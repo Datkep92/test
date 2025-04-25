@@ -74,7 +74,8 @@ const elements = {
     selectAllCounter: { // Bộ đếm chọn tất cả
         btn: document.getElementById('select-all-counter-btn'),
         count: document.querySelector('#select-all-counter-btn .selected-count')
-    }
+    },
+    fanpageControls: null // Sẽ được khởi tạo trong renderFanpageTab
 };
 
 // Utility: Debounce
@@ -199,11 +200,7 @@ function formatDateTime(date) {
     const d = new Date(date);
     return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')} ${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
 }
-/*
-function formatDate(timestamp) {
-    return new Date(timestamp).toLocaleString('vi-VN');
-}
-*/
+
 function decodeHTMLEntities(text) {
     if (!text) return '';
     return text
@@ -274,29 +271,7 @@ function saveBackup(type, data) {
 }
 
 
-/*
-function filterPersonalFanpages(fanpages) {
-    // Lọc fanpage có type: 'profile'
-    const filtered = fanpages.filter(fanpage => {
-        console.log('Checking fanpage for Personal filter:', { id: fanpage.id, type: fanpage.type, name: fanpage.name });
-        return fanpage.type === 'profile';
-    });
 
-    // Sắp xếp theo tiêu đề
-    return filtered.sort((a, b) => {
-        const titleA = a.name.toLowerCase();
-        const titleB = b.name.toLowerCase();
-        const numA = parseInt(titleA.match(/\d+/)?.[0] || '0', 10);
-        const numB = parseInt(titleB.match(/\d+/)?.[0] || '0', 10);
-        if (numA && numB) return numA - numB;
-        return titleA.localeCompare(titleB);
-    });
-}
-
-function clearIframeCache(url) {
-    localStorage.removeItem(`iframe_${url}`);
-}
-*/
 function cacheIframeContent(url, content) {
     const cacheKeys = Object.keys(localStorage).filter(k => k.startsWith('iframe_'));
     if (cacheKeys.length >= 100) {
@@ -469,80 +444,9 @@ function renderFilteredLinks(container, filter) {
     console.log('renderFilteredLinks called with filter:', filter);
     container.innerHTML = '';
     state.currentFilter = filter;
-    let filteredLinks = [];
 
-    // Debug: Log tất cả image URL
-    console.log('All images:', state.links.map(l => ({
-        url: l.url,
-        image: l.image
-    })).filter(l => l.image));
-
-    switch (filter) {
-        case 'group':
-            filteredLinks = state.links.filter(l => l.post_type === 'group' && l.blacklistStatus !== 'blacklisted');
-            break;
-        case 'photo':
-            filteredLinks = state.links.filter(l => l.post_type === 'photo' && l.blacklistStatus !== 'blacklisted');
-            break;
-        case 'story':
-            filteredLinks = state.links.filter(l => l.post_type === 'story' && l.blacklistStatus !== 'blacklisted');
-            break;
-        case 'video':
-            filteredLinks = state.links.filter(l => l.post_type === 'video' && l.blacklistStatus !== 'blacklisted');
-            break;
-        case 'reel':
-            filteredLinks = state.links.filter(l => l.post_type === 'reel' && l.blacklistStatus !== 'blacklisted');
-            break;
-        case 'post':
-            filteredLinks = state.links.filter(l => l.post_type === 'post' && l.blacklistStatus !== 'blacklisted');
-            break;
-        case 'iframe':
-            filteredLinks = state.links.filter(l => l.status === 'iframe' && l.blacklistStatus !== 'blacklisted');
-            break;
-        case 'duplicate':
-            const urlGroups = {};
-            state.links.forEach(l => {
-                if (!urlGroups[l.url]) urlGroups[l.url] = [];
-                urlGroups[l.url].push(l);
-            });
-            filteredLinks = Object.values(urlGroups)
-                .filter(group => group.length > 1 && group.every(l => l.blacklistStatus !== 'blacklisted'))
-                .flat();
-            break;
-        case 'blacklist':
-            filteredLinks = state.links.filter(l => l.blacklistStatus === 'blacklisted');
-            break;
-        case 'note':
-            filteredLinks = state.links.filter(l => l.note && l.note.trim() !== '');
-            break;
-        case 'success':
-            filteredLinks = state.links.filter(l => l.status === 'success' && l.blacklistStatus !== 'blacklisted');
-            break;
-
-        case 'image_scontent':
-            filteredLinks = state.links.filter(l => {
-                if (!l.image || typeof l.image !== 'string') {
-                    console.log(`Invalid or missing image for link: ${l.url}, image: ${l.image}`);
-                    return false;
-                }
-                const isScontent = l.image.includes('scontent') && l.image.includes('fbcdn.net') && !l.image.includes('/ads/') && !l.image.includes('/adsarchive/');
-                console.log(`Checking image_scontent: ${l.image} -> ${isScontent}`);
-                return isScontent && l.blacklistStatus !== 'blacklisted';
-            });
-            break;
-        default:
-            filteredLinks = state.links.filter(l => l.blacklistStatus !== 'blacklisted');
-            state.currentFilter = 'group';
-            break;
-    }
-
-    const searchQuery = state.dateFilter.searchQuery.toLowerCase();
-    if (searchQuery) {
-        filteredLinks = filteredLinks.filter(l =>
-            (l.title && l.title.toLowerCase().includes(searchQuery)) ||
-            (l.description && l.description.toLowerCase().includes(searchQuery))
-        );
-    }
+    // Use the shared helper to get filtered links
+    let filteredLinks = getFilteredLinksForFilterTab();
 
     let label = '';
     if (filter === 'image_ads') {
@@ -593,157 +497,6 @@ function renderFilteredLinks(container, filter) {
     console.log('Filtered images:', filteredLinks.slice(0, 5).map(l => l.image));
     updateCounters();
 }
-/*
-function renderDateFilterTab() {
-    const container = elements.linkLists['date-filter'];
-    if (!container) return;
-
-    container.innerHTML = `
-            <div class="date-filter-header">
-                <div class="filter-controls">
-                    <label>Từ ngày:</label>
-                    <input type="date" id="start-date-input" value="${state.dateFilter.startDate}">
-                    <label>Đến ngày:</label>
-                    <input type="date" id="end-date-input" value="${state.dateFilter.endDate}">
-                    <label>Trạng thái:</label>
-                    <select id="status-filter">
-                        <option value="all" ${state.dateFilter.status === 'all' ? 'selected' : ''}>Tất cả</option>
-                        <option value="pending" ${state.dateFilter.status === 'pending' ? 'selected' : ''}>Đang chờ</option>
-                        <option value="login" ${state.dateFilter.status === 'login' ? 'selected' : ''}>Yêu cầu đăng nhập</option>
-                        <option value="link_hỏng" ${state.dateFilter.status === 'link_hỏng' ? 'selected' : ''}>Link hỏng</option>
-                        <option value="error" ${state.dateFilter.status === 'error' ? 'selected' : ''}>Lỗi</option>
-                    </select>
-                    <label>Nhóm tiêu đề:</label>
-                    <input type="checkbox" id="group-titles" ${state.dateFilter.groupTitles ? 'checked' : ''}>
-                    <label>Tìm kiếm:</label>
-                    <input type="text" id="search-filter" placeholder="Tìm tiêu đề/nội dung..." value="${state.dateFilter.searchQuery}">
-                    <button class="btn filter-btn" id="apply-date-filter"><i class="fas fa-filter"></i> Lọc</button>
-                    <button class="btn reset-filter-btn" id="reset-date-filter"><i class="fas fa-times"></i> Xóa bộ lọc</button>
-                </div>
-                <div class="filter-result" id="filter-result">Đã lọc: 0 link</div>
-            </div>
-            <div class="filtered-links"></div>
-        `;
-
-    const startDateInput = container.querySelector('#start-date-input');
-    const endDateInput = container.querySelector('#end-date-input');
-    const statusFilter = container.querySelector('#status-filter');
-    const groupTitlesCheckbox = container.querySelector('#group-titles');
-    const searchInput = container.querySelector('#search-filter');
-    const applyButton = container.querySelector('#apply-date-filter');
-    const resetButton = container.querySelector('#reset-date-filter');
-    const filteredContainer = container.querySelector('.filtered-links');
-    const resultLabel = container.querySelector('#filter-result');
-
-    function applyFilter() {
-        saveBackup('dateFilter', { dateFilter: { ...state.dateFilter } });
-        state.dateFilter.startDate = startDateInput.value;
-        state.dateFilter.endDate = endDateInput.value;
-        state.dateFilter.status = statusFilter.value;
-        state.dateFilter.groupTitles = groupTitlesCheckbox.checked;
-        state.dateFilter.searchQuery = searchInput.value.trim();
-
-        if (state.dateFilter.startDate && state.dateFilter.endDate) {
-            const start = new Date(state.dateFilter.startDate);
-            const end = new Date(state.dateFilter.endDate);
-            if (start > end) {
-                showToast('Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc', 'warning');
-                return;
-            }
-        }
-
-        let filteredLinks = getLinksForCurrentTab();
-        if (state.dateFilter.groupTitles) {
-            const grouped = {};
-            filteredLinks.forEach(link => {
-                const key = link.title || link.url;
-                if (!grouped[key]) grouped[key] = [];
-                grouped[key].push(link);
-            });
-            filteredLinks = Object.values(grouped).map(group => group[0]);
-        }
-
-        filteredContainer.innerHTML = '';
-        if (filteredLinks.length === 0) {
-            filteredContainer.innerHTML = '<p>Không có link nào trong khoảng ngày này</p>';
-        } else {
-            const fragment = document.createDocumentFragment();
-            filteredLinks.forEach((link, index) => {
-                const item = createLinkItem(link, index);
-                fragment.appendChild(item);
-            });
-            filteredContainer.appendChild(fragment);
-        }
-        resultLabel.textContent = `Đã lọc: ${filteredLinks.length} link`;
-        updateCounters();
-        saveData({ dateFilter: true });
-        showToast(`Đã lọc ${filteredLinks.length} link`, 'info');
-    }
-
-    applyButton.addEventListener('click', applyFilter);
-    resetButton.addEventListener('click', () => {
-        saveBackup('dateFilter', { dateFilter: { ...state.dateFilter } });
-        state.dateFilter.startDate = '';
-        state.dateFilter.endDate = '';
-        state.dateFilter.status = 'all';
-        state.dateFilter.groupTitles = false;
-        state.dateFilter.searchQuery = '';
-        startDateInput.value = '';
-        endDateInput.value = '';
-        statusFilter.value = 'all';
-        groupTitlesCheckbox.checked = false;
-        searchInput.value = '';
-        filteredContainer.innerHTML = '';
-        resultLabel.textContent = 'Đã lọc: 0 link';
-        updateCounters();
-        saveData({ dateFilter: true });
-        showToast('Đã xóa bộ lọc', 'info');
-        addLog('Đã xóa bộ lọc', 'info');
-    });
-
-    if (state.dateFilter.startDate && state.dateFilter.endDate) applyFilter();
-}
-
-function renderLogs() {
-    const container = elements.linkLists['log'];
-    if (!container) {
-        console.error('Không tìm thấy container cho tab log');
-        return;
-    }
-    container.innerHTML = '';
-
-    // Thêm nút đổi tay trái/phải
-    const toggleButton = document.createElement('button');
-    toggleButton.id = 'toggle-handedness';
-    toggleButton.textContent = 'Đổi tay trái/phải';
-    toggleButton.className = 'btn';
-    toggleButton.style.marginBottom = '10px'; // Khoảng cách với danh sách log
-    container.appendChild(toggleButton);
-
-    // Sự kiện cho nút
-    toggleButton.addEventListener('click', () => {
-        const isLeftHanded = !localStorage.getItem('isLeftHanded') || localStorage.getItem('isLeftHanded') === 'false';
-        localStorage.setItem('isLeftHanded', isLeftHanded);
-        toggleHandedness(isLeftHanded);
-        addLog(`Chuyển chế độ: ${isLeftHanded ? 'Tay trái' : 'Tay phải'}`, 'info');
-    });
-
-    // Hiển thị danh sách log
-    if (state.logs.length === 0) {
-        container.innerHTML += '<p>Không có log nào.</p>';
-    } else {
-        state.logs.forEach((log, index) => {
-            const logItem = document.createElement('div');
-            logItem.className = `log-item log-${log.type}`;
-            logItem.innerHTML = `
-                <span class="log-time">[${new Date(log.time).toLocaleString()}]</span>
-                <span class="log-message">${log.message}</span>
-            `;
-            container.appendChild(logItem);
-        });
-    }
-}
-*/
 
 function smartScroll() {
     if (!elements.mainContent) return;
@@ -848,23 +601,7 @@ function toggleHandedness(isLeftHanded) {
     document.body.classList.toggle('left-handed', isLeftHanded);
     document.body.classList.toggle('right-handed', !isLeftHanded);
 }
-/*
-// Thêm nút vào header
-function addHandednessButton() {
-    const header = document.querySelector('.tab-container');
-    const button = document.createElement('button');
-    button.id = 'toggle-handedness';
-    button.textContent = 'Đổi tay trái/phải';
-    button.className = 'btn';
-    header.appendChild(button);
 
-    button.addEventListener('click', () => {
-        const isLeftHanded = !localStorage.getItem('isLeftHanded') || localStorage.getItem('isLeftHanded') === 'false';
-        localStorage.setItem('isLeftHanded', isLeftHanded);
-        toggleHandedness(isLeftHanded);
-    });
-}
-*/
 function init() {
     window.addEventListener('DOMContentLoaded', async () => {
         try {
@@ -881,33 +618,6 @@ function init() {
     });
 }
 
-/*
-// Hàm kiểm tra trực tiếp
-function checkFanpageImmediately(fanpage, iframeContainer) {
-    iframeContainer.innerHTML = `
-        <div class="fb-post" 
-             data-href="${fanpage.url}" 
-             data-width="100%"
-             data-show-text="true"
-             data-lazy="false"></div>
-    `;
-
-    // Xử lý khi SDK đã sẵn sàng
-    if (window.FB) {
-        window.FB.XFBML.parse(iframeContainer, () => {
-            setTimeout(() => {
-                verifyFanpageStatus(fanpage, iframeContainer);
-            }, 2000); // Chờ 2 giây để iframe tải
-        });
-    } else {
-        // Fallback nếu SDK chưa sẵn sàng
-        setTimeout(() => {
-            verifyFanpageStatus(fanpage, iframeContainer);
-        }, 3000);
-    }
-}
-
-*/
 
 // Helper functions
 function getStatusIcon(status) {
@@ -919,73 +629,7 @@ function getStatusIcon(status) {
     }[status] || 'question-circle';
 }
 
-/*
-// Hàm hỗ trợ
-function getActualStatus(fanpage) {
-    if (fanpage.errorCount >= 3) return 'not-exists';
-    if (fanpage.lastError === 'content_restricted') return 'restricted';
-    return fanpage.status;
-}
 
-
-
-function resetFanpageStatus(fanpageId) {
-    const fanpage = state.fanpages.find(f => f.id === fanpageId);
-    if (!fanpage) return;
-
-    // Reset trạng thái
-    fanpage.status = 'pending';
-    fanpage.errorCount = 0;
-    delete fanpage.lastError;
-
-    saveData({ fanpages: true });
-    renderFanpageTab();
-    showToast(`Đã reset trạng thái fanpage ${fanpage.name}`, 'info');
-}
-
-// Hàm kiểm tra trạng thái thực tế
-function checkActualFanpageStatus(fanpage) {
-    // Nếu bài viết đã bị xóa hoặc hạn chế
-    if (fanpage.errorCount > 2) { // Ngưỡng lỗi
-        return {
-            status: 'not-exists',
-            icon: 'times-circle',
-            text: 'Bài viết không khả dụng'
-        };
-    }
-
-    // Trạng thái bình thường
-    return {
-        status: fanpage.status,
-        icon: fanpage.status === 'exists' ? 'check-circle'
-            : fanpage.status === 'not-exists' ? 'times-circle'
-                : 'spinner fa-pulse',
-        text: fanpage.status === 'exists' ? 'Tồn tại'
-            : fanpage.status === 'not-exists' ? 'Không tồn tại'
-                : 'Đang kiểm tra'
-    };
-}
-
-
-
-function isFanpageExists(url) {
-    const baseUrl = url.split('?')[0];
-    return state.fanpages.some(fanpage => fanpage.url.split('?')[0] === baseUrl);
-}
-
-
-function refreshFanpage(fanpageId) {
-    const fanpage = state.fanpages.find(f => f.id === fanpageId);
-    if (!fanpage) return;
-
-    saveBackup('refreshFanpage', { fanpage: { ...fanpage } });
-    fanpage.status = 'pending';
-    fanpage.lastChecked = null;
-    saveData({ fanpages: true });
-    renderTabContent('fanpage');
-    addLog(`Làm mới fanpage: ${fanpage.name}`, 'info');
-}
-*/
 function getStatusText(status) {
     const statusMap = {
         'exists': '✓ Tồn tại',
@@ -1032,85 +676,34 @@ async function verifyFanpage(fanpage, container) {
     }
 }
 
-
-/*
-function forceCheckFanpage(fanpageId, itemElement) {
-    const fanpage = state.fanpages.find(f => f.id === fanpageId);
-    if (!fanpage) return;
-
-    // Reset trạng thái
-    fanpage.status = 'pending';
-    fanpage.lastChecked = null;
-    saveData({ fanpages: true });
-
-    // Hiển thị loading
-    const statusElement = itemElement.querySelector('.fanpage-status-overlay');
-    statusElement.className = 'fanpage-status-overlay pending';
-    statusElement.textContent = '⌛ Đang kiểm tra...';
-
-    // Tải lại iframe
-    const iframeContainer = itemElement.querySelector('.fanpage-iframe-container');
-    iframeContainer.innerHTML = '';
-    iframeContainer.dataset.loaded = 'false';
-    loadFanpageIframe(fanpage, iframeContainer);
-}
-
-function loadFanpageIframe(fanpage, container) {
-    if (fanpage.status !== 'pending' && fanpage.lastChecked) return;
-
-    container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
-
-    // Sử dụng Facebook SDK nếu có
-    if (window.FB) {
-        container.innerHTML = `
-            <div class="fb-post" 
-                 data-href="${fanpage.url}" 
-                 data-width="300"
-                 data-show-text="true"
-                 data-lazy="true"></div>
-        `;
-        window.FB.XFBML.parse(container);
-    } else {
-        // Fallback sử dụng iframe thông thường
-        container.innerHTML = `
-            <iframe src="https://www.facebook.com/plugins/post.php?href=${encodeURIComponent(fanpage.url)}&width=300&show_text=true" 
-                    width="300" height="200" 
-                    style="border:none;overflow:hidden" 
-                    scrolling="no" 
-                    frameborder="0" 
-                    allowfullscreen="true"></iframe>
-        `;
-    }
-
-    // Cập nhật trạng thái sau khi tải
-    setTimeout(() => {
-        fanpage.status = 'exists'; // Giả định tải thành công
-        fanpage.lastChecked = new Date().toISOString();
-        saveData({ fanpages: true });
-    }, 2000);
-}
-*/
-
 function updateSelectionBar(fanpages) {
-    const container = elements.linkLists['fanpage'];
-    if (!container) return;
+    if (!elements.fanpageControls) return;
 
     const selectedCount = fanpages.filter(f => f.checked).length;
     const totalCount = fanpages.length;
 
-    container.querySelector('.selection-count').textContent = `${selectedCount}/${totalCount}`;
-    container.querySelector('.delete-selected-btn').disabled = selectedCount === 0;
+    // Cập nhật số lượng đã chọn
+    if (elements.fanpageControls.selectionCount) {
+        elements.fanpageControls.selectionCount.textContent = `${selectedCount}/${totalCount}`;
+    }
 
-    const selectAllCheckbox = container.querySelector('#select-all-fanpages');
-    if (selectedCount === 0) {
-        selectAllCheckbox.checked = false;
-        selectAllCheckbox.indeterminate = false;
-    } else if (selectedCount === totalCount) {
-        selectAllCheckbox.checked = true;
-        selectAllCheckbox.indeterminate = false;
-    } else {
-        selectAllCheckbox.checked = false;
-        selectAllCheckbox.indeterminate = true;
+    // Cập nhật trạng thái nút xóa
+    if (elements.fanpageControls.deleteSelectedBtn) {
+        elements.fanpageControls.deleteSelectedBtn.disabled = selectedCount === 0;
+    }
+
+    // Cập nhật checkbox chọn tất cả
+    if (elements.fanpageControls.selectAllCheckbox) {
+        if (selectedCount === 0) {
+            elements.fanpageControls.selectAllCheckbox.checked = false;
+            elements.fanpageControls.selectAllCheckbox.indeterminate = false;
+        } else if (selectedCount === totalCount) {
+            elements.fanpageControls.selectAllCheckbox.checked = true;
+            elements.fanpageControls.selectAllCheckbox.indeterminate = false;
+        } else {
+            elements.fanpageControls.selectAllCheckbox.checked = false;
+            elements.fanpageControls.selectAllCheckbox.indeterminate = true;
+        }
     }
 }
 
@@ -1187,230 +780,97 @@ function renderFanpageTab() {
     }
 
     container.innerHTML = `
-    <div class="fanpage-controls">
-      <div class="fanpage-search">
-        <input type="text" id="fanpage-filter-search" placeholder="Tìm kiếm theo tên fanpage...">
-      </div>
-      <div class="filter-buttons">
-        <button class="filter-btn active" data-filter="all">All</button>
-        <button class="filter-btn" data-filter="fanpage">Fanpage</button>
-        <button class="filter-btn" data-filter="profile">Cá nhân</button>
-        <button class="filter-btn" data-filter="profile-pro">Pro</button>
-        <button class="filter-btn" data-filter="duplicate">Trùng</button>
-      </div>
-      <div class="action-buttons">
-        <button class="export-btn" id="export-fanpage-json">Xuất</button>
-      </div>
-    </div>
-    <div class="selection-bar">
-      <input type="checkbox" id="select-all-fanpages">
-      <span class="selection-info">All</span>
-      <span class="selection-count">0/${state.fanpages.length}</span>
-      <button class="delete-selected-btn" disabled>Xóa</button>
-    </div>
-    <div class="fanpage-list"></div>
-    <style>
-      .fanpage-search {
-        margin-bottom: 10px;
-      }
-      #fanpage-filter-search {
-        width: 100%;
-        padding: 8px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 14px;
-      }
-      .link-item.hovered {
-        background: #e0f7fa;
-        transition: background 0.3s;
-      }
-    </style>
-  `;
-
-    const listContainer = container.querySelector('.fanpage-list');
-    let currentFilter = 'all';
-
-    // Debounced search
-    const debouncedSearch = debounce(() => {
-        updateFanpageList();
-    }, config.debounceDelay);
-
-    // Search input event
-    container.querySelector('#fanpage-filter-search').addEventListener('input', debouncedSearch);
-
-    // Filter buttons
-    container.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            container.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentFilter = btn.dataset.filter;
-            updateFanpageList();
-        });
-    });
-
-    // Export button
-    container.querySelector('#export-fanpage-json').addEventListener('click', () => {
-        const filteredFanpages = getFilteredFanpages(currentFilter, container.querySelector('#fanpage-filter-search')?.value.trim().toLowerCase() || '');
-        exportFanpagesToJSON(filteredFanpages);
-    });
-
-    // Select all checkbox
-    container.querySelector('#select-all-fanpages').addEventListener('change', function () {
-        const filteredFanpages = getFilteredFanpages(currentFilter, container.querySelector('#fanpage-filter-search')?.value.trim().toLowerCase() || '');
-        const isChecked = this.checked;
-
-        filteredFanpages.forEach(fanpage => {
-            fanpage.checked = isChecked;
-        });
-
-        saveData({ fanpages: true });
-        updateFanpageList();
-    });
-
-    // Delete selected button
-    container.querySelector('.delete-selected-btn').addEventListener('click', () => {
-        const filteredFanpages = getFilteredFanpages(currentFilter, container.querySelector('#fanpage-filter-search')?.value.trim().toLowerCase() || '');
-        const selectedFanpages = filteredFanpages.filter(f => f.checked);
-
-        if (selectedFanpages.length === 0) return;
-
-        if (confirm(`Bạn có chắc muốn xóa ${selectedFanpages.length} fanpage đã chọn?`)) {
-            saveBackup('deleteFanpages', { fanpages: [...selectedFanpages] });
-            state.fanpages = state.fanpages.filter(f => !selectedFanpages.includes(f));
-
-            saveData({ fanpages: true });
-            updateFanpageList();
-            showToast(`Đã xóa ${selectedFanpages.length} fanpage`, 'success');
-            addLog(`Đã xóa ${selectedFanpages.length} fanpage`, 'info');
-        }
-    });
-
-    // Initial render
-    updateFanpageList();
-}
-/*
-function groupFanpagesByType(fanpages) {
-    const groups = {
-        'profile-pro': { title: '⭐ Profile Pro', items: [] },
-        'profile': { title: '👤 Trang cá nhân', items: [] },
-        'fanpage': { title: '📌 Fanpage', items: [] }
-    };
-
-    fanpages.forEach(f => {
-        if (groups[f.type]) {
-            groups[f.type].items.push(f);
-        } else {
-            groups.profile.items.push(f);
-        }
-    });
-
-    return Object.values(groups).filter(g => g.items.length > 0);
-}
-
-
-
-function loadFanpageIframe(container, fanpage) {
-    if (fanpage.status === 'exists' && fanpage.lastChecked) {
-        // Đã kiểm tra rồi thì không cần tải lại
-        return;
-    }
-
-    container.innerHTML = `
-        <iframe src="https://www.facebook.com/plugins/page.php?href=${encodeURIComponent(fanpage.url)}&tabs&width=280&height=130&small_header=true&adapt_container_width=true&hide_cover=true&show_facepile=false" 
-                width="280" height="130" style="border:none;overflow:hidden" 
-                scrolling="no" frameborder="0" allowfullscreen="true" 
-                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
-        </iframe>
+        <div class="fanpage-list"></div>
+        <style>
+            .fanpage-controls {
+                margin-bottom: 10px;
+            }
+            .link-item.hovered {
+                background: #e0f7fa;
+                transition: background 0.3s;
+            }
+            .link-checkbox:checked {
+                background: #e0f7fa;
+                border-color: #007bff;
+            }
+            .link-item.checked {
+                background: #e0f7fa;
+            }
+        </style>
     `;
 
-    // Kiểm tra sau khi tải
-    setTimeout(() => verifyFanpage(fanpage, container), 2000);
-}
+    const listContainer = container.querySelector('.fanpage-list');
 
+    const updateFanpageList = () => {
+        const searchQuery = state.dateFilter.searchQuery || '';
+        const filteredFanpages = getFilteredFanpages(state.currentFilter || 'all', searchQuery);
+        listContainer.innerHTML = '';
 
+        filteredFanpages.forEach((fanpage, index) => {
+            const item = document.createElement('div');
+            item.className = `link-item ${fanpage.checked ? 'checked' : ''}`;
+            item.dataset.id = fanpage.id;
 
-function getTypeColor(type) {
-    return {
-        'profile-pro': '#ff9500',
-        'profile': '#42b72a',
-        'fanpage': '#1877f2'
-    }[type] || '#65676b';
-}
+            const indexStr = (index + 1).toString();
+            const indexDigits = indexStr.split('').map(digit => `<span>${digit}</span>`).join('');
 
+            item.innerHTML = `
+                <input type="checkbox" class="link-checkbox" ${fanpage.checked ? 'checked' : ''}>
+                <div class="link-row">
+                    <button class="link-index" title="Xóa fanpage này">
+                        ${indexDigits}
+                    </button>
+                    <div class="link-thumbnail">
+                        <div class="fanpage-iframe-mini" data-url="${fanpage.url}"></div>
+                    </div>
+                    <div class="link-content">
+                        <div class="link-title">${fanpage.name}</div>
+                        <div class="link-description">${fanpage.description || ''}</div>
+                        <div class="link-meta">
+                            <span class="link-time">${formatDateTime(fanpage.date)}</span>
+                            <span class="link-status ${fanpage.type}">${getTypeLabel(fanpage.type)}</span>
+                        </div>
+                    </div>
+                    <div class="link-actions">
+                        <button class="action-btn edit" title="Sửa"><i class="fas fa-edit"></i></button>
+                    </div>
+                </div>
+            `;
 
+            listContainer.appendChild(item);
+            loadMiniIframe(item.querySelector('.fanpage-iframe-mini'), fanpage.url);
 
-
-
-
-function findDuplicateTitles() {
-    const titleMap = {};
-    const duplicates = [];
-
-    state.fanpages.forEach(fanpage => {
-        if (!titleMap[fanpage.name]) {
-            titleMap[fanpage.name] = [];
-        }
-        titleMap[fanpage.name].push(fanpage);
-    });
-
-    for (const name in titleMap) {
-        if (titleMap[name].length > 1) {
-            duplicates.push(...titleMap[name]);
-        }
-    }
-
-    return duplicates;
-}
-
-
-function setupFanpageEvents() {
-    // Sự kiện chỉnh sửa
-    document.querySelectorAll('[contenteditable="true"]').forEach(el => {
-        el.addEventListener('blur', function () {
-            const item = this.closest('.link-item');
-            const fanpage = state.fanpages.find(f => f.id === item.dataset.id);
-            const field = this.classList.contains('link-title') ? 'name' : 'description';
-
-            if (fanpage) {
-                fanpage[field] = this.textContent.trim();
+            const checkbox = item.querySelector('.link-checkbox');
+            checkbox.addEventListener('change', () => {
+                fanpage.checked = checkbox.checked;
                 saveData({ fanpages: true });
-            }
+                item.classList.toggle('checked', fanpage.checked);
+            });
+
+            item.addEventListener('click', (e) => {
+                if (!e.target.closest('.link-checkbox') && !e.target.closest('.link-actions')) {
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change'));
+                }
+            });
+
+            item.querySelector('.edit').addEventListener('click', (e) => {
+                e.stopPropagation();
+                showEditFanpagePopup(fanpage);
+            });
+
+            item.querySelector('.link-index').addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (confirm(`Xóa fanpage: ${fanpage.url}?`)) {
+                    deleteFanpage(fanpage.id);
+                }
+            });
         });
-    });
+    };
 
-    // Sự kiện xóa
-    document.querySelectorAll('.action-btn.delete').forEach(btn => {
-        btn.addEventListener('click', function () {
-            const item = this.closest('.link-item');
-            const fanpageId = item.dataset.id;
-
-            if (confirm('Xóa fanpage này?')) {
-                state.fanpages = state.fanpages.filter(f => f.id !== fanpageId);
-                saveData({ fanpages: true });
-                renderFanpageTab();
-            }
-        });
-    });
-
-    // Sự kiện sửa
-    document.querySelectorAll('.action-btn.edit').forEach(btn => {
-        btn.addEventListener('click', function () {
-            const item = this.closest('.link-item');
-            const title = item.querySelector('.link-title');
-            title.focus();
-
-            // Di chuyển con trỏ đến cuối văn bản
-            const range = document.createRange();
-            range.selectNodeContents(title);
-            range.collapse(false);
-            const sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(range);
-        });
-    });
+    updateFanpageList();
 }
 
-*/
 // Hàm fetch với retry
 async function fetchWithRetry(url, options = {}, retries = config.maxRetries, delay = config.retryDelay) {
     for (let attempt = 1; attempt <= retries; attempt++) {
@@ -1489,39 +949,7 @@ async function extractImageFromUrl(url) {
         return null;
     }
 }
-/*
-async function reloadImage(linkId) {
-    const link = state.links.find(l => l.id === linkId);
-    if (!link) return;
 
-    try {
-        showToast('Đang tải lại ảnh...', 'info');
-        const newImage = await extractImageFromUrl(link.url);
-
-        if (newImage) {
-            // Lưu trạng thái cũ để undo
-            saveBackup('updateImage', {
-                linkId: link.id,
-                oldImage: link.image,
-                newImage: newImage
-            });
-
-            // Cập nhật ảnh mới
-            link.image = newImage;
-            saveData({ links: true });
-            renderTabContent(state.currentTab);
-
-            showToast('Đã cập nhật ảnh mới', 'success');
-            addLog(`Đã cập nhật ảnh cho link ${link.url}`, 'info');
-        } else {
-            showToast('Không thể tải ảnh mới', 'warning');
-        }
-    } catch (error) {
-        showToast('Lỗi khi tải ảnh mới', 'danger');
-        addLog(`Lỗi khi tải ảnh mới cho link ${link.url}: ${error.message}`, 'error');
-    }
-}
-*/
 /**
  * Hàm chung xử lý nhập/xuất dữ liệu lên Gist
  */
@@ -1649,22 +1077,22 @@ async function importLinksFromJsonLines() {
             })
             .filter(Boolean);
 
-        const items = filterByKeywords(rawItems).filter(item =>
+        const filteredItems = filterByBlockedTitle(rawItems).filter(item =>
             isValidUrl(item.url) && item.image && item.image.trim() !== ''
         );
 
-        if (items.length === 0) {
+        if (filteredItems.length === 0) {
             showToast('Không có dòng JSON hợp lệ hoặc đã bị lọc', 'warning');
             return;
         }
 
-        if (!confirm(`Bạn có chắc muốn nhập ${items.length} link từ Jsonlink?`)) {
+        if (!confirm(`Bạn có chắc muốn nhập ${filteredItems.length} link từ Jsonlink?`)) {
             showToast('Đã hủy nhập dữ liệu', 'warning');
             return;
         }
 
         const newLinks = [];
-        for (const item of items) {
+        for (const item of filteredItems) {
             const isErrorImage = item.image === config.defaultImage || item.image.includes('facebook.com/plugins/');
             const newLink = {
                 id: generateId(),
@@ -1701,6 +1129,7 @@ async function importLinksFromJsonLines() {
         state.isLoading = false;
     }
 }
+
 
 async function clearGistFileContent(gistId, fileName = "Jsonlink") {
     try {
@@ -1876,7 +1305,7 @@ async function importFromJSON() {
         let data = JSON.parse(fileContent);
         if (!Array.isArray(data)) throw new Error('Dữ liệu JSON không hợp lệ (phải là mảng object)');
 
-        const filteredData = filterByKeywords(data).filter(item =>
+        const filteredData = filterByBlockedTitle(data).filter(item =>
             typeof item.url === 'string' &&
             item.url.trim() !== '' &&
             item.image &&
@@ -1929,6 +1358,7 @@ async function importFromJSON() {
         state.isLoading = false;
     }
 }
+
 
 
 function showToast(message, type = 'info') {
@@ -2172,26 +1602,7 @@ function showLinkDetailsPopup(link) {
 }
 
 
-/*
-function loadMiniIframe(container, url) {
-    const cachedIframe = getCachedIframeContent(url);
-    if (cachedIframe) {
-        container.innerHTML = cachedIframe;
-        return;
-    }
-    const iframeHtml = `<iframe src="https://www.facebook.com/plugins/post.php?href=${encodeURIComponent(url)}&width=60&height=60&show_text=false" width="60" height="60" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" loading="lazy"></iframe>`;
-    container.innerHTML = iframeHtml;
-    cacheIframeContent(url, iframeHtml);
 
-    const observer = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) {
-            container.innerHTML = iframeHtml;
-            observer.disconnect();
-        }
-    }, { rootMargin: '100px' });
-    observer.observe(container);
-}
-*/
 // Refactored getTypeLabel
 function getTypeLabel(type) {
     return {
@@ -2343,18 +1754,23 @@ function filterByKeywords(urlsOrItems) {
 init();
 
 
-// Refactored loadMiniIframe
 function loadMiniIframe(container, url) {
-    container.innerHTML = `
-    <iframe src="https://www.facebook.com/plugins/post.php?href=${encodeURIComponent(url)}&width=60&height=60&show_text=false" 
-            width="60" 
-            height="60" 
-            style="border:none;overflow:hidden" 
-            scrolling="no" 
-            frameborder="0" 
-            allowfullscreen="true"
-            loading="lazy"></iframe>
-  `;
+    const cachedIframe = getCachedIframeContent(url);
+    if (cachedIframe) {
+        container.innerHTML = cachedIframe;
+        return;
+    }
+    const iframeHtml = `<iframe src="https://www.facebook.com/plugins/post.php?href=${encodeURIComponent(url)}&width=60&height=60&show_text=false" width="60" height="60" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" loading="lazy"></iframe>`;
+    container.innerHTML = iframeHtml;
+    cacheIframeContent(url, iframeHtml);
+
+    const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+            container.innerHTML = iframeHtml;
+            observer.disconnect();
+        }
+    }, { rootMargin: '100px' });
+    observer.observe(container);
 }
 
 function addLog(message, type) {
@@ -2381,9 +1797,6 @@ function renderTabContent(tab) {
     switch (tab) {
         case 'fanpage':
             renderFanpageTab();
-            break;
-        case 'date-filter':
-            renderDateFilterTab();
             break;
         case 'log':
             renderLogs();
@@ -2559,21 +1972,7 @@ function toggleCheckbox(link) {
     updateCounters();
 }
 
-/*
-// Refactored retryLink
-function retryLink(id) {
-    const link = state.links.find(l => l.id === id);
-    if (!link) return;
 
-    saveBackup('retryLink', { linkId: id, link: { ...link } });
-    link.status = 'pending';
-    link.title = 'Đang trích xuất lại...';
-    saveData({ links: true });
-    updateLinkItem(link);
-    setTimeout(() => extractContent(link.url), 0);
-    addLog(`Đang thử lại link: ${link.url} (ID: ${link.id})`, 'info');
-}
-*/
 // Refactored extractContent
 async function extractContent(url) {
     const link = state.links.find(l => l.url === url);
@@ -2661,54 +2060,53 @@ async function extractContent(url) {
 
 // Refactored toggleSelectAll
 function toggleSelectAll() {
+    let itemsToToggle = [];
+    let type = '';
+    let allChecked = false;
+
+    // Determine the items to toggle based on the current tab
     if (state.currentTab === 'fanpage') {
-        const fanpagesToToggle = getFilteredFanpages(state.currentFilter || 'all');
-        const allChecked = fanpagesToToggle.every(f => f.checked);
-
-        saveBackup('selectAllFanpages', { fanpages: fanpagesToToggle });
-        fanpagesToToggle.forEach(f => f.checked = !allChecked);
-
-        saveData({ fanpages: true });
-        updateCounters();
-
-        showToast(`Đã ${allChecked ? 'bỏ chọn' : 'chọn'} tất cả ${fanpagesToToggle.length} fanpage`, 'info');
-        addLog(`Đã ${allChecked ? 'bỏ chọn' : 'chọn'} tất cả ${fanpagesToToggle.length} fanpage`, 'info');
+        type = 'fanpages';
+        itemsToToggle = getFilteredFanpages(state.currentFilter || 'all', state.dateFilter.searchQuery || '');
+        allChecked = itemsToToggle.every(f => f.checked);
     } else {
-        let linksToToggle;
+        type = 'links';
         if (state.currentTab === 'filter') {
-            // Lấy danh sách link đã lọc theo state.currentFilter
-            linksToToggle = getFilteredLinksForFilterTab();
+            itemsToToggle = getFilteredLinksForFilterTab();
         } else {
-            // Giữ logic cũ cho các tab khác
-            linksToToggle = getLinksForCurrentTab();
+            itemsToToggle = getLinksForCurrentTab();
         }
+        allChecked = itemsToToggle.every(l => l.checked);
+    }
 
-        const allChecked = linksToToggle.every(l => l.checked);
+    // Save backup for undo
+    saveBackup(`selectAll${type.charAt(0).toUpperCase() + type.slice(1)}`, { [type]: itemsToToggle.map(item => ({ ...item })) });
 
-        saveBackup('selectAll', { links: linksToToggle.map(l => ({ ...l })) });
-        linksToToggle.forEach(link => {
-            link.checked = !allChecked;
-            updateLinkItem(link);
-        });
+    // Toggle the checked state
+    itemsToToggle.forEach(item => {
+        item.checked = !allChecked;
+        if (type === 'links') updateLinkItem(item);
+    });
 
-        saveData({ links: true });
-        updateCounters();
+    // Save data and update UI
+    saveData({ [type]: true });
+    updateCounters();
+    renderTabContent(state.currentTab);
 
-        showToast(`Đã ${allChecked ? 'bỏ chọn' : 'chọn'} ${linksToToggle.length} link`, 'info');
-        addLog(`Đã ${allChecked ? 'bỏ chọn' : 'chọn'} ${linksToToggle.length} link trong tab ${state.currentTab}`, 'info');
+    // Show toast and log
+    const action = allChecked ? 'bỏ chọn' : 'chọn';
+    showToast(`Đã ${action} ${itemsToToggle.length} ${type === 'fanpages' ? 'fanpage' : 'link'}`, 'info');
+    addLog(`Đã ${action} ${itemsToToggle.length} ${type === 'fanpages' ? 'fanpage' : 'link'} trong tab ${state.currentTab}`, 'info');
 
-        // Cập nhật giao diện
-        renderTabContent(state.currentTab);
-
-        if (!allChecked && linksToToggle.length > 0) {
-            showSelectionActionsDialog(linksToToggle.length);
-        }
+    // Show selection actions dialog if items are selected
+    if (!allChecked && itemsToToggle.length > 0) {
+        showSelectionActionsDialog(itemsToToggle.length);
     }
 }
-
-// Hàm mới để lấy danh sách link đã lọc cho tab filter
 function getFilteredLinksForFilterTab() {
     let filteredLinks = [];
+    const searchQuery = state.dateFilter.searchQuery.toLowerCase();
+    const dateQuery = state.dateFilter.dateQuery;
 
     switch (state.currentFilter) {
         case 'group':
@@ -2751,23 +2149,29 @@ function getFilteredLinksForFilterTab() {
         case 'success':
             filteredLinks = state.links.filter(l => l.status === 'success' && l.blacklistStatus !== 'blacklisted');
             break;
-        case 'image_ads':
-            filteredLinks = state.links.filter(l => l.image && typeof l.image === 'string' && l.image.includes('fbcdn.net') && (l.image.includes('/ads/') || l.image.includes('/adsarchive/')) && l.blacklistStatus !== 'blacklisted');
-            break;
         case 'image_scontent':
-            filteredLinks = state.links.filter(l => l.image && typeof l.image === 'string' && l.image.includes('scontent') && l.image.includes('fbcdn.net') && !l.image.includes('/ads/') && !l.image.includes('/adsarchive/') && l.blacklistStatus !== 'blacklisted');
+            filteredLinks = state.links.filter(l =>
+                l.image && typeof l.image === 'string' &&
+                l.image.includes('scontent') && l.image.includes('fbcdn.net') &&
+                !l.image.includes('/ads/') && !l.image.includes('/adsarchive/') &&
+                l.blacklistStatus !== 'blacklisted'
+            );
             break;
         default:
             filteredLinks = state.links.filter(l => l.blacklistStatus !== 'blacklisted');
-            state.currentFilter = 'group';
             break;
     }
 
-    const searchQuery = state.dateFilter.searchQuery.toLowerCase();
     if (searchQuery) {
         filteredLinks = filteredLinks.filter(l =>
             (l.title && l.title.toLowerCase().includes(searchQuery)) ||
             (l.description && l.description.toLowerCase().includes(searchQuery))
+        );
+    }
+
+    if (dateQuery) {
+        filteredLinks = filteredLinks.filter(l =>
+            l.date && l.date.includes(dateQuery)
         );
     }
 
@@ -2847,29 +2251,7 @@ function highlightAndScrollToFanpage(fanpageId) {
     smoothScroll(listContainer, item.offsetTop);
 }
 
-/*
-function isFacebookAdsImage(url) {
-    return url && typeof url === 'string' && url.includes('fbcdn.net') && (url.includes('/ads/') || url.includes('/adsarchive/'));
-}
 
-function isScontentImage(url) {
-    return url && typeof url === 'string' && /scontent.*\.fbcdn\.net/.test(url);
-
-} 
-
-function openFacebookLink(url) {
-    const fbAppUrl = url.replace('https://www.facebook.com', 'fb://').replace('https://m.facebook.com', 'fb://');
-    const fallbackUrl = url;
-
-    window.location.href = fbAppUrl;
-
-    setTimeout(() => {
-        if (document.hasFocus()) {
-            window.location.href = fallbackUrl;
-        }
-    }, 2000);
-}
-*/
 function createItem({ item, index, type, templateFn, eventHandlers }) {
     const element = document.createElement('div');
     element.className = `link-item ${item.checked ? 'checked' : ''}`;
@@ -2939,9 +2321,24 @@ function createLinkItem(link, index) {
                 element.classList.toggle('checked', link.checked);
             },
             onItemClick: (e, link, checkbox) => {
-                if (!e.target.closest('.link-checkbox') && !e.target.closest('.link-actions')) {
+                const isCheckbox = e.target.matches('.link-checkbox');
+                const isInsideActions = e.target.closest('.link-actions');
+                const isInsideIndex = e.target.closest('.link-index');
+                const isInsideThumbnail = e.target.closest('.link-thumbnail'); // Thêm dòng này
+
+                // Nếu click vào checkbox, action, index, hoặc thumbnail → không mở URL
+                if (isCheckbox || isInsideActions || isInsideIndex || isInsideThumbnail) {
                     checkbox.checked = !checkbox.checked;
                     checkbox.dispatchEvent(new Event('change'));
+                    return;
+                }
+
+                // Mặc định: toggle và mở URL nếu check
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
+
+                if (checkbox.checked && link.url) {
+                    window.location.href = link.url;
                 }
             },
             onDelete: (link) => {
@@ -3074,6 +2471,11 @@ function deleteSelected() {
 }
 
 function deleteSelectedFanpages() {
+    const container = elements.linkLists['fanpage'];
+    if (!container || !container.querySelector('.selection-bar')) {
+        renderFanpageTab(); // Ensure the tab is rendered before proceeding
+    }
+
     const selectedFanpages = state.fanpages.filter(f => f.checked);
     deleteItems({
         items: selectedFanpages,
@@ -3102,15 +2504,6 @@ function deleteFanpage(fanpageId) {
 //
 /**
  * Hàm tạo popup chung
- * @param {Object} config - Cấu hình popup
- * @param {string} config.title - Tiêu đề popup
- * @param {string} config.content - Nội dung HTML body
- * @param {Array} [config.buttons] - Danh sách nút bấm
- * @param {string} [config.customClass] - Class tùy chỉnh
- * @param {string} [config.customStyle] - CSS tùy chỉnh
- * @param {string} [config.headerStyle] - Style cho header
- * @param {string} [config.bodyStyle] - Style cho body
- * @returns {Object} { element: HTMLElement, close: Function }
  */
 function createPopup(config) {
     // Tạo overlay
@@ -3204,6 +2597,16 @@ function showNoteDialog(link) {
 
     cancelBtn.addEventListener('click', close);
 }
+
+function filterByBlockedTitle(links) {
+    const blockedKeywords = state.config.blockedKeywords || [];
+
+    return links.filter(link => {
+        const title = (link.title || '').toLowerCase();
+        return !blockedKeywords.some(keyword => title.includes(keyword.toLowerCase()));
+    });
+}
+
 
 function showAddLinkDialog() {
     const { close } = createPopup({
@@ -3316,7 +2719,7 @@ function showAddLinkDialog() {
     };
 }
 
-function showSelectionActionsDialog(count) {
+function showSelectionActionsDialog(count, type) {
     const buttons = [
         {
             id: 'delete-selected',
@@ -3325,7 +2728,13 @@ function showSelectionActionsDialog(count) {
         }
     ];
 
-    if (state.currentTab !== 'fanpage') {
+    if (state.currentTab === 'fanpage') {
+        buttons.push({
+            id: 'export-fanpage',
+            text: '<i class="fas fa-file-export"></i> Xuất Fanpage',
+            class: 'btn-primary'
+        });
+    } else {
         buttons.push(
             {
                 id: 'export-gist',
@@ -3342,47 +2751,99 @@ function showSelectionActionsDialog(count) {
 
     buttons.push({
         id: 'unselect-all',
-        text: '<i class="fas fa-times"></i> Bỏ chọn',
+        text: '<i class="fas fa-times"></i> Bỏ Chọn',
         class: 'btn-secondary'
     });
 
     const { close } = createPopup({
-        title: `Đã chọn ${count} mục`,
+        title: `Đã chọn ${count} ${state.currentTab === 'fanpage' ? 'fanpage' : 'link'}`,
         content: '<div style="display: flex; flex-wrap: wrap; gap: 10px;"></div>',
         buttons
     });
 
-    document.getElementById('delete-selected').addEventListener('click', () => {
-        state.currentTab === 'fanpage' ? deleteSelectedFanpages() : deleteSelected();
-        close();
-    });
-
-    if (state.currentTab !== 'fanpage') {
-        document.getElementById('export-gist').addEventListener('click', () => {
-            exportToGist(state.links.filter(l => l.checked));
+    const deleteButton = document.getElementById('delete-selected');
+    if (deleteButton) {
+        deleteButton.addEventListener('click', () => {
+            state.currentTab === 'fanpage' ? deleteSelectedFanpages() : deleteSelected();
             close();
         });
-
-        document.getElementById('export-url').addEventListener('click', () => {
-            const selectedLinks = state.links.filter(l => l.checked);
-            if (selectedLinks.length === 0) {
-                showToast('Vui lòng chọn ít nhất một link để xuất URL', 'warning');
-                return;
-            }
-            exportUrlsToGist(selectedLinks);
-            close();
-        });
+    } else {
+        console.error("Button with id 'delete-selected' not found.");
     }
 
-    document.getElementById('unselect-all').addEventListener('click', () => {
-        const items = state.currentTab === 'fanpage' ? state.fanpages : state.links;
-        items.forEach(item => item.checked = false);
-        saveData({ [state.currentTab === 'fanpage' ? 'fanpages' : 'links']: true });
-        renderTabContent(state.currentTab);
-        close();
-    });
-}
+    if (state.currentTab === 'fanpage') {
+        const exportFanpageButton = document.getElementById('export-fanpage');
+        if (exportFanpageButton) {
+            exportFanpageButton.addEventListener('click', async () => {
+                const selectedFanpages = state.fanpages.filter(f => f.checked);
+                if (selectedFanpages.length === 0) {
+                    showToast('Không có fanpage nào được chọn', 'error');
+                    return;
+                }
+                await exportFanpagesToJSON(selectedFanpages);
+                close();
+            });
+        } else {
+            console.error("Button with id 'export-fanpage' not found.");
+        }
+    } else {
+        const exportGistButton = document.getElementById('export-gist');
+        if (exportGistButton) {
+            exportGistButton.addEventListener('click', () => {
+                exportToGist(state.links.filter(l => l.checked));
+                close();
+            });
+        } else {
+            console.error("Button with id 'export-gist' not found.");
+        }
 
+        const exportUrlButton = document.getElementById('export-url');
+        if (exportUrlButton) {
+            exportUrlButton.addEventListener('click', () => {
+                const selectedLinks = state.links.filter(l => l.checked);
+                if (selectedLinks.length === 0) {
+                    showToast('Vui lòng chọn ít nhất một link để xuất URL', 'warning');
+                    return;
+                }
+                exportUrlsToGist(selectedLinks);
+                close();
+            });
+        } else {
+            console.error("Button with id 'export-url' not found.");
+        }
+    }
+
+    const unselectButton = document.getElementById('unselect-all');
+    if (unselectButton) {
+        unselectButton.addEventListener('click', () => {
+            const items = state.currentTab === 'fanpage' ? state.fanpages : state.links;
+            items.forEach(item => (item.checked = false));
+            saveData({ [state.currentTab === 'fanpage' ? 'fanpages' : 'links']: true });
+            renderTabContent(state.currentTab);
+            close();
+        });
+    } else {
+        console.error("Button with id 'unselect-all' not found.");
+    }
+
+    // Clear search inputs when dialog closes
+    const dialog = document.querySelector('.dialog');
+    if (dialog) {
+        dialog.addEventListener('remove', () => {
+            if (state.currentTab === 'filter' || state.currentTab === 'all-link') {
+                state.dateFilter.searchQuery = '';
+                state.dateFilter.dateQuery = '';
+                const searchContentInput = document.getElementById('search-content');
+                const searchDateInput = document.getElementById('search-date');
+                const searchLinkInput = document.getElementById('search-link');
+                if (searchContentInput) searchContentInput.value = '';
+                if (searchDateInput) searchDateInput.value = '';
+                if (searchLinkInput) searchLinkInput.value = '';
+                renderTabContent(state.currentTab);
+            }
+        });
+    }
+}
 function showAddFanpageDialog() {
     const { element: dialog, close } = createPopup({
         title: 'Thêm Fanpage/Profile',
@@ -3708,37 +3169,73 @@ function showEditFanpagePopup(fanpage) {
     }, 100);
 }
 
+// Ensure showFilterPopup is defined
 function showFilterPopup() {
     const { element: popup, close } = createPopup({
         title: 'Chọn Bộ Lọc',
         customClass: 'filter-modal',
         content: `
-            <div class="filter-search-box">
-                <input type="text" id="filter-search-input" 
-                       placeholder="Tìm kiếm theo tiêu đề/nội dung..."
-                       value="${state.dateFilter.searchQuery || ''}">
-                <button id="filter-search-btn"><i class="fas fa-search"></i></button>
+            <div class="filter-section">
+                <h4>All Link Filters</h4>
+                <div class="add-fanpage-form-group">
+                    <label>Tìm kiếm Link</label>
+                    <input type="text" id="all-link-search" placeholder="Tìm kiếm theo tiêu đề hoặc mô tả..." class="add-fanpage-form-control">
+                    <div id="all-link-search-results" class="search-results"></div>
+                </div>
             </div>
-            <div class="filter-buttons-container">
-                ${['group', 'photo', 'story', 'video', 'reel', 'post', 'iframe', 'duplicate', 'blacklist', 'note', 'success', 'image_scontent']
+            <div class="filter-section">
+                <h4>Link Filters</h4>
+                <div class="filter-search-box">
+                    <input type="text" id="link-filter-search" 
+                           placeholder="Tìm kiếm theo tiêu đề...">
+                    <button id="link-search-btn"><i class="fas fa-search"></i></button>
+                </div>
+                <div class="filter-buttons-container link-filters">
+                    ${['group', 'photo', 'story', 'video', 'reel', 'post', 'iframe', 'duplicate', 'blacklist', 'note', 'success', 'image_scontent']
                 .map(filter => `
-                    <button class="filter-btn ${state.currentFilter === filter ? 'active' : ''} ${filter === 'image_scontent' ? 'image-scontent-filter' : ''}" 
-                            data-filter="${filter}">
-                        ${getFilterLabel(filter)}
-                    </button>`).join('')}
+                        <button class="filter-btn ${state.currentFilter === filter ? 'active' : ''} ${filter === 'image_scontent' ? 'image-scontent-filter' : ''}" 
+                                data-filter="${filter}">
+                            ${getFilterLabel(filter)}
+                        </button>`).join('')}
+                </div>
+            </div>
+            <div class="filter-section">
+                <h4>Fanpage Filters</h4>
+                <div class="add-fanpage-form-group">
+                    <label>Tìm kiếm Fanpage</label>
+                    <input type="text" id="fanpage-search" placeholder="Nhập tên fanpage để tìm..." class="add-fanpage-form-control">
+                    <div id="fanpage-search-results" class="search-results"></div>
+                </div>
+                <div class="filter-buttons-container fanpage-filters">
+                    ${['all', 'fanpage', 'profile', 'profile-pro', 'fanpage_duplicate']
+                .map(filter => `
+                        <button class="filter-btn ${state.currentFilter === filter ? 'active' : ''}" 
+                                data-filter="${filter}">
+                            ${getFilterLabel(filter)}
+                        </button>`).join('')}
+                </div>
             </div>
             <style>
+                .filter-section {
+                    margin-bottom: 20px;
+                }
+                .filter-section h4 {
+                    margin: 0 0 10px;
+                    font-size: 16px;
+                    color: #333;
+                }
                 .filter-search-box {
                     display: flex;
                     margin-bottom: 15px;
                 }
-                #filter-search-input {
+                #link-filter-search, #fanpage-filter-search {
                     flex: 1;
                     padding: 8px;
                     border: 1px solid #ddd;
                     border-radius: 4px 0 0 4px;
+                    font-size: 14px;
                 }
-                #filter-search-btn {
+                #link-search-btn, #fanpage-search-btn {
                     padding: 0 15px;
                     background: #f0f0f0;
                     border: 1px solid #ddd;
@@ -3773,6 +3270,34 @@ function showFilterPopup() {
                     position: absolute;
                     right: 5px;
                 }
+                .add-fanpage-form-group {
+                    margin-bottom: 15px;
+                }
+                .add-fanpage-form-control {
+                    width: 100%;
+                    padding: 8px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                }
+                .search-results {
+                    max-height: 150px;
+                    overflow-y: auto;
+                    margin-top: 5px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    padding: 5px;
+                }
+                .search-result-item {
+                    padding: 5px;
+                    cursor: pointer;
+                    border-bottom: 1px solid #eee;
+                }
+                .search-result-item:hover {
+                    background: #f0f0f0;
+                }
+                .search-result-item:last-child {
+                    border-bottom: none;
+                }
             </style>
         `
     });
@@ -3791,31 +3316,118 @@ function showFilterPopup() {
             'blacklist': 'Blacklist',
             'note': 'Ghi chú',
             'success': 'Thành công',
-            'image_scontent': 'Ảnh SContent'
+            'image_scontent': 'Ảnh SContent',
+            'all': 'Tất cả Fanpage',
+            'fanpage': 'Fanpage',
+            'profile': 'Cá nhân',
+            'profile-pro': 'Pro',
+            'fanpage_duplicate': 'Fanpage Trùng'
         };
         return labels[filter] || filter;
     }
 
-    // Xử lý sự kiện
-    const searchInput = popup.querySelector('#filter-search-input');
-    const searchBtn = popup.querySelector('#filter-search-btn');
+    // Debounce utility
+    function debounce(func, delay) {
+        let timeoutId;
+        return (...args) => {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => func(...args), delay);
+        };
+    }
 
-    searchBtn.addEventListener('click', () => {
-        const query = searchInput.value.trim();
+    // Xử lý sự kiện
+    const linkSearchInput = popup.querySelector('#link-filter-search');
+    const linkSearchBtn = popup.querySelector('#link-search-btn');
+    const fanpageSearchInput = popup.querySelector('#fanpage-search');
+    const allLinkSearchInput = popup.querySelector('#all-link-search');
+
+    // Search for All Link tab
+    const debouncedAllLinkSearch = debounce((query) => {
+        const resultsContainer = popup.querySelector('#all-link-search-results');
+        resultsContainer.innerHTML = '';
+        if (!query) return;
+
+        const filteredLinks = state.links.filter(l =>
+            removeVietnameseTones((l.title || l.description || '').toLowerCase()).includes(
+                removeVietnameseTones(query.toLowerCase())
+            ) && l.blacklistStatus !== 'blacklisted'
+        );
+
+        if (filteredLinks.length === 0) {
+            resultsContainer.innerHTML = '<p>Không tìm thấy link</p>';
+        } else {
+            filteredLinks.slice(0, 5).forEach(link => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'search-result-item';
+                resultItem.textContent = link.title || link.description || 'No title/description';
+                resultItem.addEventListener('click', () => {
+                    state.dateFilter.searchQuery = link.title || link.description || '';
+                    state.currentFilter = 'all'; // Ensure "all" filter for All Link tab
+                    saveData({ dateFilter: true, currentFilter: true });
+                    switchTab('all-link');
+                    renderTabContent('all-link');
+                    close();
+                });
+                resultsContainer.appendChild(resultItem);
+            });
+        }
+    }, 300);
+
+    allLinkSearchInput.addEventListener('input', (e) => {
+        debouncedAllLinkSearch(e.target.value.trim());
+    });
+
+    // Search for Filter tab
+    linkSearchBtn.addEventListener('click', () => {
+        const query = linkSearchInput.value.trim();
         if (query) {
             state.dateFilter.searchQuery = query;
-            state.currentFilter = 'group';
+            state.currentFilter = state.currentFilter && !['all', 'fanpage', 'profile', 'profile-pro', 'fanpage_duplicate'].includes(state.currentFilter) ? state.currentFilter : 'group';
             saveData({ dateFilter: true, currentFilter: true });
             switchTab('filter');
             renderTabContent('filter');
             close();
         } else {
-            showToast('Vui lòng nhập từ khóa tìm kiếm', 'warning');
+            showToast('Vui lòng nhập từ khóa tìm kiếm cho link', 'warning');
         }
     });
 
-    searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') searchBtn.click();
+    linkSearchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') linkSearchBtn.click();
+    });
+
+    // Search for Fanpage tab
+    const debouncedFanpageSearch = debounce((query) => {
+        const resultsContainer = popup.querySelector('#fanpage-search-results');
+        resultsContainer.innerHTML = '';
+        if (!query) return;
+
+        const filteredFanpages = state.fanpages.filter(f =>
+            removeVietnameseTones(f.name.toLowerCase()).includes(removeVietnameseTones(query.toLowerCase()))
+        );
+
+        if (filteredFanpages.length === 0) {
+            resultsContainer.innerHTML = '<p>Không tìm thấy fanpage</p>';
+        } else {
+            filteredFanpages.forEach(f => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'search-result-item';
+                resultItem.textContent = f.name;
+                resultItem.addEventListener('click', () => {
+                    state.dateFilter.searchQuery = f.name;
+                    state.currentFilter = f.type === 'fanpage' ? 'fanpage' : f.type === 'profile' ? 'profile' : 'profile-pro';
+                    saveData({ dateFilter: true, currentFilter: true });
+                    switchTab('fanpage');
+                    renderTabContent('fanpage');
+                    close();
+                });
+                resultsContainer.appendChild(resultItem);
+            });
+        }
+    }, 300);
+
+    fanpageSearchInput.addEventListener('input', (e) => {
+        debouncedFanpageSearch(e.target.value.trim());
     });
 
     popup.querySelectorAll('.filter-btn').forEach(btn => {
@@ -3825,12 +3437,27 @@ function showFilterPopup() {
                 state.currentFilter = filter;
                 state.dateFilter.searchQuery = '';
                 saveData({ currentFilter: true, dateFilter: true });
-                switchTab('filter');
-                renderTabContent('filter');
+                const isFanpageFilter = ['all', 'fanpage', 'profile', 'profile-pro', 'fanpage_duplicate'].includes(filter);
+                switchTab(isFanpageFilter ? 'fanpage' : 'filter');
+                renderTabContent(isFanpageFilter ? 'fanpage' : 'filter');
                 close();
             }
         });
     });
 }
 
-/////BACKUP - UNDO///
+document.addEventListener('DOMContentLoaded', () => {
+    let filterButton = document.querySelector('.btn-filter'); // Update this selector
+    if (filterButton) {
+        filterButton.addEventListener('click', () => {
+            showFilterPopup();
+        });
+    } else {
+        document.body.addEventListener('click', (e) => {
+            if (e.target.matches('.btn-filter')) { // Update this selector
+                showFilterPopup();
+            }
+        });
+        console.warn("Filter button not found initially. Using event delegation instead.");
+    }
+});
