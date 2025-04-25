@@ -1,46 +1,85 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Facebook App and Browser Open</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Quản lý link</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .fb-post-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: #65676b;
+            gap: 8px;
+        }
+        
+        .fanpage-iframe-container {
+            margin-top: 12px;
+            border: 1px solid #e4e6eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+    </style>
 </head>
 <body>
-    <h2>Test Open Facebook Link</h2>
+    <header class="app-header">
+        <div class="header-row">
+            <div class="header-actions">
+                <button class="header-btn primary" title="Thêm link" id="add-link-btn">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <div class="status-counter all" title="Tất cả link" id="all-counter">
+                    <i class="fas fa-link"></i>
+                    <span class="count">0</span>
+                </div>
+                <button class="header-btn" title="Log" id="log-btn">
+                    <i class="fas fa-clipboard-list"></i>
+                </button>
+                <div class="status-counter filter" title="Bộ lọc" id="filter-counter">
+    <i class="fas fa-filter"></i>
+    <span class="count" style="display: none;">0</span>
+</div>
+                <button class="header-btn select-all-counter" title="Chọn tất cả" id="select-all-counter-btn">
+                    <i class="fas fa-check-square"></i>
+                    <span class="selected-count">0</span>
+                </button>
+                <button class="header-btn danger" title="Xóa" id="delete-btn">
+                    <i class="fas fa-trash"></i>
+                </button>
+                <button class="header-btn" title="Hoàn tác" id="undo-btn">
+                    <i class="fas fa-undo"></i>
+                </button>
+                <button class="header-btn" title="Cuộn" id="scroll-btn">
+                    <i class="fas fa-arrow-down"></i>
+                </button>
+                <button class="header-btn" title="Fanpage" id="fanpage-btn">
+                    <i class="fas fa-users"></i>
+                </button>
+            </div>
+        </div>
+    </header>
     
-    <!-- Nút mở trong ứng dụng Facebook -->
-    <button id="openInAppButton">Mở trong ứng dụng Facebook</button>
+    <main class="main-content">
+        <div class="tab-container">
+            <!-- Các nút tab sẽ được thêm động bởi JavaScript -->
+        </div>
+        <div class="scroll-container">
+            <div id="all-link-tab" class="tab-content" style="display: block;"></div>
+            <div id="blacklist-tab" class="tab-content" style="display: none;"></div>
+            <div id="date-filter-tab" class="tab-content" style="display: none;"></div>
+            <div id="error-tab" class="tab-content" style="display: none;"></div>
+            <div id="duplicate-tab" class="tab-content" style="display: none;"></div>
+            <div id="log-tab" class="tab-content" style="display: none;"></div>
+            <div id="filter-tab" class="tab-content" style="display: none;"></div>
+            <div id="fanpage-tab" class="tab-content" style="display: none;"></div>
+        </div>
+    </main>
 
-    <!-- Nút mở trong trình duyệt -->
-    <button id="openInBrowserButton">Mở trong trình duyệt</button>
-
-    <script>
-        // Link để kiểm tra
-        const url = "https://www.facebook.com/61551539972542/posts/122178818642051332/";
-
-        // Hàm mở trong ứng dụng Facebook nếu có, nếu không mở trong trình duyệt
-        function openInFacebookApp(url) {
-            const facebookAppURL = "fb://feed/?link=" + encodeURIComponent(url);
-            const browserCheck = window.open(facebookAppURL, '_blank'); // Mở thử trong app
-            if (!browserCheck) {
-                window.open(url, '_blank'); // Nếu không mở được trong app, mở trong trình duyệt
-            }
-        }
-
-        // Hàm mở trong trình duyệt (không mở tab mới)
-        function openInBrowser(url) {
-            window.location.href = url; // Chuyển hướng trong cùng một tab
-        }
-
-        // Sự kiện click nút mở ứng dụng Facebook
-        document.getElementById('openInAppButton').addEventListener('click', function() {
-            openInFacebookApp(url);
-        });
-
-        // Sự kiện click nút mở trong trình duyệt
-        document.getElementById('openInBrowserButton').addEventListener('click', function() {
-            openInBrowser(url);
-        });
-    </script>
+    <div id="fb-root"></div>
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/vi_VN/sdk.js#xfbml=1&version=v20.0"></script>
+    <script src="script.js" defer></script>
 </body>
 </html>
