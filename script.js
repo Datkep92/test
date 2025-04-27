@@ -3154,39 +3154,41 @@ function deleteSelected() {
         renderFn: () => {
             if (state.currentTab === 'filter') {
                 renderFilteredResults(elements.linkLists['filter'], state.currentFilter, type);
-            }
-            if (type === 'links' && state.currentTab !== 'filter') {
-                renderTabContent('all-link');
-            } else if (type === 'fanpages' && state.currentTab !== 'filter') {
-                renderTabContent('fanpage');
+            } else {
+                if (type === 'fanpages') {
+                    renderTabContent('fanpage');
+                } else if (type === 'links') {
+                    renderTabContent('all-link');
+                }
             }
         }
     });
 }
-function deleteSelected() {
+
+function deleteSelectedFanpages() {
     let selectedItems = [];
-    let type = 'links';
+    const type = 'fanpages';
+
     if (state.currentTab === 'filter') {
-        type = state.lastActiveTab === 'fanpage' ? 'fanpages' : 'links';
         const container = elements.linkLists['filter'];
         const selectedIds = Array.from(container.querySelectorAll('.link-checkbox:checked'))
             .map(cb => cb.closest('.link-item').dataset.id);
-        selectedItems = (type === 'links' ? state.links : state.fanpages).filter(item => selectedIds.includes(item.id));
+        selectedItems = state.fanpages.filter(item => selectedIds.includes(item.id));
     } else {
-        selectedItems = getLinksForCurrentTab().filter(link => link.checked);
+        selectedItems = state.fanpages.filter(fanpage => fanpage.checked);
     }
+
     deleteItems({
         items: selectedItems,
         type,
-        confirmMessage: `Bạn có chắc muốn xóa ${selectedItems.length} ${type === 'links' ? 'link' : 'fanpage'} đã chọn?`,
-        backupType: `delete${type.charAt(0).toUpperCase() + type.slice(1)}`,
-        successMessage: `Đã xóa ${selectedItems.length} ${type === 'links' ? 'link' : 'fanpage'}`,
+        confirmMessage: `Bạn có chắc muốn xóa ${selectedItems.length} fanpage đã chọn?`,
+        backupType: 'deleteFanpages',
+        successMessage: `Đã xóa ${selectedItems.length} fanpage`,
         renderFn: () => {
             if (state.currentTab === 'filter') {
                 renderFilteredResults(elements.linkLists['filter'], state.currentFilter, type);
-            }
-            if (type === 'links' && state.currentTab !== 'filter') {
-                renderTabContent('all-link');
+            } else {
+                renderTabContent('fanpage');
             }
         }
     });
@@ -3200,7 +3202,13 @@ function deleteFanpage(fanpageId) {
         confirmMessage: `Bạn có chắc muốn xóa fanpage "${fanpage.name}"?`,
         backupType: 'deleteFanpage',
         successMessage: `Đã xóa fanpage ${fanpage.name}`,
-        renderFn: () => renderTabContent('fanpage')
+        renderFn: () => {
+            if (state.currentTab === 'filter') {
+                renderFilteredResults(elements.linkLists['filter'], state.currentFilter, 'fanpages');
+            } else {
+                renderTabContent('fanpage');
+            }
+        }
     });
 }
 init();
