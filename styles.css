@@ -1743,7 +1743,7 @@ textarea.edit-fanpage-form-control {
 .filter-btn[data-filter="blacklist"] { background-color: #F44336; }
 .filter-btn[data-filter="note"]      { background-color: #8BC34A; }
 .filter-btn[data-filter="success"]   { background-color: #4CAF50; }
-.filter-btn[data-filter="image_scontent"]   { background-color: #ffff66; }
+.filter-btn[data-filter="image_scontent"]   { background-color: #009688; }
 .filter-btn[data-filter="fanpage"]   { background-color: #E91E63; }
 .filter-btn[data-filter="profile-pro"]   { background-color: #FF5722; }
 .filter-btn[data-filter="fanpage_duplicate"]   { background-color: #3F51B5; }
