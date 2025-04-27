@@ -238,114 +238,340 @@ function filterByBlockedTitle(links) {
     });
 }
 function showAddLinkDialog() {
-    const { close } = createPopup({
-        title: 'Nhập danh sách link',
+    const { element: dialog, close } = createPopup({
+        title: 'Thêm Link hoặc Fanpage',
         customStyle: 'width: 420px; padding-top: 20px;',
         content: `
             <div class="input-row" style="margin-bottom: 12px;">
-                <textarea id="new-links-input" class="modal-textarea" 
-                          placeholder="URL mỗi dòng..."
-                          style="width: 100%; height: 60px; resize: none; padding: 6px; font-size: 13px;"></textarea>
+                <label style="font-size: 14px; margin-bottom: 8px;">Loại dữ liệu:</label>
+                <select id="item-type" class="modal-select" style="width: 100%; padding: 6px; font-size: 13px;">
+                    <option value="link">Link</option>
+                    <option value="fanpage">Fanpage/Profile</option>
+                </select>
             </div>
-            <div class="config-row" style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-                <label style="width: 100px; font-size: 14px;">GitHub Token:</label>
-                <input type="text" id="github-token-input" value="${config.githubToken}" style="flex: 1; padding: 6px; font-size: 13px;">
-                <button id="confirm-token-btn" class="btn" style="width: 60px; padding: 6px 0; font-size: 13px;">Lưu</button>
+            <!-- Form cho Link -->
+            <div id="link-form" class="item-form">
+                <div class="input-row" style="margin-bottom: 12px;">
+                    <textarea id="new-links-input" class="modal-textarea" 
+                              placeholder="URL mỗi dòng..."
+                              style="width: 100%; height: 60px; resize: none; padding: 6px; font-size: 13px;"></textarea>
+                </div>
+                <div class="config-row" style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <label style="width: 100px; font-size: 14px;">GitHub Token:</label>
+                    <input type="text" id="github-token-input" value="${config.githubToken}" style="flex: 1; padding: 6px; font-size: 13px;">
+                    <button id="confirm-token-btn" class="btn" style="width: 60px; padding: 6px 0; font-size: 13px;">Lưu</button>
+                </div>
+                <div class="config-row" style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <label style="width: 100px; font-size: 14px;">Gist ID:</label>
+                    <input type="text" id="github-id-input" value="${config.fanpageGistUrl?.split('/').pop() || ''}" style="flex: 1; padding: 6px; font-size: 13px;">
+                    <button id="confirm-id-btn" class="btn" style="width: 60px; padding: 6px 0; font-size: 13px;">Lưu</button>
+                </div>
             </div>
-            <div class="config-row" style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-                <label style="width: 100px; font-size: 14px;">Gist ID:</label>
-                <input type="text" id="github-id-input" value="${config.fanpageGistUrl?.split('/').pop() || ''}" style="flex: 1; padding: 6px; font-size: 13px;">
-                <button id="confirm-id-btn" class="btn" style="width: 60px; padding: 6px 0; font-size: 13px;">Lưu</button>
+            <!-- Form cho Fanpage -->
+            <div id="fanpage-form" class="item-form" style="display: none;">
+                <div class="add-fanpage-form-group" style="margin-bottom: 12px;">
+                    <label style="font-size: 14px;">Tìm kiếm Fanpage</label>
+                    <input type="text" id="fanpage-search" placeholder="Nhập tên fanpage để tìm..." class="add-fanpage-form-control" style="width: 100%; padding: 6px; font-size: 13px;">
+                    <div id="fanpage-search-results" class="search-results" style="max-height: 150px; overflow-y: auto; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; padding: 5px;"></div>
+                </div>
+                <div class="add-fanpage-form-group" style="margin-bottom: 12px;">
+                    <label style="font-size: 14px;">URL Fanpage/Profile</label>
+                    <input type="text" id="fanpage-url" placeholder="Nhập URL" class="add-fanpage-form-control" style="width: 100%; padding: 6px; font-size: 13px;">
+                </div>
+                <div class="add-fanpage-form-group" style="margin-bottom: 12px;">
+                    <label style="font-size: 14px;">Tiêu đề</label>
+                    <div class="title-input-group" style="display: flex; gap: 8px;">
+                        <input type="text" id="fanpage-title" placeholder="Nhập tiêu đề" class="add-fanpage-form-control" style="flex: 1; padding: 6px; font-size: 13px;">
+                        <button id="edit-title-btn" class="btn-edit" title="Sửa tiêu đề" style="background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; width: 40px;">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="add-fanpage-form-group">
+                    <label style="font-size: 14px;">Loại Profile</label>
+                    <div class="profile-selector" style="display: flex; gap: 8px; margin-top: 8px;">
+                        <button class="profile-btn active" data-type="fanpage" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; text-align: center;"><i class="fas fa-flag"></i> Fanpage</button>
+                        <button class="profile-btn" data-type="profile" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; text-align: center;"><i class="fas fa-user"></i> Cá nhân</button>
+                        <button class="profile-btn" data-type="profile-pro" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; text-align: center;"><i class="fas fa-star"></i> Pro</button>
+                    </div>
+                </div>
             </div>
+            <!-- Action buttons -->
             <div class="action-buttons" style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
-                <button id="add-links-confirm" class="btn btn-add">Thêm</button>
+                <button id="add-item-confirm" class="btn btn-add">Thêm</button>
                 <button id="import-json-lines" class="btn btn-item">Item</button>
                 <button id="import-json-array" class="btn btn-all">All</button>
                 <button id="filter-keyword-btn" class="btn btn-block">Block</button>
-                <button id="add-links-cancel" class="btn btn-cancel">Huỷ</button>
+                <button id="import-fanpage-json" class="btn btn-secondary" style="display: none;">Nhập JSON</button>
+                <button id="cancel-add-item" class="btn btn-cancel">Hủy</button>
             </div>
             <style>
+                .modal-select { border: 1px solid #ddd; border-radius: 4px; }
+                .item-form { margin-bottom: 12px; }
+                .search-results { max-height: 150px; overflow-y: auto; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; padding: 5px; }
+                .search-result-item { padding: 5px; cursor: pointer; border-bottom: 1px solid #eee; }
+                .search-result-item:hover { background: #f0f0f0; }
+                .search-result-item:last-child { border-bottom: none; }
+                .profile-selector { display: flex; gap: 8px; margin-top: 8px; }
+                .profile-btn { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; text-align: center; }
+                .profile-btn.active { background: #007bff; color: white; border-color: #007bff; }
+                .title-input-group { display: flex; gap: 8px; }
+                .btn-edit { background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; width: 40px; }
                 .btn-add { background-color: #28a745; color: white; }
                 .btn-item { background-color: #17a2b8; color: white; }
                 .btn-all { background-color: #007bff; color: white; }
                 .btn-block { background-color: #ffc107; color: black; }
                 .btn-cancel { background-color: #dc3545; color: white; }
+                .btn-secondary { background-color: #6c757d; color: white; }
                 .btn:hover { opacity: 0.9; }
             </style>
-        `
+        `,
+        buttons: [] // Không dùng buttons của createPopup, xử lý qua action-buttons
     });
 
-    // Giữ nguyên toàn bộ logic xử lý sự kiện
-    document.getElementById('confirm-token-btn').onclick = () => {
-        const token = document.getElementById('github-token-input').value.trim();
+    let selectedType = 'link';
+    let selectedProfileType = 'fanpage';
+
+    // Toggle form dựa trên item-type
+    const toggleForm = () => {
+        const linkForm = dialog.querySelector('#link-form');
+        const fanpageForm = dialog.querySelector('#fanpage-form');
+        const importJsonBtn = dialog.querySelector('#import-fanpage-json');
+        const linkActionButtons = ['import-json-lines', 'import-json-array', 'filter-keyword-btn'];
+
+        if (selectedType === 'link') {
+            linkForm.style.display = 'block';
+            fanpageForm.style.display = 'none';
+            importJsonBtn.style.display = 'none';
+            linkActionButtons.forEach(id => dialog.querySelector(`#${id}`).style.display = 'inline-block');
+        } else {
+            linkForm.style.display = 'none';
+            fanpageForm.style.display = 'block';
+            importJsonBtn.style.display = 'inline-block';
+            linkActionButtons.forEach(id => dialog.querySelector(`#${id}`).style.display = 'none');
+        }
+    };
+
+    // Xử lý dropdown item-type
+    dialog.querySelector('#item-type').addEventListener('change', (e) => {
+        selectedType = e.target.value;
+        toggleForm();
+        // Reset input
+        dialog.querySelector('#new-links-input').value = '';
+        dialog.querySelector('#fanpage-search').value = '';
+        dialog.querySelector('#fanpage-url').value = '';
+        dialog.querySelector('#fanpage-title').value = '';
+        dialog.querySelectorAll('.profile-btn').forEach(b => b.classList.remove('active'));
+        dialog.querySelector('.profile-btn[data-type="fanpage"]').classList.add('active');
+        selectedProfileType = 'fanpage';
+    });
+
+    // Khởi tạo form
+    toggleForm();
+
+    // Debounced search cho fanpage
+    const debouncedSearch = debounce((query) => {
+        const resultsContainer = dialog.querySelector('#fanpage-search-results');
+        resultsContainer.innerHTML = '';
+        if (!query) return;
+
+        const filteredFanpages = state.fanpages.filter(f =>
+            removeVietnameseTones(f.name.toLowerCase()).includes(removeVietnameseTones(query.toLowerCase()))
+        );
+
+        if (filteredFanpages.length === 0) {
+            resultsContainer.innerHTML = '<p>Không tìm thấy fanpage</p>';
+        } else {
+            filteredFanpages.forEach(f => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'search-result-item';
+                resultItem.textContent = f.name;
+                resultItem.addEventListener('click', () => {
+                    dialog.querySelector('#fanpage-url').value = f.url;
+                    dialog.querySelector('#fanpage-title').value = f.name;
+                    dialog.querySelectorAll('.profile-btn').forEach(b => b.classList.remove('active'));
+                    dialog.querySelector(`.profile-btn[data-type="${f.type}"]`).classList.add('active');
+                    selectedProfileType = f.type;
+                });
+                resultsContainer.appendChild(resultItem);
+            });
+        }
+    }, config.debounceDelay);
+
+    // Xử lý sự kiện
+    dialog.querySelector('#fanpage-search').addEventListener('input', (e) => {
+        debouncedSearch(e.target.value.trim());
+    });
+
+    dialog.querySelectorAll('.profile-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            dialog.querySelectorAll('.profile-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            selectedProfileType = this.dataset.type;
+        });
+    });
+
+    dialog.querySelector('#edit-title-btn').addEventListener('click', () => {
+        dialog.querySelector('#fanpage-title').focus();
+    });
+
+    dialog.querySelector('#confirm-token-btn').addEventListener('click', () => {
+        const token = dialog.querySelector('#github-token-input').value.trim();
         if (token) {
             config.githubToken = token;
             localStorage.setItem('githubToken', token);
             showToast('Đã lưu token', 'success');
         }
-    };
+    });
 
-    document.getElementById('confirm-id-btn').onclick = () => {
-        const id = document.getElementById('github-id-input').value.trim();
+    dialog.querySelector('#confirm-id-btn').addEventListener('click', () => {
+        const id = dialog.querySelector('#github-id-input').value.trim();
         if (id) {
             config.fanpageGistUrl = `https://api.github.com/gists/${id}`;
             localStorage.setItem('fanpageGistUrl', config.fanpageGistUrl);
             showToast('Đã lưu Gist ID', 'success');
         }
-    };
+    });
 
-    document.getElementById('add-links-cancel').onclick = close;
-    document.getElementById('filter-keyword-btn').onclick = () => {
-        close();
-        showFilterKeywordsPopup();
-    };
+    dialog.querySelector('#add-item-confirm').addEventListener('click', () => {
+        if (selectedType === 'link') {
+            const urls = dialog.querySelector('#new-links-input').value.trim().split('\n').map(l => l.trim()).filter(Boolean);
+            const filteredUrls = filterByKeywords(urls);
 
-    document.getElementById('import-json-lines').onclick = () => {
-        close();
-        importLinksFromJsonLines();
-    };
+            if (filteredUrls.length === 0) {
+                showToast('Không có link nào sau lọc', 'warning');
+                return;
+            }
 
-    document.getElementById('import-json-array').onclick = () => {
-        close();
-        importFromJSON();
-    };
+            const newLinks = filteredUrls
+                .filter(url => !isLinkExists(url))
+                .map(url => ({
+                    id: generateId(),
+                    url,
+                    title: 'Đang xử lý...',
+                    description: '',
+                    image: '',
+                    status: 'pending',
+                    post_type: determinePostType(url),
+                    date: new Date().toISOString(),
+                    checked: false,
+                    blacklistStatus: 'active',
+                    note: ''
+                }));
 
-    document.getElementById('add-links-confirm').onclick = () => {
-        const urls = document.getElementById('new-links-input').value.trim().split('\n').map(l => l.trim()).filter(Boolean);
-        const filteredUrls = filterByKeywords(urls);
+            if (newLinks.length > 0) {
+                state.newItemId = newLinks[0].id; // Lưu ID của link đầu tiên để highlight
+                state.links.unshift(...newLinks);
+                saveBackup('addLinks', { links: newLinks });
+                saveData({ links: true });
+                updateCounters();
+                state.currentTab = 'all-link';
 
-        if (filteredUrls.length === 0) {
-            showToast('Không có link nào sau lọc', 'warning');
-            return;
-        }
+                // Kích hoạt tab all-link trên giao diện
+                const allLinkTabBtn = document.querySelector('#all-link');
+                if (allLinkTabBtn) {
+                    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                    allLinkTabBtn.classList.add('active');
+                }
 
-        const newLinks = filteredUrls
-            .filter(url => !isLinkExists(url))
-            .map(url => ({
+                renderTabContent('all-link');
+                highlightAndScrollToItem(newLinks[0].id);
+                showToast(`Đã thêm ${newLinks.length} link`, 'success');
+                newLinks.forEach(link => setTimeout(() => extractContent(link.url), 0));
+            }
+        } else {
+            const url = dialog.querySelector('#fanpage-url').value.trim();
+            const title = dialog.querySelector('#fanpage-title').value.trim();
+
+            if (!isValidUrl(url)) return showToast('URL không hợp lệ', 'warning');
+            if (!title) return showToast('Vui lòng nhập tiêu đề', 'warning');
+
+            const newFanpage = {
                 id: generateId(),
                 url,
-                title: 'Đang xử lý...',
+                name: title,
                 description: '',
-                image: '',
-                status: 'pending',
-                post_type: determinePostType(url),
+                type: selectedProfileType,
                 date: new Date().toISOString(),
                 checked: false,
-                blacklistStatus: 'active',
-                note: ''
-            }));
+                status: 'pending',
+                thumbnail: config.defaultImage
+            };
 
-        if (newLinks.length > 0) {
-            state.links.unshift(...newLinks);
-            saveBackup('addLinks', { links: newLinks });
-            saveData({ links: true });
+            state.newItemId = newFanpage.id; // Lưu ID để highlight
+            state.fanpages.unshift(newFanpage);
+            saveBackup('addFanpages', { fanpages: [newFanpage] });
+            saveData({ fanpages: true });
             updateCounters();
-            renderTabContent(state.currentTab);
-            showToast(`Đã thêm ${newLinks.length} link`, 'success');
-            newLinks.forEach(link => setTimeout(() => extractContent(link.url), 0));
+
+            // Chuyển sang tab filter, hiển thị danh sách fanpage
+            state.currentTab = 'filter';
+            state.lastActiveTab = 'fanpage';
+            state.currentFilter = 'all';
+
+            // Kích hoạt tab filter trên giao diện
+            const filterTabBtn = document.querySelector('#filter');
+            if (filterTabBtn) {
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                filterTabBtn.classList.add('active');
+            } else {
+                console.error('Không tìm thấy nút tab filter');
+                addLog('Không tìm thấy nút tab filter', 'error');
+                showToast('Lỗi chuyển tab filter', 'error');
+            }
+
+            // Render danh sách fanpage
+            const container = elements.linkLists['filter'] || document.querySelector('#filter-results');
+            if (container) {
+                container.innerHTML = ''; // Xóa nội dung cũ
+                renderFilteredResults(container, state.currentFilter, 'fanpages');
+                setTimeout(() => highlightAndScrollToItem(newFanpage.id), 0); // Delay nhẹ để đảm bảo render hoàn tất
+            } else {
+                console.error('Không tìm thấy container cho tab filter');
+                addLog('Không tìm thấy container cho tab filter', 'error');
+                showToast('Lỗi hiển thị danh sách fanpage', 'error');
+            }
+
+            showToast(`Đã thêm ${selectedProfileType === 'fanpage' ? 'Fanpage' : 'Profile'} mới`, 'success');
+            addLog(`Đã thêm fanpage: ${title} (ID: ${newFanpage.id})`, 'success');
         }
         close();
-    };
+    });
+
+    dialog.querySelector('#import-json-lines').addEventListener('click', () => {
+        close();
+        importLinksFromJsonLines();
+    });
+
+    dialog.querySelector('#import-json-array').addEventListener('click', () => {
+        close();
+        importFromJSON();
+    });
+
+    dialog.querySelector('#filter-keyword-btn').addEventListener('click', () => {
+        close();
+        showFilterKeywordsPopup();
+    });
+
+    dialog.querySelector('#import-fanpage-json').addEventListener('click', () => {
+        close();
+        importFanpagesFromJSON();
+    });
+
+    dialog.querySelector('#cancel-add-item').addEventListener('click', close);
+}
+
+// Hàm highlight và cuộn tới item
+function highlightAndScrollToItem(itemId) {
+    const itemEl = document.querySelector(`.link-item[data-id="${itemId}"]`);
+    if (itemEl) {
+        itemEl.classList.add('new-item');
+        itemEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => itemEl.classList.remove('new-item'), 3000);
+    } else {
+        console.error(`Không tìm thấy item với ID: ${itemId}`);
+        addLog(`Không tìm thấy item với ID: ${itemId}`, 'error');
+    }
 }
 function showSelectionActionsDialog(count, type) {
     const buttons = [
@@ -1013,17 +1239,6 @@ function renderFilteredResults(container, filter, dataType) {
         return;
     }
 
-    // Thêm nút chọn tất cả, bỏ chọn, xóa
-    const controls = document.createElement('div');
-    controls.className = 'filter-controls';
-    controls.innerHTML = `
-        <button class="btn btn-primary select-all">Chọn tất cả</button>
-        <button class="btn btn-secondary deselect-all">Bỏ chọn tất cả</button>
-        <button class="btn btn-danger delete-selected">Xóa đã chọn</button>
-    `;
-    container.appendChild(controls);
-
-    // Tạo danh sách item với checkbox
     const itemContainer = document.createElement('div');
     itemContainer.className = 'filter-items';
     items.forEach((item, index) => {
@@ -1032,51 +1247,24 @@ function renderFilteredResults(container, filter, dataType) {
                 createLinkItem(item, index, true) :
                 createFanpageItem(item, index, true);
             const checkbox = itemEl.querySelector('.link-checkbox');
-            checkbox.checked = false; // Checkbox tạm, không lưu
+            checkbox.checked = item.checked; // Đồng bộ với item.checked
+            checkbox.addEventListener('change', () => {
+                item.checked = checkbox.checked;
+                itemEl.classList.toggle('checked', checkbox.checked); // Thêm class hover
+                saveData({ [dataType]: true });
+                updateCounters();
+            });
             itemEl.dataset.id = item.id;
             itemContainer.appendChild(itemEl);
+            if (dataType === 'fanpages') {
+                loadMiniIframe(itemEl.querySelector('.fanpage-iframe-mini'), item.url);
+            }
         } catch (error) {
             console.error(`Lỗi khi tạo item ${dataType} ID: ${item.id}`, error);
             addLog(`Lỗi khi tạo item ${dataType} ID: ${item.id}: ${error.message}`, 'error');
         }
     });
     container.appendChild(itemContainer);
-
-    // Xử lý nút chọn tất cả
-    controls.querySelector('.select-all').addEventListener('click', () => {
-        itemContainer.querySelectorAll('.link-checkbox').forEach(cb => cb.checked = true);
-    });
-
-    // Xử lý nút bỏ chọn tất cả
-    controls.querySelector('.deselect-all').addEventListener('click', () => {
-        itemContainer.querySelectorAll('.link-checkbox').forEach(cb => cb.checked = false);
-    });
-
-    // Xử lý nút xóa
-    controls.querySelector('.delete-selected').addEventListener('click', () => {
-        const selectedIds = Array.from(itemContainer.querySelectorAll('.link-checkbox:checked'))
-            .map(cb => cb.closest('.link-item').dataset.id);
-        if (!selectedIds.length) {
-            showToast('Không có mục nào được chọn', 'warning');
-            return;
-        }
-        const selectedItems = items.filter(item => selectedIds.includes(item.id));
-        deleteItems({
-            items: selectedItems,
-            type: dataType,
-            confirmMessage: `Bạn có chắc muốn xóa ${selectedItems.length} ${dataType === 'links' ? 'link' : 'fanpage'}?`,
-            backupType: `delete${dataType.charAt(0).toUpperCase() + dataType.slice(1)}`,
-            successMessage: `Đã xóa ${selectedItems.length} ${dataType === 'links' ? 'link' : 'fanpage'}`,
-            renderFn: () => {
-                renderFilteredResults(container, filter, dataType);
-                if (dataType === 'links' && state.currentTab !== 'filter') {
-                    renderTabContent('all-link');
-                } else if (dataType === 'fanpages' && state.currentTab !== 'filter') {
-                    renderTabContent('fanpage');
-                }
-            }
-        });
-    });
 
     updateCounters();
     if (elements.mainContent) {
@@ -2729,7 +2917,7 @@ async function extractContent(url) {
 }
 // Refactored toggleSelectAll
 function toggleSelectAll() {
-    if (state.currentTab === 'fanpage') {
+    if (state.currentTab === 'fanpage' || (state.currentTab === 'filter' && state.lastActiveTab === 'fanpage')) {
         const fanpagesToToggle = getFilteredFanpages(state.currentFilter || 'all');
         const allChecked = fanpagesToToggle.every(f => f.checked);
 
@@ -2742,7 +2930,13 @@ function toggleSelectAll() {
         showToast(`Đã ${allChecked ? 'bỏ chọn' : 'chọn'} tất cả ${fanpagesToToggle.length} fanpage`, 'info');
         addLog(`Đã ${allChecked ? 'bỏ chọn' : 'chọn'} tất cả ${fanpagesToToggle.length} fanpage`, 'info');
 
-        renderTabContent('fanpage'); // Thêm dòng này
+        // Làm mới giao diện
+        if (state.currentTab === 'fanpage') {
+            renderTabContent('fanpage');
+        } else if (state.currentTab === 'filter') {
+            const container = elements.linkLists['filter'] || document.querySelector('#filter-results');
+            renderFilteredResults(container, state.currentFilter || 'all', 'fanpages');
+        }
 
         if (!allChecked && fanpagesToToggle.length > 0) {
             showSelectionActionsDialog(fanpagesToToggle.length, 'fanpages');
@@ -2769,7 +2963,13 @@ function toggleSelectAll() {
         showToast(`Đã ${allChecked ? 'bỏ chọn' : 'chọn'} ${linksToToggle.length} link`, 'info');
         addLog(`Đã ${allChecked ? 'bỏ chọn' : 'chọn'} ${linksToToggle.length} link trong tab ${state.currentTab}`, 'info');
 
-        renderTabContent(state.currentTab);
+        // Làm mới giao diện
+        if (state.currentTab === 'filter') {
+            const container = elements.linkLists['filter'] || document.querySelector('#filter-results');
+            renderFilteredResults(container, state.currentFilter || 'all', 'links');
+        } else {
+            renderTabContent(state.currentTab);
+        }
 
         if (!allChecked && linksToToggle.length > 0) {
             showSelectionActionsDialog(linksToToggle.length, 'links');
@@ -2926,19 +3126,20 @@ function createLinkItem(link, index, isFilterTab = false) {
                 const isCheckbox = e.target.matches('.link-checkbox');
                 const isInsideActions = e.target.closest('.link-actions');
                 const isInsideIndex = e.target.closest('.link-index');
-                const isInsideThumbnail = e.target.closest('.link-thumbnail');
+                const isInsideThumbnail = e.target.closest('.link-thumbnail'); // Thêm dòng này
 
+                // Nếu click vào checkbox, action, index, hoặc thumbnail → không mở URL
                 if (isCheckbox || isInsideActions || isInsideIndex || isInsideThumbnail) {
-                    if (isCheckbox) {
-                        checkbox.dispatchEvent(new Event('change'));
-                    }
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change'));
                     return;
                 }
 
+                // Mặc định: toggle và mở URL nếu check
                 checkbox.checked = !checkbox.checked;
                 checkbox.dispatchEvent(new Event('change'));
 
-                if (checkbox.checked && link.url && !isFilterTab) {
+                if (checkbox.checked && link.url) {
                     window.location.href = link.url;
                 }
             },
