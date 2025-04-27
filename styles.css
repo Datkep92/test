@@ -1,4 +1,4 @@
-/* Biến màu sắc */
+/* Bi?n màu s?c */
 :root {
     --primary: #1877f2;
     --primary-light: #e7f3ff;
@@ -126,7 +126,7 @@ body {
     overscroll-behavior-y: contain;
     display: flex;
     flex-direction: column;
-    min-height: 100vh; /* Đảm bảo body chiếm toàn bộ chiều cao màn hình */
+    min-height: 100vh; /* Ð?m b?o body chi?m toàn b? chi?u cao màn hình */
 }
 
 /* Header */
@@ -134,15 +134,15 @@ body {
     display: flex;
     flex-direction: column;
     background: var(--white);
-    position: fixed; /* Thay từ sticky thành fixed */
+    position: fixed; /* Thay t? sticky thành fixed */
     top: 0;
     left: 0;
     right: 0;
-    z-index: 1000; /* Đảm bảo header luôn ở trên cùng */
+    z-index: 1000; /* Ð?m b?o header luôn ? trên cùng */
     padding: 6px 10px;
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
-    transform: none !important; /* Ngăn bất kỳ hiệu ứng di chuyển nào */
+    transform: none !important; /* Ngan b?t k? hi?u ?ng di chuy?n nào */
 }
 .header-actions {
     display: flex;
@@ -189,9 +189,9 @@ body {
     color: white;
 }
 
-/* Status counters - Chỉ giữ icon, xóa số lượng */
+/* Status counters - Ch? gi? icon, xóa s? lu?ng */
 .status-counter {
-    width: 34px; /* Giữ đồng bộ với header-btn */
+    width: 34px; /* Gi? d?ng b? v?i header-btn */
     height: 34px;
     border-radius: 8px;
     background: var(--light-gray);
@@ -199,7 +199,7 @@ body {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 14px; /* Kích thước icon */
+    font-size: 14px; /* Kích thu?c icon */
     transition: all 0.15s;
 }
 
@@ -224,17 +224,17 @@ body {
     color: var(--primary);
 }
 
-/* Nút mới - Hiển thị % dung lượng local */
+/* Nút m?i - Hi?n th? % dung lu?ng local */
 .storage-percentage {
-    width: 20px; /* Chiều rộng nhỏ hơn */
-    height: 34px; /* Cao bằng các nút khác */
+    width: 20px; /* Chi?u r?ng nh? hon */
+    height: 34px; /* Cao b?ng các nút khác */
     border-radius: 8px;
     background: var(--light-gray);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 10px; /* Chữ nhỏ để vừa 20px */
+    font-size: 10px; /* Ch? nh? d? v?a 20px */
     color: var(--dark);
     font-weight: 300;
     transition: all 0.15s;
@@ -242,7 +242,7 @@ body {
 }
 
 .storage-percentage:hover {
-    background: #ddd; /* Hiệu ứng hover nhẹ */
+    background: #ddd; /* Hi?u ?ng hover nh? */
 }
 .header-row {
     display: flex;
@@ -256,13 +256,13 @@ body {
 }
 
 .header-row > *:last-child {
-    margin-right: 0; /* Bỏ margin cho phần tử cuối */
+    margin-right: 0; /* B? margin cho ph?n t? cu?i */
 }
 
 .header-decoration {
-    height: 4px; /* Thanh mỏng */
-    background: linear-gradient(90deg, #1877f2, #42b72a, #faad14); /* Gradient màu sắc */
-    margin-bottom: 6px; /* Khoảng cách với các nút bên dưới */
+    height: 4px; /* Thanh m?ng */
+    background: linear-gradient(90deg, #1877f2, #42b72a, #faad14); /* Gradient màu s?c */
+    margin-bottom: 6px; /* Kho?ng cách v?i các nút bên du?i */
     border-radius: 2px;
 }
 
@@ -273,7 +273,7 @@ body {
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     align-items: center;
-    justify-content: center; /* Căn giữa các nút */
+    justify-content: center; /* Can gi?a các nút */
 }
 
 .header-actions > * {
@@ -281,14 +281,14 @@ body {
 }
 
 .header-actions > *:last-child {
-    margin-right: 0; /* Bỏ margin cho phần tử cuối */
+    margin-right: 0; /* B? margin cho ph?n t? cu?i */
 }
 
-/* Ngăn header-actions bị trượt hoặc lệch */
+/* Ngan header-actions b? tru?t ho?c l?ch */
 .header-actions {
     display: flex;
     flex-wrap: nowrap;
-    overflow-x: visible; /* Ngăn trượt ngang */
+    overflow-x: visible; /* Ngan tru?t ngang */
     align-items: center;
     justify-content: center;
     width: 100%;
@@ -402,14 +402,14 @@ body {
     font-weight: bold;
 }
 
-/* Đảm bảo nội dung không bị che bởi header cố định */
+/* Ð?m b?o n?i dung không b? che b?i header c? d?nh */
 .main-content {
-    margin-top: 80px; /* Khoảng cách đủ để tránh chồng lấn với header */
+    margin-top: 80px; /* Kho?ng cách d? d? tránh ch?ng l?n v?i header */
     flex: 1;
     overflow: hidden;
 }
 .scroll-container {
-    height: calc(100vh - 80px); /* Trừ chiều cao header */
+    height: calc(100vh - 80px); /* Tr? chi?u cao header */
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     padding: 8px 10px;
@@ -428,14 +428,14 @@ body {
 }
 
 .link-list .link-item {
-    margin-bottom: 10px; /* Tạo khoảng cách 10px giữa các item */
+    margin-bottom: 10px; /* T?o kho?ng cách 10px gi?a các item */
 }
 
 .link-list .link-item:last-child {
-    margin-bottom: 0; /* Bỏ margin cho item cuối */
+    margin-bottom: 0; /* B? margin cho item cu?i */
 }
 
-/* Link item - Khôi phục trạng thái cũ */
+/* Link item - Khôi ph?c tr?ng thái cu */
 .link-item {
     background: #ffffff;
     border-radius: 8px;
@@ -462,7 +462,7 @@ body {
     background-color: rgba(66, 183, 42, 0.05);
 }
 
-/* Link mới bỏ chặn */
+/* Link m?i b? ch?n */
 .link-item.newly-unblocked {
     border-left: 4px solid var(--success);
     animation: pulseHighlight 2s ease-in-out;
@@ -475,7 +475,7 @@ body {
     100% { background-color: rgba(66, 183, 42, 0.05); }
 }
 
-/* Tiêu đề link mới bỏ chặn */
+/* Tiêu d? link m?i b? ch?n */
 .newly-unblocked .link-title {
     font-weight: bold;
     color: var(--success);
@@ -494,7 +494,7 @@ body {
     font-weight: bold;
 }
 
-/* Ẩn checkbox và checkmark */
+/* ?n checkbox và checkmark */
 .link-checkbox, .checkmark {
     display: none;
 }
@@ -550,7 +550,7 @@ body {
 }
 
 .link-content > * {
-    margin-bottom: 2px; /* Thay gap cho flex dọc */
+    margin-bottom: 2px; /* Thay gap cho flex d?c */
 }
 
 .link-content > *:last-child {
@@ -585,13 +585,13 @@ body {
     margin-top: auto;
 }
 
-/* Ngày giờ */
+/* Ngày gi? */
 .link-time {
     font-weight: 400;
     color: #65676b;
 }
 
-/* Trạng thái */
+/* Tr?ng thái */
 .link-status {
     font-weight: 400;
 }
@@ -602,39 +602,39 @@ body {
 }
 
 .link-status.status-pending {
-    color: #faad14; /* Vàng - Đang chờ */
+    color: #faad14; /* Vàng - Ðang ch? */
 }
 
 .link-status.status-login {
-    color: #f39c12; /* Cam nhạt - Yêu cầu đăng nhập */
-font-weight: bold; /* Chữ đậm */
+    color: #f39c12; /* Cam nh?t - Yêu c?u dang nh?p */
+font-weight: bold; /* Ch? d?m */
 }
 
-.link-status.status-link_hỏng {
-    color: #7f8c8d; /* Xám đậm - Link hỏng */
+.link-status.status-link_h?ng {
+    color: #7f8c8d; /* Xám d?m - Link h?ng */
 }
 
 .link-status.status-iframe {
-    color: #e91e63; /* Hồng đậm - Link hỏng */
-    font-weight: bold; /* Chữ đậm */
+    color: #e91e63; /* H?ng d?m - Link h?ng */
+    font-weight: bold; /* Ch? d?m */
 }
 
 
 .link-status.status-error {
-    color: #ff4d4f; /* Đỏ - Lỗi */
-font-weight: bold; /* Chữ đậm */
+    color: #ff4d4f; /* Ð? - L?i */
+font-weight: bold; /* Ch? d?m */
 }
 
 .link-status.status-blacklist .blacklist-text {
-    color: #ff4d4f; /* Đỏ - Blacklist */
+    color: #ff4d4f; /* Ð? - Blacklist */
     font-weight: 600;
 }
-/* Thêm vào file CSS hoặc thẻ style */
+/* Thêm vào file CSS ho?c th? style */
 .filter-btn.iframe {
     position: relative;
 }
 .filter-btn.iframe::after {
-    content: "🖼️";
+    content: "???";
     margin-left: 5px;
 }
 
@@ -648,18 +648,18 @@ font-weight: bold; /* Chữ đậm */
 }
 /* Ghi chú */
 .note-text {
-    color: #1877f2; /* Màu xanh dương để nổi bật */
-    font-weight: 500; /* Đậm nhẹ để dễ nhận biết */
-    font-style: normal; /* Bỏ nghiêng để khác với ghi chú cũ */
+    color: #1877f2; /* Màu xanh duong d? n?i b?t */
+    font-weight: 500; /* Ð?m nh? d? d? nh?n bi?t */
+    font-style: normal; /* B? nghiêng d? khác v?i ghi chú cu */
 }
 
-/* Chữ Blacklist */
+/* Ch? Blacklist */
 .blacklist-text {
-    color: #ff4d4f; /* Màu đỏ để nổi bật */
-    font-weight: 600; /* Đậm để dễ nhận biết */
+    color: #ff4d4f; /* Màu d? d? n?i b?t */
+    font-weight: 600; /* Ð?m d? d? nh?n bi?t */
 }
 
-/* Ghi chú cũ (nếu vẫn hiển thị ở chỗ khác) */
+/* Ghi chú cu (n?u v?n hi?n th? ? ch? khác) */
 .link-note {
     font-size: 12px;
     color: #606770;
@@ -676,7 +676,7 @@ font-weight: bold; /* Chữ đậm */
 }
 
 .link-actions > * {
-    margin-bottom: 4px; /* Thay gap cho flex dọc */
+    margin-bottom: 4px; /* Thay gap cho flex d?c */
 }
 
 .link-actions > *:last-child {
@@ -763,16 +763,16 @@ font-weight: bold; /* Chữ đậm */
 /* Filter buttons */
 .filter-buttons {
     display: flex;
-    flex-wrap: wrap; /* Cho phép xuống dòng */
-    max-width: 375px; /* Giới hạn chiều rộng tối đa bằng iPhone X */
-    justify-content: center; /* Căn giữa danh sách nút */
+    flex-wrap: wrap; /* Cho phép xu?ng dòng */
+    max-width: 375px; /* Gi?i h?n chi?u r?ng t?i da b?ng iPhone X */
+    justify-content: center; /* Can gi?a danh sách nút */
     margin: 5px 0;
     padding: 0;
 }
 
 .filter-buttons > * {
     margin-right: 10px; /* Thay gap cho flex ngang */
-    margin-bottom: 5px; /* Khoảng cách dưới nếu xuống dòng */
+    margin-bottom: 5px; /* Kho?ng cách du?i n?u xu?ng dòng */
 }
 
 .filter-buttons > *:last-child {
@@ -796,13 +796,13 @@ font-weight: bold; /* Chữ đậm */
 }
 .modal-footer {
     padding: 0 20px 20px;
-    white-space: nowrap; /* Ngăn xuống dòng */
-    text-align: right; /* Căn phải */
+    white-space: nowrap; /* Ngan xu?ng dòng */
+    text-align: right; /* Can ph?i */
 }
 .modal-footer .btn {
-    display: inline-block !important; /* Ép nằm ngang */
-    width: 80px; /* Chiều rộng cố định, nhỏ hơn để vừa 3 nút */
-    padding: 8px; /* Giảm padding cho gọn */
+    display: inline-block !important; /* Ép n?m ngang */
+    width: 80px; /* Chi?u r?ng c? d?nh, nh? hon d? v?a 3 nút */
+    padding: 8px; /* Gi?m padding cho g?n */
     border-radius: 8px;
     border: none;
     cursor: pointer;
@@ -810,11 +810,11 @@ font-weight: bold; /* Chữ đậm */
     text-align: center;
     transition: background 0.2s;
     box-sizing: border-box;
-    margin-left: 10px; /* Khoảng cách giữa nút */
-    vertical-align: middle; /* Căn chỉnh dọc */
+    margin-left: 10px; /* Kho?ng cách gi?a nút */
+    vertical-align: middle; /* Can ch?nh d?c */
 }
 .modal-footer .btn:first-child {
-    margin-left: 0; /* Nút đầu không có margin trái */
+    margin-left: 0; /* Nút d?u không có margin trái */
 }
 .modal-dialog {
     background: white;
@@ -914,7 +914,7 @@ font-weight: bold; /* Chữ đậm */
     .link-meta {
         font-size: 10px;
     }
-/* Đã có trong CSS trước đó */
+/* Ðã có trong CSS tru?c dó */
 .link-item {
     display: flex;
     align-items: center;
@@ -924,23 +924,23 @@ font-weight: bold; /* Chữ đậm */
     padding: 8px;
     transition: all 0.15s;
     cursor: pointer;
-    margin-bottom: 10px; /* Thêm khoảng cách 10px giữa các item */
+    margin-bottom: 10px; /* Thêm kho?ng cách 10px gi?a các item */
 }
 
 .link-item:last-child {
-    margin-bottom: 0; /* Bỏ margin-bottom cho item cuối cùng */
+    margin-bottom: 0; /* B? margin-bottom cho item cu?i cùng */
 }
 
 
 
-/* Container chứa các link-item */
+/* Container ch?a các link-item */
 .scroll-container,
 .filtered-list,
 .tab-content {
-    padding: 8px 10px; /* Đã có sẵn, giữ nguyên */
+    padding: 8px 10px; /* Ðã có s?n, gi? nguyên */
 }
 
-/* Các style khác giữ nguyên */
+/* Các style khác gi? nguyên */
     .link-row > * {
         margin-right: 6px; /* Thay gap cho flex ngang */
     }
@@ -955,21 +955,21 @@ font-weight: bold; /* Chữ đậm */
     align-items: center;
     justify-content: center;
 
-    width: 24px;               /* Rộng hơn chút để đủ chứa số */
-    min-height: 36px;          /* Cao vừa phải cho 2 dòng */
-    padding: 2px 0;            /* Nhẹ nhàng hơn cho chiều dọc */
+    width: 24px;               /* R?ng hon chút d? d? ch?a s? */
+    min-height: 36px;          /* Cao v?a ph?i cho 2 dòng */
+    padding: 2px 0;            /* Nh? nhàng hon cho chi?u d?c */
 
     font-size: 12px;
-    line-height: 1.1;          /* Rút ngắn khoảng cách dòng */
-    font-weight: 600;          /* Vừa đủ đậm */
-    color: #8a6d3b;            /* Tông nâu vàng nhẹ nhàng */
+    line-height: 1.1;          /* Rút ng?n kho?ng cách dòng */
+    font-weight: 600;          /* V?a d? d?m */
+    color: #8a6d3b;            /* Tông nâu vàng nh? nhàng */
     text-align: center;
     flex-shrink: 0;
 
-    background-color: #ffff; /* Nền vàng nhạt */
-    border: 1px solid #ffecb3; /* Viền cùng tone */
-    border-radius: 4px;        /* Bo nhẹ */
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* Đổ bóng nhẹ */
+    background-color: #ffff; /* N?n vàng nh?t */
+    border: 1px solid #ffecb3; /* Vi?n cùng tone */
+    border-radius: 4px;        /* Bo nh? */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* Ð? bóng nh? */
 }
 .link-index span {
     display: block;
@@ -1065,7 +1065,7 @@ font-weight: bold; /* Chữ đậm */
 /* Toast (Thông báo) */
 .toast {
     position: fixed;
-    bottom: 20px; /* 👈 Hiển thị sát footer */
+    bottom: 20px; /* ?? Hi?n th? sát footer */
     right: 20px;
     max-width: 300px;
     padding: 8px 16px;
@@ -1076,13 +1076,13 @@ font-weight: bold; /* Chữ đậm */
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
     z-index: 1000;
 
-    /* Hiệu ứng mượt */
+    /* Hi?u ?ng mu?t */
     opacity: 0;
-    transform: translateY(10px); /* Di chuyển từ dưới lên */
+    transform: translateY(10px); /* Di chuy?n t? du?i lên */
     animation: toast-fade-in 0.4s ease-out forwards;
 }
 
-/* Hiệu ứng toast */
+/* Hi?u ?ng toast */
 @keyframes toast-fade-in {
     to {
         opacity: 1;
@@ -1090,7 +1090,7 @@ font-weight: bold; /* Chữ đậm */
     }
 }
 
-/* Màu sắc theo loại */
+/* Màu s?c theo lo?i */
 .toast-success { background: #42b72a; }
 .toast-warning { background: #faad14; }
 .toast-danger  { background: #ff4d4f; }
@@ -1402,32 +1402,6 @@ font-weight: bold; /* Chữ đậm */
 }
 .btn-edit:hover {
     background: #e0e0e0;
-}
-.profile-selector {
-    display: flex;
-    gap: 5px;
-    margin-top: 5px;
-}
-.profile-btn {
-    flex: 1;
-    padding: 6px 4px;
-    border: 1px solid #ddd;
-    background: #f5f5f5;
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    font-size: 13px;
-}
-.profile-btn i {
-    font-size: 13px;
-}
-.profile-btn.active {
-    background: #1877f2;
-    color: white;
-    border-color: #1877f2;
 }
 .add-fanpage-modal-footer {
     padding: 10px 12px;
@@ -1769,7 +1743,11 @@ textarea.edit-fanpage-form-control {
 .filter-btn[data-filter="blacklist"] { background-color: #F44336; }
 .filter-btn[data-filter="note"]      { background-color: #8BC34A; }
 .filter-btn[data-filter="success"]   { background-color: #4CAF50; }
-.filter-btn[data-filter="image_scontent"]   { background-color: #daa520; }
+.filter-btn[data-filter="image_scontent"]   { background-color: #ffff66; }
+.filter-btn[data-filter="fanpage"]   { background-color: #E91E63; }
+.filter-btn[data-filter="profile-pro"]   { background-color: #FF5722; }
+.filter-btn[data-filter="fanpage_duplicate"]   { background-color: #3F51B5; }
+
     .filter-btn.active {
         box-shadow: 0 0 0 2px #00000033;
         outline: 2px solid white;
