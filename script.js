@@ -2021,17 +2021,17 @@ async function exportKeywordsToGist() {
         state.isLoading = true;
         showToast('Đang xuất danh sách keywords lên Gist...', 'info');
 
-        // Đảm bảo luôn lấy danh sách đúng, kể cả khi state rỗng
-        let keywords = Array.isArray(state.filterKeywords) && state.filterKeywords.length
+        // Lấy keywords mới từ state hoặc localStorage
+        let newKeywords = Array.isArray(state.filterKeywords) && state.filterKeywords.length
             ? state.filterKeywords
             : JSON.parse(localStorage.getItem('filterKeywords') || '[]');
 
-        // Làm sạch danh sách
-        keywords = keywords
+        // Làm sạch danh sách mới
+        newKeywords = newKeywords
             .filter(item => item && item.trim() !== '')
             .map(item => item.trim());
 
-        if (!keywords.length) {
+        if (!newKeywords.length) {
             showToast('Không có keywords để xuất', 'warning');
             return;
         }
@@ -2044,12 +2044,48 @@ async function exportKeywordsToGist() {
             return;
         }
 
-        // Dạng text thuần, mỗi dòng là một keyword
-        const textContent = keywords.join('\n');
-        console.log('Text content to export:', textContent); // Debug
+        // 1. Fetch nội dung Gist hiện tại
+        let existingKeywords = [];
+        try {
+            const gistResponse = await fetchWithRetry(gistUrl, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Accept': 'application/vnd.github+json'
+                }
+            });
 
-        // Gửi PATCH lên Gist
-        const response = await fetchWithRetry(gistUrl, {
+            if (gistResponse.ok) {
+                const gistData = await gistResponse.json();
+                const locFile = gistData.files && gistData.files['loc.txt'];
+                if (locFile && locFile.content) {
+                    existingKeywords = locFile.content.split('\n')
+                        .map(item => item.trim())
+                        .filter(item => item);
+                }
+            } else {
+                console.warn('Không thể đọc nội dung Gist hiện tại, tiếp tục export mới.');
+            }
+        } catch (err) {
+            console.error('Lỗi khi đọc Gist:', err);
+            // Vẫn tiếp tục export mới
+        }
+
+        // 2. Merge danh sách cũ và mới, loại bỏ trùng lặp
+        const allKeywordsSet = new Set([...existingKeywords, ...newKeywords]);
+        const mergedKeywords = Array.from(allKeywordsSet).sort(); // Sắp xếp cho dễ nhìn
+
+        if (!mergedKeywords.length) {
+            showToast('Không có keywords để lưu sau khi merge', 'warning');
+            return;
+        }
+
+        // 3. Chuẩn bị nội dung mới
+        const textContent = mergedKeywords.join('\n');
+        console.log('Text content to export (merged):', textContent);
+
+        // 4. Gửi PATCH cập nhật Gist
+        const updateResponse = await fetchWithRetry(gistUrl, {
             method: 'PATCH',
             headers: {
                 'Authorization': `token ${token}`,
@@ -2063,13 +2099,13 @@ async function exportKeywordsToGist() {
             })
         });
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(`HTTP ${response.status}: ${errorData.message || 'Không thể cập nhật Gist'}`);
+        if (!updateResponse.ok) {
+            const errorData = await updateResponse.json().catch(() => ({}));
+            throw new Error(`HTTP ${updateResponse.status}: ${errorData.message || 'Không thể cập nhật Gist'}`);
         }
 
-        showToast(`Đã xuất ${keywords.length} keywords lên Gist (loc.txt)`, 'success');
-        addLog(`Đã export ${keywords.length} keywords lên Gist (loc.txt)`, 'success');
+        showToast(`Đã cập nhật Gist thành công với ${mergedKeywords.length} keywords`, 'success');
+        addLog(`Đã export ${mergedKeywords.length} keywords lên Gist (loc.txt)`, 'success');
     } catch (error) {
         console.error('Lỗi export keywords:', error);
         showToast(`Lỗi khi export keywords: ${error.message}`, 'danger');
@@ -2078,7 +2114,6 @@ async function exportKeywordsToGist() {
         state.isLoading = false;
     }
 }
-
     async function exportToGist() {
         const linksToExport = state.links.filter(link => link.checked).length > 0
             ? state.links.filter(link => link.checked)
