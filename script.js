@@ -3178,36 +3178,40 @@ function showFilterKeywordsPopup() {
     }
     ////DELETE/////
     async function deleteItems({ items, type, confirmMessage, backupType, successMessage, renderFn }) {
-        if (!items.length) {
-            showToast('Không có mục nào được chọn', 'warning');
-            return;
-        }
-        if (confirm(confirmMessage)) {
-            saveBackup(backupType, { [type]: [...items] });
-            if (type === 'links') {
-                state.links = state.links.filter(l => !items.includes(l));
-            } else {
-                state.fanpages = state.fanpages.filter(f => !items.includes(f));
-            }
-            await saveData({ [type]: true });
-            renderFn();
-            updateCounters();
-            showToast(successMessage, 'success');
-            addLog(successMessage, 'info');
-        }
+    if (!items.length) {
+        showToast('Không có mục nào để xóa', 'warning');
+        return;
     }
-    function deleteSelected() {
-        let selectedItems = [];
-        let type = 'links';
-        if (state.currentTab === 'filter') {
-            type = state.lastActiveTab === 'fanpage' ? 'fanpages' : 'links';
-            const container = elements.linkLists['filter'];
-            const selectedIds = Array.from(container.querySelectorAll('.link-checkbox:checked'))
-                .map(cb => cb.closest('.link-item').dataset.id);
-            selectedItems = (type === 'links' ? state.links : state.fanpages).filter(item => selectedIds.includes(item.id));
+    if (confirm(confirmMessage)) {
+        saveBackup(backupType, { [type]: [...items] });
+        if (type === 'links') {
+            state.links = state.links.filter(l => !items.includes(l));
         } else {
-            selectedItems = getLinksForCurrentTab().filter(link => link.checked);
+            state.fanpages = state.fanpages.filter(f => !items.includes(f));
         }
+        await saveData({ [type]: true });
+        renderFn();
+        updateCounters();
+        showToast(successMessage, 'success');
+        addLog(successMessage, 'info');
+    }
+}
+
+function deleteSelected() {
+    let selectedItems = [];
+    let type = 'links';
+    if (state.currentTab === 'filter') {
+        type = state.lastActiveTab === 'fanpage' ? 'fanpages' : 'links';
+        const container = elements.linkLists['filter'];
+        const selectedIds = Array.from(container.querySelectorAll('.link-checkbox:checked'))
+            .map(cb => cb.closest('.link-item').dataset.id);
+        selectedItems = (type === 'links' ? state.links : state.fanpages).filter(item => selectedIds.includes(item.id));
+    } else {
+        selectedItems = getLinksForCurrentTab().filter(link => link.checked);
+    }
+
+    if (selectedItems.length > 0) {
+        // Có checkbox: Xóa theo checkbox
         deleteItems({
             items: selectedItems,
             type,
@@ -3226,21 +3230,45 @@ function showFilterKeywordsPopup() {
                 }
             }
         });
+    } else {
+        // Không có checkbox: Xóa trùng lặp
+        const uniqueLinks = [];
+        const seenUrls = new Set();
+        state.links.forEach(link => {
+            if (!seenUrls.has(link.url)) {
+                seenUrls.add(link.url);
+                uniqueLinks.push(link);
+            }
+        });
+        const deletedCount = state.links.length - uniqueLinks.length;
+        if (deletedCount === 0) {
+            showToast('Không có link trùng lặp để xóa', 'warning');
+            return;
+        }
+        state.links = uniqueLinks;
+        saveData({ links: true });
+        renderTabContent('all-link');
+        updateCounters();
+        showToast(`Đã xóa ${deletedCount} link trùng lặp`, 'success');
+        addLog(`Đã xóa ${deletedCount} link trùng lặp`, 'info');
+    }
+}
+
+function deleteSelectedFanpages() {
+    let selectedItems = [];
+    const type = 'fanpages';
+
+    if (state.currentTab === 'filter') {
+        const container = elements.linkLists['filter'];
+        const selectedIds = Array.from(container.querySelectorAll('.link-checkbox:checked'))
+            .map(cb => cb.closest('.link-item').dataset.id);
+        selectedItems = state.fanpages.filter(item => selectedIds.includes(item.id));
+    } else {
+        selectedItems = state.fanpages.filter(fanpage => fanpage.checked);
     }
 
-    function deleteSelectedFanpages() {
-        let selectedItems = [];
-        const type = 'fanpages';
-
-        if (state.currentTab === 'filter') {
-            const container = elements.linkLists['filter'];
-            const selectedIds = Array.from(container.querySelectorAll('.link-checkbox:checked'))
-                .map(cb => cb.closest('.link-item').dataset.id);
-            selectedItems = state.fanpages.filter(item => selectedIds.includes(item.id));
-        } else {
-            selectedItems = state.fanpages.filter(fanpage => fanpage.checked);
-        }
-
+    if (selectedItems.length > 0) {
+        // Có checkbox: Xóa theo checkbox
         deleteItems({
             items: selectedItems,
             type,
@@ -3255,25 +3283,48 @@ function showFilterKeywordsPopup() {
                 }
             }
         });
-    }
-    function deleteFanpage(fanpageId) {
-        const fanpage = state.fanpages.find(f => f.id === fanpageId);
-        if (!fanpage) return;
-        deleteItems({
-            items: [fanpage],
-            type: 'fanpages',
-            confirmMessage: `Bạn có chắc muốn xóa fanpage "${fanpage.name}"?`,
-            backupType: 'deleteFanpage',
-            successMessage: `Đã xóa fanpage ${fanpage.name}`,
-            renderFn: () => {
-                if (state.currentTab === 'filter') {
-                    renderFilteredResults(elements.linkLists['filter'], state.currentFilter, 'fanpages');
-                } else {
-                    renderTabContent('fanpage');
-                }
+    } else {
+        // Không có checkbox: Xóa trùng lặp
+        const uniqueFanpages = [];
+        const seenUrls = new Set();
+        state.fanpages.forEach(fanpage => {
+            if (!seenUrls.has(fanpage.url)) {
+                seenUrls.add(fanpage.url);
+                uniqueFanpages.push(fanpage);
             }
         });
+        const deletedCount = state.fanpages.length - uniqueFanpages.length;
+        if (deletedCount === 0) {
+            showToast('Không có fanpage trùng lặp để xóa', 'warning');
+            return;
+        }
+        state.fanpages = uniqueFanpages;
+        saveData({ fanpages: true });
+        renderTabContent('fanpage');
+        updateCounters();
+        showToast(`Đã xóa ${deletedCount} fanpage trùng lặp`, 'success');
+        addLog(`Đã xóa ${deletedCount} fanpage trùng lặp`, 'info');
     }
+}
+
+function deleteFanpage(fanpageId) {
+    const fanpage = state.fanpages.find(f => f.id === fanpageId);
+    if (!fanpage) return;
+    deleteItems({
+        items: [fanpage],
+        type: 'fanpages',
+        confirmMessage: `Bạn có chắc muốn xóa fanpage "${fanpage.name}"?`,
+        backupType: 'deleteFanpage',
+        successMessage: `Đã xóa fanpage ${fanpage.name}`,
+        renderFn: () => {
+            if (state.currentTab === 'filter') {
+                renderFilteredResults(elements.linkLists['filter'], state.currentFilter, 'fanpages');
+            } else {
+                renderTabContent('fanpage');
+            }
+        }
+    });
+}
     init();
     function setupEventListeners() {
         console.log('Setting up event listeners');
