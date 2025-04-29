@@ -1124,32 +1124,38 @@
         }
     }
     async function saveData(changes = {}) {
-        if (!Object.keys(changes).length) return;
-        const data = {
-            links: state.links,
-            fanpages: state.fanpages,
-            logs: state.logs,
-            scrollPosition: state.scrollPosition,
-            filterScrollPosition: state.filterScrollPosition,
-            dateFilter: state.dateFilter,
-            fanpageFilter: state.fanpageFilter
-        };
-        try {
-            const db = await openDatabase();
-            const transaction = db.transaction(storeName, 'readwrite');
-            const store = transaction.objectStore(storeName);
-            store.clear();
-            store.put({ id: 1, data });
-            await new Promise((resolve, reject) => {
-                transaction.oncomplete = resolve;
-                transaction.onerror = reject;
-            });
-            saveToLocalStorage();
-        } catch (error) {
-            addLog('Không thể lưu dữ liệu vào IndexedDB', 'error');
-            saveToLocalStorage();
-        }
+    if (!Object.keys(changes).length) return;
+
+    const data = {
+        links: state.links,
+        fanpages: state.fanpages,
+        logs: state.logs,
+        scrollPosition: state.scrollPosition,
+        filterScrollPosition: state.filterScrollPosition,
+        dateFilter: state.dateFilter,
+        fanpageFilter: state.fanpageFilter,
+        filterKeywords: state.filterKeywords || [] // <<-- Thêm lưu từ khoá lọc
+    };
+
+    try {
+        const db = await openDatabase();
+        const transaction = db.transaction(storeName, 'readwrite');
+        const store = transaction.objectStore(storeName);
+
+        store.clear();
+        store.put({ id: 1, data });
+
+        await new Promise((resolve, reject) => {
+            transaction.oncomplete = resolve;
+            transaction.onerror = reject;
+        });
+
+        saveToLocalStorage();
+    } catch (error) {
+        addLog('Không thể lưu dữ liệu vào IndexedDB', 'error');
+        saveToLocalStorage();
     }
+}
     function renderFilteredResults(container, filter, dataType) {
         if (!container) {
             console.error('Không tìm thấy container cho tab filter');
@@ -1205,66 +1211,84 @@
         }
     }
     async function loadData() {
-        const hideLoading = (() => {
-            const loading = document.createElement('div');
-            loading.className = 'loading';
-            loading.textContent = 'Đang tải...';
-            document.body.appendChild(loading);
-            return () => document.body.removeChild(loading);
-        })();
-        try {
-            const db = await openDatabase();
-            const transaction = db.transaction(storeName, 'readonly');
-            const store = transaction.objectStore(storeName);
-            const request = store.get(1);
-            const savedData = await new Promise((resolve, reject) => {
-                request.onsuccess = () => resolve(request.result?.data || null);
-                request.onerror = () => reject('Lỗi tải dữ liệu từ IndexedDB');
-            });
-            if (savedData) {
-                state.links = savedData.links || [];
-                state.fanpages = savedData.fanpages || [];
-                state.logs = savedData.logs || [];
-                state.scrollPosition = savedData.scrollPosition || 0;
-                state.filterScrollPosition = savedData.filterScrollPosition || 0;
-                state.dateFilter = savedData.dateFilter || { startDate: '', endDate: '', status: 'all', groupTitles: false, searchQuery: '' };
-                state.fanpageFilter = savedData.fanpageFilter || { currentPage: 1 };
-                state.links = state.links.map(link => ({
-                    ...link,
-                    post_type: link.post_type || 'unknown',
-                    blacklistStatus: link.blacklistStatus || 'active',
-                    checked: link.checked || false,
-                    note: link.note || ''
-                }));
-                state.fanpages = state.fanpages.map(fanpage => ({
-                    ...fanpage,
-                    id: fanpage.id || generateId(),
-                    url: fanpage.url || '',
-                    name: fanpage.name || '',
-                    status: fanpage.status || 'pending',
-                    thumbnail: fanpage.thumbnail || config.defaultImage,
-                    description: fanpage.description || '',
-                    checked: fanpage.checked || false
-                }));
+    const hideLoading = (() => {
+        const loading = document.createElement('div');
+        loading.className = 'loading';
+        loading.textContent = 'Đang tải...';
+        document.body.appendChild(loading);
+        return () => document.body.removeChild(loading);
+    })();
+
+    try {
+        const db = await openDatabase();
+        const transaction = db.transaction(storeName, 'readonly');
+        const store = transaction.objectStore(storeName);
+        const request = store.get(1);
+
+        const savedData = await new Promise((resolve, reject) => {
+            request.onsuccess = () => resolve(request.result?.data || null);
+            request.onerror = () => reject('Lỗi tải dữ liệu từ IndexedDB');
+        });
+
+        if (savedData) {
+            state.links = savedData.links || [];
+            state.fanpages = savedData.fanpages || [];
+            state.logs = savedData.logs || [];
+            state.scrollPosition = savedData.scrollPosition || 0;
+            state.filterScrollPosition = savedData.filterScrollPosition || 0;
+            state.dateFilter = savedData.dateFilter || { startDate: '', endDate: '', status: 'all', groupTitles: false, searchQuery: '' };
+            state.fanpageFilter = savedData.fanpageFilter || { currentPage: 1 };
+
+            // Load danh sách từ khoá lọc
+            if (Array.isArray(savedData.filterKeywords)) {
+                state.filterKeywords = savedData.filterKeywords;
             } else {
-                addLog('Không tìm thấy dữ liệu, sử dụng mặc định', 'warning');
+                state.filterKeywords = [];
             }
-            updateCounters();
-            switchTab('all-link');
-            if (elements.mainContent) {
-                elements.mainContent.scrollTop = state.scrollPosition;
-            }
-        } catch (error) {
-            console.error('Lỗi tải dữ liệu:', error);
-            showToast('Không thể tải dữ liệu, sử dụng mặc định', 'danger');
-            state.links = [];
-            state.fanpages = [];
-            updateCounters();
-            switchTab('all-link');
-        } finally {
-            hideLoading();
+
+            // Cập nhật dữ liệu links
+            state.links = state.links.map(link => ({
+                ...link,
+                post_type: link.post_type || 'unknown',
+                blacklistStatus: link.blacklistStatus || 'active',
+                checked: link.checked || false,
+                note: link.note || ''
+            }));
+
+            // Cập nhật dữ liệu fanpages
+            state.fanpages = state.fanpages.map(fanpage => ({
+                ...fanpage,
+                id: fanpage.id || generateId(),
+                url: fanpage.url || '',
+                name: fanpage.name || '',
+                status: fanpage.status || 'pending',
+                thumbnail: fanpage.thumbnail || config.defaultImage,
+                description: fanpage.description || '',
+                checked: fanpage.checked || false
+            }));
+
+        } else {
+            addLog('Không tìm thấy dữ liệu, sử dụng mặc định', 'warning');
         }
+
+        updateCounters();
+        switchTab('all-link');
+
+        if (elements.mainContent) {
+            elements.mainContent.scrollTop = state.scrollPosition;
+        }
+
+    } catch (error) {
+        console.error('Lỗi tải dữ liệu:', error);
+        showToast('Không thể tải dữ liệu, sử dụng mặc định', 'danger');
+        state.links = [];
+        state.fanpages = [];
+        updateCounters();
+        switchTab('all-link');
+    } finally {
+        hideLoading();
     }
+}
     // Mở hoặc tạo cơ sở dữ liệu
     const openDatabase = () => {
         return new Promise((resolve, reject) => {
@@ -1833,6 +1857,10 @@ async function importLinksFromJsonLines() {
         state.isLoading = true;
         showToast('Đang nhập danh sách link từ Jsonlink...', 'info');
 
+        if (!Array.isArray(state.filterKeywords) || state.filterKeywords.length === 0) {
+            await importKeywordsFromGist();
+        }
+
         const { fanpageGistUrl: gistUrl, githubToken: token } = config;
         if (!token || token === 'YOUR_GITHUB_TOKEN_HERE' || !(await validateGithubToken(token))) {
             showToast('Token GitHub không hợp lệ', 'danger');
@@ -1858,7 +1886,7 @@ async function importLinksFromJsonLines() {
             }
         }).filter(item => item);
 
-        const keywords = (state.filterKeywords || []).map(normalize);
+        const keywords = state.filterKeywords.map(normalize);
         const filteredData = data.filter(item => !shouldExcludeItemByTitleAndDescription(item, keywords));
 
         if (!filteredData.length) {
@@ -2016,22 +2044,21 @@ async function importLinksFromJsonLines() {
             state.isLoading = false;
         }
     }
+// === Hàm Export Keywords lên Gist ===
 async function exportKeywordsToGist() {
     try {
         state.isLoading = true;
         showToast('Đang xuất danh sách keywords lên Gist...', 'info');
 
-        // Lấy keywords mới từ state hoặc localStorage
-        let newKeywords = Array.isArray(state.filterKeywords) && state.filterKeywords.length
+        let keywords = Array.isArray(state.filterKeywords) && state.filterKeywords.length
             ? state.filterKeywords
             : JSON.parse(localStorage.getItem('filterKeywords') || '[]');
 
-        // Làm sạch danh sách mới
-        newKeywords = newKeywords
+        keywords = keywords
             .filter(item => item && item.trim() !== '')
             .map(item => item.trim());
 
-        if (!newKeywords.length) {
+        if (!keywords.length) {
             showToast('Không có keywords để xuất', 'warning');
             return;
         }
@@ -2044,48 +2071,32 @@ async function exportKeywordsToGist() {
             return;
         }
 
-        // 1. Fetch nội dung Gist hiện tại
-        let existingKeywords = [];
-        try {
-            const gistResponse = await fetchWithRetry(gistUrl, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `token ${token}`,
-                    'Accept': 'application/vnd.github+json'
-                }
-            });
-
-            if (gistResponse.ok) {
-                const gistData = await gistResponse.json();
-                const locFile = gistData.files && gistData.files['loc.txt'];
-                if (locFile && locFile.content) {
-                    existingKeywords = locFile.content.split('\n')
-                        .map(item => item.trim())
-                        .filter(item => item);
-                }
-            } else {
-                console.warn('Không thể đọc nội dung Gist hiện tại, tiếp tục export mới.');
+        // Bước 1: Lấy nội dung Gist hiện tại
+        const gistResponse = await fetch(gistUrl, {
+            headers: {
+                'Authorization': `token ${token}`,
+                'Accept': 'application/vnd.github+json'
             }
-        } catch (err) {
-            console.error('Lỗi khi đọc Gist:', err);
-            // Vẫn tiếp tục export mới
+        });
+
+        if (!gistResponse.ok) {
+            throw new Error('Không thể lấy nội dung Gist');
         }
 
-        // 2. Merge danh sách cũ và mới, loại bỏ trùng lặp
-        const allKeywordsSet = new Set([...existingKeywords, ...newKeywords]);
-        const mergedKeywords = Array.from(allKeywordsSet).sort(); // Sắp xếp cho dễ nhìn
+        const gistData = await gistResponse.json();
+        const existingContent = gistData.files?.['loc.txt']?.content || '';
 
-        if (!mergedKeywords.length) {
-            showToast('Không có keywords để lưu sau khi merge', 'warning');
-            return;
-        }
+        let existingKeywords = existingContent.split('\n')
+            .map(item => item.trim())
+            .filter(item => item);
 
-        // 3. Chuẩn bị nội dung mới
+        // Bước 2: Merge (không trùng lặp)
+        const mergedKeywords = Array.from(new Set([...existingKeywords, ...keywords]));
+
         const textContent = mergedKeywords.join('\n');
-        console.log('Text content to export (merged):', textContent);
 
-        // 4. Gửi PATCH cập nhật Gist
-        const updateResponse = await fetchWithRetry(gistUrl, {
+        // Bước 3: Gửi PATCH cập nhật lại Gist
+        const response = await fetchWithRetry(gistUrl, {
             method: 'PATCH',
             headers: {
                 'Authorization': `token ${token}`,
@@ -2099,10 +2110,14 @@ async function exportKeywordsToGist() {
             })
         });
 
-        if (!updateResponse.ok) {
-            const errorData = await updateResponse.json().catch(() => ({}));
-            throw new Error(`HTTP ${updateResponse.status}: ${errorData.message || 'Không thể cập nhật Gist'}`);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(`HTTP ${response.status}: ${errorData.message || 'Không thể cập nhật Gist'}`);
         }
+
+        // Bước 4: Cập nhật local state + localStorage
+        state.filterKeywords = mergedKeywords;
+        localStorage.setItem('filterKeywords', JSON.stringify(mergedKeywords));
 
         showToast(`Đã cập nhật Gist thành công với ${mergedKeywords.length} keywords`, 'success');
         addLog(`Đã export ${mergedKeywords.length} keywords lên Gist (loc.txt)`, 'success');
@@ -2114,6 +2129,61 @@ async function exportKeywordsToGist() {
         state.isLoading = false;
     }
 }
+
+// === Hàm Import Keywords từ Gist về Local ===
+async function importKeywordsFromGist() {
+    try {
+        state.isLoading = true;
+        showToast('Đang lấy danh sách keywords từ Gist...', 'info');
+
+        const { fanpageGistUrl: gistUrl, githubToken: token } = config;
+
+        if (!token || token === 'YOUR_GITHUB_TOKEN_HERE' || !(await validateGithubToken(token))) {
+            showToast('Token GitHub không hợp lệ', 'danger');
+            addLog('Lỗi token khi import keywords từ Gist', 'error');
+            return;
+        }
+
+        const gistResponse = await fetch(gistUrl, {
+            headers: {
+                'Authorization': `token ${token}`,
+                'Accept': 'application/vnd.github+json'
+            }
+        });
+
+        if (!gistResponse.ok) {
+            throw new Error('Không thể lấy nội dung Gist');
+        }
+
+        const gistData = await gistResponse.json();
+        const existingContent = gistData.files?.['loc.txt']?.content || '';
+
+        let importedKeywords = existingContent.split('\n')
+            .map(item => item.trim())
+            .filter(item => item);
+
+        if (!importedKeywords.length) {
+            showToast('Không có keywords nào trong Gist', 'warning');
+            return;
+        }
+
+        // Cập nhật vào local
+        state.filterKeywords = importedKeywords;
+        localStorage.setItem('filterKeywords', JSON.stringify(importedKeywords));
+
+        showToast(`Đã import ${importedKeywords.length} keywords từ Gist`, 'success');
+        addLog(`Đã import ${importedKeywords.length} keywords từ Gist`, 'success');
+
+        // Nếu có render lại popup thì gọi hàm renderFilterPopup() hoặc render lại danh sách tùy bạn
+    } catch (error) {
+        console.error('Lỗi import keywords:', error);
+        showToast(`Lỗi khi import keywords: ${error.message}`, 'danger');
+        addLog(`Lỗi khi import keywords từ Gist: ${error.message}`, 'error');
+    } finally {
+        state.isLoading = false;
+    }
+}
+
     async function exportToGist() {
         const linksToExport = state.links.filter(link => link.checked).length > 0
             ? state.links.filter(link => link.checked)
@@ -2167,6 +2237,10 @@ async function importFromJSON() {
         state.isLoading = true;
         showToast('Đang tải danh sách link từ Jsonalllink...', 'info');
 
+        if (!Array.isArray(state.filterKeywords) || state.filterKeywords.length === 0) {
+            await importKeywordsFromGist();
+        }
+
         const response = await fetch(config.fanpageGistUrl, { cache: 'no-cache' });
         if (!response.ok) throw new Error(`Lỗi HTTP: ${response.status}`);
 
@@ -2177,7 +2251,7 @@ async function importFromJSON() {
         let data = JSON.parse(fileContent);
         if (!Array.isArray(data)) throw new Error('Dữ liệu JSON không hợp lệ (phải là mảng object)');
 
-        const keywords = (state.filterKeywords || []).map(normalize);
+        const keywords = state.filterKeywords.map(normalize);
         const filteredData = data.filter(item => !shouldExcludeItemByTitleAndDescription(item, keywords));
 
         if (!filteredData.length) {
@@ -2228,7 +2302,6 @@ async function importFromJSON() {
         state.isLoading = false;
     }
 }
-
     //6. Link Management
     function cacheIframeContent(url, content) {
         const cacheKeys = Object.keys(localStorage).filter(k => k.startsWith('iframe_'));
@@ -2647,8 +2720,12 @@ function showFilterKeywordsPopup() {
             </div>
             <div class="modal-body">
                 <input type="text" id="filter-keyword-input" placeholder="Nhập từ khóa mới..." style="width: 100%; margin-bottom: 10px;">
-                <button id="save-filter-keyword" class="btn btn-primary">Lưu từ khóa</button>
-                <div id="filter-keywords-list" style="margin-top: 15px;"></div>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button id="save-filter-keyword" class="btn btn-primary" style="flex: 1;">Lưu từ khóa</button>
+                    <button id="import-keywords-gist" class="btn btn-secondary" style="flex: 1;">Import Gist</button>
+                    <button id="export-keywords-gist" class="btn btn-success" style="flex: 1;">Export Gist</button>
+                </div>
+                <div id="filter-keywords-list" style="margin-top: 15px; max-height: 300px; overflow-y: auto;"></div>
             </div>
         </div>
     `;
@@ -2656,6 +2733,8 @@ function showFilterKeywordsPopup() {
 
     const input = popup.querySelector('#filter-keyword-input');
     const saveBtn = popup.querySelector('#save-filter-keyword');
+    const importBtn = popup.querySelector('#import-keywords-gist');
+    const exportBtn = popup.querySelector('#export-keywords-gist');
     const listEl = popup.querySelector('#filter-keywords-list');
 
     if (!state.filterKeywords) {
@@ -2664,11 +2743,22 @@ function showFilterKeywordsPopup() {
 
     function renderKeywordList() {
         listEl.innerHTML = '';
+        if (state.filterKeywords.length === 0) {
+            listEl.innerHTML = '<p>Chưa có từ khóa nào</p>';
+            return;
+        }
         state.filterKeywords.forEach((word, i) => {
             const el = document.createElement('div');
-            el.innerHTML = `${word} <button data-index="${i}" class="btn btn-sm">X</button>`;
+            el.style.display = 'flex';
+            el.style.justifyContent = 'space-between';
+            el.style.alignItems = 'center';
+            el.style.marginBottom = '5px';
+            el.innerHTML = `
+                <span>${word}</span>
+                <button data-index="${i}" class="btn btn-sm btn-danger">X</button>
+            `;
             el.querySelector('button').onclick = () => {
-                state.filterKeywords.splice(i, 1); // ✅ sửa lỗi tại đây
+                state.filterKeywords.splice(i, 1);
                 localStorage.setItem('filterKeywords', JSON.stringify(state.filterKeywords));
                 renderKeywordList();
             };
@@ -2684,6 +2774,16 @@ function showFilterKeywordsPopup() {
             input.value = '';
             renderKeywordList();
         }
+    };
+
+    importBtn.onclick = async () => {
+        await importKeywordsFromGist();
+        renderKeywordList();
+    };
+
+    exportBtn.onclick = async () => {
+        await exportKeywordsToGist();
+        renderKeywordList();
     };
 
     popup.querySelector('.modal-close').onclick = () => document.body.removeChild(popup);
