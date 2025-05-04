@@ -15,7 +15,7 @@
             color: #65676b;
             gap: 8px;
         }
-        
+
         .fanpage-iframe-container {
             margin-top: 12px;
             border: 1px solid #e4e6eb;
@@ -35,13 +35,11 @@
                     <i class="fas fa-link"></i>
                     <span class="count">0</span>
                 </div>
-                <button class="header-btn" title="Log" id="log-btn">
-                    <i class="fas fa-clipboard-list"></i>
-                </button>
+                <!-- Đã đổi vị trí filter và log -->
                 <div class="status-counter filter" title="Bộ lọc" id="filter-counter">
-    <i class="fas fa-filter"></i>
-    <span class="count" style="display: none;">0</span>
-</div>
+                    <i class="fas fa-filter"></i>
+                    <span class="count" style="display: none;">0</span>
+                </div>
                 <button class="header-btn select-all-counter" title="Chọn tất cả" id="select-all-counter-btn">
                     <i class="fas fa-check-square"></i>
                     <span class="selected-count">0</span>
@@ -52,14 +50,16 @@
                 <button class="header-btn" title="Hoàn tác" id="undo-btn">
                     <i class="fas fa-undo"></i>
                 </button>
+                <button class="header-btn" title="Log" id="log-btn">
+                    <i class="fas fa-clipboard-list"></i>
+                </button>
                 <button class="header-btn" title="Cuộn" id="scroll-btn">
                     <i class="fas fa-arrow-down"></i>
                 </button>
-                
             </div>
         </div>
     </header>
-    
+
     <main class="main-content">
         <div class="tab-container">
             <!-- Các nút tab sẽ được thêm động bởi JavaScript -->
