@@ -1,83 +1,186 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Quản lý link</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        .fb-post-loading {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 200px;
-            color: #65676b;
-            gap: 8px;
-        }
-
-        .fanpage-iframe-container {
-            margin-top: 12px;
-            border: 1px solid #e4e6eb;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Quản lý Hộ Kinh Doanh (HKD)</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    header { background: #2c3e50; color: white; padding: 10px 20px; }
+    .tabs { display: flex; background: #ecf0f1; border-bottom: 1px solid #ccc; }
+    .tab { padding: 10px 20px; cursor: pointer; }
+    .tab.active { background: white; border-top: 2px solid #3498db; font-weight: bold; }
+    .tab-content { display: none; padding: 20px; }
+    .tab-content.active { display: block; }
+    input[type="file"], input[type="text"] { margin-top: 10px; padding: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 5px; font-size: 14px; }
+  </style>
 </head>
 <body>
-    <header class="app-header">
-        <div class="header-row">
-            <div class="header-actions">
-                <button class="header-btn primary" title="Thêm link" id="add-link-btn">
-                    <i class="fas fa-plus"></i>
-                </button>
-                <div class="status-counter all" title="Tất cả link" id="all-counter">
-                    <i class="fas fa-link"></i>
-                    <span class="count">0</span>
-                </div>
-                <!-- Đã đổi vị trí filter và log -->
-                <div class="status-counter filter" title="Bộ lọc" id="filter-counter">
-                    <i class="fas fa-filter"></i>
-                    <span class="count" style="display: none;">0</span>
-                </div>
-                <button class="header-btn select-all-counter" title="Chọn tất cả" id="select-all-counter-btn">
-                    <i class="fas fa-check-square"></i>
-                    <span class="selected-count">0</span>
-                </button>
-                <button class="header-btn danger" title="Xóa" id="delete-btn">
-                    <i class="fas fa-trash"></i>
-                </button>
-                <button class="header-btn" title="Hoàn tác" id="undo-btn">
-                    <i class="fas fa-undo"></i>
-                </button>
-                <button class="header-btn" title="Log" id="log-btn">
-                    <i class="fas fa-clipboard-list"></i>
-                </button>
-                <button class="header-btn" title="Cuộn" id="scroll-btn">
-                    <i class="fas fa-arrow-down"></i>
-                </button>
-            </div>
-        </div>
-    </header>
+  <header>
+    <h2>📊 Quản lý Hộ Kinh Doanh</h2>
+  </header>
 
-    <main class="main-content">
-        <div class="tab-container">
-            <!-- Các nút tab sẽ được thêm động bởi JavaScript -->
-        </div>
-        <div class="scroll-container">
-            <div id="all-link-tab" class="tab-content" style="display: block;"></div>
-            <div id="blacklist-tab" class="tab-content" style="display: none;"></div>
-            <div id="date-filter-tab" class="tab-content" style="display: none;"></div>
-            <div id="error-tab" class="tab-content" style="display: none;"></div>
-            <div id="duplicate-tab" class="tab-content" style="display: none;"></div>
-            <div id="log-tab" class="tab-content" style="display: none;"></div>
-            <div id="filter-tab" class="tab-content" style="display: none;"></div>
-            <div id="fanpage-tab" class="tab-content" style="display: none;"></div>
-        </div>
-    </main>
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('uploadTab')">📥 Tải Hóa đơn</div>
+    <div class="tab" onclick="showTab('summaryTab')">📋 Danh sách HKD</div>
+    <div class="tab" onclick="showTab('stockTab')">📦 Tồn kho</div>
+    <div class="tab" onclick="showTab('searchTab')">🔍 Tìm kiếm HĐ</div>
+  </div>
 
-    <div id="fb-root"></div>
-    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/vi_VN/sdk.js#xfbml=1&version=v20.0"></script>
-    <script src="script.js" defer></script>
+  <div id="uploadTab" class="tab-content active">
+    <h3>🧾 Nhập file ZIP chứa hóa đơn HTML</h3>
+    <input type="file" id="zipInput" accept=".zip" multiple />
+    <p id="status"></p>
+  </div>
+
+  <div id="summaryTab" class="tab-content">
+    <input type="text" id="searchHKD" placeholder="🔍 Tìm kiếm theo MST HKD...">
+    <div id="hkdList"></div>
+  </div>
+
+  <div id="stockTab" class="tab-content">
+    <select id="businessSelect" onchange="renderStock()"></select>
+    <div id="stockTable"></div>
+  </div>
+
+  <div id="searchTab" class="tab-content">
+    <input type="text" id="searchInput" placeholder="Nhập MST hoặc số HĐ..." />
+    <div id="searchResults"></div>
+  </div>
+
+  <script>
+    const businesses = {};   // MST -> { ten, invoices[], stock[] }
+    const allInvoices = [];
+
+    function showTab(id) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.tab[onclick*='${id}']`).classList.add('active');
+      document.getElementById(id).classList.add('active');
+      if (id === 'stockTab') updateBusinessSelect();
+      if (id === 'summaryTab') renderBusinessList();
+    }
+
+    function updateBusinessSelect() {
+      const sel = document.getElementById('businessSelect');
+      sel.innerHTML = Object.values(businesses).map(b => `<option value="${b.mst}">${b.ten} (${b.mst})</option>`).join('');
+      renderStock();
+    }
+
+    function renderBusinessList() {
+      const searchKey = document.getElementById('searchHKD').value.toLowerCase();
+      const div = document.getElementById('hkdList');
+      div.innerHTML = '';
+      Object.values(businesses)
+        .filter(b => b.mst.toLowerCase().includes(searchKey))
+        .forEach(b => {
+          const total = b.stock.reduce((s, i) => s + (i.sl * i.dg), 0);
+          const box = document.createElement('div');
+          box.innerHTML = `
+            <h4>${b.ten} (${b.mst})</h4>
+            <p>Tổng SL: ${b.stock.reduce((s, i) => s + i.sl, 0)} | Tổng tiền: ${total.toLocaleString()}</p>
+            <button onclick="deleteHKD('${b.mst}')">🗑️ Xoá toàn bộ</button>
+          `;
+          div.appendChild(box);
+        });
+    }
+
+    function deleteHKD(mst) {
+      if (confirm('Bạn có chắc muốn xoá toàn bộ dữ liệu của HKD này?')) {
+        delete businesses[mst];
+        renderBusinessList();
+      }
+    }
+
+    document.getElementById('searchHKD').addEventListener('input', renderBusinessList);
+
+    document.getElementById('zipInput').addEventListener('change', async (event) => {
+      const files = event.target.files;
+      const status = document.getElementById('status');
+      status.textContent = '⏳ Đang xử lý...';
+
+      for (const file of files) {
+        if (!file.name.endsWith('.zip')) continue;
+        const zip = await JSZip.loadAsync(file);
+
+        for (const [filename, fileObj] of Object.entries(zip.files)) {
+          if (!filename.endsWith('.html')) continue;
+          const html = await fileObj.async('string');
+          const invoice = parseInvoiceHTML(html);
+          if (!invoice.mstMua || !invoice.mccqt) continue;
+
+          const mccqtKey = `${invoice.mccqt}-${invoice.so}`;
+          if (allInvoices.some(i => `${i.mccqt}-${i.so}` === mccqtKey)) {
+            console.warn('⚠️ MCCQT trùng:', mccqtKey);
+            continue;
+          }
+
+          allInvoices.push(invoice);
+
+          const mst = invoice.mstMua;
+          if (!businesses[mst]) businesses[mst] = { ten: invoice.tenMua, mst, invoices: [], stock: [] };
+          businesses[mst].invoices.push(invoice);
+          businesses[mst].stock.push(...invoice.items);
+        }
+      }
+
+      status.textContent = '✅ Xử lý xong';
+    });
+
+    function parseInvoiceHTML(html) {
+      const dom = new DOMParser().parseFromString(html, 'text/html');
+      const get = sel => (dom.querySelector(sel)?.textContent.trim() || '');
+      const invoice = {
+        so: get(".code-content b:nth-child(3)"),
+        kyHieu: get(".code-content b:nth-child(2)"),
+        ngay: get("p.day"),
+        mccqt: get("li:nth-child(2) .di-value div"),
+        tenMua: get("li:nth-child(9) .di-value div"),
+        mstMua: get("li:nth-child(11) .di-value div"),
+        items: [],
+        total: 0
+      };
+
+      const table = dom.querySelector('table.res-tb');
+      if (table) {
+        for (const row of table.querySelectorAll('tbody tr')) {
+          const cells = [...row.querySelectorAll('td')].map(td => td.textContent.trim());
+          if (cells.length >= 10) {
+            const sl = parseFloat(cells[5].replace(/,/g, '')) || 0;
+            const dg = parseFloat(cells[6].replace(/,/g, '')) || 0;
+            const tt = parseFloat(cells[9].replace(/,/g, '')) || 0;
+            invoice.items.push({ ten: cells[3], dvt: cells[4], sl, dg, tt });
+            invoice.total += tt;
+          }
+        }
+      }
+      return invoice;
+    }
+
+    function renderStock() {
+      const mst = document.getElementById('businessSelect').value;
+      const container = document.getElementById('stockTable');
+      container.innerHTML = '';
+      if (!mst || !businesses[mst]) return;
+
+      const table = document.createElement('table');
+      table.innerHTML = `<thead><tr>
+        <th>STT</th><th>Tên hàng hóa</th><th>Đơn vị</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th>
+      </tr></thead>`;
+
+      const tbody = document.createElement('tbody');
+      businesses[mst].stock.forEach((item, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${i + 1}</td><td>${item.ten}</td><td>${item.dvt}</td>
+          <td>${item.sl}</td><td>${item.dg}</td><td>${(item.sl * item.dg).toLocaleString()}</td>`;
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      container.appendChild(table);
+    }
+  </script>
 </body>
 </html>
