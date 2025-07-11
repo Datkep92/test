@@ -1631,8 +1631,8 @@ function updateMismatchFilter() {
         console.error('Lỗi updateMismatchFilter:', e);
     }
 }
-
-
+// Hàm lưu thay đổi Số hóa đơn và MCCQT
+// Hàm lưu thay đổi hóa đơn - chỉ chỉnh sửa MCCQT
 
 
 // Hàm tải danh sách hóa đơn
@@ -1691,6 +1691,7 @@ function filterInvoicesByType(type, businessId) {
 }
 
 
+// Các hàm khác (giữ nguyên)
 function showInvoicesTab(businessId) {
     try {
         const invoicesTab = document.getElementById('invoicesTab');
@@ -1726,7 +1727,7 @@ function showInvoicesTab(businessId) {
             .warning-row { background-color: #fff3cd; }
             .error-row { background-color: #ffcccc; }
             .unknown-row { background-color: #ffe6e6; }
-            .mismatch-row { background-color: #fff0f0; border: 2px solid #ff9999; }
+            .mismatch-row { background-color: #fff0f0; border: 2px solid #ff9999; } /* Màu nhạt đỏ cho "Lệch" */
             .filter-buttons button {
                 padding: 8px 12px;
                 border: none;
@@ -1754,32 +1755,6 @@ function showInvoicesTab(businessId) {
             .search-box {
                 display: flex;
                 gap: 10px;
-            }
-            .invoice-action-buttons button {
-                padding: 6px 10px;
-                margin-right: 5px;
-                border: none;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 12px;
-            }
-            .view-btn {
-                background-color: #2196F3;
-                color: #fff;
-            }
-            .view-btn:hover {
-                background-color: #1976D2;
-            }
-            .download-btn {
-                background-color: #4CAF50;
-                color: #fff;
-            }
-            .download-btn:hover {
-                background-color: #45a049;
-            }
-            .invoice-action-buttons button:disabled {
-                background-color: #cccccc;
-                cursor: not-allowed;
             }
         `;
         document.head.appendChild(style);
@@ -1848,6 +1823,7 @@ function getStatusIcon(statusColor) {
     }
 }
 
+// Hàm render danh sách hóa đơn
 function renderInvoiceList(invoices) {
     if (invoices.length === 0) return '<p>Không tìm thấy hóa đơn nào</p>';
 
@@ -1874,7 +1850,7 @@ function renderInvoiceList(invoices) {
             </thead>
             <tbody>
                 ${invoices.map((invoice, index) => {
-        const status = checkInvoiceStatus(invoice);
+        const status = checkInvoiceStatus(invoice); // Thay checkInvoice bằng checkInvoiceStatus
         return `
                         <tr class="invoice-row ${status === 'valid' ? 'valid-row' :
                 status === 'warning' ? 'warning-row' :
@@ -1889,8 +1865,7 @@ function renderInvoiceList(invoices) {
                             <td>${formatMoney(calculateInvoiceTotal(invoice))}</td>
                             <td>${getStatusBadge(status)}</td>
                             <td class="actions">
-                                <button class="view-btn" onclick="viewInvoiceInNewTab('${invoice.id}')" ${!invoice.file ? 'disabled' : ''}>Xem</button>
-                                <button class="download-btn" onclick="downloadInvoice('${invoice.id}')" ${!invoice.file ? 'disabled' : ''}>Tải về</button>
+                                <button onclick="showInvoiceDetails('${invoice.id}')">Xem</button>
                                 <button onclick="deleteInvoice('${invoice.id}', '${invoice.businessId}')">Xóa</button>
                             </td>
                         </tr>
@@ -3858,10 +3833,11 @@ async function clearAllData() {
             return;
         }
 
-        // Lấy token trước khi xóa bất kỳ dữ liệu nào
-        const token = getGitHubToken();
+        // Xóa toàn bộ localStorage
+        localStorage.clear();
 
         // Xóa các Gist có tên file invoice.html của tài khoản Datkep92
+        const token = getGitHubToken();
         if (token) {
             try {
                 let page = 1;
@@ -3915,12 +3891,6 @@ async function clearAllData() {
             alert('Không tìm thấy token GitHub, chỉ xóa dữ liệu localStorage');
         }
 
-        // Xóa các key cụ thể trong localStorage thay vì toàn bộ
-        localStorage.setItem('businesses', JSON.stringify([]));
-        localStorage.setItem('invoices', JSON.stringify([]));
-        localStorage.setItem('inventory', JSON.stringify([]));
-        localStorage.setItem('exportedInvoices', JSON.stringify([]));
-
         // Cập nhật giao diện
         businesses = [];
         invoices = [];
@@ -3938,6 +3908,16 @@ async function clearAllData() {
         console.error('Lỗi clearAllData:', e);
         alert('Lỗi khi xóa dữ liệu: ' + e.message);
     }
+}
+
+// Hàm giả lập để lấy token
+function getGitHubToken() {
+    return localStorage.getItem('githubToken') || null;
+}
+
+// Hàm giả lập để cập nhật danh sách doanh nghiệp
+function updateBusinessList() {
+    console.log('Cập nhật danh sách doanh nghiệp');
 }
 
 function toggleDuplicateCheck() {
@@ -6607,39 +6587,36 @@ function getGitHubToken() {
     return localStorage.getItem('githubToken') || null;
 }
 
-async function uploadToGist(content, fileName) {
+// Upload HTML content as Gist and return raw_url
+async function uploadToGist(content, filename) {
+    const token = getGitHubToken();
+    if (!token) {
+        alert('GitHub token chưa được cấu hình!');
+        return null;
+    }
     try {
-        const token = getGitHubToken();
-        if (!token) {
-            console.warn('Chưa cấu hình GitHub token, không thể upload lên Gist.');
-            return null;
-        }
-
         const response = await fetch('https://api.github.com/gists', {
             method: 'POST',
             headers: {
-                'Authorization': `token ${token}`,
-                'Content-Type': 'application/json'
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/vnd.github.v3+json'
             },
             body: JSON.stringify({
-                description: `Hóa đơn ${fileName}`,
-                public: false,
+                description: `Invoice HTML: ${filename}`,
+                public: true,
                 files: {
-                    [fileName]: {
-                        content: content
+                    [filename]: {
+                        content
                     }
                 }
             })
         });
-
-        if (!response.ok) {
-            throw new Error(`Lỗi upload Gist: ${response.statusText}`);
-        }
-
-        const gist = await response.json();
-        return gist.html_url; // Trả về URL của Gist
+        if (!response.ok) throw new Error(`Gist error: ${response.statusText}`);
+        const result = await response.json();
+        return result.files[filename].raw_url;
     } catch (e) {
-        console.error('Lỗi uploadToGist:', e);
+        console.error('uploadToGist failed:', e);
         return null;
     }
 }
@@ -6685,57 +6662,56 @@ async function uploadToGist(content, filename) {
 
 async function parseToTableAndUploadGist(businessId, file, info, direction) {
     try {
-        // Gọi parseToTable trước để tạo hóa đơn
+        const token = getGitHubToken();
+        if (!token) {
+            alert('Vui lòng cấu hình GitHub Token trước khi tải lên Gist!');
+            parseToTable(businessId, file, info, direction); // Vẫn xử lý parseToTable
+            return;
+        }
+
+        const htmlContent = await file.text();
+        const gistUrl = await uploadToGist(htmlContent, file.name);
+        if (gistUrl) {
+            info.gist = gistUrl;
+        }
+
         parseToTable(businessId, file, info, direction);
 
-        // Lấy hóa đơn vừa tạo (hóa đơn cuối cùng trong invoices)
         const lastInvoice = invoices[invoices.length - 1];
-        if (!lastInvoice || lastInvoice.mccqt !== info.mccqt || lastInvoice.businessId !== businessId) {
-            throw new Error('Không tìm thấy hóa đơn vừa tạo hoặc thông tin không khớp.');
+        if (lastInvoice && gistUrl) {
+            lastInvoice.file = `https://htmlpreview.github.io/?${gistUrl}`;
+            localStorage.setItem('invoices', JSON.stringify(invoices)); // <-- thêm dòng này
         }
 
-        // Upload file HTML lên Gist
-        const token = getGitHubToken();
-        let gistUrl = null;
-        if (token) {
-            const htmlContent = await file.text();
-            gistUrl = await uploadToGist(htmlContent, file.name);
-            if (gistUrl) {
-                lastInvoice.file = `https://htmlpreview.github.io/?${gistUrl}`;
-                info.gist = gistUrl; // Lưu vào info để sử dụng nếu cần
-            } else {
-                console.warn(`Không thể upload file ${file.name} lên Gist.`);
-                lastInvoice.file = null; // Đảm bảo invoice.file không bị undefined
-            }
-        } else {
-            console.warn('GitHub token chưa được cấu hình, bỏ qua upload Gist.');
-            lastInvoice.file = null;
-        }
-
-        // Cập nhật invoices vào localStorage
-        localStorage.setItem('invoices', JSON.stringify(invoices));
-
-        // Ghi log hoạt động
-        logActivity('parse_invoice', {
-            businessId,
-            invoiceId: lastInvoice.id,
-            mccqt: info.mccqt,
-            fileName: file.name,
-            gistUrl: lastInvoice.file || 'Không có'
-        });
-
-        // Cập nhật giao diện
-        updateBusinessList();
-        showBusinessDetails(businessId);
-
-        return lastInvoice;
     } catch (e) {
         console.error('Lỗi parseToTableAndUploadGist:', e);
-        showToast(`Lỗi khi xử lý hóa đơn ${file.name}: ${e.message}`, 'error');
         throw e;
     }
 }
 
+
+
+
+
+async function downloadInvoicePDF(invoiceId) {
+    try {
+        const invoice = invoices.find(i => i.id === invoiceId);
+        if (!invoice) {
+            alert('Hóa đơn không tồn tại!');
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.text(`Hóa đơn ${invoice.series}-${invoice.number}`, 10, 10);
+        doc.save(`HoaDon_${invoice.series}-${invoice.number}.pdf`);
+
+        logActivity('download_pdf', { invoiceId, invoiceNumber: `${invoice.series}-${invoice.number}` });
+    } catch (e) {
+        console.error('Lỗi downloadInvoicePDF:', e);
+        alert('Lỗi khi tải PDF: ' + e.message);
+    }
+}
 
 function viewOnGISPortal(invoiceId) {
     const invoice = invoices.find(i => i.id === invoiceId);
@@ -6810,18 +6786,25 @@ function formatNumber(value) {
 
 async function updateInvoiceToGIS(invoiceId, updatedInvoice) {
     try {
-        const token = getGISToken(); // Token của nhà cung cấp GIS
-        const response = await fetch('https://api.gis-provider.com/invoices', {
-            method: 'POST',
+        const token = getGitHubToken(); // Hoặc token GIS
+        if (!token) throw new Error('Chưa cấu hình token GIS');
+        const response = await fetch(`https://api.gis.example.com/invoices/${invoiceId}`, {
+            method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(updatedInvoice)
         });
-        if (!response.ok) throw new Error(`Lỗi GIS: ${response.statusText}`);
-        const gisInvoice = await response.json();
-        return gisInvoice.fileUrl; // URL file từ GIS
+        if (!response.ok) throw new Error(`Lỗi cập nhật GIS: ${response.statusText}`);
+        const updated = await response.json();
+        // Đồng bộ localStorage
+        const index = invoices.findIndex(i => i.id === invoiceId);
+        if (index !== -1) {
+            invoices[index] = updated;
+            localStorage.setItem('invoices', JSON.stringify(invoices));
+        }
+        return updated;
     } catch (e) {
         console.error('Lỗi updateInvoiceToGIS:', e);
         throw e;
@@ -7044,7 +7027,7 @@ async function showInvoiceDetails(invoiceId) {
     try {
         let invoice;
         try {
-            // Lấy dữ liệu từ GIS API (giả lập)
+            // Lấy dữ liệu từ GIS API
             invoice = await fetchInvoiceFromGIS(invoiceId);
         } catch (apiError) {
             console.warn('Không thể lấy dữ liệu từ GIS API, sử dụng dữ liệu cục bộ:', apiError);
@@ -7053,13 +7036,13 @@ async function showInvoiceDetails(invoiceId) {
 
         if (!invoice) {
             console.error(`Không tìm thấy hóa đơn với ID ${invoiceId}`);
-            showToast('Hóa đơn không tồn tại!', 'error');
+            alert('Hóa đơn không tồn tại!');
             return;
         }
 
         let businessInvoices;
         try {
-            // Lấy danh sách hóa đơn từ GIS API (giả lập)
+            // Lấy danh sách hóa đơn từ GIS API
             businessInvoices = await fetchBusinessInvoicesFromGIS(invoice.businessId);
         } catch (apiError) {
             console.warn('Không thể lấy danh sách hóa đơn từ GIS, sử dụng dữ liệu cục bộ:', apiError);
@@ -7200,12 +7183,11 @@ async function showInvoiceDetails(invoiceId) {
                 <div class="invoice-navigation">
                     <button ${!prevInvoiceId ? 'disabled' : ''} onclick="navigateInvoice('${prevInvoiceId}')">⬅️ Hóa đơn trước</button>
                     <button ${!nextInvoiceId ? 'disabled' : ''} onclick="navigateInvoice('${nextInvoiceId}')">Hóa đơn tiếp theo ➡️</button>
-                    <button onclick="viewInvoiceInNewTab('${invoice.id}')">Xem hóa đơn</button>
-                    <button onclick="downloadInvoice('${invoice.id}')">Tải hóa đơn</button>
                 </div>
+                
                 <div class="invoice-info">
                     <p>MST: 
-                        <select id="businessSelect" class="business-select" onchange="updateSelectedBusiness('${invoice.id}')">
+                        <select id="businessSelect" class="business-select" onchange="updateSelectedBusiness('${invoiceId}')">
                             <option value="">-- Chọn HKD --</option>
                             ${businesses.map(b => `
                                 <option value="${b.id}" ${b.id === invoice.businessId ? 'selected' : ''}>
@@ -7215,12 +7197,12 @@ async function showInvoiceDetails(invoiceId) {
                         </select>
                     </p>
                     <p>Địa chỉ: ${invoice.seller?.address || 'Không rõ'}</p>
-                    <button onclick="updateInvoiceMST('${invoice.id}')">💾 Cập nhật HKD</button>
+                    <button onclick="updateInvoiceMST('${invoiceId}')">💾 Cập nhật HKD</button>
                 </div>
                 <div class="form-group">
                     <label>MCCQT:</label>
                     <input type="text" id="editMCCQT" value="${invoice.mccqt || ''}">
-                    <button onclick="saveInvoiceChanges('${invoice.id}', '${invoice.businessId}')">Cập nhật</button>
+                    <button onclick="saveInvoiceChanges('${invoiceId}', '${invoice.businessId}')">Cập nhật</button>
                 </div>
                 <table class="compact-table">
                     <thead>
@@ -7259,12 +7241,12 @@ async function showInvoiceDetails(invoiceId) {
                                     <td>${formatMoney(itemTotal)}</td>
                                     <td>
                                         ${item.isEditing ? `
-                                            <button onclick="saveOrCancelInvoiceItem('${invoice.id}', ${index}, 'save')">💾</button>
-                                            <button onclick="saveOrCancelInvoiceItem('${invoice.id}', ${index}, 'cancel')">❌</button>
+                                            <button onclick="saveOrCancelInvoiceItem('${invoiceId}', ${index}, 'save')">💾</button>
+                                            <button onclick="saveOrCancelInvoiceItem('${invoiceId}', ${index}, 'cancel')">❌</button>
                                         ` : `
-                                            <button onclick="editInvoiceItem('${invoice.id}', ${index})">✏️</button>
-                                            <button onclick="insertInvoiceItem('${invoice.id}', ${index})">➕</button>
-                                            <button onclick="deleteInvoiceItem('${invoice.id}', ${index})">🗑️</button>
+                                            <button onclick="editInvoiceItem('${invoiceId}', ${index})">✏️</button>
+                                            <button onclick="insertInvoiceItem('${invoiceId}', ${index})">➕</button>
+                                            <button onclick="deleteInvoiceItem('${invoiceId}', ${index})">🗑️</button>
                                         `}
                                     </td>
                                 </tr>
@@ -7295,7 +7277,7 @@ async function showInvoiceDetails(invoiceId) {
                     </div>
                     ${comparison.message ? `<div class="error-message">${comparison.message}</div>` : ''}
                 </div>
-                <button onclick="addInvoiceItem('${invoice.id}')">➕ Thêm dòng hàng hóa</button>
+                <button onclick="addInvoiceItem('${invoiceId}')">➕ Thêm dòng hàng hóa</button>
             </div>
         `;
 
@@ -7354,9 +7336,9 @@ async function showInvoiceDetails(invoiceId) {
                 <span class="close-popup" onclick="this.parentElement.parentElement.remove()">❌</span>
                 <div class="invoice-comparison">
                     <div class="invoice-pdf">
-                        <h4>Hóa đơn HTML</h4>
+                        <h4>Hóa đơn PDF</h4>
                         <div class="pdf-container">
-                            <iframe src="${invoice.file || 'about:blank'}" width="100%" height="5000px"></iframe>
+                            <iframe src="${getGISViewerUrl(invoiceId)}" width="100%" height="1000px"></iframe>
                             <div class="magnifier"></div>
                         </div>
                     </div>
@@ -7374,86 +7356,7 @@ async function showInvoiceDetails(invoiceId) {
         });
     } catch (e) {
         console.error('Lỗi showInvoiceDetails:', e);
-        showToast('Lỗi khi hiển thị hóa đơn: ' + e.message, 'error');
+        alert('Lỗi khi hiển thị hóa đơn: ' + e.message);
     }
 }
 
-function viewInvoiceInNewTab(invoiceId) {
-    try {
-        const invoice = invoices.find(i => i.id === invoiceId);
-        if (!invoice) {
-            showToast('Hóa đơn không tồn tại!', 'error');
-            return;
-        }
-        if (!invoice.file) {
-            showToast('Không tìm thấy file hóa đơn trên Gist!', 'error');
-            return;
-        }
-        window.open(invoice.file, '_blank');
-        logActivity('view_invoice', {
-            invoiceId,
-            invoiceNumber: `${invoice.series}-${invoice.number}`,
-            gistUrl: invoice.file
-        });
-    } catch (e) {
-        console.error('Lỗi viewInvoiceInNewTab:', e);
-        showToast('Lỗi khi xem hóa đơn: ' + e.message, 'error');
-    }
-}
-
-function downloadInvoice(invoiceId) {
-    try {
-        const invoice = invoices.find(i => i.id === invoiceId);
-        if (!invoice || !invoice.file) {
-            showToast('Hóa đơn hoặc file không tồn tại!', 'error');
-            return;
-        }
-        const link = document.createElement('a');
-        link.href = invoice.file;
-        link.download = `invoice_${invoice.series}_${invoice.number}.html`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        logActivity('download_invoice', {
-            invoiceId,
-            invoiceNumber: `${invoice.series}-${invoice.number}`,
-            gistUrl: invoice.file
-        });
-    } catch (e) {
-        console.error('Lỗi downloadInvoice:', e);
-        showToast('Lỗi khi tải hóa đơn: ' + e.message, 'error');
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    try {
-        businesses = JSON.parse(localStorage.getItem('businesses')) || [];
-        invoices = JSON.parse(localStorage.getItem('invoices')) || [];
-        inventory = JSON.parse(localStorage.getItem('inventory')) || [];
-        exportedInvoices = JSON.parse(localStorage.getItem('exportedInvoices')) || [];
-        activityLogs = JSON.parse(localStorage.getItem('activityLogs')) || [];
-        lastActiveBusinessId = localStorage.getItem('lastActiveBusinessId');
-
-        // Kiểm tra tính hợp lệ của invoices
-        invoices.forEach(invoice => {
-            if (!invoice.file) {
-                console.warn(`Hóa đơn ${invoice.mccqt} thiếu URL Gist`);
-            }
-        });
-
-        if (!lastActiveBusinessId && businesses.length > 0) {
-            lastActiveBusinessId = businesses[0].id;
-        }
-
-        saveCurrentState();
-        updateBusinessList(lastActiveBusinessId);
-        if (lastActiveBusinessId) {
-            showBusinessDetails(lastActiveBusinessId);
-            showPriceList(lastActiveBusinessId);
-            showExportHistory(lastActiveBusinessId);
-        }
-    } catch (e) {
-        console.error('Lỗi khởi tạo dữ liệu:', e);
-        alert('Lỗi khi khởi tạo dữ liệu: ' + e.message);
-    }
-});

@@ -1,48 +1,106 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Quản lý Hóa đơn & Tồn kho</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.min.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    /* === Sidebar & Responsive Toggle === */
+    .container {
+      display: flex;
+    }
+
+    .sidebar {
+      width: 250px;
+      padding: 12px;
+      border: 1px solid #ccc;
+      position: sticky;
+      top: 0;
+      background-color: #f9f9f9;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .mobile-toggle {
+      display: none;
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 999;
+      padding: 6px 12px;
+      font-size: 15px;
+      border: none;
+      background: #007bff;
+      color: white;
+      border-radius: 6px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        position: fixed;
+        left: -260px;
+        top: 0;
+        height: 100%;
+        z-index: 998;
+        background: #fff;
+        transition: left 0.3s ease-in-out;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      }
+
+      .sidebar.show {
+        left: 0;
+      }
+
+      .mobile-toggle {
+        display: block;
+      }
+    }
+  </style>
 </head>
 <body>
+  <button id="toggleSidebarBtn" class="mobile-toggle">📂 Menu</button>
+
   <div class="container">
-   <div class="sidebar">
-  <input type="file" id="pdfInput" accept="application/pdf" multiple>
-  <div id="status"></div>
-  <input type="text" id="searchInput" placeholder="Tìm kiếm Hộ Kinh Doanh...">
-  
-  <div id="searchResults"></div>
-  <div id="businessList"></div>
-</div>
-    
-    <div class="main-content">
+    <div class="sidebar">
+      <label>🗂️ File ZIP:</label>
+      <input type="file" id="zipInput" accept=".zip" multiple />
+
+      <label style="margin-top:10px">📄 File HTML:</label>
+      <input type="file" id="htmlInput" accept=".html" />
+
+      <div id="status" style="white-space: pre-wrap; font-size: 0.9em; margin-top:10px;"></div>
+      <input type="text" id="searchInput" placeholder="Tìm kiếm Hộ Kinh Doanh..." />
+      <div id="searchResults"></div>
+      <div id="businessList"></div>
+    </div>
+
+    <div class="main-content" style="flex:1; padding: 20px;">
       <div id="invoiceInfo"></div>
       <div id="businessDetails">
         <h4>Chi tiết Hộ Kinh Doanh</h4>
-        <!-- Đã xóa phần tabs từ đây -->
-        
         <table id="invoiceTable">
-          <thead>
-            <tr id="headerRow"></tr>
-          </thead>
+          <thead><tr id="headerRow"></tr></thead>
           <tbody></tbody>
         </table>
         <div id="autoInvoiceTotal">Tổng tiền: 0 VND</div>
       </div>
-      
-      <!-- Các tab content -->
+
       <div id="inventoryTab" class="tab-content"></div>
       <div id="invoicesTab" class="tab-content hidden"></div>
       <div id="priceListTab" class="tab-content hidden"></div>
       <div id="exportHistoryTab" class="tab-content hidden"></div>
       <div id="exportTab" class="tab-content hidden"></div>
-      
+
       <div id="invoiceDetails" class="section"></div>
 
       <div id="manualInventoryForm" class="section hidden">
@@ -67,23 +125,65 @@
   </div>
 
   <script>
-    let selectedBusinessId = null;
-    function updateSelectedBusinessId(businessId) {
-      selectedBusinessId = businessId;
-      console.log('Selected business ID updated:', selectedBusinessId); // Debug
-    }
-
-    // Đảm bảo hàm showTab được gọi khi click tab
     document.addEventListener('DOMContentLoaded', () => {
-      updateBusinessList(); // Khởi tạo danh sách HKD
-      const tabs = document.querySelectorAll('.tab-button');
-      tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-          showTab(tab.getAttribute('onclick').match(/showTab\('([^']+)'\)/)[1], tab, selectedBusinessId);
-        });
+      const toggleBtn = document.getElementById('toggleSidebarBtn');
+      const sidebar = document.querySelector('.sidebar');
+
+      toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('show');
       });
+
+      document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768 &&
+            !sidebar.contains(e.target) &&
+            !toggleBtn.contains(e.target)) {
+          sidebar.classList.remove('show');
+        }
+      });
+
+      // ZIP xử lý
+      const zipInput = document.getElementById('zipInput');
+      if (zipInput) {
+        zipInput.addEventListener('change', handleZipUpload);
+      }
+
+      // HTML đơn lẻ
+      const htmlInput = document.getElementById('htmlInput');
+      if (htmlInput) {
+        htmlInput.addEventListener('change', async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const htmlText = await file.text();
+
+          const info = extractInvoiceInfoFromHTML(htmlText);
+          const dom = new DOMParser().parseFromString(htmlText, 'text/html');
+          const rows = [...dom.querySelectorAll('table.res-tb tbody tr')];
+          const lines = rows.map(tr => {
+            return [...tr.querySelectorAll('td')].map(td => td.textContent.trim()).join(' ');
+          });
+
+          const pdfTextArea = document.getElementById('pdfTextArea');
+          if (pdfTextArea) pdfTextArea.value = lines.join('\n');
+
+          let business = businesses.find(b => b.taxCode === info.mstMua);
+          if (!business) {
+            business = {
+              id: generateUUID(),
+              name: info.tenMua,
+              taxCode: info.mstMua,
+              address: info.diachiMua
+            };
+            businesses.push(business);
+          }
+
+          parseToTable(business.id, file, info, 'input');
+          updateBusinessList();
+          showBusinessDetails(business.id);
+        });
+      }
     });
   </script>
+
   <script src="script.js"></script>
 </body>
 </html>
