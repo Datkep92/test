@@ -245,11 +245,14 @@ function parseXmlInvoice(xmlContent) {
         const tchat = parseInt(getText('TChat', node) || '1');
         const xmlThTien = parseFloat(getText('ThTien', node)) || 0;
 
+        // Tính lại thành tiền và thuế chuẩn kế toán
         let amount = quantity * price - discount;
-if (tchat === 3) amount *= -1;
-amount = Math.round(amount); // Làm tròn thành tiền
+        if (tchat === 3) amount *= -1;
+        amount = Math.round(amount); // Làm tròn VND
 
-const tax = Math.round(quantity * price * taxRate / 100); // Làm tròn thuếconst diff = Math.abs(amount - xmlThTien);
+        const tax = Math.round(quantity * price * taxRate / 100); // Thuế làm tròn
+
+        const diff = Math.abs(amount - xmlThTien);
         const category = (tchat === 3 || name.toLowerCase().includes('chiết khấu')) ? 'chiet_khau'
                         : (price === 0 || name.toLowerCase().includes('khuyến mại')) ? 'KM'
                         : 'hang_hoa';
@@ -259,8 +262,8 @@ const tax = Math.round(quantity * price * taxRate / 100); // Làm tròn thuếco
 
         products.push({
             stt, code, name, unit, quantity: quantity.toString(), price: price.toString(),
-            discount: discount.toString(), amount: amount.toFixed(2), taxRate: taxRate.toString(),
-            tax: tax.toFixed(2), category, tchat, __diff: diff >= 1, xmlAmount: xmlThTien.toFixed(2)
+            discount: discount.toString(), amount, taxRate: taxRate.toString(),
+            tax, category, tchat, __diff: diff >= 1, xmlAmount: Math.round(xmlThTien)
         });
     });
 
@@ -268,11 +271,11 @@ const tax = Math.round(quantity * price * taxRate / 100); // Làm tròn thuếco
     const ttCKTMai = parseFloat(getText('HDon > DLHDon > NDHDon > TToan > TTCKTMai') || '0');
 
     const totals = {
-        beforeTax: totalManual.toFixed(2),
-        tax: totalTax.toFixed(2),
-        fee: '0',
-        discount: ttCKTMai.toFixed(2),
-        total: (totalManual + totalTax).toFixed(2)
+        beforeTax: totalManual,
+        tax: totalTax,
+        fee: 0,
+        discount: Math.round(ttCKTMai),
+        total: totalManual + totalTax
     };
 
     return { invoiceInfo, sellerInfo, buyerInfo, products, totals };
