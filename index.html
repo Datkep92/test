@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Đọc hóa đơn từ ZIP và tính tổng đúng</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
 </head>
@@ -14,51 +14,85 @@
     document.getElementById('zipFileInput').addEventListener('change', async function(event) {
       const file = event.target.files[0];
       if (!file) return;
+      await handleZipFileInput(file);
+    });
 
-      const zip = await JSZip.loadAsync(file);
+    async function handleZipFileInput(file) {
+      try {
+        const zip = await JSZip.loadAsync(file);
+        const xmlText = await extractXmlFromZip(zip);
+        if (!xmlText) return alert("❌ Không tìm thấy file XML trong ZIP.");
+
+        const { items, xmlDoc } = parseInvoiceFromXml(xmlText);
+        const totals = calculateTotals(items, xmlDoc);
+        renderResult(items, totals);
+      } catch (error) {
+        console.error(error);
+        alert("❌ Lỗi xử lý file ZIP hoặc XML.");
+      }
+    }
+
+    async function extractXmlFromZip(zip) {
       const xmlFile = Object.values(zip.files).find(f => f.name.endsWith('.xml'));
-      if (!xmlFile) return alert("❌ Không tìm thấy file XML trong ZIP.");
+      if (!xmlFile) return null;
+      return await xmlFile.async("text");
+    }
 
-      const xmlText = await xmlFile.async("text");
+    function parseInvoiceFromXml(xmlText) {
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(xmlText, "application/xml");
-
-      const items = Array.from(xmlDoc.querySelectorAll("HHDVu"));
-      const tableRows = [];
-      let totalManual = 0;
-
-      for (const item of items) {
-        const stt = item.querySelector("STT")?.textContent || '';
-        const ten = item.querySelector("THHDVu")?.textContent || '';
-        const dvt = item.querySelector("DVTinh")?.textContent || '';
-        const sl = item.querySelector("SLuong")?.textContent || '0';
-        const dg = item.querySelector("DGia")?.textContent || '0';
-        const ck = item.querySelector("STCKhau")?.textContent || '0';
+      const items = Array.from(xmlDoc.querySelectorAll("HHDVu")).map(item => {
         const tchat = parseInt(item.querySelector("TChat")?.textContent || '1');
         let thanhtien = parseFloat(item.querySelector("ThTien")?.textContent || '0');
+        if (tchat === 3) thanhtien *= -1;
 
-        if (tchat === 3) thanhtien *= -1; // Dòng chiết khấu → đảo dấu
+        return {
+          stt: item.querySelector("STT")?.textContent || '',
+          ten: item.querySelector("THHDVu")?.textContent || '',
+          dvt: item.querySelector("DVTinh")?.textContent || '',
+          sl: item.querySelector("SLuong")?.textContent || '0',
+          dg: item.querySelector("DGia")?.textContent || '0',
+          ck: item.querySelector("STCKhau")?.textContent || '0',
+          tchat,
+          thanhtien,
+          thue: item.querySelector("TSuat")?.textContent || ''
+        };
+      });
 
-        totalManual += thanhtien;
+      return { items, xmlDoc };
+    }
 
-        tableRows.push(`
-          <tr>
-            <td>${stt}</td>
-            <td>${ten}</td>
-            <td>${dvt}</td>
-            <td>${sl}</td>
-            <td>${Number(dg).toLocaleString()}</td>
-            <td>${Number(ck).toLocaleString()}</td>
-            <td style="text-align:right">${thanhtien.toLocaleString()}</td>
-            <td>${item.querySelector("TSuat")?.textContent || ''}</td>
-          </tr>
-        `);
-      }
-
+    function calculateTotals(items, xmlDoc) {
+      const totalManual = items.reduce((sum, item) => sum + item.thanhtien, 0);
       const tgTThue = parseFloat(xmlDoc.querySelector("TgTThue")?.textContent || '0');
       const ttCKTMai = parseFloat(xmlDoc.querySelector("TTCKTMai")?.textContent || '0');
       const tgTTTBSo = parseFloat(xmlDoc.querySelector("TgTTTBSo")?.textContent || '0');
       const totalFinal = totalManual + tgTThue;
+
+      return {
+        totalManual,
+        tgTThue,
+        ttCKTMai,
+        tgTTTBSo,
+        totalFinal
+      };
+    }
+
+    function renderResult(items, totals) {
+      const tableRows = items.map(item => `
+        <tr>
+          <td>${item.stt}</td>
+          <td>${item.ten}</td>
+          <td>${item.dvt}</td>
+          <td>${item.sl}</td>
+          <td>${Number(item.dg).toLocaleString()}</td>
+          <td>${Number(item.ck).toLocaleString()}</td>
+          <td style="text-align:right">${item.thanhtien.toLocaleString()}</td>
+          <td>${item.thue}</td>
+        </tr>
+      `);
+
+      const khop = Math.abs(totals.totalFinal - totals.tgTTTBSo) < 1;
 
       document.getElementById("output").innerHTML = `
         <h3>📑 Bảng kê hàng hóa</h3>
@@ -74,17 +108,15 @@
         <br/>
         <h3>🧮 Tính toán tổng</h3>
         <ul>
-          <li><b>Tổng tiền hàng hóa (tự cộng & có chiết khấu âm):</b> ${totalManual.toLocaleString()} VND</li>
-          <li><b>Thuế GTGT (từ XML TgTThue):</b> ${tgTThue.toLocaleString()} VND</li>
-          <li><b>Chiết khấu TM (TTCKTMai – chỉ tham khảo, KHÔNG trừ):</b> ${ttCKTMai.toLocaleString()} VND</li>
-          <li><b><u>Tổng thanh toán (tính tay):</u></b> <strong>${totalFinal.toLocaleString()} VND</strong></li>
-          <li><b>Tổng trên XML TgTTTBSo:</b> ${tgTTTBSo.toLocaleString()} VND</li>
-          <li><b>✅ ${
-            Math.abs(totalFinal - tgTTTBSo) < 1 ? 'KHỚP' : 'KHÔNG KHỚP'
-          } với số tổng trên hóa đơn</b></li>
+          <li><b>Tổng tiền hàng hóa (tự cộng & có chiết khấu âm):</b> ${totals.totalManual.toLocaleString()} VND</li>
+          <li><b>Thuế GTGT (từ XML TgTThue):</b> ${totals.tgTThue.toLocaleString()} VND</li>
+          <li><b>Chiết khấu TM (TTCKTMai – chỉ tham khảo, KHÔNG trừ):</b> ${totals.ttCKTMai.toLocaleString()} VND</li>
+          <li><b><u>Tổng thanh toán (tính tay):</u></b> <strong>${totals.totalFinal.toLocaleString()} VND</strong></li>
+          <li><b>Tổng trên XML TgTTTBSo:</b> ${totals.tgTTTBSo.toLocaleString()} VND</li>
+          <li><b>✅ ${khop ? 'KHỚP' : 'KHÔNG KHỚP'} với số tổng trên hóa đơn</b></li>
         </ul>
       `;
-    });
+    }
   </script>
 </body>
 </html>
