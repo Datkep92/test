@@ -246,10 +246,10 @@ function parseXmlInvoice(xmlContent) {
         const xmlThTien = parseFloat(getText('ThTien', node)) || 0;
 
         let amount = quantity * price - discount;
-        if (tchat === 3) amount *= -1;
+if (tchat === 3) amount *= -1;
+amount = Math.round(amount); // Làm tròn thành tiền
 
-        const tax = Math.round((quantity * price * taxRate / 100) * 100) / 100;
-        const diff = Math.abs(amount - xmlThTien);
+const tax = Math.round(quantity * price * taxRate / 100); // Làm tròn thuếconst diff = Math.abs(amount - xmlThTien);
         const category = (tchat === 3 || name.toLowerCase().includes('chiết khấu')) ? 'chiet_khau'
                         : (price === 0 || name.toLowerCase().includes('khuyến mại')) ? 'KM'
                         : 'hang_hoa';
