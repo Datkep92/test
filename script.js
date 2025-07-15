@@ -340,75 +340,7 @@ function addOrUpdateInventory(product) {
     hkd.inventory.push(product);
   }
 }
-function renderInventoryTable(hkdKey) {
-  const hkd = store.hkdList[hkdKey];
-  if (!hkd) return;
-
-  // Lọc sản phẩm còn tồn kho và không phải chiết khấu
-  const inventory = hkd.inventory.filter(item =>
-    parseFloat(item.quantity) > 0 && item.category !== 'chiet_khau'
-  );
-
-  // Tạo bảng tồn kho chi tiết
-  const rows = inventory.map((item, index) => `
-    <tr>
-      <td>${index + 1}</td>
-      <td>${item.code}</td>
-      <td>${item.name}</td>
-      <td>${item.unit}</td>
-      <td>${item.quantity}</td>
-      <td>${item.price.toLocaleString()}</td>
-      <td>${item.amount.toLocaleString()}</td>
-      <td>${item.tax.toLocaleString()}</td>
-      <td>${item.sellingPrice.toLocaleString()}</td>
-      <td>${item.category}${item.isFree ? ' 🎁' : ''}</td>
-      <td><button onclick="editInventoryItem(${index})">✏️</button></td>
-    </tr>
-  `);
-
-  // Tổng giá trị tồn kho
-  const totalAmount = inventory.reduce((sum, i) => sum + i.amount, 0);
-  const totalTax = inventory.reduce((sum, i) => sum + i.tax, 0);
-  const totalValue = inventory.reduce((sum, i) => sum + i.sellingPrice * i.quantity, 0);
-
-  // HTML bảng chính
-  document.getElementById("inventoryTable").innerHTML = `
-    <table border="1" cellpadding="6" cellspacing="0">
-      <thead>
-        <tr>
-          <th>#</th><th>Mã hàng</th><th>Tên</th><th>ĐVT</th><th>SL</th>
-          <th>Đơn giá</th><th>Thành tiền</th><th>Thuế</th><th>Giá bán</th><th>Loại</th><th>Sửa</th>
-        </tr>
-      </thead>
-      <tbody>${rows.join('')}</tbody>
-    </table>
-    <br/>
-    <div><b>💼 Tổng tồn kho (giá gốc):</b> ${totalAmount.toLocaleString('vi-VN')} đ</div>
-    <div><b>💸 Thuế GTGT:</b> ${totalTax.toLocaleString('vi-VN')} đ</div>
-    <div><b>💰 Tổng giá bán:</b> ${totalValue.toLocaleString('vi-VN')} đ</div>
-    <div><b>🧾 Tổng Hóa Đơn:</b> ${hkd.invoices.length}</div>
-  `;
-
-  // Báo cáo phân loại theo loại hàng
-  const summary = summarizeInventoryByCategory(hkdKey);
-  let summaryHTML = `<h4>📊 Báo cáo tồn kho theo loại hàng</h4><table border="1" cellpadding="5" cellspacing="0">
-    <tr><th>Loại hàng</th><th>Tổng SL</th><th>Giá gốc</th><th>Thuế</th><th>Giá bán dự kiến</th></tr>`;
-
-  for (const cat in summary) {
-    const s = summary[cat];
-    const label = cat === 'hang_hoa' ? 'Hàng hóa' : cat === 'KM' ? 'Khuyến mãi' : cat === 'chiet_khau' ? 'Chiết khấu' : cat;
-    summaryHTML += `<tr>
-      <td>${label}</td>
-      <td>${s.quantity}</td>
-      <td>${s.amount.toLocaleString('vi-VN')} đ</td>
-      <td>${s.tax.toLocaleString('vi-VN')} đ</td>
-      <td>${s.value.toLocaleString('vi-VN')} đ</td>
-    </tr>`;
-  }
-
-  summaryHTML += `</table>`;
-  document.getElementById("inventorySummaryByCategory").innerHTML = summaryHTML;
-}
+renderInventoryTable
 
 
 // Process invoice data and group by MST
