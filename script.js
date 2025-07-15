@@ -201,9 +201,9 @@ function parseXmlInvoice(xmlContent) {
     };
 
     const invoiceInfo = {
-        title: getText('HDon > DLHDon > TTChung > THDon'),
-        template: getText('HDon > DLHDon > TTChung > KHHDon'),
-        symbol: getText('HDon > DLHDon > TTChung > KHMSHDon'),
+        title: getText('HDon > DLHDon > TTChung > THDon'),          // Loại hóa đơn
+        template: getText('HDon > DLHDon > TTChung > KHHDon'),      // Mẫu số
+        symbol: getText('HDon > DLHDon > TTChung > KHMSHDon'),      // Ký hiệu hóa đơn
         number: getText('HDon > DLHDon > TTChung > SHDon'),
         date: getText('HDon > DLHDon > TTChung > NLap'),
         paymentMethod: getText('HDon > DLHDon > TTChung > HTTToan'),
@@ -224,8 +224,14 @@ function parseXmlInvoice(xmlContent) {
         name: getText('HDon > DLHDon > NDHDon > NMua > Ten'),
         taxCode: getText('HDon > DLHDon > NDHDon > NMua > MST'),
         address: getText('HDon > DLHDon > NDHDon > NMua > DChi'),
-        customerCode: getText('HDon > DLHDon > NDHDon > NMua > MKHang'),
-        idNumber: getText('HDon > DLHDon > NDHDon > NMua > CCCDan')
+        customerCode: getText('HDon > DLHDon > NDHDon > NMua > MKHang'), // Mã khách nội bộ
+        idNumber: getText('HDon > DLHDon > NDHDon > NMua > CCCDan')       // Số CCCD/CMND
+    };
+
+    const meta = {
+        orderCode: getAdditionalInfo('MaDonHang') || '',
+        contractNumber: getAdditionalInfo('SoHopDong') || '',
+        note: getAdditionalInfo('GhiChu') || ''
     };
 
     const products = [];
@@ -245,13 +251,16 @@ function parseXmlInvoice(xmlContent) {
         const tchat = parseInt(getText('TChat', node) || '1');
         const xmlThTien = parseFloat(getText('ThTien', node)) || 0;
 
-        let amount = quantity * price - discount;
-        if (tchat === 3) amount *= -1;
-        amount = Math.round(amount); // ✅ Làm tròn thành tiền
+        let amount;
+        if (tchat === 3) {
+            amount = -Math.round(xmlThTien); // Chiết khấu
+        } else {
+            amount = Math.round(quantity * price - discount);
+        }
 
-        const tax = Math.round(quantity * price * taxRate / 100); // ✅ Làm tròn thuế
+        const tax = Math.round(quantity * price * taxRate / 100);
 
-        const diff = Math.abs(amount - xmlThTien);
+        const diff = Math.abs(amount - Math.round(xmlThTien));
         const category = (tchat === 3 || name.toLowerCase().includes('chiết khấu')) ? 'chiet_khau'
                         : (price === 0 || name.toLowerCase().includes('khuyến mại')) ? 'KM'
                         : 'hang_hoa';
@@ -268,9 +277,9 @@ function parseXmlInvoice(xmlContent) {
 
     const ttCKTMai = parseFloat(getText('HDon > DLHDon > NDHDon > TToan > TTCKTMai') || '0');
     const xmlTotalRaw = parseFloat(getText('HDon > DLHDon > NDHDon > TToan > TgTTTBSo') || '0');
-    const xmlDeclared = Math.round(xmlTotalRaw); // ✅ Làm tròn tổng từ XML để so sánh
+    const xmlDeclared = Math.round(xmlTotalRaw);
 
-    const totalAmount = Math.round(totalManual + totalTax); // ✅ Làm tròn tổng cuối cùng
+    const totalAmount = Math.round(totalManual + totalTax);
 
     const totals = {
         beforeTax: totalManual,
@@ -281,8 +290,80 @@ function parseXmlInvoice(xmlContent) {
         xmlDeclared: xmlDeclared
     };
 
-    return { invoiceInfo, sellerInfo, buyerInfo, products, totals };
+    return { invoiceInfo, sellerInfo, buyerInfo, meta, products, totals };
 }
+//Tônf kho
+function addOrUpdateInventory(product) {
+  const hkd = store.hkdList[store.currentHKD];
+  const index = hkd.inventory.findIndex(item => item.code === product.code);
+
+  product.price = parseFloat(product.price) || 0;
+  product.quantity = parseFloat(product.quantity) || 0;
+  product.taxRate = parseFloat(product.taxRate) || 0;
+  product.discount = parseFloat(product.discount) || 0;
+
+  product.amount = Math.round(product.quantity * product.price - product.discount);
+  product.tax = Math.round(product.quantity * product.price * product.taxRate / 100);
+  product.sellingPrice = Math.round(product.price * 1.1); // mặc định giá bán gấp 10%
+
+  product.isFree = product.price === 0; // ✅ Gắn cờ hàng miễn phí
+
+  if (index >= 0) {
+    const item = hkd.inventory[index];
+    item.quantity += product.quantity;
+    item.amount += product.amount;
+    item.tax += product.tax;
+  } else {
+    hkd.inventory.push(product);
+  }
+}
+function renderInventoryTable(hkdKey) {
+  const hkd = store.hkdList[hkdKey];
+  if (!hkd) return;
+
+  const inventory = hkd.inventory.filter(item =>
+    item.quantity > 0 && item.category !== 'chiet_khau'
+  );
+
+  const rows = inventory.map((item, index) => `
+    <tr>
+      <td>${index + 1}</td>
+      <td>${item.code}</td>
+      <td>${item.name}</td>
+      <td>${item.unit}</td>
+      <td>${item.quantity}</td>
+      <td>${item.price.toLocaleString()}</td>
+      <td>${item.amount.toLocaleString()}</td>
+      <td>${item.tax.toLocaleString()}</td>
+      <td>${item.sellingPrice.toLocaleString()}</td>
+      <td>${item.category}${item.isFree ? ' 🎁' : ''}</td>
+      <td><button onclick="editInventoryItem(${index})">✏️</button></td>
+    </tr>
+  `);
+
+  const totalAmount = inventory.reduce((sum, i) => sum + i.amount, 0);
+  const totalTax = inventory.reduce((sum, i) => sum + i.tax, 0);
+  const totalValue = inventory.reduce((sum, i) => sum + i.sellingPrice * i.quantity, 0);
+
+  document.getElementById("inventoryTable").innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Mã hàng</th><th>Tên</th><th>ĐVT</th><th>SL</th>
+          <th>Đơn giá</th><th>Thành tiền</th><th>Thuế</th><th>Giá bán</th><th>Loại</th><th>Sửa</th>
+        </tr>
+      </thead>
+      <tbody>${rows.join('')}</tbody>
+    </table>
+    <br/>
+    <div><b>💼 Tổng tồn kho (giá gốc):</b> ${totalAmount.toLocaleString()} đ</div>
+    <div><b>💸 Thuế GTGT:</b> ${totalTax.toLocaleString()} đ</div>
+    <div><b>💰 Tổng giá bán:</b> ${totalValue.toLocaleString()} đ</div>
+    <div><b>🧾 Tổng Hóa Đơn:</b> ${hkd.invoices.length}</div>
+  `;
+}
+
+
 // Process invoice data and group by MST
 // REPLACE with:
 function processInvoiceData(data) {
@@ -980,9 +1061,30 @@ function undoAction() {
         hkdData[taxCode].inventory = [];
         hkdData[taxCode].invoices.forEach(invoice => {
             invoice.products.forEach(product => {
-                const existingItem = hkdData[taxCode].inventory.find(item =>
-                    item.code === product.code && item.unit === product.unit
-                );
+  // Ép kiểu chuẩn
+  product.price = parseFloat(product.price) || 0;
+  product.quantity = parseFloat(product.quantity) || 0;
+  product.discount = parseFloat(product.discount) || 0;
+  product.taxRate = parseFloat(product.taxRate) || 0;
+
+  // ✅ Bỏ qua dòng chiết khấu
+  const isChiếtKhấu = product.category === 'chiet_khau' || product.tchat === 3;
+
+  // ✅ Chỉ xử lý nếu có số lượng > 0
+  const hasQuantity = product.quantity > 0;
+
+  // ✅ Gắn cờ miễn phí nếu giá = 0
+  product.isFree = product.price === 0;
+
+  // ✅ Tính lại amount, tax, sellingPrice
+  product.amount = Math.round(product.quantity * product.price - product.discount);
+  product.tax = Math.round(product.quantity * product.price * product.taxRate / 100);
+  product.sellingPrice = Math.round(product.price * 1.1); // mặc định bán gấp 10%
+
+  if (!isChiếtKhấu && hasQuantity) {
+    addOrUpdateInventory(product);
+  }
+});
                 if (existingItem) {
                     existingItem.quantity = (parseFloat(existingItem.quantity) + parseFloat(product.quantity)).toString();
                     existingItem.amount = (parseFloat(existingItem.quantity) * parseFloat(existingItem.price)).toString();
