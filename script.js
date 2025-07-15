@@ -1967,10 +1967,12 @@ function summarizeInventoryByCategory(hkdKey) {
 
   hkd.inventory.forEach(item => {
     if (item.quantity <= 0) return;
+
     const cat = item.category || 'khac';
     if (!result[cat]) {
       result[cat] = { quantity: 0, amount: 0, tax: 0, value: 0 };
     }
+
     result[cat].quantity += item.quantity;
     result[cat].amount += item.amount;
     result[cat].tax += item.tax;
