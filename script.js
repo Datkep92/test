@@ -1,4 +1,4 @@
-  // Data storage
+// Data storage
 let hkdData = {};
 let actionHistory = [];
 let currentTaxCode = null;
@@ -293,8 +293,12 @@ function parseXmlInvoice(xmlContent) {
     return { invoiceInfo, sellerInfo, buyerInfo, meta, products, totals };
 }
 //Tônf kho
+// Sửa từ:
+
 function addOrUpdateInventory(product) {
-  const hkd = store.hkdList[store.currentHKD];
+  const hkd = hkdData[currentTaxCode]; // ✅ Sử dụng biến toàn cục đã định nghĩa
+  if (!hkd) return;
+  
   const index = hkd.inventory.findIndex(item => item.code === product.code);
 
   product.price = parseFloat(product.price) || 0;
@@ -317,8 +321,9 @@ function addOrUpdateInventory(product) {
     hkd.inventory.push(product);
   }
 }
-function renderInventoryTable(hkdKey) {
-  const hkd = store.hkdList[hkdKey];
+
+function renderInventoryTable(taxCode) {
+  const hkd = hkdData[taxCode]; // ✅ Sử dụng đúng biến toàn cục
   if (!hkd) return;
 
   const inventory = hkd.inventory.filter(item =>
@@ -1957,28 +1962,26 @@ function showBusinessDetails(taxCode, from, to) {
     }
 }
 
-function summarizeInventoryByCategory(hkdKey) {
-  const hkd = store.hkdList?.[hkdKey] || hkdData?.[hkdKey];
+function summarizeInventoryByCategory(taxCode) {
+  const hkd = hkdData[taxCode];
   if (!hkd) return {};
 
-  const result = {};
-
+  const summary = {};
+  
   hkd.inventory.forEach(item => {
-    const qty = parseFloat(item.quantity) || 0;
-    if (qty <= 0) return;
-
-    const cat = item.category || 'khac';
-    if (!result[cat]) {
-      result[cat] = { quantity: 0, amount: 0, tax: 0, value: 0 };
+    const category = item.category || 'hang_hoa';
+    if (!summary[category]) {
+      summary[category] = { quantity: 0, amount: 0, tax: 0, value: 0 };
     }
-
-    result[cat].quantity += qty;
-    result[cat].amount += parseFloat(item.amount) || 0;
-    result[cat].tax += parseFloat(item.tax) || 0;
-    result[cat].value += (parseFloat(item.sellingPrice) || 0) * qty;
+    
+    const qty = parseFloat(item.quantity) || 0;
+    summary[category].quantity += qty;
+    summary[category].amount += parseFloat(item.amount) || 0;
+    summary[category].tax += parseFloat(item.tax) || 0;
+    summary[category].value += qty * (parseFloat(item.sellingPrice) || 0);
   });
 
-  return result;
+  return summary;
 }
 
 function filterExportHistory(taxCode) {
