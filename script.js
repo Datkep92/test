@@ -292,6 +292,78 @@ function parseXmlInvoice(xmlContent) {
 
     return { invoiceInfo, sellerInfo, buyerInfo, meta, products, totals };
 }
+//Tônf kho
+function addOrUpdateInventory(product) {
+  const hkd = store.hkdList[store.currentHKD];
+  const index = hkd.inventory.findIndex(item => item.code === product.code);
+
+  product.price = parseFloat(product.price) || 0;
+  product.quantity = parseFloat(product.quantity) || 0;
+  product.taxRate = parseFloat(product.taxRate) || 0;
+  product.discount = parseFloat(product.discount) || 0;
+
+  product.amount = Math.round(product.quantity * product.price - product.discount);
+  product.tax = Math.round(product.quantity * product.price * product.taxRate / 100);
+  product.sellingPrice = Math.round(product.price * 1.1); // mặc định giá bán gấp 10%
+
+  product.isFree = product.price === 0; // ✅ Gắn cờ hàng miễn phí
+
+  if (index >= 0) {
+    const item = hkd.inventory[index];
+    item.quantity += product.quantity;
+    item.amount += product.amount;
+    item.tax += product.tax;
+  } else {
+    hkd.inventory.push(product);
+  }
+}
+function renderInventoryTable(hkdKey) {
+  const hkd = store.hkdList[hkdKey];
+  if (!hkd) return;
+
+  const inventory = hkd.inventory.filter(item =>
+    item.quantity > 0 && item.category !== 'chiet_khau'
+  );
+
+  const rows = inventory.map((item, index) => `
+    <tr>
+      <td>${index + 1}</td>
+      <td>${item.code}</td>
+      <td>${item.name}</td>
+      <td>${item.unit}</td>
+      <td>${item.quantity}</td>
+      <td>${item.price.toLocaleString()}</td>
+      <td>${item.amount.toLocaleString()}</td>
+      <td>${item.tax.toLocaleString()}</td>
+      <td>${item.sellingPrice.toLocaleString()}</td>
+      <td>${item.category}${item.isFree ? ' 🎁' : ''}</td>
+      <td><button onclick="editInventoryItem(${index})">✏️</button></td>
+    </tr>
+  `);
+
+  const totalAmount = inventory.reduce((sum, i) => sum + i.amount, 0);
+  const totalTax = inventory.reduce((sum, i) => sum + i.tax, 0);
+  const totalValue = inventory.reduce((sum, i) => sum + i.sellingPrice * i.quantity, 0);
+
+  document.getElementById("inventoryTable").innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Mã hàng</th><th>Tên</th><th>ĐVT</th><th>SL</th>
+          <th>Đơn giá</th><th>Thành tiền</th><th>Thuế</th><th>Giá bán</th><th>Loại</th><th>Sửa</th>
+        </tr>
+      </thead>
+      <tbody>${rows.join('')}</tbody>
+    </table>
+    <br/>
+    <div><b>💼 Tổng tồn kho (giá gốc):</b> ${totalAmount.toLocaleString()} đ</div>
+    <div><b>💸 Thuế GTGT:</b> ${totalTax.toLocaleString()} đ</div>
+    <div><b>💰 Tổng giá bán:</b> ${totalValue.toLocaleString()} đ</div>
+    <div><b>🧾 Tổng Hóa Đơn:</b> ${hkd.invoices.length}</div>
+  `;
+}
+
+
 // Process invoice data and group by MST
 // REPLACE with:
 function processInvoiceData(data) {
@@ -989,9 +1061,30 @@ function undoAction() {
         hkdData[taxCode].inventory = [];
         hkdData[taxCode].invoices.forEach(invoice => {
             invoice.products.forEach(product => {
-                const existingItem = hkdData[taxCode].inventory.find(item =>
-                    item.code === product.code && item.unit === product.unit
-                );
+  // Ép kiểu chuẩn
+  product.price = parseFloat(product.price) || 0;
+  product.quantity = parseFloat(product.quantity) || 0;
+  product.discount = parseFloat(product.discount) || 0;
+  product.taxRate = parseFloat(product.taxRate) || 0;
+
+  // ✅ Bỏ qua dòng chiết khấu
+  const isChiếtKhấu = product.category === 'chiet_khau' || product.tchat === 3;
+
+  // ✅ Chỉ xử lý nếu có số lượng > 0
+  const hasQuantity = product.quantity > 0;
+
+  // ✅ Gắn cờ miễn phí nếu giá = 0
+  product.isFree = product.price === 0;
+
+  // ✅ Tính lại amount, tax, sellingPrice
+  product.amount = Math.round(product.quantity * product.price - product.discount);
+  product.tax = Math.round(product.quantity * product.price * product.taxRate / 100);
+  product.sellingPrice = Math.round(product.price * 1.1); // mặc định bán gấp 10%
+
+  if (!isChiếtKhấu && hasQuantity) {
+    addOrUpdateInventory(product);
+  }
+});
                 if (existingItem) {
                     existingItem.quantity = (parseFloat(existingItem.quantity) + parseFloat(product.quantity)).toString();
                     existingItem.amount = (parseFloat(existingItem.quantity) * parseFloat(existingItem.price)).toString();
