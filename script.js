@@ -361,6 +361,24 @@ function renderInventoryTable(hkdKey) {
     <div><b>💰 Tổng giá bán:</b> ${totalValue.toLocaleString()} đ</div>
     <div><b>🧾 Tổng Hóa Đơn:</b> ${hkd.invoices.length}</div>
   `;
+const categorySummary = summarizeInventoryByCategory(hkdKey);
+
+let html = `<h4>📊 Báo cáo tồn kho theo loại hàng</h4><table border="1" cellpadding="5" cellspacing="0">
+  <tr><th>Loại hàng</th><th>Tổng SL</th><th>Giá gốc</th><th>Thuế</th><th>Giá bán dự kiến</th></tr>`;
+
+for (const cat in categorySummary) {
+  const s = categorySummary[cat];
+  html += `<tr>
+    <td>${cat === 'hang_hoa' ? 'Hàng hóa' : cat === 'KM' ? 'Khuyến mãi' : cat === 'chiet_khau' ? 'Chiết khấu' : cat}</td>
+    <td>${s.quantity}</td>
+    <td>${s.amount.toLocaleString('vi-VN')} đ</td>
+    <td>${s.tax.toLocaleString('vi-VN')} đ</td>
+    <td>${s.value.toLocaleString('vi-VN')} đ</td>
+  </tr>`;
+}
+
+html += `</table>`;
+document.getElementById("inventorySummaryByCategory").innerHTML = html;
 }
 
 
@@ -1832,6 +1850,7 @@ function showBusinessDetails(taxCode, from, to) {
 
     <div class="tabs">
       <div class="tab active" onclick="openTab(event, '${taxCode}-tonkho')">📦 Tồn kho</div>
+    <div id="inventorySummaryByCategory" style="margin-top: 20px;"></div>
       <div class="tab" onclick="openTab(event, '${taxCode}-qlyhoadon')">📥 Quản lý Hóa đơn đầu vào</div>
       <div class="tab" onclick="openTab(event, '${taxCode}-xuathang')">📤 Xuất hàng hóa</div>
       <div class="tab" onclick="openTab(event, '${taxCode}-lichsu')">📜 Lịch sử xuất hàng</div>
@@ -1937,7 +1956,26 @@ function showBusinessDetails(taxCode, from, to) {
         filteredDiv.innerHTML = `📅 Đang lọc từ <b>${f}</b> đến <b>${t}</b>: ${filteredInvoices.length} hóa đơn, ${filteredExports.length} lần xuất hàng`;
     }
 }
+function summarizeInventoryByCategory(hkdKey) {
+  const hkd = store.hkdList[hkdKey];
+  const result = {};
 
+  hkd.inventory.forEach(item => {
+    if (item.quantity <= 0) return;
+
+    const cat = item.category || 'khac';
+    if (!result[cat]) {
+      result[cat] = { quantity: 0, amount: 0, tax: 0, value: 0 };
+    }
+
+    result[cat].quantity += item.quantity;
+    result[cat].amount += item.amount;
+    result[cat].tax += item.tax;
+    result[cat].value += item.sellingPrice * item.quantity;
+  });
+
+  return result;
+}
 function filterExportHistory(taxCode) {
     const fromDate = document.getElementById(`filterFrom-${taxCode}`).value;
     const toDate = document.getElementById(`filterTo-${taxCode}`).value;
