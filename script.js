@@ -125,6 +125,29 @@ function initData() {
         }
     }
 }
+function summarizeInventoryByCategory(hkdKey) {
+  const hkd = store.hkdList?.[hkdKey] || hkdData?.[hkdKey];
+  if (!hkd) return {};
+
+  const result = {};
+
+  hkd.inventory.forEach(item => {
+    const qty = parseFloat(item.quantity) || 0;
+    if (qty <= 0) return;
+
+    const cat = item.category || 'khac';
+    if (!result[cat]) {
+      result[cat] = { quantity: 0, amount: 0, tax: 0, value: 0 };
+    }
+
+    result[cat].quantity += qty;
+    result[cat].amount += parseFloat(item.amount) || 0;
+    result[cat].tax += parseFloat(item.tax) || 0;
+    result[cat].value += (parseFloat(item.sellingPrice) || 0) * qty;
+  });
+
+  return result;
+}
 function saveData() {
     storageHandler.save('hkd_data', hkdData);
     storageHandler.save('hkd_order', hkdOrder);
@@ -1856,6 +1879,7 @@ function showBusinessDetails(taxCode, from, to) {
 
     <div class="tabs">
       <div class="tab active" onclick="openTab(event, '${taxCode}-tonkho')">📦 Tồn kho</div>
+    <div id="inventorySummaryByCategory"></div>
       <div class="tab" onclick="openTab(event, '${taxCode}-qlyhoadon')">📥 Quản lý Hóa đơn đầu vào</div>
       <div class="tab" onclick="openTab(event, '${taxCode}-xuathang')">📤 Xuất hàng hóa</div>
       <div class="tab" onclick="openTab(event, '${taxCode}-lichsu')">📜 Lịch sử xuất hàng</div>
