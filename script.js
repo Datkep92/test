@@ -1,4 +1,4 @@
- // Data storage
+  // Data storage
 let hkdData = {};
 let actionHistory = [];
 let currentTaxCode = null;
