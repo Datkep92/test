@@ -125,29 +125,6 @@ function initData() {
         }
     }
 }
-function summarizeInventoryByCategory(hkdKey) {
-  const hkd = store.hkdList?.[hkdKey] || hkdData?.[hkdKey];
-  if (!hkd) return {};
-
-  const result = {};
-
-  hkd.inventory.forEach(item => {
-    const qty = parseFloat(item.quantity) || 0;
-    if (qty <= 0) return;
-
-    const cat = item.category || 'khac';
-    if (!result[cat]) {
-      result[cat] = { quantity: 0, amount: 0, tax: 0, value: 0 };
-    }
-
-    result[cat].quantity += qty;
-    result[cat].amount += parseFloat(item.amount) || 0;
-    result[cat].tax += parseFloat(item.tax) || 0;
-    result[cat].value += (parseFloat(item.sellingPrice) || 0) * qty;
-  });
-
-  return result;
-}
 function saveData() {
     storageHandler.save('hkd_data', hkdData);
     storageHandler.save('hkd_order', hkdOrder);
@@ -340,7 +317,73 @@ function addOrUpdateInventory(product) {
     hkd.inventory.push(product);
   }
 }
-renderInventoryTable
+function renderInventoryTable(hkdKey) {
+  const hkd = store.hkdList[hkdKey];
+  if (!hkd) return;
+
+  const inventory = hkd.inventory.filter(item =>
+    parseFloat(item.quantity) > 0 && item.category !== 'chiet_khau'
+  );
+
+  const rows = inventory.map((item, index) => `
+    <tr>
+      <td>${index + 1}</td>
+      <td>${item.code}</td>
+      <td>${item.name}</td>
+      <td>${item.unit}</td>
+      <td>${item.quantity}</td>
+      <td>${item.price.toLocaleString()}</td>
+      <td>${item.amount.toLocaleString()}</td>
+      <td>${item.tax.toLocaleString()}</td>
+      <td>${item.sellingPrice.toLocaleString()}</td>
+      <td>${item.category}${item.isFree ? ' 🎁' : ''}</td>
+      <td><button onclick="editInventoryItem(${index})">✏️</button></td>
+    </tr>
+  `);
+
+  const totalAmount = inventory.reduce((sum, i) => sum + i.amount, 0);
+  const totalTax = inventory.reduce((sum, i) => sum + i.tax, 0);
+  const totalValue = inventory.reduce((sum, i) => sum + i.sellingPrice * i.quantity, 0);
+
+  document.getElementById("inventoryTable").innerHTML = `
+    <table border="1" cellpadding="6" cellspacing="0">
+      <thead>
+        <tr>
+          <th>#</th><th>Mã hàng</th><th>Tên</th><th>ĐVT</th><th>SL</th>
+          <th>Đơn giá</th><th>Thành tiền</th><th>Thuế</th><th>Giá bán</th><th>Loại</th><th>Sửa</th>
+        </tr>
+      </thead>
+      <tbody>${rows.join('')}</tbody>
+    </table>
+    <br/>
+    <div><b>💼 Tổng tồn kho (giá gốc):</b> ${totalAmount.toLocaleString('vi-VN')} đ</div>
+    <div><b>💸 Thuế GTGT:</b> ${totalTax.toLocaleString('vi-VN')} đ</div>
+    <div><b>💰 Tổng giá bán:</b> ${totalValue.toLocaleString('vi-VN')} đ</div>
+    <div><b>🧾 Tổng Hóa Đơn:</b> ${hkd.invoices.length}</div>
+  `;
+
+  // Gọi bảng phân loại theo loại hàng
+  const summary = summarizeInventoryByCategory(hkdKey);
+  let summaryHTML = `<h4>📊 Báo cáo tồn kho theo loại hàng</h4><table border="1" cellpadding="5" cellspacing="0">
+    <tr><th>Loại hàng</th><th>Tổng SL</th><th>Giá gốc</th><th>Thuế</th><th>Giá bán dự kiến</th></tr>`;
+
+  for (const cat in summary) {
+    const s = summary[cat];
+    const label = cat === 'hang_hoa' ? 'Hàng hóa' :
+                  cat === 'KM' ? 'Khuyến mãi' :
+                  cat === 'chiet_khau' ? 'Chiết khấu' : cat;
+    summaryHTML += `<tr>
+      <td>${label}</td>
+      <td>${s.quantity}</td>
+      <td>${s.amount.toLocaleString('vi-VN')} đ</td>
+      <td>${s.tax.toLocaleString('vi-VN')} đ</td>
+      <td>${s.value.toLocaleString('vi-VN')} đ</td>
+    </tr>`;
+  }
+
+  summaryHTML += `</table>`;
+  document.getElementById("inventorySummaryByCategory").innerHTML = summaryHTML;
+}
 
 
 // Process invoice data and group by MST
@@ -1149,17 +1192,7 @@ function undoAction() {
     logAction('undo_action', { type: lastAction.type });
 }
 
-// Summarize (placeholder)
-function summarize() {
-    showToast('Chức năng tổng kết đang được phát triển', 'info');
-    logAction('summarize_attempt', {});
-}
 
-// Upload to GitHub (placeholder)
-function uploadToGitHub() {
-    showToast('Chức năng đẩy lên GitHub đang được phát triển', 'info');
-    logAction('github_upload_attempt', {});
-}
 
 // Search HKD (placeholder)
 function searchHKD() {
@@ -1810,8 +1843,14 @@ function showBusinessDetails(taxCode, from, to) {
     </div>
 
     <div class="tabs">
-      <div class="tab active" onclick="openTab(event, '${taxCode}-tonkho')">📦 Tồn kho</div>
-    <div id="inventorySummaryByCategory"></div>
+     <div id="${taxCode}-tonkho" class="tabcontent" style="display:block">
+  <h3>📦 Tồn kho</h3>
+  
+  <div id="inventoryTable"></div> <!-- Bảng chi tiết từng sản phẩm -->
+
+  <div id="inventorySummaryByCategory" style="margin-top: 20px;"></div> <!-- Báo cáo phân loại -->
+
+</div>
       <div class="tab" onclick="openTab(event, '${taxCode}-qlyhoadon')">📥 Quản lý Hóa đơn đầu vào</div>
       <div class="tab" onclick="openTab(event, '${taxCode}-xuathang')">📤 Xuất hàng hóa</div>
       <div class="tab" onclick="openTab(event, '${taxCode}-lichsu')">📜 Lịch sử xuất hàng</div>
@@ -1917,24 +1956,31 @@ function showBusinessDetails(taxCode, from, to) {
         filteredDiv.innerHTML = `📅 Đang lọc từ <b>${f}</b> đến <b>${t}</b>: ${filteredInvoices.length} hóa đơn, ${filteredExports.length} lần xuất hàng`;
     }
 }
+
 function summarizeInventoryByCategory(hkdKey) {
-  const hkd = store.hkdList[hkdKey];
+  const hkd = store.hkdList?.[hkdKey] || hkdData?.[hkdKey];
+  if (!hkd) return {};
+
   const result = {};
 
   hkd.inventory.forEach(item => {
-    if (item.quantity <= 0) return;
+    const qty = parseFloat(item.quantity) || 0;
+    if (qty <= 0) return;
+
     const cat = item.category || 'khac';
     if (!result[cat]) {
       result[cat] = { quantity: 0, amount: 0, tax: 0, value: 0 };
     }
-    result[cat].quantity += item.quantity;
-    result[cat].amount += item.amount;
-    result[cat].tax += item.tax;
-    result[cat].value += item.sellingPrice * item.quantity;
+
+    result[cat].quantity += qty;
+    result[cat].amount += parseFloat(item.amount) || 0;
+    result[cat].tax += parseFloat(item.tax) || 0;
+    result[cat].value += (parseFloat(item.sellingPrice) || 0) * qty;
   });
 
   return result;
 }
+
 function filterExportHistory(taxCode) {
     const fromDate = document.getElementById(`filterFrom-${taxCode}`).value;
     const toDate = document.getElementById(`filterTo-${taxCode}`).value;
