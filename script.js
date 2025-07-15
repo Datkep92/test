@@ -201,9 +201,9 @@ function parseXmlInvoice(xmlContent) {
     };
 
     const invoiceInfo = {
-        title: getText('HDon > DLHDon > TTChung > THDon'),
-        template: getText('HDon > DLHDon > TTChung > KHHDon'),
-        symbol: getText('HDon > DLHDon > TTChung > KHMSHDon'),
+        title: getText('HDon > DLHDon > TTChung > THDon'),          // Loại hóa đơn
+        template: getText('HDon > DLHDon > TTChung > KHHDon'),      // Mẫu số
+        symbol: getText('HDon > DLHDon > TTChung > KHMSHDon'),      // Ký hiệu hóa đơn
         number: getText('HDon > DLHDon > TTChung > SHDon'),
         date: getText('HDon > DLHDon > TTChung > NLap'),
         paymentMethod: getText('HDon > DLHDon > TTChung > HTTToan'),
@@ -224,8 +224,14 @@ function parseXmlInvoice(xmlContent) {
         name: getText('HDon > DLHDon > NDHDon > NMua > Ten'),
         taxCode: getText('HDon > DLHDon > NDHDon > NMua > MST'),
         address: getText('HDon > DLHDon > NDHDon > NMua > DChi'),
-        customerCode: getText('HDon > DLHDon > NDHDon > NMua > MKHang'),
-        idNumber: getText('HDon > DLHDon > NDHDon > NMua > CCCDan')
+        customerCode: getText('HDon > DLHDon > NDHDon > NMua > MKHang'), // Mã khách nội bộ
+        idNumber: getText('HDon > DLHDon > NDHDon > NMua > CCCDan')       // Số CCCD/CMND
+    };
+
+    const meta = {
+        orderCode: getAdditionalInfo('MaDonHang') || '',
+        contractNumber: getAdditionalInfo('SoHopDong') || '',
+        note: getAdditionalInfo('GhiChu') || ''
     };
 
     const products = [];
@@ -245,13 +251,16 @@ function parseXmlInvoice(xmlContent) {
         const tchat = parseInt(getText('TChat', node) || '1');
         const xmlThTien = parseFloat(getText('ThTien', node)) || 0;
 
-        let amount = quantity * price - discount;
-        if (tchat === 3) amount *= -1;
-        amount = Math.round(amount); // ✅ Làm tròn thành tiền
+        let amount;
+        if (tchat === 3) {
+            amount = -Math.round(xmlThTien); // Chiết khấu
+        } else {
+            amount = Math.round(quantity * price - discount);
+        }
 
-        const tax = Math.round(quantity * price * taxRate / 100); // ✅ Làm tròn thuế
+        const tax = Math.round(quantity * price * taxRate / 100);
 
-        const diff = Math.abs(amount - xmlThTien);
+        const diff = Math.abs(amount - Math.round(xmlThTien));
         const category = (tchat === 3 || name.toLowerCase().includes('chiết khấu')) ? 'chiet_khau'
                         : (price === 0 || name.toLowerCase().includes('khuyến mại')) ? 'KM'
                         : 'hang_hoa';
@@ -268,9 +277,9 @@ function parseXmlInvoice(xmlContent) {
 
     const ttCKTMai = parseFloat(getText('HDon > DLHDon > NDHDon > TToan > TTCKTMai') || '0');
     const xmlTotalRaw = parseFloat(getText('HDon > DLHDon > NDHDon > TToan > TgTTTBSo') || '0');
-    const xmlDeclared = Math.round(xmlTotalRaw); // ✅ Làm tròn tổng từ XML để so sánh
+    const xmlDeclared = Math.round(xmlTotalRaw);
 
-    const totalAmount = Math.round(totalManual + totalTax); // ✅ Làm tròn tổng cuối cùng
+    const totalAmount = Math.round(totalManual + totalTax);
 
     const totals = {
         beforeTax: totalManual,
@@ -281,7 +290,7 @@ function parseXmlInvoice(xmlContent) {
         xmlDeclared: xmlDeclared
     };
 
-    return { invoiceInfo, sellerInfo, buyerInfo, products, totals };
+    return { invoiceInfo, sellerInfo, buyerInfo, meta, products, totals };
 }
 // Process invoice data and group by MST
 // REPLACE with:
