@@ -5,13 +5,6 @@ let currentTaxCode = null;
 let isLoggingStorage = false;
 let hkdOrder = [];
 let exportDraft = null;
-// Thêm các biến toàn cục còn thiếu
-const store = {
-  hkdList: hkdData, // Ánh xạ từ hkdData
-  currentHKD: currentTaxCode
-};
-
-// Hoặc tốt hơn nên sử dụng hkdData thay vì store để thống nhất
 
 // DOM elements
 const zipFileInput = document.getElementById('zipFile');
@@ -300,12 +293,8 @@ function parseXmlInvoice(xmlContent) {
     return { invoiceInfo, sellerInfo, buyerInfo, meta, products, totals };
 }
 //Tônf kho
-// Sửa từ:
-
 function addOrUpdateInventory(product) {
-  const hkd = hkdData[currentTaxCode]; // ✅ Sử dụng biến toàn cục đã định nghĩa
-  if (!hkd) return;
-  
+  const hkd = store.hkdList[store.currentHKD];
   const index = hkd.inventory.findIndex(item => item.code === product.code);
 
   product.price = parseFloat(product.price) || 0;
@@ -328,15 +317,16 @@ function addOrUpdateInventory(product) {
     hkd.inventory.push(product);
   }
 }
-
-function renderInventoryTable(taxCode) {
-  const hkd = hkdData[taxCode]; // ✅ Sử dụng đúng biến toàn cục
+function renderInventoryTable(hkdKey) {
+  const hkd = store.hkdList[hkdKey];
   if (!hkd) return;
 
+  // Lọc sản phẩm còn tồn kho và không phải chiết khấu
   const inventory = hkd.inventory.filter(item =>
     parseFloat(item.quantity) > 0 && item.category !== 'chiet_khau'
   );
 
+  // Tạo bảng tồn kho chi tiết
   const rows = inventory.map((item, index) => `
     <tr>
       <td>${index + 1}</td>
@@ -353,10 +343,12 @@ function renderInventoryTable(taxCode) {
     </tr>
   `);
 
+  // Tổng giá trị tồn kho
   const totalAmount = inventory.reduce((sum, i) => sum + i.amount, 0);
   const totalTax = inventory.reduce((sum, i) => sum + i.tax, 0);
   const totalValue = inventory.reduce((sum, i) => sum + i.sellingPrice * i.quantity, 0);
 
+  // HTML bảng chính
   document.getElementById("inventoryTable").innerHTML = `
     <table border="1" cellpadding="6" cellspacing="0">
       <thead>
@@ -374,16 +366,14 @@ function renderInventoryTable(taxCode) {
     <div><b>🧾 Tổng Hóa Đơn:</b> ${hkd.invoices.length}</div>
   `;
 
-  // Gọi bảng phân loại theo loại hàng
+  // Báo cáo phân loại theo loại hàng
   const summary = summarizeInventoryByCategory(hkdKey);
   let summaryHTML = `<h4>📊 Báo cáo tồn kho theo loại hàng</h4><table border="1" cellpadding="5" cellspacing="0">
     <tr><th>Loại hàng</th><th>Tổng SL</th><th>Giá gốc</th><th>Thuế</th><th>Giá bán dự kiến</th></tr>`;
 
   for (const cat in summary) {
     const s = summary[cat];
-    const label = cat === 'hang_hoa' ? 'Hàng hóa' :
-                  cat === 'KM' ? 'Khuyến mãi' :
-                  cat === 'chiet_khau' ? 'Chiết khấu' : cat;
+    const label = cat === 'hang_hoa' ? 'Hàng hóa' : cat === 'KM' ? 'Khuyến mãi' : cat === 'chiet_khau' ? 'Chiết khấu' : cat;
     summaryHTML += `<tr>
       <td>${label}</td>
       <td>${s.quantity}</td>
@@ -1204,7 +1194,17 @@ function undoAction() {
     logAction('undo_action', { type: lastAction.type });
 }
 
+// Summarize (placeholder)
+function summarize() {
+    showToast('Chức năng tổng kết đang được phát triển', 'info');
+    logAction('summarize_attempt', {});
+}
 
+// Upload to GitHub (placeholder)
+function uploadToGitHub() {
+    showToast('Chức năng đẩy lên GitHub đang được phát triển', 'info');
+    logAction('github_upload_attempt', {});
+}
 
 // Search HKD (placeholder)
 function searchHKD() {
@@ -1855,14 +1855,7 @@ function showBusinessDetails(taxCode, from, to) {
     </div>
 
     <div class="tabs">
-     <div id="${taxCode}-tonkho" class="tabcontent" style="display:block">
-  <h3>📦 Tồn kho</h3>
-  
-  <div id="inventoryTable"></div> <!-- Bảng chi tiết từng sản phẩm -->
-
-  <div id="inventorySummaryByCategory" style="margin-top: 20px;"></div> <!-- Báo cáo phân loại -->
-
-</div>
+      <div class="tab active" onclick="openTab(event, '${taxCode}-tonkho')">📦 Tồn kho</div>
       <div class="tab" onclick="openTab(event, '${taxCode}-qlyhoadon')">📥 Quản lý Hóa đơn đầu vào</div>
       <div class="tab" onclick="openTab(event, '${taxCode}-xuathang')">📤 Xuất hàng hóa</div>
       <div class="tab" onclick="openTab(event, '${taxCode}-lichsu')">📜 Lịch sử xuất hàng</div>
@@ -1968,29 +1961,24 @@ function showBusinessDetails(taxCode, from, to) {
         filteredDiv.innerHTML = `📅 Đang lọc từ <b>${f}</b> đến <b>${t}</b>: ${filteredInvoices.length} hóa đơn, ${filteredExports.length} lần xuất hàng`;
     }
 }
+function summarizeInventoryByCategory(hkdKey) {
+  const hkd = store.hkdList[hkdKey];
+  const result = {};
 
-function summarizeInventoryByCategory(taxCode) {
-  const hkd = hkdData[taxCode];
-  if (!hkd) return {};
-
-  const summary = {};
-  
   hkd.inventory.forEach(item => {
-    const category = item.category || 'hang_hoa';
-    if (!summary[category]) {
-      summary[category] = { quantity: 0, amount: 0, tax: 0, value: 0 };
+    if (item.quantity <= 0) return;
+    const cat = item.category || 'khac';
+    if (!result[cat]) {
+      result[cat] = { quantity: 0, amount: 0, tax: 0, value: 0 };
     }
-    
-    const qty = parseFloat(item.quantity) || 0;
-    summary[category].quantity += qty;
-    summary[category].amount += parseFloat(item.amount) || 0;
-    summary[category].tax += parseFloat(item.tax) || 0;
-    summary[category].value += qty * (parseFloat(item.sellingPrice) || 0);
+    result[cat].quantity += item.quantity;
+    result[cat].amount += item.amount;
+    result[cat].tax += item.tax;
+    result[cat].value += item.sellingPrice * item.quantity;
   });
 
-  return summary;
+  return result;
 }
-
 function filterExportHistory(taxCode) {
     const fromDate = document.getElementById(`filterFrom-${taxCode}`).value;
     const toDate = document.getElementById(`filterTo-${taxCode}`).value;
