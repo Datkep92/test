@@ -1,0 +1,1158 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>H&oacute;a Đơn Điện Tử</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=Edge">
+<script type="text/javascript" src="details.js"></script>
+<style>
+                    * {
+                    box-sizing: border-box;
+                    -moz-box-sizing: border-box;
+                    }
+
+                    body {
+                    width: 100%;
+                    height: 100%;
+                    margin: 0 auto;
+                    padding: 0;
+                    font-size: 13pt;
+                    }
+
+                    .print-page {
+                    width: 210mm;
+                    min-height: 297mm;
+                    margin: 0mm auto;
+                    }
+
+                    .main-page {
+                    max-width: 210mm;
+                    padding: 20px 20px 10px;
+                    margin: auto;
+                    background-image: url(viewinvoice-bg.jpg);
+                    background-repeat: no-repeat;
+                    background-position: center center;
+                    background-size: 180%;
+                    border: 3px double rgba(145, 87, 21, 0.69);
+                    line-height: 1.5;
+                    box-shadow: rgb(222 226 230 / 70%) 0px 0px 9px 2px;
+                    }
+
+                    canvas {
+                    display: inline-block
+                    }
+
+                    html {
+                    font-size: 100%
+                    }
+
+                    .heading-content .main-title {
+                    font-size: 20pt;
+                    text-align: center;
+                    display: block;
+                    font-weight: bold;
+                    text-transform: uppercase;
+                    }
+
+                    .heading-content p {
+                    font-size: 13pt;
+                    text-align: right;
+                    }
+
+                    .heading-content p.day {
+                    text-align: center;
+                    display: block;
+                    }
+
+                    .day .mg-bottom {
+                    margin-bottom: 8px !important;
+                    text-align: center;
+                    }
+
+                    .heading-content .top-content {
+                    display: flex;
+                    justify-content: space-between;
+                    }
+
+                    .heading-content .code-content {
+                    display: inline-block;
+                    }
+
+                    .heading-content .code-ms {
+                    display: flex;
+                    font-size: 12pt;
+                    }
+
+                    .vip-divide {
+                    width: 100%;
+                    height: 0;
+                    border-bottom: 1px solid rgba(145, 87, 21, 0.69);
+                    }
+
+                    .flex-li {
+                    display: flex;
+                    }
+
+                    .content-info {
+                    padding-top: 5px;
+                    }
+
+                    .content-info .list-fill-out {
+                    list-style: none;
+                    padding-inline-start: 0;
+                    margin-top: 5px;
+                    margin-bottom: 5px;
+                    }
+
+                    .content-info .list-fill-out li {
+                    font-size: 13pt;
+                    }
+
+                    .content-info .tx-money {
+                    text-align: right;
+                    }
+
+                    .content-info .square-list {
+                    display: flex;
+                    flex-wrap: wrap;
+                    align-items: center;
+                    padding: 10px 0px;
+                    }
+
+                    .content-info .square-list ul {
+                    display: flex;
+                    flex-wrap: wrap;
+                    padding-left: 25px;
+                    }
+
+                    .content-info .square-list ul li {
+                    width: 35px;
+                    height: 35px;
+                    display: block;
+                    border-left: 1px solid #000;
+                    border-top: 1px solid #000;
+                    border-bottom: 1px solid #000;
+                    }
+
+                    .content-info .square-list ul li:last-child {
+                    border-right: 1px solid #000;
+                    }
+
+                    .table-horizontal-wrapper {
+                    display: flex;
+                    justify-content: space-between;
+                    }
+
+                    .res-tb {
+                    border-collapse: collapse;
+                    border-spacing: 0px;
+                    width: 100%;
+                    overflow-x: auto;
+                    margin: 10px 0px;
+                    min-width: 250px;
+                    }
+
+                    .res-tb tr td {
+                    border: 1px solid black;
+                    padding: 6px 4px 6px 4px;
+                    vertical-align: baseline;
+                    }
+
+                    .res-tb tr td.tx-center {
+                    text-align: center;
+                    }
+
+                    .res-tb tr td.tx-left {
+                    text-align: left;
+                    }
+
+                    .res-tb tr td.tx-right {
+                    text-align: right;
+                    }
+
+                    .res-tb thead tr th {
+                    border: 1px solid black;
+                    vertical-align: middle;
+                    padding: 6px 4px 6px 4px;
+                    }
+
+                    .res-tb thead tr th.tb-stt {
+                    width: 70px;
+                    text-align: center;
+                    }
+
+                    .res-tb thead tr th.tb-thh {
+                    width: 200px;
+                    text-align: center;
+                    }
+
+                    .res-tb thead tr th.tb-dvt {
+                    width: 100px;
+                    text-align: center;
+                    }
+
+                    .res-tb thead tr th.tb-sl {
+                    width: 80px;
+                    text-align: center;
+                    }
+
+                    .res-tb thead tr th.tb-dg {
+                    width: 80px;
+                    text-align: center;
+                    }
+
+                    .res-tb thead tr th.tb-ts {
+                    width: 80px;
+                    text-align: center;
+                    }
+
+                    .res-tb thead tr th.tb-ttct {
+                    width: 250px;
+                    text-align: center;
+                    }
+
+                    .res-tb thead tr th.tb-stt2 {
+                    width: 70px;
+                    text-align: center;
+                    }
+
+                    .res-tb thead tr th.tb-thh2 {
+                    width: 160px;
+                    text-align: center;
+                    }
+
+                    .res-tb thead tr th.tb-dvt2 {
+                    width: 90px;
+                    text-align: center;
+                    }
+
+                    .res-tb thead tr th.tb-sl2 {
+                    width: 60px;
+                    text-align: center;
+                    }
+
+                    .res-tb thead tr th.tb-dg2 {
+                    width: 60px;
+                    text-align: center;
+                    }
+
+                    .res-tb thead tr th.tb-ts2 {
+                    width: 70px;
+                    text-align: center;
+                    }
+
+                    .res-tb thead tr th.tb-ttct2 {
+                    width: 190px;
+                    text-align: center;
+                    }
+
+                    .res-tb thead tr th.tb-dvtt {
+                    width: 70px;
+                    text-align: center;
+                    }
+
+                    .res-tb thead tr th.tb-tg {
+                    width: 70px;
+                    text-align: center;
+                    }
+
+                    .res-tb thead tr th.tb-ttgd {
+                    width: 170px;
+                    text-align: center;
+                    }
+
+                    .res-tb thead tr th.tb-ctgd {
+                    width: 170px;
+                    text-align: center;
+                    }
+
+                    .ft-sign {
+                    padding-top: 20px;
+                    }
+
+                    .ft-sign .sign-dx {
+                    display: flex;
+                    flex-wrap: wrap;
+                    justify-content: space-around;
+                    align-items: flex-start;
+                    }
+
+                    .ft-sign .sign-dx h3 p {
+                    text-align: center;
+                    font-size: 13pt;
+                    font-weight: 100;
+                    }
+
+                    .ft-sign .sign-dx h3 p:nth-child(2) {
+                    font-size: 14px;
+                    font-weight: normal;
+                    }
+
+                    .ft-sign .fd-end {
+                    padding-top: 120px;
+                    text-align: center;
+                    }
+
+                    .ft-sign .appendix {
+                    padding-top: 120px;
+                    }
+
+                    .ft-sign .appendix .apen-ul {
+                    display: flex;
+                    flex-wrap: wrap;
+                    list-style: none;
+                    }
+
+                    .ft-sign .appendix .apen-ul li {
+                    margin-right: 25px;
+                    }
+
+                    .ft-sign .appendix .apen-ul li:last-child {
+                    margin-right: unset;
+                    }
+
+                    .sign-box {
+                    width: 260px !important;
+                    padding: 5px !important;
+                    border: 2px solid #23b709 !important;
+                    background-image: url("sign-check.jpg") !important;
+                    background-repeat: no-repeat !important;
+                    background-position: right 45px bottom 10px !important;
+                    background-size: 70px 60px !important;
+                    margin-top: 10px !important;
+                    font-weight: 500;
+                    }
+
+                    .sign-box span {
+                    color: #23b709 !important;
+                    font-size: 13pt !important;
+                    text-align: left !important;
+                    display: block;
+                    }
+
+                    .data-item-auto-w {
+                    display: flex;
+                    justify-content: left;
+                    align-items: flex-start;
+                    font-size: 13pt;
+                    color: rgba(0, 0, 0, 0.85);
+                    }
+
+                    .data-item-auto-w .di-label {
+                    min-height: 25px;
+                    height: auto;
+                    border-bottom: 1px dashed transparent;
+                    display: flex;
+                    align-items: flex-start;
+                    }
+
+                    .data-item-auto-w .di-value {
+                    box-sizing: border-box;
+                    flex: 1;
+                    min-height: 25px;
+                    display: flex;
+                    align-items: flex-start;
+                    padding-left: 5px;
+                    height: auto;
+                    justify-content: center;
+                    }
+
+                    .data-item {
+                    width: 100%;
+                    display: flex;
+                    justify-content: left;
+                    align-items: flex-start;
+                    font-size: 13pt;
+                    color: rgba(0, 0, 0, 0.85);
+                    }
+
+                    .data-item .di-label {
+                    min-height: 25px;
+                    height: auto;
+                    border-bottom: 1px dashed transparent;
+                    display: flex;
+                    align-items: flex-start;
+                    }
+
+                    .data-item .di-value {
+                    box-sizing: border-box;
+                    flex: 1;
+                    min-height: 25px;
+                    // border-bottom: 1px dashed #e8e8e8;
+                    display: flex;
+                    align-items: flex-start;
+                    padding-left: 5px;
+                    height: auto;
+                    justify-content: unset;
+                    }
+
+                    .space {
+                    display: inline-block;
+                    width: 20px;
+                    height: 1px;
+                    }
+
+                    .data-text {
+                    width: 100%;
+                    font-size: 13pt;
+                    color: rgba(0, 0, 0, 0.85);
+                    }
+
+                    @page {
+                    size: A4;
+                    margin: 0 !important;
+                    }
+
+                    @media print {
+                    * {
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                    }
+                    body {
+                    width: auto;
+                    height: auto;
+                    margin: 0 auto;
+                    }
+                    table tr,
+                    td {
+                    page-break-inside: avoid;
+                    }
+                    table thead {
+                    display: table-row-group !important;
+                    }
+                    .table-horizontal-wrapper {
+                    page-break-inside: avoid;
+                    padding-top: 5px;
+                    }
+                    .main-page {
+                    margin: 0;
+                    width: initial;
+                    min-height: 296mm;
+                    background: none;
+                    border: none;
+                    }
+                    .ft-sign {
+                    page-break-inside: avoid !important;
+                    page-break-after: auto;
+                    }
+                    .fd-end {
+                    padding-top: 0 !important;
+                    }
+                    }
+
+                    body {
+                    width: 100%;
+                    height: 100%;
+                    margin: 0 auto;
+                    padding: 0;
+                    font-size: 13pt;
+                    }
+
+                    .bg-container {
+                    position: fixed;
+                    width: 100%;
+                    height: 100%;
+                    z-index: 0;
+                    background-image: url("viewinvoice-bg.jpg");
+                    background-repeat: no-repeat;
+                    background-position: center;
+                    background-size: 250%;
+                    border: 3px double rgba(145, 87, 21, 0.69);
+                    top: 0px;
+                    left: 0px;
+                    }
+
+                    .print-page {
+                    width: 210mm;
+                    min-height: 297mm;
+                    margin: 0mm auto;
+                    }
+
+                    .main-page {
+                    font-family: "Times New Roman";
+                    padding: 20px;
+                    line-height: 1.5;
+                    position: relative;
+                    z-index: 1;
+                    border: 3px double rgba(145, 87, 21, 0.69);
+                    }
+
+                    .heading-ct {
+                    width: 100%;
+                    }
+
+                    .heading-ct .code {
+                    display: block;
+                    text-align: right;
+                    font-size: 13pt;
+                    padding-bottom: 5px;
+                    }
+
+                    .heading-ct .lg-plan {
+                    display: flex;
+                    justify-content: space-between;
+                    }
+
+                    .heading-ct .lg-plan div {
+                    text-align: center;
+                    }
+
+                    .heading-ct h5 {
+                    margin: 0;
+                    padding: 0;
+                    margin-bottom: 0.5rem;
+                    }
+
+                    .pop-content {
+                    padding-top: 0px;
+                    }
+
+                    .pop-content .content-head {
+                    text-align: center;
+                    }
+
+                    .pop-content .content-head h5 {
+                    display: flex;
+                    justify-content: center;
+                    font-size: 16px;
+                    }
+
+                    .pop-content .content-head h5 i {
+                    font-weight: normal;
+                    }
+
+                    .pop-content .content-info {
+                    padding-top: 0px;
+                    }
+
+                    .pop-content .content-info ul {
+                    list-style: none;
+                    padding: 0;
+                    }
+
+                    .pop-content .content-info .sign-end {
+                    display: block;
+                    text-align: right;
+                    }
+
+                    .pop-content .content-info .sign-flex {
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: flex-end;
+                    align-items: flex-end;
+                    text-align: center;
+                    padding-top: 14px;
+                    }
+
+                    .res-tb {
+                    border-collapse: collapse;
+                    border-spacing: 0;
+                    width: 100%;
+                    margin-top: 10px;
+                    margin-bottom: 10px;
+                    }
+
+                    .res-tb tr td {
+                    border: 1px solid black;
+                    padding: 6px 4px 6px 4px;
+                    vertical-align: baseline;
+                    }
+
+                    .res-tb tr td.tx-center {
+                    text-align: center;
+                    }
+
+                    .res-tb thead tr th {
+                    border: 1px solid black;
+                    vertical-align: middle;
+                    /* white-space: nowrap; */
+                    padding: 6px 4px 6px 4px;
+                    }
+
+                    .res-tb thead tr th.tb-rs-nb {
+                    width: 150px;
+                    }
+
+                    .res-tb thead tr th.tb-rs-kh {
+                    width: 300px;
+                    }
+
+                    .res-tb thead tr th.tb-rs-shd {
+                    width: 250px;
+                    }
+
+                    .res-tb thead tr th.tb-rs-nhd {
+                    width: 200px;
+                    }
+
+                    .res-tb thead tr th.tb-rs-lap {
+                    width: 250px;
+                    }
+
+                    .res-tb thead tr th.tb-rs-ldr {
+                    width: 250px;
+                    }
+
+                    .get-plus::before {
+                    content: "+"
+                    }
+
+                    .sign-box {
+                    width: 260px !important;
+                    padding: 5px !important;
+                    border: 2px solid #23b709 !important;
+                    background-image: url("sign-check.jpg") !important;
+                    background-repeat: no-repeat !important;
+                    background-position: right 45px bottom 10px !important;
+                    background-size: 70px 60px !important;
+                    margin-top: 10px !important;
+                    font-weight: 500;
+                    }
+
+                    .span-sign-box {
+                    display: inline !important;
+                    }
+
+                    .sign-box span {
+                    color: #23b709 !important;
+                    font-size: 13pt !important;
+                    text-align: left !important;
+                    display: block;
+                    }
+
+                    .data-item {
+                    width: 100%;
+                    display: flex;
+                    justify-content: left;
+                    align-items: flex-start;
+                    font-size: 13pt;
+                    color: #000;
+                    margin-bottom: 10px;
+                    }
+
+                    .data-item .di-label {
+                    min-height: 25px;
+                    border-bottom: 1px dashed transparent;
+                    display: flex;
+                    align-items: flex-start;
+                    }
+
+                    .data-item .di-value {
+                    min-height: 25px;
+                    box-sizing: border-box;
+                    flex: 1;
+                    border-bottom: 1px dashed #e8e8e8;
+                    display: flex;
+                    align-items: flex-start;
+                    padding-left: 10px;
+                    justify-content: flex-start;
+                    }
+
+                    .sign-content b {
+                    display: block;
+                    }
+
+                    .sign-content b {
+                    display: block;
+                    }
+
+                    .sign-row {
+                    padding-top: 20px;
+                    display: flex;
+                    justify-content: space-between;
+                    }
+
+                    .text-bold {
+                    font-weight: bold;
+                    }
+
+                    .text-indent {
+                    text-indent: 40px
+                    }
+
+                    .p-space {
+                    text-indent: 30pt;
+                    font-size: 13pt;
+                    margin-bottom: 10px;
+                    }
+
+                    .p-no-space {
+                    text-indent: 30pt;
+                    font-size: 13pt;
+                    margin-bottom: 0;
+                    }
+
+                    .justify {
+                    text-align: justify;
+                    }
+
+                    .font-size-custome {
+                    font-size: 12.5px !important;
+                    }
+
+                    @page {
+                    size: A4;
+                    margin: 0 !important;
+                    }
+
+                    @media print {
+                    * {
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                    }
+                    body {
+                    width: auto;
+                    height: auto;
+                    margin: 0 auto;
+                    }
+                    table,
+                    tr,
+                    td {
+                    page-break-inside: avoid;
+                    }
+                    .main-page {
+                    margin: 0;
+                    width: initial;
+                    min-height: 296mm;
+                    background: none;
+                    border: none;
+                    }
+                    div>.page-break {
+                    page-break-inside: avoid;
+                    padding-top: 5px;
+                    }
+                    .sign-flex {
+                    page-break-inside: avoid !important;
+                    page-break-after: auto;
+                    padding-top: 0 !important;
+                    }
+                    .sign-box {
+                    line-height: 1.2 !important;
+                    }
+                    }
+                </style>
+</head>
+<body>
+<div class="main-page">
+<div class="heading-content">
+<div class="top-content">
+<div style="width: 80px; min-height: 20px">
+<div id="qrcodeTable"></div>
+</div>
+<div class="code-content">
+<b>
+                                    Mẫu số:
+                                    1</b>
+<br>
+<b>
+                                    K&yacute; hiệu:
+                                    C25THN</b>
+<br>
+<b>
+                                    Số:
+                                    00047789</b>
+</div>
+</div>
+<div class="title-heading">
+<h2 class="main-title">
+                                        HO&Aacute; ĐƠN GI&Aacute; TRỊ GIA TĂNG
+                                    </h2>
+<p class="day">
+<div class="day">
+<p class="day">Ng&agrave;y 09 th&aacute;ng 07 năm 2025</p>
+<p class="day">
+                                            MCCQT:
+                                            00C134CE10B3204139A1C2EA7CACD428EA</p>
+</div>
+</p>
+</div>
+</div>
+<div class="vip-divide"></div>
+<div class="content-info">
+<ul class="list-fill-out">
+<li>
+<div class="data-item">
+<div class="di-label">
+<span>T&ecirc;n người b&aacute;n:</span>
+</div>
+<div class="di-value">
+<div>C&Ocirc;NG TY TR&Aacute;CH NHIỆM HỮU HẠN THƯƠNG MẠI V&Agrave; DỊCH VỤ HƯNG PH&Uacute; NINH THUẬN</div>
+</div>
+</div>
+</li>
+<li>
+<div class="data-item">
+<div class="di-label">
+<span>M&atilde; số thuế:</span>
+</div>
+<div class="di-value">
+<div>4500196220</div>
+</div>
+</div>
+</li>
+<li>
+<div class="data-item">
+<div class="di-label">
+<span>M&atilde; cửa h&agrave;ng:</span>
+</div>
+<div class="di-value">
+<div></div>
+</div>
+</div>
+</li>
+<li>
+<div class="data-item">
+<div class="di-label">
+<span>T&ecirc;n cửa h&agrave;ng:</span>
+</div>
+<div class="di-value">
+<div></div>
+</div>
+</div>
+</li>
+<li>
+<div class="data-item">
+<div class="di-label">
+<span>Địa chỉ:</span>
+</div>
+<div class="di-value">
+<div>Số 548 Thống Nhất, Phường Phan Rang, Tỉnh Kh&aacute;nh H&ograve;a, Việt Nam</div>
+</div>
+</div>
+</li>
+<li>
+<div class="data-item">
+<div class="di-label">
+<span>Điện thoại:</span>
+</div>
+<div class="di-value">
+<div>0259.3822455</div>
+</div>
+</div>
+</li>
+<li>
+<div class="data-item">
+<div class="di-label">
+<span>Số t&agrave;i khoản:</span>
+</div>
+<div class="di-value">
+<div>6160033208
+                                                    &nbsp;&nbsp;&nbsp;
+                                                    tại Ng&acirc;n h&agrave;ng BIDV Ninh Thuận - PGD Phan Rang </div>
+</div>
+</div>
+</li>
+<li>
+<div class="vip-divide" style="margin: 5px 0;"></div>
+</li>
+<li>
+<div class="data-item">
+<div class="di-label">
+<span>T&ecirc;n người mua:</span>
+</div>
+<div class="di-value">
+<div>Trương Thị Minh</div>
+</div>
+</div>
+</li>
+<li>
+<div class="data-item">
+<div class="di-label">
+<span>Họ t&ecirc;n người mua:</span>
+</div>
+<div class="di-value">
+<div>Tạp Ho&aacute; Minh Hồng</div>
+</div>
+</div>
+</li>
+<li>
+<div class="data-item">
+<div class="di-label">
+<span>M&atilde; số thuế:</span>
+</div>
+<div class="di-value">
+<div>4500421476</div>
+</div>
+</div>
+</li>
+<li>
+<div class="data-item">
+<div class="di-label">
+<span>M&atilde; ĐVCQHVNSNN:</span>
+</div>
+<div class="di-value">
+<div></div>
+</div>
+</div>
+</li>
+<li>
+<div class="data-item">
+<div class="di-label">
+<span>CCCD người mua:</span>
+</div>
+<div class="di-value">
+<div></div>
+</div>
+</div>
+</li>
+<li>
+<div class="data-item">
+<div class="di-label">
+<span>Số hộ chiếu:</span>
+</div>
+<div class="di-value">
+<div></div>
+</div>
+</div>
+</li>
+<li>
+<div class="data-item">
+<div class="di-label">
+<span>Địa chỉ:</span>
+</div>
+<div class="di-value">
+<div>Số 52 đường Đo&agrave;n Thị Điểm, Phường Phan Rang, Tỉnh Kh&aacute;nh Ho&agrave;, Việt Nam</div>
+</div>
+</div>
+</li>
+<li>
+<div class="data-item">
+<div class="di-label">
+<span>Số t&agrave;i khoản:</span>
+</div>
+<div class="di-value">
+<div>
+<div>
+                                                        &nbsp;&nbsp;&nbsp;
+                                                        </div>
+</div>
+</div>
+</div>
+</li>
+<li>
+<div class="data-item">
+<div class="di-label">
+<span>H&igrave;nh thức thanh to&aacute;n:</span>
+</div>
+<div class="di-value">
+<div>TM/CK</div>
+</div>
+</div>
+</li>
+<li class="flex-li">
+<div class="data-item" style="width: 50%">
+<div class="di-label">
+<span>Số bảng k&ecirc;:</span>
+</div>
+<div class="di-value">
+<div></div>
+</div>
+</div>
+<div class="data-item" style="width: 50%">
+<div class="di-label">
+<span>Ng&agrave;y bảng k&ecirc;:</span>
+</div>
+<div class="di-value">
+<div></div>
+</div>
+</div>
+</li>
+</ul>
+<table class="res-tb">
+<thead style="text-align: center;">
+<tr>
+<th class="tb-stt">STT</th><th class="tb-stt">T&iacute;nh chất</th><th class="tb-stt">Loại h&agrave;ng ho&aacute; đặc trưng</th><th class="tb-thh">T&ecirc;n h&agrave;ng h&oacute;a, dịch vụ</th><th class="tb-dvt">Đơn vị t&iacute;nh</th><th class="tb-sl">Số lượng</th><th class="tb-dg">Đơn gi&aacute;</th><th class="tb-dg">Chiết khấu</th><th class="tb-ts">Thuế suất</th><th class="tb-ttct">Th&agrave;nh tiền chưa c&oacute; thuế GTGT</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tx-center">1</td><td class="tx-left"><span>H&agrave;ng h&oacute;a, dịch vụ</span></td><td class="tx-left" style="max-width: 200px;word-wrap: break-word;"></td><td class="tx-left">Thuốc l&aacute; SE 555  Signature</td><td class="tx-left">G&oacute;i</td><td class="tx-center">50</td><td class="tx-center">33.363,636</td><td class="tx-center">0</td><td class="tx-center">
+<HHDVu>10%</HHDVu>
+</td><td class="tx-center">1.668.182</td>
+</tr>
+<tr>
+<td class="tx-center">2</td><td class="tx-left"><span>H&agrave;ng h&oacute;a, dịch vụ</span></td><td class="tx-left" style="max-width: 200px;word-wrap: break-word;"></td><td class="tx-left">Amore</td><td class="tx-left">G&oacute;i</td><td class="tx-center">50</td><td class="tx-center">10.409,091</td><td class="tx-center">0</td><td class="tx-center">
+<HHDVu>10%</HHDVu>
+</td><td class="tx-center">520.455</td>
+</tr>
+<tr>
+<td class="tx-center">3</td><td class="tx-left"><span>H&agrave;ng h&oacute;a, dịch vụ</span></td><td class="tx-left" style="max-width: 200px;word-wrap: break-word;"></td><td class="tx-left">Thuốc L&aacute; Craven Demi</td><td class="tx-left">G&oacute;i</td><td class="tx-center">500</td><td class="tx-center">12.618,182</td><td class="tx-center">0</td><td class="tx-center">
+<HHDVu>10%</HHDVu>
+</td><td class="tx-center">6.309.091</td>
+</tr>
+<tr>
+<td class="tx-center">4</td><td class="tx-left"><span>H&agrave;ng h&oacute;a, dịch vụ</span></td><td class="tx-left" style="max-width: 200px;word-wrap: break-word;"></td><td class="tx-left">Thuốc l&aacute; Craven A  Classic</td><td class="tx-left">G&oacute;i</td><td class="tx-center">500</td><td class="tx-center">20.072,727</td><td class="tx-center">0</td><td class="tx-center">
+<HHDVu>10%</HHDVu>
+</td><td class="tx-center">10.036.364</td>
+</tr>
+<tr>
+<td class="tx-center">5</td><td class="tx-left"><span>H&agrave;ng h&oacute;a, dịch vụ</span></td><td class="tx-left" style="max-width: 200px;word-wrap: break-word;"></td><td class="tx-left">Thuốc l&aacute; Thăng Long Slim BC</td><td class="tx-left">Bao</td><td class="tx-center">50</td><td class="tx-center">10.681,818</td><td class="tx-center">0</td><td class="tx-center">
+<HHDVu>10%</HHDVu>
+</td><td class="tx-center">534.091</td>
+</tr>
+<tr>
+<td class="tx-center">6</td><td class="tx-left"><span>H&agrave;ng h&oacute;a, dịch vụ</span></td><td class="tx-left" style="max-width: 200px;word-wrap: break-word;"></td><td class="tx-left">Thuốc White Horse</td><td class="tx-left">G&oacute;i</td><td class="tx-center">100</td><td class="tx-center">22.182,727</td><td class="tx-center">0</td><td class="tx-center">
+<HHDVu>10%</HHDVu>
+</td><td class="tx-center">2.218.273</td>
+</tr>
+<tr>
+<td class="tx-center">7</td><td class="tx-left"><span>H&agrave;ng h&oacute;a, dịch vụ</span></td><td class="tx-left" style="max-width: 200px;word-wrap: break-word;"></td><td class="tx-left">Thuốc White Horse Demi</td><td class="tx-left">G&oacute;i</td><td class="tx-center">100</td><td class="tx-center">10.821,818</td><td class="tx-center">0</td><td class="tx-center">
+<HHDVu>10%</HHDVu>
+</td><td class="tx-center">1.082.182</td>
+</tr>
+<tr>
+<td class="tx-center">8</td><td class="tx-left"><span>H&agrave;ng h&oacute;a, dịch vụ</span></td><td class="tx-left" style="max-width: 200px;word-wrap: break-word;"></td><td class="tx-left">Bia Tiger Crytal 330ml</td><td class="tx-left">Th&ugrave;ng</td><td class="tx-center">10</td><td class="tx-center">351.363,636</td><td class="tx-center">0</td><td class="tx-center">
+<HHDVu>10%</HHDVu>
+</td><td class="tx-center">3.513.636</td>
+</tr>
+<tr>
+<td class="tx-center">9</td><td class="tx-left"><span>H&agrave;ng h&oacute;a, dịch vụ</span></td><td class="tx-left" style="max-width: 200px;word-wrap: break-word;"></td><td class="tx-left">Bia Tiger Crystal 250 x 24C</td><td class="tx-left">Th&ugrave;ng</td><td class="tx-center">10</td><td class="tx-center">240.909,091</td><td class="tx-center">0</td><td class="tx-center">
+<HHDVu>10%</HHDVu>
+</td><td class="tx-center">2.409.091</td>
+</tr>
+<tr>
+<td class="tx-center">10</td><td class="tx-left"><span>H&agrave;ng h&oacute;a, dịch vụ</span></td><td class="tx-left" style="max-width: 200px;word-wrap: break-word;"></td><td class="tx-left">Nước Yến Sanest lọ Tx70ml</td><td class="tx-left">Lọ</td><td class="tx-center">10</td><td class="tx-center">29.537,037</td><td class="tx-center">0</td><td class="tx-center">
+<HHDVu>8%</HHDVu>
+</td><td class="tx-center">295.370</td>
+</tr>
+<tr>
+<td class="tx-center">11</td><td class="tx-left"><span>H&agrave;ng h&oacute;a, dịch vụ</span></td><td class="tx-left" style="max-width: 200px;word-wrap: break-word;"></td><td class="tx-left">Nước Yến Sanest Th&ugrave;ng 30 lon x 190ml</td><td class="tx-left">Th&ugrave;ng</td><td class="tx-center">10</td><td class="tx-center">231.481,481</td><td class="tx-center">0</td><td class="tx-center">
+<HHDVu>8%</HHDVu>
+</td><td class="tx-center">2.314.815</td>
+</tr>
+<tr>
+<td class="tx-center">12</td><td class="tx-left"><span>H&agrave;ng h&oacute;a, dịch vụ</span></td><td class="tx-left" style="max-width: 200px;word-wrap: break-word;"></td><td class="tx-left">Đường K&iacute;nh Trắng cao cấp 'S'</td><td class="tx-left">kg</td><td class="tx-center">150</td><td class="tx-center">18.703,703</td><td class="tx-center">0</td><td class="tx-center">
+<HHDVu>8%</HHDVu>
+</td><td class="tx-center">2.805.555</td>
+</tr>
+<tr>
+<td class="tx-center">13</td><td class="tx-left"><span>H&agrave;ng h&oacute;a, dịch vụ</span></td><td class="tx-left" style="max-width: 200px;word-wrap: break-word;"></td><td class="tx-left">Đường c&acirc;y 12Kg</td><td class="tx-left">c&acirc;y</td><td class="tx-center">10</td><td class="tx-center">213.888,889</td><td class="tx-center">0</td><td class="tx-center">
+<HHDVu>8%</HHDVu>
+</td><td class="tx-center">2.138.889</td>
+</tr>
+<tr>
+<td class="tx-center">14</td><td class="tx-left"><span>H&agrave;ng h&oacute;a, dịch vụ</span></td><td class="tx-left" style="max-width: 200px;word-wrap: break-word;"></td><td class="tx-left">Hạt n&ecirc;m Aji - Ngon 170g heo</td><td class="tx-left">G&oacute;i</td><td class="tx-center">32</td><td class="tx-center">11.505,682</td><td class="tx-center">0</td><td class="tx-center">
+<HHDVu>8%</HHDVu>
+</td><td class="tx-center">368.182</td>
+</tr>
+<tr>
+<td class="tx-center">15</td><td class="tx-left"><span>H&agrave;ng h&oacute;a, dịch vụ</span></td><td class="tx-left" style="max-width: 200px;word-wrap: break-word;"></td><td class="tx-left">Hạt n&ecirc;m Aji - Ngon 400g heo</td><td class="tx-left">G&oacute;i</td><td class="tx-center">24</td><td class="tx-center">25.946,969</td><td class="tx-center">0</td><td class="tx-center">
+<HHDVu>8%</HHDVu>
+</td><td class="tx-center">622.727</td>
+</tr>
+<tr>
+<td class="tx-center">16</td><td class="tx-left"><span>H&agrave;ng h&oacute;a, dịch vụ</span></td><td class="tx-left" style="max-width: 200px;word-wrap: break-word;"></td><td class="tx-left">Tr&agrave; Thanh Nhiệt Dr Thanh Pet 24x330ml</td><td class="tx-left">Th&ugrave;ng</td><td class="tx-center">10</td><td class="tx-center">187.037,037</td><td class="tx-center">0</td><td class="tx-center">
+<HHDVu>8%</HHDVu>
+</td><td class="tx-center">1.870.370</td>
+</tr>
+<tr>
+<td class="tx-center">17</td><td class="tx-left"><span>H&agrave;ng h&oacute;a, dịch vụ</span></td><td class="tx-left" style="max-width: 200px;word-wrap: break-word;"></td><td class="tx-left">Tăng lực thường 330ml</td><td class="tx-left">Th&ugrave;ng</td><td class="tx-center">10</td><td class="tx-center">179.166,667</td><td class="tx-center">0</td><td class="tx-center">
+<HHDVu>8%</HHDVu>
+</td><td class="tx-center">1.791.667</td>
+</tr>
+<tr>
+<td class="tx-center">18</td><td class="tx-left"><span>H&agrave;ng h&oacute;a, dịch vụ</span></td><td class="tx-left" style="max-width: 200px;word-wrap: break-word;"></td><td class="tx-left">Tr&agrave; Xanh Chanh PET  24 x 455ml</td><td class="tx-left">Th&ugrave;ng</td><td class="tx-center">10</td><td class="tx-center">172.685,185</td><td class="tx-center">0</td><td class="tx-center">
+<HHDVu>8%</HHDVu>
+</td><td class="tx-center">1.726.852</td>
+</tr>
+<tr>
+<td class="tx-center">19</td><td class="tx-left"><span>H&agrave;ng h&oacute;a, dịch vụ</span></td><td class="tx-left" style="max-width: 200px;word-wrap: break-word;"></td><td class="tx-left">Nước Tinh Khiết Pet 12 x 500ml New (KM)</td><td class="tx-left">Lốc</td><td class="tx-center">30</td><td class="tx-center">0</td><td class="tx-center">0</td><td class="tx-center">
+<HHDVu>8%</HHDVu>
+</td><td class="tx-center">0</td>
+</tr>
+<tr>
+<td class="tx-center">20</td><td class="tx-left"><span>H&agrave;ng h&oacute;a, dịch vụ</span></td><td class="tx-left" style="max-width: 200px;word-wrap: break-word;"></td><td class="tx-left">Kẹo 85 gram</td><td class="tx-left">Th&ugrave;ng</td><td class="tx-center">1</td><td class="tx-center">342.592,593</td><td class="tx-center">0</td><td class="tx-center">
+<HHDVu>8%</HHDVu>
+</td><td class="tx-center">342.593</td>
+</tr>
+</tbody>
+</table>
+<div class="table-horizontal-wrapper">
+<div style="margin-right: 10;">
+<table class="res-tb">
+<thead style="text-align: center">
+<tr>
+<th>Thuế suất</th><th>Tổng tiền chưa thuế</th><th>Tổng tiền thuế</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tx-center">
+<LTSuat>10%</LTSuat>
+</td><td class="tx-center">28.291.365</td><td class="tx-center">2.829.137</td>
+</tr>
+<tr>
+<td class="tx-center">
+<LTSuat>8%</LTSuat>
+</td><td class="tx-center">14.277.020</td><td class="tx-center">1.142.162</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div style="flex: 1">
+<table class="res-tb">
+<tbody>
+<tr>
+<td class="tx-center">
+                                                Tổng tiền chưa thuế
+                                                <br>
+                                                (Tổng cộng th&agrave;nh tiền chưa c&oacute; thuế)
+                                            </td><td class="tx-center" style="min-width: 200px; max-width: 300px;">42.568.385</td>
+</tr>
+<tr>
+<td class="tx-center">Tổng tiền thuế (Tổng cộng tiền thuế)</td><td class="tx-center" style="min-width: 200px; max-width: 300px">3.971.299</td>
+</tr>
+<tr>
+<td class="tx-center">Tổng tiền ph&iacute;</td><td class="tx-center" style="min-width: 200px; max-width: 300px">0</td>
+</tr>
+<tr>
+<td class="tx-center">
+                                                Tổng tiền chiết khấu thương mại
+                                            </td><td class="tx-center" style="min-width: 200px; max-width: 300px">0</td>
+</tr>
+<tr>
+<td class="tx-center">
+                                                Tổng tiền thanh to&aacute;n bằng số
+                                            </td><td class="tx-center" style="min-width: 200px; max-width: 300px">46.539.684</td>
+</tr>
+<tr>
+<td class="tx-center">
+                                                Tổng tiền thanh to&aacute;n bằng chữ
+                                            </td><td class="tx-center" style="min-width: 200px; max-width: 300px">Bốn mươi s&aacute;u triệu năm trăm ba mươi ch&iacute;n ngh&igrave;n s&aacute;u trăm t&aacute;m mươi bốn đồng chẵn.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="vip-divide"></div>
+<div class="ft-sign">
+<div class="sign-dx">
+<h3>
+<p>NGƯỜI MUA H&Agrave;NG</p>
+<p>
+<i>(Chữ k&yacute; số (nếu c&oacute;))</i>
+</p>
+<td></td>
+</h3>
+<h3>
+<p>NGƯỜI B&Aacute;N H&Agrave;NG</p>
+<p>
+<i>(Chữ k&yacute; điện tử, chữ k&yacute; số)</i>
+</p>
+<div class="sign-box">
+<span>Signature Valid</span><span class="span-sign-box">K&yacute; bởi&nbsp;</span><span id="cks" class="span-sign-box">OID.0.9.2342.19200300.100.1.1=MST:4500196220, CN=C&Ocirc;NG TY TR&Aacute;CH NHIỆM HỮU HẠN THƯƠNG MẠI V&Agrave; DỊCH VỤ HƯNG PH&Uacute; NINH THUẬN, L=NINH THUẬN, C=VN</span><span></span><span class="span-sign-box">K&yacute; ng&agrave;y:&nbsp;</span><span class="span-sign-box">2025-07-09T11:15:00</span>
+</div>
+</h3>
+</div>
+<div class="fd-end">
+<p>
+<i>(Cần kiểm tra, đối chiếu khi lập, nhận h&oacute;a đơn)</i>
+</p>
+</div>
+</div>
+</div>
+<input type="hidden" id="qrcodeContent" value="00020199990033VFJXQ7JZCNU0J2QFP339S4RHJUN1P1ZBE01104500196220020110306C25THN04054778905082025070906084653968463040651">
+</body>
+</html>
