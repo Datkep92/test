@@ -245,12 +245,11 @@ function parseXmlInvoice(xmlContent) {
         const tchat = parseInt(getText('TChat', node) || '1');
         const xmlThTien = parseFloat(getText('ThTien', node)) || 0;
 
-        // Tính lại thành tiền và thuế chuẩn kế toán
         let amount = quantity * price - discount;
         if (tchat === 3) amount *= -1;
-        amount = Math.round(amount); // Làm tròn VND
+        amount = Math.round(amount); // ✅ Làm tròn thành tiền
 
-        const tax = Math.round(quantity * price * taxRate / 100); // Thuế làm tròn
+        const tax = Math.round(quantity * price * taxRate / 100); // ✅ Làm tròn thuế
 
         const diff = Math.abs(amount - xmlThTien);
         const category = (tchat === 3 || name.toLowerCase().includes('chiết khấu')) ? 'chiet_khau'
@@ -267,15 +266,19 @@ function parseXmlInvoice(xmlContent) {
         });
     });
 
-    const xmlTotal = parseFloat(getAdditionalInfo('TotalAmount')) || 0;
     const ttCKTMai = parseFloat(getText('HDon > DLHDon > NDHDon > TToan > TTCKTMai') || '0');
+    const xmlTotalRaw = parseFloat(getText('HDon > DLHDon > NDHDon > TToan > TgTTTBSo') || '0');
+    const xmlDeclared = Math.round(xmlTotalRaw); // ✅ Làm tròn tổng từ XML để so sánh
+
+    const totalAmount = Math.round(totalManual + totalTax); // ✅ Làm tròn tổng cuối cùng
 
     const totals = {
         beforeTax: totalManual,
         tax: totalTax,
         fee: 0,
         discount: Math.round(ttCKTMai),
-        total: totalManual + totalTax
+        total: totalAmount,
+        xmlDeclared: xmlDeclared
     };
 
     return { invoiceInfo, sellerInfo, buyerInfo, products, totals };
