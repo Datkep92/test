@@ -321,10 +321,12 @@ function renderInventoryTable(hkdKey) {
   const hkd = store.hkdList[hkdKey];
   if (!hkd) return;
 
+  // Lọc sản phẩm còn tồn kho và không phải chiết khấu
   const inventory = hkd.inventory.filter(item =>
-    item.quantity > 0 && item.category !== 'chiet_khau'
+    parseFloat(item.quantity) > 0 && item.category !== 'chiet_khau'
   );
 
+  // Tạo bảng tồn kho chi tiết
   const rows = inventory.map((item, index) => `
     <tr>
       <td>${index + 1}</td>
@@ -341,12 +343,14 @@ function renderInventoryTable(hkdKey) {
     </tr>
   `);
 
+  // Tổng giá trị tồn kho
   const totalAmount = inventory.reduce((sum, i) => sum + i.amount, 0);
   const totalTax = inventory.reduce((sum, i) => sum + i.tax, 0);
   const totalValue = inventory.reduce((sum, i) => sum + i.sellingPrice * i.quantity, 0);
 
+  // HTML bảng chính
   document.getElementById("inventoryTable").innerHTML = `
-    <table>
+    <table border="1" cellpadding="6" cellspacing="0">
       <thead>
         <tr>
           <th>#</th><th>Mã hàng</th><th>Tên</th><th>ĐVT</th><th>SL</th>
@@ -356,29 +360,31 @@ function renderInventoryTable(hkdKey) {
       <tbody>${rows.join('')}</tbody>
     </table>
     <br/>
-    <div><b>💼 Tổng tồn kho (giá gốc):</b> ${totalAmount.toLocaleString()} đ</div>
-    <div><b>💸 Thuế GTGT:</b> ${totalTax.toLocaleString()} đ</div>
-    <div><b>💰 Tổng giá bán:</b> ${totalValue.toLocaleString()} đ</div>
+    <div><b>💼 Tổng tồn kho (giá gốc):</b> ${totalAmount.toLocaleString('vi-VN')} đ</div>
+    <div><b>💸 Thuế GTGT:</b> ${totalTax.toLocaleString('vi-VN')} đ</div>
+    <div><b>💰 Tổng giá bán:</b> ${totalValue.toLocaleString('vi-VN')} đ</div>
     <div><b>🧾 Tổng Hóa Đơn:</b> ${hkd.invoices.length}</div>
   `;
-const categorySummary = summarizeInventoryByCategory(hkdKey);
 
-let html = `<h4>📊 Báo cáo tồn kho theo loại hàng</h4><table border="1" cellpadding="5" cellspacing="0">
-  <tr><th>Loại hàng</th><th>Tổng SL</th><th>Giá gốc</th><th>Thuế</th><th>Giá bán dự kiến</th></tr>`;
+  // Báo cáo phân loại theo loại hàng
+  const summary = summarizeInventoryByCategory(hkdKey);
+  let summaryHTML = `<h4>📊 Báo cáo tồn kho theo loại hàng</h4><table border="1" cellpadding="5" cellspacing="0">
+    <tr><th>Loại hàng</th><th>Tổng SL</th><th>Giá gốc</th><th>Thuế</th><th>Giá bán dự kiến</th></tr>`;
 
-for (const cat in categorySummary) {
-  const s = categorySummary[cat];
-  html += `<tr>
-    <td>${cat === 'hang_hoa' ? 'Hàng hóa' : cat === 'KM' ? 'Khuyến mãi' : cat === 'chiet_khau' ? 'Chiết khấu' : cat}</td>
-    <td>${s.quantity}</td>
-    <td>${s.amount.toLocaleString('vi-VN')} đ</td>
-    <td>${s.tax.toLocaleString('vi-VN')} đ</td>
-    <td>${s.value.toLocaleString('vi-VN')} đ</td>
-  </tr>`;
-}
+  for (const cat in summary) {
+    const s = summary[cat];
+    const label = cat === 'hang_hoa' ? 'Hàng hóa' : cat === 'KM' ? 'Khuyến mãi' : cat === 'chiet_khau' ? 'Chiết khấu' : cat;
+    summaryHTML += `<tr>
+      <td>${label}</td>
+      <td>${s.quantity}</td>
+      <td>${s.amount.toLocaleString('vi-VN')} đ</td>
+      <td>${s.tax.toLocaleString('vi-VN')} đ</td>
+      <td>${s.value.toLocaleString('vi-VN')} đ</td>
+    </tr>`;
+  }
 
-html += `</table>`;
-document.getElementById("inventorySummaryByCategory").innerHTML = html;
+  summaryHTML += `</table>`;
+  document.getElementById("inventorySummaryByCategory").innerHTML = summaryHTML;
 }
 
 
