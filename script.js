@@ -5,6 +5,13 @@ let currentTaxCode = null;
 let isLoggingStorage = false;
 let hkdOrder = [];
 let exportDraft = null;
+// Thêm các biến toàn cục còn thiếu
+const store = {
+  hkdList: hkdData, // Ánh xạ từ hkdData
+  currentHKD: currentTaxCode
+};
+
+// Hoặc tốt hơn nên sử dụng hkdData thay vì store để thống nhất
 
 // DOM elements
 const zipFileInput = document.getElementById('zipFile');
