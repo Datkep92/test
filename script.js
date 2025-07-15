@@ -1856,7 +1856,6 @@ function showBusinessDetails(taxCode, from, to) {
 
     <div class="tabs">
       <div class="tab active" onclick="openTab(event, '${taxCode}-tonkho')">📦 Tồn kho</div>
-    <div id="inventorySummaryByCategory" style="margin-top: 20px;"></div>
       <div class="tab" onclick="openTab(event, '${taxCode}-qlyhoadon')">📥 Quản lý Hóa đơn đầu vào</div>
       <div class="tab" onclick="openTab(event, '${taxCode}-xuathang')">📤 Xuất hàng hóa</div>
       <div class="tab" onclick="openTab(event, '${taxCode}-lichsu')">📜 Lịch sử xuất hàng</div>
