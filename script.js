@@ -142,17 +142,26 @@ function handleFiles() {
         }
 
         extractInvoiceFromZip(file).then(invoiceData => {
-            processInvoiceData(invoiceData);
-            storageHandler.save('hkd_data', hkdData);
-            storageHandler.save('hkd_order', hkdOrder);
-            updateBusinessList();
-            if (currentTaxCode) {
-                showBusinessDetails(currentTaxCode);
-            }
-        }).catch(error => {
-            showToast('Lỗi khi xử lý hóa đơn: ' + error.message, 'error');
-            logAction('file_process_error', { error: error.message, file: file.name });
-        });
+    processInvoiceData(invoiceData);
+    storageHandler.save('hkd_data', hkdData);
+    storageHandler.save('hkd_order', hkdOrder);
+    updateBusinessList();
+    if (currentTaxCode) {
+        showBusinessDetails(currentTaxCode);
+    }
+}).catch(error => {
+    const errorMsg = `Lỗi khi xử lý file ${file.name}: ${error.message}`;
+    showToast(errorMsg, 'error');
+    console.error(errorMsg, error);
+
+    // ✅ Ghi log chi tiết
+    logAction('invoice_parse_error', {
+        filename: file.name,
+        message: error.message,
+        stack: error.stack || 'No stack trace',
+        time: new Date().toISOString()
+    });
+});
     }
 }
 
@@ -3333,4 +3342,19 @@ function showBusinessDetails(taxCode, from, to) {
 
   document.getElementById(`${taxCode}-exportHistoryTable`).innerHTML =
     renderExportHistory(taxCode, filteredExports);
+}
+
+function showLogHistory() {
+    const logs = JSON.parse(localStorage.getItem('logs') || '[]');
+    if (logs.length === 0) {
+        alert('✅ Không có log lỗi nào');
+        return;
+    }
+
+    const last10 = logs.slice(-10).reverse();
+    const logText = last10.map((log, i) =>
+        `${i + 1}. [${log.type}] ${log.data.filename || ''}\n→ ${log.data.message}\n`
+    ).join('\n');
+
+    alert(`🧾 Log lỗi gần đây:\n\n${logText}`);
 }
