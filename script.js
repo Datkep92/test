@@ -3207,7 +3207,8 @@ function showBusinessDetails(taxCode, from, to) {
   currentTaxCode = taxCode;
   const hkd = hkdData[taxCode];
   if (!hkd) {
-    showToast('Không tìm thấy doanh nghiệp', 'error');
+    logAction('error', { message: `Không tìm thấy HKD với ID: ${taxCode}` });
+    showToast('Lỗi: Không tìm thấy doanh nghiệp', 'error');
     mainContent.innerHTML = '<div id="hkdInfo">Chưa chọn HKD</div>';
     return;
   }
@@ -3216,7 +3217,9 @@ function showBusinessDetails(taxCode, from, to) {
   const toDate = to ? new Date(to) : null;
   if (toDate) toDate.setHours(23, 59, 59, 999);
 
-  const filteredInvoices = hkd.invoices.filter(inv => {
+  const container = mainContent;
+
+  const filteredInvoices = (hkd.invoices || []).filter(inv => {
     const d = new Date(inv.date || inv.invoiceInfo?.date);
     return (!fromDate || d >= fromDate) && (!toDate || d <= toDate);
   });
@@ -3226,39 +3229,52 @@ function showBusinessDetails(taxCode, from, to) {
     return (!fromDate || d >= fromDate) && (!toDate || d <= toDate);
   });
 
+  const relatedCodes = new Set();
+  filteredInvoices.forEach(inv => {
+    (inv.products || []).forEach(p => relatedCodes.add(`${p.code}__${p.unit}`));
+  });
+
+  const filterByRelatedCodes = (list) => list.filter(item => {
+    const code = item.code || 'UNKNOWN';
+    const unit = item.unit || 'N/A';
+    return relatedCodes.has(`${code}__${unit}`);
+  });
+
+  const inventoryMain = filterByRelatedCodes(hkd.tonkhoMain || []);
+  const inventoryKM = filterByRelatedCodes(hkd.tonkhoKM || []);
+  const inventoryCK = filterByRelatedCodes(hkd.tonkhoCK || []);
+
+  const allInventory = [...inventoryMain, ...inventoryKM, ...inventoryCK];
+
+  const calculateInventoryTotals = (list) => {
+    let totalQuantity = 0, totalAmount = 0;
+    list.forEach(p => {
+      totalQuantity += parseFloat(p.quantity || 0);
+      totalAmount += parseFloat(p.amount || 0);
+    });
+    return { totalQuantity, totalAmount };
+  };
+
+  const { totalQuantity: totalQuantityMain, totalAmount: totalAmountMain } = calculateInventoryTotals(inventoryMain);
+
   const name = hkd.name || 'Chưa rõ';
   const f = from ? new Date(from).toLocaleDateString('vi-VN') : 'đầu kỳ';
   const t = to ? new Date(to).toLocaleDateString('vi-VN') : 'nay';
 
-  // ✅ Tổng hợp tồn kho từng kho
-  const getTotals = (list) => {
-    let totalQty = 0, totalAmt = 0;
-    for (const p of list || []) {
-      totalQty += parseFloat(p.quantity || 0);
-      totalAmt += parseFloat(p.amount || 0);
-    }
-    return { totalQty, totalAmt };
-  };
-
-  const { totalAmt: amtMain } = getTotals(hkd.tonkhoMain);
-  const { totalAmt: amtKM } = getTotals(hkd.tonkhoKM);
-  const { totalAmt: amtCK } = getTotals(hkd.tonkhoCK);
-  const totalTonkho = amtMain + amtKM + amtCK;
-
-  // ✅ Tổng hợp hóa đơn & xuất hàng
-  let totalInvoiceAmount = 0, totalInvoiceTax = 0, totalInvoiceDiscount = 0;
+  let totalInvoiceAmount = 0, totalInvoiceTax = 0, totalInvoiceFee = 0, totalInvoiceDiscount = 0;
   filteredInvoices.forEach(inv => {
     totalInvoiceAmount += parseFloat(inv.totals?.total || 0);
     totalInvoiceTax += parseFloat(inv.totals?.tax || 0);
+    totalInvoiceFee += parseFloat(inv.totals?.fee || 0);
     totalInvoiceDiscount += parseFloat(inv.totals?.discount || 0);
   });
 
   let totalExportRevenue = 0, totalExportCost = 0;
   filteredExports.forEach(r => {
     (r.productList || []).forEach(p => {
+      const qty = parseFloat(p.quantity || 0);
       const cost = parseFloat(p.price || 0);
       const sell = parseFloat(p.sellingPrice || 0);
-      const qty = parseFloat(p.quantity || 0);
       totalExportRevenue += sell * qty;
       totalExportCost += cost * qty;
     });
@@ -3266,8 +3282,7 @@ function showBusinessDetails(taxCode, from, to) {
 
   const totalProfit = totalExportRevenue - totalExportCost;
 
-  // ✅ Hiển thị HTML
-  mainContent.innerHTML = `
+  container.innerHTML = `
     <div class="hkd-wrapper">
       <div class="hkd-report-filters">
         <label>Từ ngày: <input type="date" id="reportFrom-${taxCode}" value="${from || ''}"></label>
@@ -3287,13 +3302,14 @@ function showBusinessDetails(taxCode, from, to) {
         <div class="summary-box"><div class="label">📥 Tổng HĐ đầu vào</div><div class="value">${filteredInvoices.length}</div></div>
         <div class="summary-box"><div class="label">🧾 Tổng HDST đã T.Toán</div><div class="value">${formatCurrency(totalInvoiceAmount)}</div></div>
         <div class="summary-box"><div class="label">💸 Thuế GTGT đã trả</div><div class="value">${formatCurrency(totalInvoiceTax)}</div></div>
+        <div class="summary-box"><div class="label">📦 Phí</div><div class="value">${formatCurrency(totalInvoiceFee)}</div></div>
         <div class="summary-box"><div class="label">🎁 Chiết khấu</div><div class="value">${formatCurrency(totalInvoiceDiscount)}</div></div>
         <div class="summary-box"><div class="label">📤 Tổng HĐ xuất hàng</div><div class="value">${filteredExports.length}</div></div>
         <div class="summary-box"><div class="label">📤 Tổng tiền xuất hàng</div><div class="value">${formatCurrency(totalExportRevenue)}</div></div>
         <div class="summary-box"><div class="label">📈 Tổng lợi nhuận tạm tính</div><div class="value">${formatCurrency(totalProfit)}</div></div>
         <div class="summary-box">
           <div class="label">💼 Tổng tồn kho hiện tại (Chưa thuế)</div>
-          <div class="value" id="hkd-summary-tonkho">${formatCurrency(totalTonkho)}</div>
+          <div class="value" id="hkd-summary-tonkho">${formatCurrency(totalAmountMain)}</div>
         </div>
       </div>
 
@@ -3302,6 +3318,7 @@ function showBusinessDetails(taxCode, from, to) {
         <div class="tab" onclick="openTab(event, '${taxCode}-qlyhoadon')">📥 Quản lý Hóa đơn đầu vào</div>
         <div class="tab" onclick="openTab(event, '${taxCode}-xuathang')">📤 Xuất hàng hóa</div>
         <div class="tab" onclick="openTab(event, '${taxCode}-lichsu')">📜 Lịch sử xuất hàng</div>
+        <div class="tab" onclick="openTab(event, '${taxCode}-xoaHKD')">🗑️ Lịch sử xóa HKD</div>
       </div>
 
       <div id="${taxCode}-tonkho" class="tab-content active hkd-section">
@@ -3317,6 +3334,7 @@ function showBusinessDetails(taxCode, from, to) {
       </div>
 
       <div id="${taxCode}-qlyhoadon" class="tab-content hkd-section">
+        <h4>📥 Quản lý Hóa đơn đầu vào</h4>
         <div id="${taxCode}-invoiceTablePlaceholder"></div>
       </div>
 
@@ -3330,20 +3348,18 @@ function showBusinessDetails(taxCode, from, to) {
     </div>
   `;
 
-  // ✅ Render bảng tồn kho mặc định
-  renderTonkhoTable(taxCode, 'main');
-
-  // ✅ Render bảng hóa đơn và xuất hàng
+  // ✅ Hiển thị bảng hóa đơn, xuất hàng
   document.getElementById(`${taxCode}-invoiceTablePlaceholder`).innerHTML =
     renderInvoiceManagementTable({ ...hkd, invoices: filteredInvoices });
 
   document.getElementById(`${taxCode}-exportTabPlaceholder`).innerHTML =
-    renderExportTab(hkd, taxCode);
+    renderExportTab({ ...hkd }, taxCode);
 
   document.getElementById(`${taxCode}-exportHistoryTable`).innerHTML =
     renderExportHistory(taxCode, filteredExports);
-}
 
+  renderTonkhoTable(taxCode, 'main');
+}
 function showLogHistory() {
     const logs = JSON.parse(localStorage.getItem('logs') || '[]');
     if (logs.length === 0) {
