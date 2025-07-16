@@ -394,41 +394,7 @@ function updateBusinessList() {
 
 
 
-function savePopupToInventory(taxCode, invoiceIdx) {
-    const inv = hkdData[taxCode].invoices[invoiceIdx];
-    if (!inv) return;
 
-    inv.products.forEach(p => {
-        const quantity = parseFloat(p.quantity);
-        const price = parseFloat(p.price);
-        const taxRate = parseFloat(p.taxRate);
-
-        const existing = hkdData[taxCode].inventory.find(i => i.code === p.code && i.unit === p.unit);
-        if (existing) {
-            existing.quantity = (parseFloat(existing.quantity) + quantity).toString();
-            existing.amount = (parseFloat(existing.quantity) * price).toFixed(2);
-            existing.tax = (parseFloat(existing.quantity) * price * taxRate / 100).toFixed(2);
-        } else {
-            hkdData[taxCode].inventory.push({
-                code: p.code,
-                name: p.name,
-                unit: p.unit,
-                quantity: quantity.toString(),
-                price: price.toString(),
-                discount: p.discount,
-                amount: (quantity * price).toFixed(2),
-                taxRate: taxRate.toString(),
-                tax: (quantity * price * taxRate / 100).toFixed(2),
-                category: p.category,
-                sellingPrice: calculateSellingPrice(price)
-            });
-        }
-    });
-
-    storageHandler.save('hkd_data', hkdData);
-    showBusinessDetails(taxCode);
-    showToast('Đã nhập vào tồn kho', 'success');
-}
 function deleteInvoice(invoiceNumber, mccqt, taxCode) {
     const invoices = hkdData[taxCode].invoices;
     const index = invoices.findIndex(i => i.invoiceInfo.number === invoiceNumber && i.invoiceInfo.mccqt === mccqt);
@@ -1538,162 +1504,6 @@ function applyHKDReportFilter(taxCode) {
 
 
 // ✅ Hàm showBusinessDetails hoàn chỉnh đã tích hợp hiển thị tổng tồn kho chính đúng và bố cục đẹp
-function showBusinessDetails(taxCode, from, to) {
-  currentTaxCode = taxCode;
-  const hkd = hkdData[taxCode];
-  if (!hkd) {
-    logAction('error', { message: `Không tìm thấy HKD với ID: ${taxCode}` });
-    showToast('Lỗi: Không tìm thấy doanh nghiệp', 'error');
-    mainContent.innerHTML = '<div id="hkdInfo">Chưa chọn HKD</div>';
-    return;
-  }
-
-  const fromDate = from ? new Date(from) : null;
-  const toDate = to ? new Date(to) : null;
-  if (toDate) toDate.setHours(23, 59, 59, 999);
-
-  const container = mainContent;
-
-  const filteredInvoices = hkd.invoices.filter(inv => {
-    const d = new Date(inv.invoiceInfo.date);
-    return (!fromDate || d >= fromDate) && (!toDate || d <= toDate);
-  });
-
-  const filteredExports = hkd.exportHistory.filter(e => {
-    const d = new Date(e.date);
-    return (!fromDate || d >= fromDate) && (!toDate || d <= toDate);
-  });
-
-  const relatedCodes = new Set();
-  filteredInvoices.forEach(inv => {
-    (inv.products || []).forEach(p => relatedCodes.add(`${p.code}__${p.unit}`));
-  });
-
-  const filterByRelatedCodes = (list) => list.filter(item => {
-    const code = item.code || 'UNKNOWN';
-    const unit = item.unit || 'N/A';
-    const key = `${code}__${unit}`;
-    return relatedCodes.has(key);
-  });
-
-  const filteredInventory = filterByRelatedCodes(hkd.inventory || []);
-
-  const inventoryMain = filteredInventory.filter(i =>
-    i.category === 'hang_hoa' || i.category === 'chiet_khau'
-  );
-
-  const inventoryMisc = filteredInventory.filter(i =>
-    i.category === 'KM' || parseFloat(i.quantity) === 0
-  );
-
-  const { totalQuantity: totalQuantityMain, totalAmount: totalAmountMain } =
-    calculateInventoryTotals(inventoryMain, false);
-
-  const name = hkd.name || 'Chưa rõ';
-  const address = hkd.address || 'N/A';
-
-  let totalInvoiceAmount = 0, totalInvoiceTax = 0, totalInvoiceFee = 0, totalInvoiceDiscount = 0;
-  filteredInvoices.forEach(inv => {
-    totalInvoiceAmount += parseFloat(inv.totals?.total || 0);
-    totalInvoiceTax += parseFloat(inv.totals?.tax || 0);
-    totalInvoiceFee += parseFloat(inv.totals?.fee || 0);
-    totalInvoiceDiscount += parseFloat(inv.totals?.discount || 0);
-  });
-
-  let totalExportRevenue = 0, totalExportCost = 0;
-  filteredExports.forEach(r => {
-    (r.productList || []).forEach(p => {
-      const cost = parseFloat(p.price || 0);
-      const sell = parseFloat(p.sellingPrice || 0);
-      const qty = parseFloat(p.quantity || 0);
-      totalExportRevenue += sell * qty;
-      totalExportCost += cost * qty;
-    });
-  });
-
-  const totalProfit = totalExportRevenue - totalExportCost;
-  const f = from ? new Date(from).toLocaleDateString('vi-VN') : 'đầu kỳ';
-  const t = to ? new Date(to).toLocaleDateString('vi-VN') : 'nay';
-
-  container.innerHTML = `
-    <div class="hkd-wrapper">
-      <div class="hkd-report-filters">
-        <label>Từ ngày: <input type="date" id="reportFrom-${taxCode}" value="${from || ''}"></label>
-        <label>Đến ngày: <input type="date" id="reportTo-${taxCode}" value="${to || ''}"></label>
-        <button onclick="applyHKDReportFilter('${taxCode}')">📊 Áp dụng</button>
-        <button onclick="resetHKDReport('${taxCode}')">🔄 Xem toàn bộ</button>
-        <button onclick="printHKDSummary('${taxCode}')">🖨️ In báo cáo</button>
-      </div>
-
-      <h2 style="font-size:25px; font-weight:bold; color:red; margin:10px 0;">🧾 ${name}</h2>
-      <div id="filteredSummary-${taxCode}" style="margin-bottom:12px;">
-        📅 Đang lọc từ <b>${f}</b> đến <b>${t}</b>: ${filteredInvoices.length} hóa đơn,
-        ${filteredExports.length} lần xuất hàng
-      </div>
-
-      <div class="hkd-summary-grid hkd-section">
-        <div class="summary-box"><div class="label">📥 Tổng HĐ đầu vào</div><div class="value">${filteredInvoices.length}</div></div>
-        <div class="summary-box"><div class="label">🧾 Tổng HDST đã T.Toán</div><div class="value">${formatCurrency(totalInvoiceAmount)}</div></div>
-        <div class="summary-box"><div class="label">💸 Thuế GTGT đã trả</div><div class="value">${formatCurrency(totalInvoiceTax)}</div></div>
-        <div class="summary-box"><div class="label">📦 Phí</div><div class="value">${formatCurrency(totalInvoiceFee)}</div></div>
-        <div class="summary-box"><div class="label">🎁 Chiết khấu</div><div class="value">${formatCurrency(totalInvoiceDiscount)}</div></div>
-        <div class="summary-box"><div class="label">📤 Tổng HĐ xuất hàng</div><div class="value">${filteredExports.length}</div></div>
-        <div class="summary-box"><div class="label">📤 Tổng tiền xuất hàng</div><div class="value">${formatCurrency(totalExportRevenue)}</div></div>
-        <div class="summary-box"><div class="label">📈 Tổng lợi nhuận tạm tính</div><div class="value">${formatCurrency(totalProfit)}</div></div>
-        <div class="summary-box">
-          <div class="label">💼 Tổng tồn kho hiện tại (Chưa thuế)</div>
-          <div class="value" id="hkd-summary-tonkho">0 đ</div>
-        </div>
-      </div>
-
-      <div class="tabs">
-        <div class="tab active" onclick="openTab(event, '${taxCode}-tonkho')">📦 Tồn kho</div>
-        <div class="tab" onclick="openTab(event, '${taxCode}-qlyhoadon')">📥 Quản lý Hóa đơn đầu vào</div>
-        <div class="tab" onclick="openTab(event, '${taxCode}-xuathang')">📤 Xuất hàng hóa</div>
-        <div class="tab" onclick="openTab(event, '${taxCode}-lichsu')">📜 Lịch sử xuất hàng</div>
-        <div class="tab" onclick="openTab(event, '${taxCode}-xoaHKD')">🗑️ Lịch sử xóa HKD</div>
-      </div>
-
-      <div id="${taxCode}-tonkho" class="tab-content active hkd-section">
-        <h4>📦 Danh sách tồn kho</h4>
-        <div style="margin-bottom:10px;">
-          <button onclick="downloadInventoryExcel('${taxCode}')">📥 Xuất Excel tồn kho</button>
-          <button onclick="switchTonKhoTab('main')" style="padding:4px 10px;">📦 Chính</button>
-          <button onclick="switchTonKhoTab('misc')" style="padding:4px 10px;">🎁 KM / CK</button>
-        </div>
-        <div id="tonKhoTogglesContainer" style="overflow-x:auto;">
-          <div id="tonKho-main"></div>
-          <div id="tonKho-misc" style="display:none;"></div>
-        </div>
-        <script>switchTonKhoTab('main');</script>
-      </div>
-
-      <div id="${taxCode}-qlyhoadon" class="tab-content hkd-section">
-        <h4>📥 Quản lý Hóa đơn đầu vào</h4>
-        <div id="${taxCode}-invoiceTablePlaceholder"></div>
-      </div>
-
-      <div id="${taxCode}-xuathang" class="tab-content hkd-section">
-        <div id="${taxCode}-exportTabPlaceholder"></div>
-        <div style="margin-top:20px;">
-          <h4>📜 Lịch sử xuất hàng</h4>
-          <div id="${taxCode}-exportHistoryTable"></div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  // ✅ Cập nhật số tiền tồn kho vào nút phía trên
-  const tonkhoDisplay = document.getElementById('hkd-summary-tonkho');
-  if (tonkhoDisplay) {
-    tonkhoDisplay.innerText = formatCurrency(totalAmountMain);
-  }
-
-  // ✅ Render các bảng còn lại
-  document.getElementById(`${taxCode}-invoiceTablePlaceholder`).innerHTML = renderInvoiceManagementTable({ ...hkd, invoices: filteredInvoices });
-  document.getElementById(`${taxCode}-exportTabPlaceholder`).innerHTML = renderExportTab({ ...hkd, inventory: filteredInventory }, taxCode);
-  document.getElementById(`${taxCode}-exportHistoryTable`).innerHTML = renderExportHistory(taxCode, filteredExports);
-}
 
 // ✅ Hàm tính tổng tồn kho chính
 function calculateInventoryTotals(inventory) {
@@ -3379,65 +3189,143 @@ function processInvoiceData(invoiceList, forceTaxCode) {
         showBusinessDetails(currentTaxCode);
     }
 }
-
-function addToMainInventory(product, taxCode) {
+function showBusinessDetails(taxCode, from, to) {
+  currentTaxCode = taxCode;
   const hkd = hkdData[taxCode];
-  const code = product.code || 'UNKNOWN';
-  const unit = product.unit || 'N/A';
-  const existing = hkd.inventory.find(i => i.code === code && i.unit === unit);
-
-  const amount = Math.round(parseFloat(product.amount || 0));
-  const quantity = parseFloat(product.quantity || 0);
-  const price = parseFloat(product.price || 0);
-  const tax = Math.round(parseFloat(product.tax || 0));
-
-  if (existing) {
-    existing.quantity = (parseFloat(existing.quantity) + quantity).toString();
-    existing.amount += amount;
-    existing.tax += tax;
-  } else {
-    hkd.inventory.push({
-      code,
-      name: product.name,
-      unit,
-      quantity: quantity.toString(),
-      price: price.toString(),
-      amount,
-      tax,
-      sellingPrice: calculateSellingPrice(price),
-      category: product.category,
-      typeName: product.typeName || ''
-    });
+  if (!hkd) {
+    showToast('Không tìm thấy doanh nghiệp', 'error');
+    mainContent.innerHTML = '<div id="hkdInfo">Chưa chọn HKD</div>';
+    return;
   }
-}
 
-function addToMiscInventory(product, taxCode) {
-  const hkd = hkdData[taxCode];
-  const code = product.code || 'UNKNOWN';
-  const unit = product.unit || 'N/A';
-  const existing = hkd.miscInventory.find(i => i.code === code && i.unit === unit);
+  const fromDate = from ? new Date(from) : null;
+  const toDate = to ? new Date(to) : null;
+  if (toDate) toDate.setHours(23, 59, 59, 999);
 
-  const amount = Math.round(parseFloat(product.amount || 0));
-  const quantity = parseFloat(product.quantity || 0);
-  const price = parseFloat(product.price || 0);
-  const tax = Math.round(parseFloat(product.tax || 0));
+  const filteredInvoices = hkd.invoices.filter(inv => {
+    const d = new Date(inv.date || inv.invoiceInfo?.date);
+    return (!fromDate || d >= fromDate) && (!toDate || d <= toDate);
+  });
 
-  if (existing) {
-    existing.quantity = (parseFloat(existing.quantity) + quantity).toString();
-    existing.amount += amount;
-    existing.tax += tax;
-  } else {
-    hkd.miscInventory.push({
-      code,
-      name: product.name,
-      unit,
-      quantity: quantity.toString(),
-      price: price.toString(),
-      amount,
-      tax,
-      sellingPrice: calculateSellingPrice(price),
-      category: product.category,
-      typeName: product.typeName || ''
+  const filteredExports = (hkd.exportHistory || []).filter(e => {
+    const d = new Date(e.date);
+    return (!fromDate || d >= fromDate) && (!toDate || d <= toDate);
+  });
+
+  const name = hkd.name || 'Chưa rõ';
+  const f = from ? new Date(from).toLocaleDateString('vi-VN') : 'đầu kỳ';
+  const t = to ? new Date(to).toLocaleDateString('vi-VN') : 'nay';
+
+  // ✅ Tổng hợp tồn kho từng kho
+  const getTotals = (list) => {
+    let totalQty = 0, totalAmt = 0;
+    for (const p of list || []) {
+      totalQty += parseFloat(p.quantity || 0);
+      totalAmt += parseFloat(p.amount || 0);
+    }
+    return { totalQty, totalAmt };
+  };
+
+  const { totalAmt: amtMain } = getTotals(hkd.tonkhoMain);
+  const { totalAmt: amtKM } = getTotals(hkd.tonkhoKM);
+  const { totalAmt: amtCK } = getTotals(hkd.tonkhoCK);
+  const totalTonkho = amtMain + amtKM + amtCK;
+
+  // ✅ Tổng hợp hóa đơn & xuất hàng
+  let totalInvoiceAmount = 0, totalInvoiceTax = 0, totalInvoiceDiscount = 0;
+  filteredInvoices.forEach(inv => {
+    totalInvoiceAmount += parseFloat(inv.totals?.total || 0);
+    totalInvoiceTax += parseFloat(inv.totals?.tax || 0);
+    totalInvoiceDiscount += parseFloat(inv.totals?.discount || 0);
+  });
+
+  let totalExportRevenue = 0, totalExportCost = 0;
+  filteredExports.forEach(r => {
+    (r.productList || []).forEach(p => {
+      const cost = parseFloat(p.price || 0);
+      const sell = parseFloat(p.sellingPrice || 0);
+      const qty = parseFloat(p.quantity || 0);
+      totalExportRevenue += sell * qty;
+      totalExportCost += cost * qty;
     });
-  }
+  });
+
+  const totalProfit = totalExportRevenue - totalExportCost;
+
+  // ✅ Hiển thị HTML
+  mainContent.innerHTML = `
+    <div class="hkd-wrapper">
+      <div class="hkd-report-filters">
+        <label>Từ ngày: <input type="date" id="reportFrom-${taxCode}" value="${from || ''}"></label>
+        <label>Đến ngày: <input type="date" id="reportTo-${taxCode}" value="${to || ''}"></label>
+        <button onclick="applyHKDReportFilter('${taxCode}')">📊 Áp dụng</button>
+        <button onclick="resetHKDReport('${taxCode}')">🔄 Xem toàn bộ</button>
+        <button onclick="printHKDSummary('${taxCode}')">🖨️ In báo cáo</button>
+      </div>
+
+      <h2 style="font-size:25px; font-weight:bold; color:red; margin:10px 0;">🧾 ${name}</h2>
+      <div id="filteredSummary-${taxCode}" style="margin-bottom:12px;">
+        📅 Đang lọc từ <b>${f}</b> đến <b>${t}</b>: ${filteredInvoices.length} hóa đơn,
+        ${filteredExports.length} lần xuất hàng
+      </div>
+
+      <div class="hkd-summary-grid hkd-section">
+        <div class="summary-box"><div class="label">📥 Tổng HĐ đầu vào</div><div class="value">${filteredInvoices.length}</div></div>
+        <div class="summary-box"><div class="label">🧾 Tổng HDST đã T.Toán</div><div class="value">${formatCurrency(totalInvoiceAmount)}</div></div>
+        <div class="summary-box"><div class="label">💸 Thuế GTGT đã trả</div><div class="value">${formatCurrency(totalInvoiceTax)}</div></div>
+        <div class="summary-box"><div class="label">🎁 Chiết khấu</div><div class="value">${formatCurrency(totalInvoiceDiscount)}</div></div>
+        <div class="summary-box"><div class="label">📤 Tổng HĐ xuất hàng</div><div class="value">${filteredExports.length}</div></div>
+        <div class="summary-box"><div class="label">📤 Tổng tiền xuất hàng</div><div class="value">${formatCurrency(totalExportRevenue)}</div></div>
+        <div class="summary-box"><div class="label">📈 Tổng lợi nhuận tạm tính</div><div class="value">${formatCurrency(totalProfit)}</div></div>
+        <div class="summary-box">
+          <div class="label">💼 Tổng tồn kho hiện tại (Chưa thuế)</div>
+          <div class="value" id="hkd-summary-tonkho">${formatCurrency(totalTonkho)}</div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" onclick="openTab(event, '${taxCode}-tonkho')">📦 Tồn kho</div>
+        <div class="tab" onclick="openTab(event, '${taxCode}-qlyhoadon')">📥 Quản lý Hóa đơn đầu vào</div>
+        <div class="tab" onclick="openTab(event, '${taxCode}-xuathang')">📤 Xuất hàng hóa</div>
+        <div class="tab" onclick="openTab(event, '${taxCode}-lichsu')">📜 Lịch sử xuất hàng</div>
+      </div>
+
+      <div id="${taxCode}-tonkho" class="tab-content active hkd-section">
+        <h4>📦 Danh sách tồn kho</h4>
+        <div style="margin-bottom:10px;">
+          <button onclick="renderTonkhoTable('${taxCode}', 'main')">📦 Hàng hóa</button>
+          <button onclick="renderTonkhoTable('${taxCode}', 'km')">🎁 Khuyến mại</button>
+          <button onclick="renderTonkhoTable('${taxCode}', 'ck')">🔻 Chiết khấu</button>
+        </div>
+        <div id="tonKho-main"></div>
+        <div id="tonKho-km" style="display:none;"></div>
+        <div id="tonKho-ck" style="display:none;"></div>
+      </div>
+
+      <div id="${taxCode}-qlyhoadon" class="tab-content hkd-section">
+        <div id="${taxCode}-invoiceTablePlaceholder"></div>
+      </div>
+
+      <div id="${taxCode}-xuathang" class="tab-content hkd-section">
+        <div id="${taxCode}-exportTabPlaceholder"></div>
+        <div style="margin-top:20px;">
+          <h4>📜 Lịch sử xuất hàng</h4>
+          <div id="${taxCode}-exportHistoryTable"></div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // ✅ Render bảng tồn kho mặc định
+  renderTonkhoTable(taxCode, 'main');
+
+  // ✅ Render bảng hóa đơn và xuất hàng
+  document.getElementById(`${taxCode}-invoiceTablePlaceholder`).innerHTML =
+    renderInvoiceManagementTable({ ...hkd, invoices: filteredInvoices });
+
+  document.getElementById(`${taxCode}-exportTabPlaceholder`).innerHTML =
+    renderExportTab(hkd, taxCode);
+
+  document.getElementById(`${taxCode}-exportHistoryTable`).innerHTML =
+    renderExportHistory(taxCode, filteredExports);
 }
