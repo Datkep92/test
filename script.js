@@ -777,28 +777,16 @@ function formatNumber(num) {
     return parseFloat(num).toLocaleString('vi-VN');
 }
 
-function openTab(event, tabId) {
-  const tabElement = document.getElementById(tabId);
-  if (!tabElement) return;
+function openTab(evt, tabId) {
+    const tabs = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => tab.style.display = 'none');
 
-  const tabContentContainer = tabElement.parentElement;
-  if (!tabContentContainer) return;
+    const buttons = document.querySelectorAll('.tab');
+    buttons.forEach(btn => btn.classList.remove('active'));
 
-  const tabContent = tabContentContainer.querySelectorAll('.tab-content');
-  const tabs = event.currentTarget?.parentElement?.querySelectorAll('.tab') || [];
-
-  // Ẩn tất cả nội dung và xóa active tab
-  tabContent.forEach(content => content.classList.remove('active'));
-  tabs.forEach(tab => tab.classList.remove('active'));
-
-  // Hiện tab mới
-  tabElement.classList.add('active');
-  event.currentTarget?.classList.add('active');
-
-  // ✅ Khi vào tab tồn kho → tự động hiển thị tab chính
-  if (tabId.endsWith('-tonkho')) {
-    switchTonKhoTab('main');
-  }
+    const currentTab = document.getElementById(tabId);
+    if (currentTab) currentTab.style.display = 'block';
+    if (evt?.currentTarget) evt.currentTarget.classList.add('active');
 }
 
 // Clear all data
@@ -1110,37 +1098,26 @@ function confirmExport(taxCode, buyerInfo, productList, mode) {
 }
 
 // lịch sử xuất hàng
-function renderExportHistory(taxCode) {
-    const hkd = hkdData[taxCode];
-    if (!hkd || !Array.isArray(hkd.exportHistory)) return '<p>Chưa có lịch sử xuất hàng</p>';
+function renderExportHistory(taxCode, exports) {
+    if (!exports || exports.length === 0) return '<p>📭 Chưa có lịch sử xuất hàng.</p>';
 
-    const sorted = hkd.exportHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    let html = `<table><thead><tr>
+      <th>STT</th><th>Ngày</th><th>Người mua</th><th>Loại</th><th>Tổng tiền</th>
+    </tr></thead><tbody>`;
 
-    return `
-        <table>
-            <thead>
-                <tr>
-                    <th>STT</th><th>Người mua</th><th>MST</th><th>Thời gian</th><th>Số lượng SP</th><th>Tổng tiền</th><th>Chế độ</th><th>Xem</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${sorted.map((e, i) => `
-                    <tr>
-                        <td>${i + 1}</td>
-                        <td>${e.buyerName || 'N/A'}</td>
-                        <td>${e.buyerTaxCode || 'N/A'}</td>
-                        <td>${new Date(e.timestamp).toLocaleString('vi-VN')}</td>
-                        <td>${e.productList?.length || 0}</td>
-                        <td class="text-right">${formatCurrency(e.totalAmount)}</td>
-                        <td>${e.mode || 'unknown'}</td>
-                        <td><button onclick="viewExportDetail('${taxCode}', ${i})">📄 Xem</button></td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        </table>
-    `;
+    exports.forEach((e, i) => {
+        html += `<tr>
+          <td>${i + 1}</td>
+          <td>${e.date}</td>
+          <td>${e.buyer?.name || ''}</td>
+          <td>${e.mode}</td>
+          <td class="text-right">${formatCurrency(e.total || 0)}</td>
+        </tr>`;
+    });
+
+    html += '</tbody></table>';
+    return html;
 }
-
 
 function viewExportDetail(exportId, taxCode) {
     const hkd = hkdData[taxCode];
@@ -1678,25 +1655,17 @@ let items = hkd.inventory.filter(item => {
 //
 
 function renderExportTab(hkd, taxCode) {
+    if (!hkd || !hkd.inventory || hkd.inventory.length === 0) {
+        return '<p>📭 Không có hàng trong kho để xuất.</p>';
+    }
+
     return `
+      <div>
         <h4>📤 Xuất hàng hóa</h4>
-        <div class="export-input-group">
-    <label for="${taxCode}-exportAmount" class="export-label">💵 Số tiền cần xuất:</label>
-    <input type="number" id="${taxCode}-exportAmount" placeholder="VD: 500000" class="export-input" />
-    
-    <label class="export-checkbox">
-        <input type="checkbox" id="${taxCode}-boHangChietKhau" checked />
-        Không xuất hàng chiết khấu
-    </label>
-</div>
-
-        <div class="export-mode-buttons">
-  <button class="export-mode-btn" onclick="handleExportMode('manual', '${taxCode}')">🛠️ Thủ công</button>
-  <button class="export-mode-btn" onclick="handleExportMode('semi', '${taxCode}')">⚙️ Bán tự động</button>
-  <button class="export-mode-btn" onclick="handleExportMode('auto', '${taxCode}')">🤖 Tự động</button>
-</div>
-
-        <div id="${taxCode}-exportResultBox"></div>
+        <button onclick="showExportPopup('manual', '${taxCode}')">✍️ Xuất thủ công</button>
+        <button onclick="showExportPopup('semi', '${taxCode}')">🤖 Bán tự động</button>
+        <button onclick="showExportPopup('auto', '${taxCode}')">⚡ Tự động</button>
+      </div>
     `;
 }
 
@@ -1856,87 +1825,73 @@ function handleParsedInvoice(parsed, taxCode) {
 
 function renderTonkhoTable(taxCode, type) {
     const hkd = hkdData[taxCode];
-    if (!hkd) return;
+    if (!hkd || !hkd.inventory) return;
 
-    const map = {
-        main: { title: '📦 Hàng hóa', data: hkd.tonkhoMain || [] },
-        km:   { title: '🎁 Khuyến mại', data: hkd.tonkhoKM || [] },
-        ck:   { title: '🔻 Chiết khấu', data: hkd.tonkhoCK || [] }
+    const typeMap = {
+        main: 'hang_hoa',
+        km: 'KM',
+        ck: 'chiet_khau'
     };
 
-    const { title, data } = map[type] || {};
-    if (!data) return;
+    const category = typeMap[type];
+    const list = hkd.inventory.filter(p => p.category === category);
 
-    const container = document.getElementById(`tonKho-${type}`);
+    const containerIds = {
+        main: 'tonKho-main',
+        km: 'tonKho-km',
+        ck: 'tonKho-ck'
+    };
+
+    Object.values(containerIds).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+
+    const container = document.getElementById(containerIds[type]);
     if (!container) return;
 
-    if (data.length === 0) {
-        container.innerHTML = `
-            <div style="margin-bottom:10px;">
-                <button onclick="addProduct('${taxCode}', '${type}')">➕ Thêm dòng</button>
-            </div>
-            <p>📭 Không có hàng trong kho này.</p>`;
+    container.style.display = 'block';
+
+    if (list.length === 0) {
+        container.innerHTML = '<p>📭 Không có hàng trong kho này.</p>';
         return;
     }
 
-    let totalQty = 0;
-    let totalAmount = 0;
+    let html = `<table><thead><tr>
+      <th>STT</th><th>Tên hàng</th><th>ĐVT</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th><th>Thuế</th>
+    </tr></thead><tbody>`;
 
-    const rows = data.map((item, i) => {
-        const qty = parseFloat(item.quantity || 0);
-        const amount = parseFloat(item.amount || 0);
+    let totalQty = 0, totalAmount = 0, totalTax = 0;
+
+    list.forEach((p, i) => {
+        const qty = parseFloat(p.quantity || 0);
+        const amount = parseFloat(p.amount || 0);
+        const tax = parseFloat(p.tax || 0);
+
         totalQty += qty;
         totalAmount += amount;
+        totalTax += tax;
 
-        return `
-        <tr>
-            <td>${i + 1}</td>
-            <td>${item.name || ''}</td>
-            <td>${item.code || ''}</td>
-            <td>${item.unit || ''}</td>
-            <td class="text-right">${formatNumber(qty)}</td>
-            <td class="text-right">${formatCurrency(item.price)}</td>
-            <td class="text-right">${formatCurrency(amount)}</td>
-            <td class="text-right">${item.taxRate || '0'}%</td>
-            <td>
-                <select onchange="productAction(this, '${taxCode}', '${type}', ${i})">
-                    <option value="">⋮</option>
-                    <option value="edit">✏️ Sửa</option>
-                    <option value="delete">❌ Xoá</option>
-                    <option value="move">🔁 Chuyển kho</option>
-                </select>
-            </td>
+        html += `<tr>
+          <td>${i + 1}</td>
+          <td>${p.name}</td>
+          <td>${p.unit}</td>
+          <td class="text-right">${qty}</td>
+          <td class="text-right">${formatCurrency(p.price)}</td>
+          <td class="text-right">${formatCurrency(amount)}</td>
+          <td class="text-right">${formatCurrency(tax)}</td>
         </tr>`;
-    }).join('');
+    });
 
-    container.innerHTML = `
-        <div style="margin-bottom:10px; display:flex; justify-content:space-between;">
-            <h4 style="margin:0;">${title}</h4>
-            <div>
-                <button onclick="addProduct('${taxCode}', '${type}')">➕ Thêm dòng</button>
-                <button onclick="downloadTonkhoExcel('${taxCode}', '${type}')">📥 Xuất Excel</button>
-            </div>
-        </div>
+    html += `<tr style="font-weight:bold;background:#f0f0f0;">
+      <td colspan="3">Tổng</td>
+      <td class="text-right">${totalQty}</td>
+      <td></td>
+      <td class="text-right">${formatCurrency(totalAmount)}</td>
+      <td class="text-right">${formatCurrency(totalTax)}</td>
+    </tr></tbody></table>`;
 
-        <table class="tonkho-table">
-            <thead>
-                <tr>
-                    <th>STT</th><th>Tên hàng</th><th>Mã</th><th>ĐVT</th><th>SL</th>
-                    <th>Đơn giá</th><th>Thành tiền</th><th>Thuế</th><th>⋮</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${rows}
-                <tr style="font-weight:bold;background:#f0f0f0;">
-                    <td colspan="4" style="text-align:right;">Tổng cộng:</td>
-                    <td class="text-right">${formatNumber(totalQty)}</td>
-                    <td></td>
-                    <td class="text-right">${formatCurrency(totalAmount)}</td>
-                    <td colspan="2"></td>
-                </tr>
-            </tbody>
-        </table>
-    `;
+    container.innerHTML = html;
 }
 
 function productAction(select, taxCode, type, index) {
@@ -2973,48 +2928,42 @@ function renderInventoryTable(list, title) {
 }
 // ✅ Cập nhật bảng quản lý hóa đơn với tổng tính toán lại từ tồn kho
 function renderInvoiceManagementTable(hkd) {
-  if (!hkd.invoices || hkd.invoices.length === 0) return '<p>Chưa có hóa đơn nào.</p>';
+    const invoices = hkd.invoices || [];
+    if (invoices.length === 0) return '<p>Chưa có hóa đơn nào.</p>';
 
-  let html = `<table><thead><tr>
-    <th>STT</th><th>Mã hóa đơn</th><th>Ngày</th><th>Tiền từ XML (TgTCThue)</th><th>Tính lại từ bảng kê</th>
-    <th>Tồn kho trước</th><th>Tồn kho sau</th><th>Trạng thái</th><th>Xem</th><th>Xoá</th>
-  </tr></thead><tbody>`;
+    let html = `<table><thead><tr>
+      <th>STT</th><th>Mã hóa đơn</th><th>Ngày</th><th>Tiền XML</th><th>Tính lại</th>
+      <th>Kho trước</th><th>Kho sau</th><th>Trạng thái</th><th>Xem</th><th>Xoá</th>
+    </tr></thead><tbody>`;
 
-  let totalInventory = 0;
+    let totalBefore = 0;
 
-  hkd.invoices.forEach((inv, idx) => {
-    // ✅ Dùng đúng <TgTCThue> làm tổng tiền chưa thuế
-    const xmlSubtotal = parseFloat(inv.totals.TgTCThue || '0');
+    invoices.forEach((inv, i) => {
+        const xmlAmount = parseFloat(inv.totals?.xmlDeclared || 0);
+        const calcAmount = parseFloat(inv.totals?.total || 0);
+        const diff = Math.abs(xmlAmount - calcAmount);
+        const isOk = diff <= 100;
+        const before = totalBefore;
+        const after = before + calcAmount;
+        totalBefore = after;
 
-    // ✅ Tính lại từ bảng kê: chỉ tính tiền hàng chưa thuế (amount)
-    const calcSubtotal = inv.products.reduce((sum, p) => sum + parseFloat(p.amount || '0'), 0);
+        html += `<tr>
+          <td>${i + 1}</td>
+          <td>${inv.invoiceInfo?.number || 'N/A'}</td>
+          <td>${inv.invoiceInfo?.date || inv.date || 'N/A'}</td>
+          <td class="text-right">${formatCurrency(xmlAmount)}</td>
+          <td class="text-right">${formatCurrency(calcAmount)}</td>
+          <td class="text-right">${formatCurrency(before)}</td>
+          <td class="text-right">${formatCurrency(after)}</td>
+          <td style="color:${isOk ? 'green' : 'red'}; font-weight:bold;">${isOk ? '✅ Đúng' : '❌ Sai'}</td>
+          <td><button onclick="showInvoicePopup('${inv.invoiceInfo?.number}', '${inv.invoiceInfo?.mccqt || ''}', ${i}, '${hkd.taxCode}')">📄</button></td>
+          <td><button onclick="deleteInvoice('${inv.invoiceInfo?.number}', '${inv.invoiceInfo?.mccqt || ''}', '${hkd.taxCode}')">❌</button></td>
+        </tr>`;
+    });
 
-    const diff = Math.abs(xmlSubtotal - calcSubtotal);
-    const isCorrect = diff <= 100;
-    const statusColor = isCorrect ? 'green' : 'red';
-
-    const inventoryBefore = totalInventory;
-    const inventoryAfter = totalInventory + calcSubtotal;
-    totalInventory = inventoryAfter;
-
-    html += `<tr>
-      <td>${idx + 1}</td>
-      <td>${inv.invoiceInfo.number || 'N/A'}</td>
-      <td>${inv.invoiceInfo.date || 'N/A'}</td>
-      <td class="text-right">${formatCurrency(xmlSubtotal)}</td>
-      <td class="text-right">${formatCurrency(calcSubtotal)}</td>
-      <td class="text-right">${formatCurrency(inventoryBefore)}</td>
-      <td class="text-right">${formatCurrency(inventoryAfter)}</td>
-      <td style="color:${statusColor}; font-weight:bold">${isCorrect ? '✅ Đúng' : '❌ Sai lệch'}</td>
-      <td><button onclick="showInvoicePopup('${inv.invoiceInfo.number}', '${inv.invoiceInfo.mccqt}', '${hkd.invoices.indexOf(inv)}', '${currentTaxCode}')">📄 Xem</button></td>
-      <td><button onclick="deleteInvoice('${inv.invoiceInfo.number}', '${inv.invoiceInfo.mccqt}', '${currentTaxCode}')">❌ Xoá</button></td>
-    </tr>`;
-  });
-
-  html += '</tbody></table>';
-  return html;
+    html += '</tbody></table>';
+    return html;
 }
-
 // ✅ Tính tổng tồn kho từ bảng chính
 function getTotalTonKho(hkd) {
   if (!hkd?.inventory) return 0;
