@@ -540,95 +540,72 @@ function showAddProductForm(taxCode, item = null, index = null) {
   });
 }
 
-function addProduct(taxCode) {
-    const name = document.getElementById('productName').value.trim();
-    const code = document.getElementById('productCode').value.trim();
-    const unit = document.getElementById('productUnit').value.trim();
-    const category = document.getElementById('productCategory').value;
-    const quantity = parseFloat(document.getElementById('productQuantity').value);
-    const price = parseFloat(document.getElementById('productPrice').value);
-    const taxRate = parseFloat(document.getElementById('productTaxRate').value);
+function addInventoryItem(taxCode, type) {
+    const hkd = hkdData[taxCode];
+    if (!hkd) return;
 
-    if (!name || !code || !unit || !category) {
-        showToast('Vui lòng nhập đầy đủ thông tin', 'error');
-        return;
-    }
-    if (isNaN(quantity) || isNaN(price) || isNaN(taxRate) || quantity < 0 || price < 0 || taxRate < 0) {
-        showToast('Vui lòng nhập số hợp lệ (không âm)', 'error');
-        return;
-    }
-    if (!['hang_hoa', 'KM', 'chiet_khau'].includes(category)) {
-        showToast('Phân loại không hợp lệ', 'error');
-        return;
-    }
+    const name = prompt('Tên hàng hóa:');
+    if (!name) return;
 
-    const product = {
-        code,
+    const unit = prompt('Đơn vị tính:', 'cái') || 'cái';
+    const quantity = parseFloat(prompt('Số lượng:', '1') || 0);
+    const price = parseFloat(prompt('Đơn giá:', '0') || 0);
+    const taxRate = parseFloat(prompt('Thuế suất (%):', '8') || 0);
+
+    const categoryMap = {
+        main: 'hang_hoa',
+        km: 'KM',
+        ck: 'chiet_khau'
+    };
+
+    const amount = Math.round(quantity * price);
+    const tax = Math.round(amount * taxRate / 100);
+
+    const item = {
+        code: 'NEW_' + Date.now(),
         name,
         unit,
-        category,
         quantity: quantity.toString(),
         price: price.toString(),
+        amount,
+        tax,
         taxRate: taxRate.toString(),
-        tax: (quantity * price * taxRate / 100).toString(),
-        amount: (quantity * price).toString(),
-        type: 'Nhập',
+        category: categoryMap[type],
+        type: 'Nhập tay',
         sellingPrice: calculateSellingPrice(price)
     };
 
-    hkdData[taxCode].inventory.push(product);
-    hkdData[taxCode].lastInteracted = Date.now();
-    hkdOrder = hkdOrder.filter(code => code !== taxCode);
-    hkdOrder.unshift(taxCode);
-    actionHistory.push({
-        type: 'add_product',
-        data: { ...product },
-        taxCode
-    });
-    storageHandler.save('hkd_data', hkdData);
-    storageHandler.save('hkd_order', hkdOrder);
+    hkd.inventory.push(item);
+    showToast(`✅ Đã thêm hàng mới vào kho ${type.toUpperCase()}`, 'success');
     showBusinessDetails(taxCode);
-    showToast('Thêm sản phẩm thành công', 'success');
-    logAction('add_product', { taxCode, productCode: code });
 }
 
-function editProduct(taxCode, code, unit) {
-    const item = hkdData[taxCode].inventory.find(item => item.code === code && item.unit === unit);
-    if (!item) {
-        showToast('Không tìm thấy sản phẩm', 'error');
-        return;
-    }
+function editInventoryItem(taxCode, index, type) {
+    const hkd = hkdData[taxCode];
+    if (!hkd || !hkd.inventory) return;
 
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <h3>Sửa sản phẩm</h3>
-            <form id="editProductForm">
-                <input type="text" id="productName" value="${item.name}" required>
-                <input type="text" id="productCode" value="${item.code}" readonly>
-                <input type="text" id="productUnit" value="${item.unit}" readonly>
-                <select id="productCategory" required>
-                    <option value="hang_hoa" ${item.category === 'hang_hoa' ? 'selected' : ''}>Hàng hóa</option>
-                    <option value="KM" ${item.category === 'KM' ? 'selected' : ''}>Khuyến mại</option>
-                    <option value="chiet_khau" ${item.category === 'chiet_khau' ? 'selected' : ''}>Chiết khấu</option>
-                </select>
-                <input type="number" id="productQuantity" value="${item.quantity}" required min="0" step="0.01">
-                <input type="number" id="productPrice" value="${item.price}" required min="0" step="0.01">
-                <input type="number" id="productTaxRate" value="${item.taxRate}" required min="0" step="0.01">
-                <button type="submit">Lưu</button>
-                <button type="button" onclick="this.closest('.modal').remove()">Hủy</button>
-            </form>
-        </div>
-    `;
-    document.body.appendChild(modal);
+    const typeMap = {
+        main: 'hang_hoa',
+        km: 'KM',
+        ck: 'chiet_khau'
+    };
 
-    const form = document.getElementById('editProductForm');
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        updateProduct(taxCode, code, unit);
-        modal.remove();
-    });
+    const list = hkd.inventory.filter(p => p.category === typeMap[type]);
+    const item = list[index];
+    if (!item) return;
+
+    const newQty = prompt('Số lượng mới:', item.quantity);
+    const newPrice = prompt('Đơn giá mới:', item.price);
+
+    if (newQty !== null) item.quantity = parseFloat(newQty || 0).toString();
+    if (newPrice !== null) item.price = parseFloat(newPrice || 0).toString();
+
+    item.amount = Math.round(parseFloat(item.quantity) * parseFloat(item.price));
+    item.tax = Math.round(item.amount * parseFloat(item.taxRate || 0) / 100);
+    item.sellingPrice = calculateSellingPrice(item.price);
+
+    showToast('✅ Đã cập nhật dòng hàng', 'success');
+    showBusinessDetails(taxCode);
 }
 
 function updateProduct(taxCode, code, unit) {
@@ -1880,6 +1857,7 @@ function renderTonkhoTable(taxCode, type) {
           <td class="text-right">${formatCurrency(p.price)}</td>
           <td class="text-right">${formatCurrency(amount)}</td>
           <td class="text-right">${formatCurrency(tax)}</td>
+<td><button onclick="editInventoryItem('${taxCode}', ${i}, '${type}')">✏️</button></td>
         </tr>`;
     });
 
@@ -1911,39 +1889,7 @@ function productAction(select, taxCode, type, index) {
     }
 }
 
-function editProduct(taxCode, type, index) {
-    const hkd = hkdData[taxCode];
-    if (!hkd) return;
 
-    const khoMap = {
-        main: hkd.tonkhoMain,
-        km: hkd.tonkhoKM,
-        ck: hkd.tonkhoCK
-    };
-
-    const list = khoMap[type];
-    const product = list?.[index];
-    if (!product) return;
-
-    // Tạo popup chỉnh sửa
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = `
-    <div class="modal-content small-modal">
-        <h3>✏️ Sửa sản phẩm</h3>
-        <label>Tên: <input id="editName" value="${product.name || ''}"></label>
-        <label>Mã: <input id="editCode" value="${product.code || ''}"></label>
-        <label>ĐVT: <input id="editUnit" value="${product.unit || ''}"></label>
-        <label>Số lượng: <input type="number" id="editQty" value="${product.quantity || 0}"></label>
-        <label>Đơn giá: <input type="number" id="editPrice" value="${product.price || 0}"></label>
-        <label>Thuế (%): <input type="number" id="editTax" value="${product.taxRate || 0}"></label>
-        <div style="text-align:right; margin-top:10px;">
-            <button onclick="document.body.removeChild(this.closest('.modal'))">❌ Hủy</button>
-            <button onclick="confirmEditProduct('${taxCode}', '${type}', ${index})">💾 Lưu</button>
-        </div>
-    </div>`;
-    document.body.appendChild(modal);
-}
 
 function confirmEditProduct(taxCode, type, index) {
     const hkd = hkdData[taxCode];
@@ -2033,43 +1979,28 @@ function showMoveProductPopup(taxCode, fromType, index) {
     document.body.appendChild(modal);
 }
 
-function moveProductToOtherStock(taxCode, fromType, index) {
+function moveInventoryItem(taxCode, index, fromType, toType) {
     const hkd = hkdData[taxCode];
-    if (!hkd) return;
+    if (!hkd || !hkd.inventory) return;
 
-    const toType = document.getElementById('moveTargetType')?.value;
-    if (!toType || toType === fromType) return;
-
-    const fromMap = {
-        main: hkd.tonkhoMain,
-        km: hkd.tonkhoKM,
-        ck: hkd.tonkhoCK
+    const typeMap = {
+        main: 'hang_hoa',
+        km: 'KM',
+        ck: 'chiet_khau'
     };
 
-    const listFrom = fromMap[fromType];
-    const listTo = fromMap[toType];
+    const fromCat = typeMap[fromType];
+    const toCat = typeMap[toType];
 
-    const product = listFrom?.[index];
-    if (!product) return;
+    const list = hkd.inventory.filter(p => p.category === fromCat);
+    const item = list[index];
+    if (!item) return;
 
-    // ❌ Tránh trùng: nếu sản phẩm cùng mã & ĐVT đã có ở kho đích
-    const isDuplicate = listTo.some(p =>
-        p.code === product.code && p.unit === product.unit
-    );
+    // Đổi loại hàng
+    item.category = toCat;
 
-    if (isDuplicate) {
-        alert("❌ Kho đích đã có sản phẩm cùng mã và đơn vị. Vui lòng sửa trước.");
-        return;
-    }
-
-    // Xóa khỏi kho hiện tại và đưa vào kho đích
-    listFrom.splice(index, 1);
-    listTo.push(product);
-
-    storageHandler.save('hkd_data', hkdData);
-    document.querySelector('.modal')?.remove();
-    renderTonkhoTable(taxCode, fromType);
-    renderTonkhoTable(taxCode, toType);
+    showToast(`✅ Đã chuyển "${item.name}" sang kho ${toType.toUpperCase()}`, 'success');
+    showBusinessDetails(taxCode);
 }
 
 function addProduct(taxCode, type) {
@@ -3275,9 +3206,19 @@ function showBusinessDetails(taxCode, from, to) {
 
         <div id="${taxCode}-tonkho" class="tab-content active hkd-section">
           <h4>📦 Danh sách tồn kho</h4>
-          <button onclick="renderTonkhoTable('${taxCode}', 'main')">📦 Hàng hóa</button>
-          <button onclick="renderTonkhoTable('${taxCode}', 'km')">🎁 Khuyến mại</button>
-          <button onclick="renderTonkhoTable('${taxCode}', 'ck')">🔻 Chiết khấu</button>
+          <div class="tonkho-toolbar">
+  <button onclick="downloadInventoryExcel('${taxCode}')">📥 Xuất Excel</button>
+  <div class="tonkho-buttons">
+    <button onclick="renderTonkhoTable('${taxCode}', 'main')">📦 Hàng hóa</button>
+    <button onclick="renderTonkhoTable('${taxCode}', 'km')">🎁 Khuyến mại</button>
+    <button onclick="renderTonkhoTable('${taxCode}', 'ck')">🔻 Chiết khấu</button>
+  </div>
+  <div class="tonkho-add">
+    <button onclick="addInventoryItem('${taxCode}', 'main')">➕ Hàng hóa</button>
+    <button onclick="addInventoryItem('${taxCode}', 'km')">➕ KM</button>
+    <button onclick="addInventoryItem('${taxCode}', 'ck')">➕ CK</button>
+  </div>
+</div>
           <div id="tonKho-main"></div>
           <div id="tonKho-km" style="display:none;"></div>
           <div id="tonKho-ck" style="display:none;"></div>
