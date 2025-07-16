@@ -1819,7 +1819,30 @@ function handleParsedInvoice(parsed, taxCode) {
         hkdOrder.push(taxCode);
     }
 
-    // ... xử lý push sản phẩm + hóa đơn như trước ...
+    if (!business.tonkhoMain) business.tonkhoMain = [];
+    if (!business.tonkhoKM) business.tonkhoKM = [];
+    if (!business.tonkhoCK) business.tonkhoCK = [];
+
+    products.forEach(product => {
+        if (product.category === 'chiet_khau') business.tonkhoCK.push(product);
+        else if (product.category === 'KM') business.tonkhoKM.push(product);
+        else business.tonkhoMain.push(product);
+    });
+
+    const invoiceId = invoiceInfo.invoiceId;
+    const existed = business.invoices.find(i => i.invoiceId === invoiceId);
+    if (!existed) {
+        business.invoices.push({
+            invoiceId,
+            date: invoiceInfo.date,
+            seller: sellerInfo.name,
+            buyer: buyerInfo.name,
+            products,
+            totals,
+            hasSuspicious,
+            deleted: false
+        });
+    }
 }
 
 function renderTonkhoTable(taxCode, type) {
@@ -2869,41 +2892,22 @@ document.getElementById('deleteAllBtn').addEventListener('click', async () => {
 });
 
 // ✅ Hàm trích xuất hóa đơn từ file ZIP, xử lý HTML nếu có và gọi xử lý tồn kho
+// Extract invoice from ZIP
 async function extractInvoiceFromZip(zipFile) {
     const zip = await JSZip.loadAsync(zipFile);
     if (!zip || !zip.files) throw new Error('❌ File ZIP không hợp lệ');
 
-    const files = Object.values(zip.files);
-    const xmlFile = files.find(f => f.name.endsWith('.xml'));
-    const htmlFile = files.find(f => f.name.endsWith('.html'));
-
+    const xmlFile = Object.values(zip.files).find(f => f.name.endsWith('.xml'));
     if (!xmlFile) throw new Error('❌ Không tìm thấy file XML trong ZIP');
 
     const xmlContent = await xmlFile.async('text');
     const invoice = parseXmlInvoice(xmlContent);
 
-    // ✅ LẤY MST NGƯỜI MUA để gom vào HKD
-    const taxCode = invoice?.buyerInfo?.taxCode?.trim();
-    if (!taxCode) throw new Error('❌ Không tìm thấy MST người mua trong hóa đơn');
-
-    // ✅ Nếu có file HTML thì upload
-    if (htmlFile && invoice?.invoiceInfo?.number) {
-        try {
-            const htmlBlob = await htmlFile.async('blob');
-            const safeName = `hd_${invoice.invoiceInfo.number.replace(/[\\/:*?"<>|]/g, '-')}.html`;
-            const uploadedUrl = await uploadToGitHub(htmlBlob, safeName);
-            if (uploadedUrl) invoice.invoiceInfo.htmlUrl = uploadedUrl;
-        } catch (err) {
-            console.warn('Không thể upload HTML:', err);
-        }
-    }
-
-    // ✅ Gán MST người mua vào hóa đơn để xử lý theo HKD
-    invoice._taxCode = taxCode;
+    // ✅ Gán MST người mua để xử lý đúng HKD
+    invoice._taxCode = invoice?.buyerInfo?.taxCode?.trim() || 'UNKNOWN';
 
     return invoice;
 }
-
 // ✅ Hiển thị tồn kho: bảng chính + bảng phụ chiết khấu + KM không SL
 function renderInventoryTable(list, title) {
   if (!list || list.length === 0) return `<p>Không có dữ liệu ${title}</p>`;
@@ -3174,19 +3178,20 @@ function editInventoryRow(index) {
 }
 
 // ✅ Hàm xử lý hóa đơn và phân loại hàng vào tồn kho chính và tồn kho phụ (logic dựa trên tchat + từ khóa)
-function processInvoiceData(invoiceList, forceTaxCode) {
-    for (const invoice of invoiceList) {
-        const taxCode = forceTaxCode || invoice.buyerInfo?.taxCode;
-        if (!taxCode) continue;
-        handleParsedInvoice(invoice, taxCode);
-    }
+function processInvoiceData(invoice) {
+    const taxCode = invoice._taxCode || invoice.buyerInfo?.taxCode;
+    if (!taxCode) return;
 
-    storageHandler.save('hkd_data', hkdData);
-    storageHandler.save('hkd_order', hkdOrder);
-    updateBusinessList();
+    handleParsedInvoice(invoice, taxCode); // chỉ 1 hóa đơn
 
-    if (currentTaxCode) {
-        showBusinessDetails(currentTaxCode);
+    // Gộp 3 kho để dùng cho các tính năng lọc nếu cần
+    const business = hkdData[taxCode];
+    if (business) {
+        business.inventory = [
+            ...(business.tonkhoMain || []),
+            ...(business.tonkhoKM || []),
+            ...(business.tonkhoCK || [])
+        ];
     }
 }
 function showBusinessDetails(taxCode, from, to) {
