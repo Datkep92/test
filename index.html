@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="icon" href="https://www.google.com/favicon.ico">
-
+  <link rel="icon" href="https://www.google.com/favicon.ico">
   <title>Quản lý Kinh doanh</title>
   <style>
     * {
@@ -205,7 +204,7 @@
     <h1>📊 Quản lý Kinh doanh</h1>
     <div class="user-info">
       <span id="currentUser"></span>
-      <button onclick="handleLogout()" class="logout-btn danger">Đăng xuất</button>
+      <button id="logoutBtn" class="logout-btn danger">Đăng xuất</button>
     </div>
   </header>
   
@@ -219,16 +218,16 @@
       <label>
         <input type="checkbox" id="rememberMe" checked /> Ghi nhớ đăng nhập
       </label>
-      <button onclick="handleLogin()" class="success">Đăng nhập</button>
+      <button id="loginBtn" class="success">Đăng nhập</button>
     </div>
   </div>
 
   <!-- Sale Screen -->
   <div class="container hidden" id="saleApp">
     <div class="tab-container">
-      <div class="tab active" onclick="switchTab('expense')">Chi phí</div>
-      <div class="tab" onclick="switchTab('export')">Xuất hàng</div>
-      <div class="tab" onclick="switchTab('revenue')">Doanh thu</div>
+      <div class="tab active" data-tab="expense">Chi phí</div>
+      <div class="tab" data-tab="export">Xuất hàng</div>
+      <div class="tab" data-tab="revenue">Doanh thu</div>
     </div>
     
     <!-- Expense Tab -->
@@ -236,7 +235,7 @@
       <h3>💸 Chi phí</h3>
       <div class="flex-md">
         <input type="text" id="expenseInput" placeholder="VD: mua xăng 60000" />
-        <button onclick="addExpense()">Thêm</button>
+        <button id="addExpenseBtn">Thêm</button>
       </div>
       <div class="table-responsive">
         <table class="table" id="expenseTable">
@@ -254,7 +253,7 @@
       <div id="productList" class="product-grid"></div>
       <div class="flex-md" style="margin-top: 15px;">
         <input type="number" id="exportQuantity" placeholder="Số lượng" value="1" min="1" />
-        <button onclick="addExport()" class="success">Thêm xuất hàng</button>
+        <button id="addExportBtn" class="success">Thêm xuất hàng</button>
       </div>
       <div class="table-responsive">
         <table class="table" id="exportTable">
@@ -271,7 +270,7 @@
       <h3>💰 Doanh thu</h3>
       <div class="flex-md">
         <input type="text" id="revenueAmount" placeholder="Số tiền (VD: 500000)" />
-        <button onclick="addRevenue()">Thêm</button>
+        <button id="addRevenueBtn">Thêm</button>
       </div>
     </div>
     
@@ -299,7 +298,7 @@
       
       <h4>Ghi chú cá nhân:</h4>
       <textarea id="dailyNote" class="note-input" placeholder="Nhập ghi chú trong ngày..."></textarea>
-      <button onclick="saveDailyData()" class="success">Lưu dữ liệu</button>
+      <button id="saveDailyDataBtn" class="success">Lưu dữ liệu</button>
     </div>
   </div>
 
@@ -312,7 +311,7 @@
         <input type="number" id="productQuantity" placeholder="Số lượng" min="0" />
         <input type="text" id="productUnit" placeholder="ĐVT (kg, ly, chai...)" />
         <input type="number" id="productPrice" placeholder="Giá đơn vị (VNĐ)" min="0" />
-        <button onclick="addProduct()">Thêm sản phẩm</button>
+        <button id="addProductBtn">Thêm sản phẩm</button>
       </div>
       <div class="table-responsive">
         <table class="table" id="productTable">
@@ -328,9 +327,9 @@
       <h3>📊 Báo cáo</h3>
       <div class="flex-md">
         <input type="date" id="reportDate" />
-        <button onclick="generateDailyReport()">Báo cáo ngày</button>
-        <button onclick="generateMonthlyReport()">Báo cáo tháng</button>
-        <button onclick="printReport()" class="warning">In báo cáo</button>
+        <button id="generateDailyReportBtn">Báo cáo ngày</button>
+        <button id="generateMonthlyReportBtn">Báo cáo tháng</button>
+        <button id="printReportBtn" class="warning">In báo cáo</button>
       </div>
       
       <div id="reportFilters" style="margin-top: 15px;">
@@ -341,7 +340,7 @@
           <select id="reportCategoryFilter">
             <option value="all">Tất cả danh mục</option>
           </select>
-          <button onclick="applyReportFilters()">Áp dụng</button>
+          <button id="applyReportFiltersBtn">Áp dụng</button>
         </div>
       </div>
       
@@ -357,7 +356,7 @@
           <option value="staff">Nhân viên</option>
           <option value="admin">Quản lý</option>
         </select>
-        <button onclick="addUser()" class="success">Thêm người dùng</button>
+        <button id="addUserBtn" class="success">Thêm người dùng</button>
       </div>
       
       <div class="table-responsive">
@@ -424,6 +423,21 @@
     };
     let users = {};
 
+    // DOM Elements
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const addExpenseBtn = document.getElementById('addExpenseBtn');
+    const addExportBtn = document.getElementById('addExportBtn');
+    const addRevenueBtn = document.getElementById('addRevenueBtn');
+    const saveDailyDataBtn = document.getElementById('saveDailyDataBtn');
+    const addProductBtn = document.getElementById('addProductBtn');
+    const addUserBtn = document.getElementById('addUserBtn');
+    const generateDailyReportBtn = document.getElementById('generateDailyReportBtn');
+    const generateMonthlyReportBtn = document.getElementById('generateMonthlyReportBtn');
+    const printReportBtn = document.getElementById('printReportBtn');
+    const applyReportFiltersBtn = document.getElementById('applyReportFiltersBtn');
+    const tabs = document.querySelectorAll('.tab');
+
     // Initialize the app
     function initApp() {
       const today = new Date().toISOString().split('T')[0];
@@ -436,6 +450,23 @@
       }
       
       // Event listeners
+      loginBtn.addEventListener('click', handleLogin);
+      logoutBtn.addEventListener('click', handleLogout);
+      addExpenseBtn.addEventListener('click', addExpense);
+      addExportBtn.addEventListener('click', addExport);
+      addRevenueBtn.addEventListener('click', addRevenue);
+      saveDailyDataBtn.addEventListener('click', saveDailyData);
+      addProductBtn.addEventListener('click', addProduct);
+      addUserBtn.addEventListener('click', addUser);
+      generateDailyReportBtn.addEventListener('click', generateDailyReport);
+      generateMonthlyReportBtn.addEventListener('click', generateMonthlyReport);
+      printReportBtn.addEventListener('click', printReport);
+      applyReportFiltersBtn.addEventListener('click', applyReportFilters);
+      
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+      });
+
       document.getElementById('password').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') handleLogin();
       });
@@ -457,7 +488,46 @@
       });
     }
 
-   
+    // Login functions
+    async function handleLogin() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const rememberMe = document.getElementById('rememberMe').checked;
+      
+      document.getElementById('errorContainer').innerHTML = '';
+      
+      if (!username || !password) {
+        showError('Vui lòng nhập đầy đủ thông tin đăng nhập');
+        return;
+      }
+      
+      try {
+        const email = `${username}@quanly-hkd.com`;
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        
+        if (rememberMe) {
+          localStorage.setItem('rememberedUser', username);
+        } else {
+          localStorage.removeItem('rememberedUser');
+        }
+        
+        currentUser = userCredential.user.uid;
+        loadUserData();
+        
+      } catch (error) {
+        console.error("Login error:", error);
+        let errorMessage = "Đăng nhập thất bại";
+        
+        if (error.code === "auth/invalid-credential") {
+          errorMessage = "Sai tên đăng nhập hoặc mật khẩu";
+        } else if (error.code === "auth/too-many-requests") {
+          errorMessage = "Quá nhiều lần thử, vui lòng thử lại sau";
+        }
+        
+        showError(errorMessage);
+      }
+    }
+
     async function loadUserData() {
       const userRef = ref(database, `users/${currentUser}`);
       const snapshot = await get(userRef);
@@ -565,7 +635,7 @@
     function switchTab(tab) {
       currentTab = tab;
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+      document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
       
       document.getElementById('expenseTab').classList.add('hidden');
       document.getElementById('exportTab').classList.add('hidden');
@@ -790,42 +860,48 @@
       const expenseTable = document.querySelector('#expenseTable tbody');
       expenseTable.innerHTML = '';
       
-      dailyData.expenses.forEach((expense, index) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${expense.description} <span class="category-badge">${expense.category}</span></td>
-          <td class="text-right">${expense.amount.toLocaleString('vi-VN')}₫</td>
-          <td class="actions">
-            <button onclick="deleteExpense('${index}')" class="danger">Xóa</button>
-          </td>
-        `;
-        expenseTable.appendChild(row);
-      });
+      if (dailyData.expenses) {
+        Object.values(dailyData.expenses).forEach((expense, index) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${expense.description} <span class="category-badge">${expense.category}</span></td>
+            <td class="text-right">${expense.amount.toLocaleString('vi-VN')}₫</td>
+            <td class="actions">
+              <button onclick="deleteExpense('${index}')" class="danger">Xóa</button>
+            </td>
+          `;
+          expenseTable.appendChild(row);
+        });
+      }
       
       // Render exports
       const exportTable = document.querySelector('#exportTable tbody');
       exportTable.innerHTML = '';
       
-      dailyData.exports.forEach((exportItem, index) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${exportItem.productName}</td>
-          <td>${exportItem.quantity}</td>
-          <td>${exportItem.unit}</td>
-          <td class="actions">
-            <button onclick="deleteExport('${index}')" class="danger">Xóa</button>
-          </td>
-        `;
-        exportTable.appendChild(row);
-      });
+      if (dailyData.exports) {
+        Object.values(dailyData.exports).forEach((exportItem, index) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${exportItem.productName}</td>
+            <td>${exportItem.quantity}</td>
+            <td>${exportItem.unit}</td>
+            <td class="actions">
+              <button onclick="deleteExport('${index}')" class="danger">Xóa</button>
+            </td>
+          `;
+          exportTable.appendChild(row);
+        });
+      }
       
       // Calculate and render summary
-      const totalExpense = dailyData.expenses.reduce((sum, e) => sum + e.amount, 0);
-      const totalExportCost = dailyData.exports.reduce((sum, e) => sum + (e.quantity * e.price), 0);
-      const balance = dailyData.revenue - totalExpense;
+      const totalExpense = dailyData.expenses ? 
+        Object.values(dailyData.expenses).reduce((sum, e) => sum + e.amount, 0) : 0;
+      const totalExportCost = dailyData.exports ? 
+        Object.values(dailyData.exports).reduce((sum, e) => sum + (e.quantity * e.price), 0) : 0;
+      const balance = (dailyData.revenue || 0) - totalExpense;
       
       document.getElementById('totalRevenue').textContent = 
-        dailyData.revenue.toLocaleString('vi-VN') + '₫';
+        (dailyData.revenue || 0).toLocaleString('vi-VN') + '₫';
       document.getElementById('totalExpense').textContent = 
         totalExpense.toLocaleString('vi-VN') + '₫';
       document.getElementById('dailyBalance').innerHTML = 
@@ -835,13 +911,13 @@
       const exportSummary = document.getElementById('exportSummary');
       exportSummary.innerHTML = '';
       
-      if (dailyData.exports.length > 0) {
+      if (dailyData.exports && Object.values(dailyData.exports).length > 0) {
         const summaryDiv = document.createElement('div');
         summaryDiv.style.marginTop = '15px';
         summaryDiv.innerHTML = `
           <h4>Xuất hàng hôm nay:</h4>
           <ul>
-            ${dailyData.exports.map(e => 
+            ${Object.values(dailyData.exports).map(e => 
               `<li>${e.productName}: ${e.quantity} ${e.unit}</li>`
             ).join('')}
           </ul>
@@ -930,20 +1006,22 @@
       const table = document.querySelector('#productTable tbody');
       table.innerHTML = '';
       
-      products.forEach((product) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${product.name}</td>
-          <td>${product.quantity}</td>
-          <td>${product.unit}</td>
-          <td class="text-right">${product.price.toLocaleString('vi-VN')}₫</td>
-          <td class="actions">
-            <button onclick="editProduct('${product.id}')">Sửa</button>
-            <button onclick="deleteProduct('${product.id}')" class="danger">Xóa</button>
-          </td>
-        `;
-        table.appendChild(row);
-      });
+      if (products) {
+        Object.values(products).forEach((product) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${product.name}</td>
+            <td>${product.quantity}</td>
+            <td>${product.unit}</td>
+            <td class="text-right">${product.price.toLocaleString('vi-VN')}₫</td>
+            <td class="actions">
+              <button onclick="editProduct('${product.id}')">Sửa</button>
+              <button onclick="deleteProduct('${product.id}')" class="danger">Xóa</button>
+            </td>
+          `;
+          table.appendChild(row);
+        });
+      }
     }
 
     // User management
@@ -1021,10 +1099,6 @@
       if (!confirm(`Bạn có chắc muốn xóa tài khoản ${user.username}?`)) return;
       
       try {
-        // Delete from Authentication
-        // Note: In a real app, you would need Cloud Functions to delete auth users
-        
-        // Delete from Database
         await remove(ref(database, `users/${userId}`));
       } catch (error) {
         console.error("Error deleting user:", error);
@@ -1036,23 +1110,25 @@
       const table = document.querySelector('#userTable tbody');
       table.innerHTML = '';
       
-      for (const userId in users) {
-        const user = users[userId];
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${user.username}</td>
-          <td>${user.role === 'admin' ? 'Quản lý' : 'Nhân viên'}</td>
-          <td>${user.active ? 'Đang hoạt động' : 'Đã khóa'}</td>
-          <td class="actions">
-            <button onclick="toggleUserStatus('${userId}')" class="${user.active ? 'warning' : 'success'}">
-              ${user.active ? 'Khóa' : 'Mở khóa'}
-            </button>
-            ${user.role !== 'admin' ? `
-              <button onclick="deleteUser('${userId}')" class="danger">Xóa</button>
-            ` : ''}
-          </td>
-        `;
-        table.appendChild(row);
+      if (users) {
+        for (const userId in users) {
+          const user = users[userId];
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${user.username}</td>
+            <td>${user.role === 'admin' ? 'Quản lý' : 'Nhân viên'}</td>
+            <td>${user.active ? 'Đang hoạt động' : 'Đã khóa'}</td>
+            <td class="actions">
+              <button onclick="toggleUserStatus('${userId}')" class="${user.active ? 'warning' : 'success'}">
+                ${user.active ? 'Khóa' : 'Mở khóa'}
+              </button>
+              ${user.role !== 'admin' ? `
+                <button onclick="deleteUser('${userId}')" class="danger">Xóa</button>
+              ` : ''}
+            </td>
+          `;
+          table.appendChild(row);
+        }
       }
     }
 
@@ -1066,12 +1142,14 @@
       while (categoryFilter.options.length > 1) categoryFilter.remove(1);
       
       // Add users
-      for (const userId in users) {
-        const user = users[userId];
-        const option = document.createElement('option');
-        option.value = userId;
-        option.textContent = user.username;
-        userFilter.appendChild(option);
+      if (users) {
+        for (const userId in users) {
+          const user = users[userId];
+          const option = document.createElement('option');
+          option.value = userId;
+          option.textContent = user.username;
+          userFilter.appendChild(option);
+        }
       }
       
       // Add categories
@@ -1226,7 +1304,7 @@
       
       const profit = totalRevenue - totalExpense - totalExportCost;
       
-      // Generate report HTML (same as before)
+      // Generate report HTML
       let reportHTML = `
         <h4>Báo cáo ${isMonthly ? 'tháng' : 'ngày'} ${dateStr}</h4>
         ${userFilter !== 'all' ? `<p>Người dùng: ${users[userFilter]?.username || userFilter}</p>` : ''}
@@ -1436,62 +1514,16 @@
       return parseInt(cleaned) || 0;
     }
 
+    // Expose functions to global scope for inline event handlers
+    window.deleteExpense = deleteExpense;
+    window.deleteExport = deleteExport;
+    window.editProduct = editProduct;
+    window.deleteProduct = deleteProduct;
+    window.toggleUserStatus = toggleUserStatus;
+    window.deleteUser = deleteUser;
+
     // Initialize the app
     document.addEventListener('DOMContentLoaded', initApp);
-
-    // Create initial admin user (run once)
-    async function createInitialAdmin() {
-      try {
-        const email = "admin@quanly-hkd.com";
-        const password = "123123";
-        
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const userId = userCredential.user.uid;
-        
-        await set(ref(database, `users/${userId}`), {
-          username: "admin",
-          role: "admin",
-          active: true,
-          createdAt: new Date().toISOString()
-        });
-        
-        console.log("Admin user created successfully!");
-      } catch (error) {
-        console.error("Error creating admin user:", error);
-      }
-    }
-
-    // Uncomment and run this once to create initial admin user
-    // createInitialAdmin();
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"></script>
-
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyBsdqN0SdltN2G9H2x7ZR0EyydOo61wt1c",
-    authDomain: "quanly-hkd.firebaseapp.com",
-    projectId: "quanly-hkd",
-    storageBucket: "quanly-hkd.appspot.com",
-    messagingSenderId: "882003765639",
-    appId: "1:882003765639:web:d51bbb3d77ee2232908b22",
-    measurementId: "G-MV5GHB4VS5"
-  };
-
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-
-  function handleLogin() {
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value.trim();
-    auth.signInWithEmailAndPassword(email, password)
-      .then((userCredential) => {
-        const user = userCredential.user;
-        alert('✅ Đăng nhập thành công');
-        // TODO: chuyển sang giao diện chính
-      })
-      .catch((error) => {
-        alert('❌ Lỗi đăng nhập: ' + error.message);
-      });
-  }
+  </script>
 </body>
 </html>
