@@ -4,7 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Quản lý Kinh doanh (Firebase)</title>
-  <link rel="stylesheet" href="styles.css" />
+  <style>
+    * { font-family: Arial, sans-serif; box-sizing: border-box; }
+    body { margin: 0; padding: 0; background: #f0f0f0; }
+    header { background: #222; color: white; padding: 12px; text-align: center; }
+    .container { max-width: 800px; margin: 24px auto; background: white; padding: 16px; border-radius: 8px; }
+    input, button, textarea, select { padding: 8px; margin: 6px 0; width: 100%; border: 1px solid #ccc; border-radius: 6px; }
+    table { width: 100%; margin-top: 16px; border-collapse: collapse; }
+    td, th { border: 1px solid #ddd; padding: 8px; }
+    th { background: #eee; }
+    .hidden { display: none; }
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tabs button { padding: 10px; cursor: pointer; }
+    #logoutBtn { float: right; background: red; color: white; border: none; margin-top: -36px; }
+  </style>
 </head>
 <body>
   <header>
@@ -17,124 +30,237 @@
     <h3>🔐 Đăng nhập</h3>
     <input type="email" id="loginEmail" placeholder="Email" />
     <input type="password" id="loginPassword" placeholder="Mật khẩu" />
-    <label><input type="checkbox" id="rememberMe"> Ghi nhớ đăng nhập</label>
     <button id="loginBtn">Đăng nhập</button>
   </div>
 
-  <div class="container" id="mainApp" class="hidden">
+  <div class="container hidden" id="mainApp">
     <div class="tabs">
       <button id="tabChiPhi">Chi phí</button>
-      <button id="tabXuatHang">Xuất hàng</button>
-      <button id="tabDoanhThu">Doanh thu</button>
-      <button id="tabKhoHang">Kho hàng</button>
+      <button id="tabGhiChu">Ghi chú</button>
       <button id="tabBaoCao">Báo cáo</button>
-      <button id="tabNguoiDung" class="hidden">Quản lý Người dùng</button>
-      <button id="tabQuickTransaction">Giao dịch nhanh</button>
+      <button id="tabNguoiDung" class="hidden">Quản lý người dùng</button>
     </div>
-    <div id="content">
-      <div id="chiPhiContent" class="hidden">
-        <h3>💸 Chi phí</h3>
-        <input type="text" id="expenseDescription" placeholder="Mô tả" />
-        <input type="number" id="expenseAmount" placeholder="Số tiền" />
-        <button id="addExpenseBtn">Thêm</button>
-        <table id="expenseTable">
-          <thead>
-            <tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <div id="xuatHangContent" class="hidden">
-        <h3>📦 Xuất hàng</h3>
-        <input type="text" id="shipmentProduct" placeholder="Sản phẩm" />
-        <input type="number" id="shipmentQuantity" placeholder="Số lượng" />
-        <input type="text" id="shipmentUnit" placeholder="ĐVT" />
-        <button id="addShipmentBtn">Thêm xuất hàng</button>
-        <table id="shipmentTable">
-          <thead>
-            <tr><th>Sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Hành động</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <div id="doanhThuContent" class="hidden">
-        <h3>💰 Doanh thu</h3>
-        <input type="text" id="revenueDescription" placeholder="Mô tả" />
-        <input type="number" id="revenueAmount" placeholder="Số tiền" />
-        <button id="addRevenueBtn">Thêm</button>
-        <table id="revenueTable">
-          <thead>
-            <tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <div id="khoHangContent" class="hidden">
-        <h3>📦 Quản lý Kho hàng</h3>
-        <input type="text" id="inventoryName" placeholder="Tên sản phẩm" />
-        <input type="number" id="inventoryQuantity" placeholder="Số lượng" />
-        <input type="text" id="inventoryUnit" placeholder="ĐVT" />
-        <input type="number" id="inventoryPrice" placeholder="Giá đơn vị" />
-        <button id="addInventoryBtn">Thêm sản phẩm</button>
-        <table id="inventoryTable">
-          <thead>
-            <tr><th>Tên sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Giá đơn vị</th><th>Hành động</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <div id="baoCaoContent" class="hidden">
-        <h3>📝 Tổng kết ngày</h3>
-        <button id="dailyReportBtn">Báo cáo ngày</button>
-        <button id="monthlyReportBtn">Báo cáo tháng</button>
-        <button id="printReportBtn">In báo cáo</button>
-        <div id="dailySummary">
-          <p>Doanh thu: <span id="dailyRevenue">0₫</span></p>
-          <p>Tổng chi phí: <span id="dailyExpenses">0₫</span></p>
-          <p>Số dư: <span id="dailyBalance">0₫</span></p>
-        </div>
-        <h3>📊 Báo cáo</h3>
-        <select id="reportUser">
-          <option value="all">Tất cả người dùng</option>
-        </select>
-        <select id="reportCategory">
-          <option value="all">Tất cả danh mục</option>
-          <option value="expenses">Chi phí</option>
-          <option value="revenue">Doanh thu</option>
-          <option value="shipments">Xuất hàng</option>
-        </select>
-        <button id="applyReportBtn">Áp dụng</button>
-        <div id="reportResults"></div>
-      </div>
-      <div id="nguoiDungContent" class="hidden">
-        <h3>👥 Quản lý Người dùng</h3>
-        <input type="email" id="newUserEmail" placeholder="Email" />
-        <input type="password" id="newUserPassword" placeholder="Mật khẩu" />
-        <select id="newUserRole">
-          <option value="staff">Nhân viên</option>
-          <option value="manager">Quản lý</option>
-        </select>
-        <button id="addUserBtn">Thêm người dùng</button>
-        <table id="userTable">
-          <thead>
-            <tr><th>Tên đăng nhập</th><th>Vai trò</th><th>Trạng thái</th><th>Hành động</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <div id="ghiChuContent">
-        <h3>📝 Ghi chú cá nhân</h3>
-        <textarea id="notesTextarea" placeholder="Ghi chú của bạn"></textarea>
-        <button id="saveNotesBtn">Lưu dữ liệu</button>
-      </div>
-      <div id="quickTransactionContent" class="hidden">
-        <h3>📝 Giao dịch nhanh</h3>
-        <input type="text" id="quickTransactionInput" placeholder="VD: bán cà phê 12000" />
-        <button id="addQuickTransactionBtn">Thêm giao dịch</button>
-      </div>
+
+    <div id="chiPhiContent" class="hidden">
+      <h3>💸 Chi phí</h3>
+      <input type="text" id="expenseDescription" placeholder="Mô tả (VD: mua xăng 50000)" />
+      <input type="number" id="expenseAmount" placeholder="Số tiền" />
+      <button id="addExpenseBtn">➕ Thêm</button>
+      <table>
+        <thead><tr><th>Mô tả</th><th>Số tiền</th><th>Xoá</th></tr></thead>
+        <tbody id="expenseTable"></tbody>
+      </table>
+    </div>
+
+    <div id="ghiChuContent" class="hidden">
+      <h3>📝 Ghi chú cá nhân</h3>
+      <textarea id="notesTextarea" rows="6" placeholder="Viết ghi chú..."></textarea>
+      <button id="saveNotesBtn">💾 Lưu ghi chú</button>
+    </div>
+
+    <div id="baoCaoContent" class="hidden">
+      <h3>📊 Báo cáo hôm nay</h3>
+      <button id="reportBtn">📅 Xem báo cáo</button>
+      <p>💰 Doanh thu: <span id="dailyRevenue">0₫</span></p>
+      <p>💸 Chi phí: <span id="dailyExpenses">0₫</span></p>
+      <p>📈 Lợi nhuận: <span id="dailyBalance">0₫</span></p>
+    </div>
+
+    <div id="nguoiDungContent" class="hidden">
+      <h3>👤 Quản lý người dùng</h3>
+      <input type="email" id="newUserEmail" placeholder="Email mới" />
+      <input type="password" id="newUserPassword" placeholder="Mật khẩu" />
+      <select id="newUserRole">
+        <option value="staff">Nhân viên</option>
+        <option value="manager">Quản lý</option>
+      </select>
+      <button id="addUserBtn">Thêm người dùng</button>
+      <table>
+        <thead><tr><th>Email</th><th>Vai trò</th><th>Xoá</th></tr></thead>
+        <tbody id="userTable"></tbody>
+      </table>
     </div>
   </div>
 
-  <script type="module" src="script.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, deleteDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
+      authDomain: "quanly-d7e54.firebaseapp.com",
+      projectId: "quanly-d7e54",
+      storageBucket: "quanly-d7e54.appspot.com",
+      messagingSenderId: "482686011267",
+      appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const loginBox = document.getElementById("loginBox");
+    const mainApp = document.getElementById("mainApp");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const currentUserSpan = document.getElementById("currentUser");
+    const loginBtn = document.getElementById("loginBtn");
+    const loginEmail = document.getElementById("loginEmail");
+    const loginPassword = document.getElementById("loginPassword");
+    const expenseTable = document.getElementById("expenseTable");
+    const addExpenseBtn = document.getElementById("addExpenseBtn");
+    const saveNotesBtn = document.getElementById("saveNotesBtn");
+    const reportBtn = document.getElementById("reportBtn");
+    const notesTextarea = document.getElementById("notesTextarea");
+    const tabNguoiDung = document.getElementById("tabNguoiDung");
+
+    let currentUser = null;
+    let userRole = "staff";
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        loginBox.classList.add("hidden");
+        mainApp.classList.remove("hidden");
+        logoutBtn.classList.remove("hidden");
+        currentUserSpan.textContent = `👤 ${user.email}`;
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          userRole = userDoc.data().role || "staff";
+          if (userRole === "manager") {
+            tabNguoiDung.classList.remove("hidden");
+            document.getElementById("nguoiDungContent").classList.remove("hidden");
+          }
+        }
+        loadExpenses();
+        loadNotes();
+        if (userRole === "manager") loadUsers();
+      } else {
+        currentUser = null;
+        loginBox.classList.remove("hidden");
+        mainApp.classList.add("hidden");
+        logoutBtn.classList.add("hidden");
+      }
+    });
+
+    loginBtn.onclick = async () => {
+      try {
+        await signInWithEmailAndPassword(auth, loginEmail.value.trim(), loginPassword.value.trim());
+      } catch (err) {
+        alert("❌ Đăng nhập thất bại: " + err.message);
+      }
+    };
+
+    logoutBtn.onclick = () => signOut(auth);
+
+    addExpenseBtn.onclick = async () => {
+      const desc = document.getElementById("expenseDescription").value.trim();
+      const amt = parseInt(document.getElementById("expenseAmount").value);
+      if (!desc || isNaN(amt)) return alert("Nhập đầy đủ thông tin");
+      await addDoc(collection(db, "expenses"), {
+        uid: currentUser.uid,
+        description: desc,
+        amount: amt,
+        timestamp: serverTimestamp()
+      });
+      loadExpenses();
+      document.getElementById("expenseDescription").value = "";
+      document.getElementById("expenseAmount").value = "";
+    };
+
+    async function loadExpenses() {
+      expenseTable.innerHTML = "<tr><td colspan=3>Đang tải...</td></tr>";
+      const q = query(collection(db, "expenses"), where("uid", "==", currentUser.uid));
+      const snapshot = await getDocs(q);
+      let html = "";
+      snapshot.forEach(docSnap => {
+        const e = docSnap.data();
+        html += `<tr>
+          <td>${e.description}</td>
+          <td>${e.amount.toLocaleString("vi-VN")}₫</td>
+          <td><button onclick="deleteExpense('${docSnap.id}')">🗑️</button></td>
+        </tr>`;
+      });
+      expenseTable.innerHTML = html || "<tr><td colspan=3>Không có dữ liệu</td></tr>";
+    }
+
+    window.deleteExpense = async (id) => {
+      await deleteDoc(doc(db, "expenses", id));
+      loadExpenses();
+    };
+
+    saveNotesBtn.onclick = async () => {
+      const note = notesTextarea.value.trim();
+      await setDoc(doc(db, "notes", currentUser.uid), { note }, { merge: true });
+      alert("Đã lưu ghi chú");
+    };
+
+    async function loadNotes() {
+      const noteDoc = await getDoc(doc(db, "notes", currentUser.uid));
+      if (noteDoc.exists()) {
+        notesTextarea.value = noteDoc.data().note || "";
+      }
+    }
+
+    reportBtn.onclick = async () => {
+      const today = new Date().toISOString().split("T")[0];
+      const start = new Date(today);
+      const end = new Date(today);
+      end.setDate(end.getDate() + 1);
+      const qExpenses = query(collection(db, "expenses"), where("uid", "==", currentUser.uid), where("timestamp", ">=", start), where("timestamp", "<", end));
+      const qRevenue = query(collection(db, "revenue"), where("uid", "==", currentUser.uid), where("timestamp", ">=", start), where("timestamp", "<", end));
+      const [exSnap, revSnap] = await Promise.all([getDocs(qExpenses), getDocs(qRevenue)]);
+      let totalEx = 0, totalRev = 0;
+      exSnap.forEach(doc => totalEx += doc.data().amount);
+      revSnap.forEach(doc => totalRev += doc.data().amount);
+      document.getElementById("dailyRevenue").innerText = totalRev.toLocaleString("vi-VN") + "₫";
+      document.getElementById("dailyExpenses").innerText = totalEx.toLocaleString("vi-VN") + "₫";
+      document.getElementById("dailyBalance").innerText = (totalRev - totalEx).toLocaleString("vi-VN") + "₫";
+    };
+
+    // Quản lý tab
+    const tabs = ["ChiPhi", "GhiChu", "BaoCao", "NguoiDung"];
+    tabs.forEach(name => {
+      document.getElementById("tab" + name).onclick = () => {
+        tabs.forEach(n => document.getElementById(n.toLowerCase() + "Content").classList.add("hidden"));
+        document.getElementById(name.toLowerCase() + "Content").classList.remove("hidden");
+      };
+    });
+
+    // Thêm người dùng (nếu quản lý)
+    const addUserBtn = document.getElementById("addUserBtn");
+    const userTable = document.getElementById("userTable");
+
+    if (addUserBtn) {
+      addUserBtn.onclick = async () => {
+        const email = document.getElementById("newUserEmail").value.trim();
+        const password = document.getElementById("newUserPassword").value.trim();
+        const role = document.getElementById("newUserRole").value;
+        try {
+          const newUser = await createUserWithEmailAndPassword(auth, email, password);
+          await setDoc(doc(db, "users", newUser.user.uid), { email, role });
+          loadUsers();
+        } catch (err) {
+          alert("Không thêm được user: " + err.message);
+        }
+      };
+    }
+
+    async function loadUsers() {
+      if (userRole !== "manager") return;
+      const users = await getDocs(collection(db, "users"));
+      let html = "";
+      users.forEach(docSnap => {
+        const u = docSnap.data();
+        html += `<tr><td>${u.email}</td><td>${u.role}</td><td><button onclick="deleteUser('${docSnap.id}')">❌</button></td></tr>`;
+      });
+      userTable.innerHTML = html;
+    }
+
+    window.deleteUser = async (uid) => {
+      await deleteDoc(doc(db, "users", uid));
+      loadUsers();
+    };
+  </script>
 </body>
 </html>
