@@ -1,343 +1,281 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quản lý Kinh doanh</title>
-  <link rel="icon" href="data:,">
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    
-    body {
-      background: #f5f7fa;
-      color: #333;
-      line-height: 1.6;
-      min-height: 100vh;
-    }
-    
-    .container {
-      padding: 20px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    
-    header {
-      background: #2c3e50;
-      color: #fff;
-      padding: 15px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    
-    .login-box {
-      max-width: 400px;
-      margin: 50px auto;
-      padding: 30px;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    
-    .section {
-      background: white;
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    
-    input, button, select {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      font-size: 16px;
-    }
-    
-    button {
-      background: #3498db;
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background 0.3s;
-    }
-    
-    button:hover {
-      background: #2980b9;
-    }
-    
-    .table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    
-    .hidden {
-      display: none;
-    }
-    
-    .error-message {
-      color: #e74c3c;
-      padding: 10px;
-      margin: 10px 0;
-      background: #ffebee;
-      border-radius: 5px;
-      text-align: center;
-    }
-    
-    .success-message {
-      color: #27ae60;
-      padding: 10px;
-      margin: 10px 0;
-      background: #e8f5e9;
-      border-radius: 5px;
-      text-align: center;
-    }
-    
-    .loading {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid rgba(255,255,255,.3);
-      border-radius: 50%;
-      border-top-color: #fff;
-      animation: spin 1s ease-in-out infinite;
-      margin-right: 10px;
-    }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f9f9f9; }
+    .nav { display: flex; justify-content: space-between; align-items: center; background: #333; padding: 10px; color: white; }
+    .nav a { color: white; text-decoration: none; }
+    .section { margin: 20px 0; background: white; padding: 15px; border-radius: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    .section h2 { border-bottom: 1px solid #ccc; padding-bottom: 5px; color: #333; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    table, th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #f4f4f4; }
+    button { padding: 5px 10px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 3px; }
+    button:hover { background: #45a049; }
+    .summary p { margin: 5px 0; font-weight: bold; }
+    .filter { margin: 10px 0; }
+    .action-btn { background: #ff4444; }
+    .action-btn:hover { background: #cc0000; }
+    input[type="text"], input[type="password"] { padding: 5px; margin: 5px 0; }
   </style>
-</head>
-<body>
-  <header id="appHeader" class="hidden">
-    <h1>Quản lý Kinh doanh</h1>
-    <div>
-      <span id="currentUser"></span>
-      <button onclick="handleLogout()">Đăng xuất</button>
-    </div>
-  </header>
-  
-  <!-- Login Screen -->
-  <div class="container">
-    <div class="login-box" id="loginBox">
-      <h2>Đăng nhập hệ thống</h2>
-      <div id="errorContainer"></div>
-      <input type="email" id="username" placeholder="Email đăng nhập" required>
-      <input type="password" id="password" placeholder="Mật khẩu" required>
-      <button onclick="handleLogin()">
-        <span id="loginText">Đăng nhập</span>
-        <span id="loginSpinner" class="loading hidden"></span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Main App Content -->
-  <div class="container hidden" id="mainApp">
-    <div class="section">
-      <h3>Bảng điều khiển</h3>
-      <div id="appContent"></div>
-    </div>
-  </div>
-
-  <script type="module">
-    // Firebase imports
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { 
-      getAuth, 
-      signInWithEmailAndPassword, 
-      signOut, 
-      onAuthStateChanged 
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { 
-      getDatabase, 
-      ref, 
-      set, 
-      get,
-      onValue,
-      off
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-    // Firebase configuration - THAY THẾ BẰNG CẤU HÌNH CỦA BẠN
+  <!-- Thêm SDK Firebase qua CDN -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
+  <script>
+    // Cấu hình Firebase từ dự án quanly-d7e54
     const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "quanly-d7e54.firebaseapp.com",
-  databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com/",
-  projectId: "quanly-d7e54",
-  storageBucket: "quanly-d7e54.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
+      apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
+      authDomain: "quanly-d7e54.firebaseapp.com",
+      databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com",
+      projectId: "quanly-d7e54",
+      storageBucket: "quanly-d7e54.firebasestorage.app",
+      messagingSenderId: "482686011267",
+      appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
+    };
 
     // Khởi tạo Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const database = getDatabase(app);
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
 
-    // Biến toàn cục
-    let connectionListener = null;
-
-    // Hiển thị thông báo lỗi
-    function showError(message) {
-      const errorContainer = document.getElementById('errorContainer');
-      errorContainer.innerHTML = `<div class="error-message">${message}</div>`;
-    }
-
-    // Hiển thị thông báo thành công
-    function showSuccess(message) {
-      const errorContainer = document.getElementById('errorContainer');
-      errorContainer.innerHTML = `<div class="success-message">${message}</div>`;
-      setTimeout(() => errorContainer.innerHTML = '', 3000);
-    }
-
-    // Kiểm tra kết nối Database
-    function setupConnectionListener() {
-      // Xóa listener cũ nếu có
-      if (connectionListener) {
-        off(connectionListener);
+    // Hàm thêm chi phí
+    function addExpense() {
+      const description = prompt("Nhập mô tả chi phí:");
+      const amount = prompt("Nhập số tiền (₫):");
+      if (description && amount) {
+        database.ref('expenses').push({
+          description: description,
+          amount: parseInt(amount),
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => updateSummary()).catch((error) => alert("Lỗi: " + error.message));
       }
-      
-      const connectedRef = ref(database, ".info/connected");
-      connectionListener = onValue(connectedRef, (snap) => {
-        if (snap.val() === true) {
-          console.log("Đã kết nối với Firebase Database");
-        } else {
-          console.log("Mất kết nối với Firebase Database");
-          showError("Mất kết nối với Database. Vui lòng kiểm tra lại kết nối mạng.");
-        }
+    }
+
+    // Hàm thêm xuất hàng
+    function addShipment() {
+      const product = prompt("Nhập sản phẩm:");
+      const quantity = prompt("Nhập số lượng:");
+      const unit = prompt("Nhập đơn vị tính:");
+      if (product && quantity && unit) {
+        database.ref('shipments').push({
+          product: product,
+          quantity: parseInt(quantity),
+          unit: unit,
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => loadData('shipments')).catch((error) => alert("Lỗi: " + error.message));
+      }
+    }
+
+    // Hàm thêm doanh thu
+    function addRevenue() {
+      const description = prompt("Nhập mô tả doanh thu:");
+      const amount = prompt("Nhập số tiền (₫):");
+      if (description && amount) {
+        database.ref('revenues').push({
+          description: description,
+          amount: parseInt(amount),
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => updateSummary()).catch((error) => alert("Lỗi: " + error.message));
+      }
+    }
+
+    // Hàm thêm sản phẩm vào kho
+    function addProduct() {
+      const name = prompt("Nhập tên sản phẩm:");
+      const quantity = prompt("Nhập số lượng:");
+      const unit = prompt("Nhập đơn vị tính:");
+      const price = prompt("Nhập giá đơn vị (₫):");
+      if (name && quantity && unit && price) {
+        database.ref('inventory').push({
+          name: name,
+          quantity: parseInt(quantity),
+          unit: unit,
+          price: parseInt(price),
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => loadData('inventory')).catch((error) => alert("Lỗi: " + error.message));
+      }
+    }
+
+    // Hàm thêm người dùng
+    function addUser() {
+      const username = prompt("Nhập tên đăng nhập:");
+      const role = prompt("Nhập vai trò (Nhân viên/Quản lý):");
+      const status = prompt("Nhập trạng thái (Hoạt động/Không hoạt động):");
+      if (username && role && status) {
+        database.ref('users').push({
+          username: username,
+          role: role,
+          status: status,
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => loadData('users')).catch((error) => alert("Lỗi: " + error.message));
+      }
+    }
+
+    // Hàm tải và hiển thị dữ liệu
+    function loadData(tableName) {
+      const tables = {
+        'shipments': '#shipmentsTable',
+        'inventory': '#inventoryTable',
+        'users': '#usersTable',
+        'expenses': '#expensesTable',
+        'revenues': '#revenuesTable'
+      };
+      if (tables[tableName]) {
+        database.ref(tableName).on('value', (snapshot) => {
+          const tbody = document.querySelector(tables[tableName] + ' tbody');
+          tbody.innerHTML = '';
+          snapshot.forEach((childSnapshot) => {
+            const data = childSnapshot.val();
+            const row = document.createElement('tr');
+            let cols = '';
+            if (tableName === 'shipments') cols = `<td>${data.product}</td><td>${data.quantity}</td><td>${data.unit}</td>`;
+            else if (tableName === 'inventory') cols = `<td>${data.name}</td><td>${data.quantity}</td><td>${data.unit}</td><td>${data.price}₫</td>`;
+            else if (tableName === 'users') cols = `<td>${data.username}</td><td>${data.role}</td><td>${data.status}</td>`;
+            else if (tableName === 'expenses') cols = `<td>${data.description}</td><td>${data.amount}₫</td>`;
+            else if (tableName === 'revenues') cols = `<td>${data.description}</td><td>${data.amount}₫</td>`;
+            row.innerHTML = cols + `<td><button class="action-btn" onclick="deleteItem('${tableName}', '${childSnapshot.key}')">Xóa</button></td>`;
+            tbody.appendChild(row);
+          });
+        });
+      }
+    }
+
+    // Hàm xóa mục
+    function deleteItem(tableName, key) {
+      if (confirm("Bạn có chắc muốn xóa?")) {
+        database.ref(tableName).child(key).remove().then(() => {
+          alert("Xóa thành công!");
+          if (tableName === 'expenses' || tableName === 'revenues') updateSummary();
+          else loadData(tableName);
+        }).catch((error) => alert("Lỗi: " + error.message));
+      }
+    }
+
+    // Hàm cập nhật tổng kết
+    function updateSummary() {
+      let totalExpense = 0;
+      let totalRevenue = 0;
+
+      database.ref('expenses').once('value').then((snapshot) => {
+        snapshot.forEach((childSnapshot) => totalExpense += childSnapshot.val().amount || 0);
+        database.ref('revenues').once('value').then((snapshot) => {
+          snapshot.forEach((childSnapshot) => totalRevenue += childSnapshot.val().amount || 0);
+          document.querySelector('#revenue').textContent = `Doanh thu: ${totalRevenue}₫`;
+          document.querySelector('#expense').textContent = `Tổng chi phí: ${totalExpense}₫`;
+          document.querySelector('#balance').textContent = `Số dư: ${totalRevenue - totalExpense}₫`;
+        });
       });
     }
 
-    // Xử lý đăng nhập
-    async function handleLogin() {
-      const email = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
-      
-      // Validate input
-      if (!email || !password) {
-        showError("Vui lòng nhập đầy đủ email và mật khẩu");
-        return;
-      }
-
-      try {
-        // Hiển thị loading
-        document.getElementById('loginText').classList.add('hidden');
-        document.getElementById('loginSpinner').classList.remove('hidden');
-        
-        // Đăng nhập với Firebase Auth
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        showSuccess("Đăng nhập thành công!");
-        
-      } catch (error) {
-        let errorMessage = "Lỗi đăng nhập";
-        switch (error.code) {
-          case "auth/invalid-email":
-            errorMessage = "Email không hợp lệ";
-            break;
-          case "auth/user-disabled":
-            errorMessage = "Tài khoản đã bị vô hiệu hóa";
-            break;
-          case "auth/user-not-found":
-          case "auth/wrong-password":
-            errorMessage = "Email hoặc mật khẩu không đúng";
-            break;
-          default:
-            errorMessage = error.message;
-        }
-        showError(errorMessage);
-      } finally {
-        // Ẩn loading
-        document.getElementById('loginText').classList.remove('hidden');
-        document.getElementById('loginSpinner').classList.add('hidden');
+    // Hàm lưu ghi chú
+    function saveNote() {
+      const note = prompt("Nhập ghi chú cá nhân:");
+      if (note) {
+        database.ref('notes').push({
+          content: note,
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => alert("Lưu ghi chú thành công!")).catch((error) => alert("Lỗi: " + error.message));
       }
     }
 
-    // Xử lý đăng xuất
-    async function handleLogout() {
-      try {
-        await signOut(auth);
-        showSuccess("Đã đăng xuất thành công");
-      } catch (error) {
-        showError(`Lỗi khi đăng xuất: ${error.message}`);
-      }
-    }
-
-    // Kiểm tra quyền admin
-    async function checkAdminStatus(uid) {
-      try {
-        const userRef = ref(database, `users/${uid}`);
-        const snapshot = await get(userRef);
-        
-        if (snapshot.exists()) {
-          return snapshot.val().role === 'admin';
-        }
-        return false;
-      } catch (error) {
-        console.error("Lỗi kiểm tra quyền admin:", error);
-        return false;
-      }
-    }
-
-    // Tải nội dung chính
-    async function loadMainContent(uid) {
-      try {
-        const isAdmin = await checkAdminStatus(uid);
-        const content = isAdmin 
-          ? "<h4>Chào mừng Quản trị viên</h4><p>Bạn có quyền truy cập tất cả tính năng</p>" 
-          : "<h4>Chào mừng Nhân viên</h4><p>Bạn có thể sử dụng các tính năng bán hàng</p>";
-        
-        document.getElementById('appContent').innerHTML = content;
-      } catch (error) {
-        showError(`Lỗi tải nội dung: ${error.message}`);
-      }
-    }
-
-    // Theo dõi trạng thái đăng nhập
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // Người dùng đã đăng nhập
-        document.getElementById('loginBox').classList.add('hidden');
-        document.getElementById('appHeader').classList.remove('hidden');
-        document.getElementById('currentUser').textContent = user.email;
-        document.getElementById('mainApp').classList.remove('hidden');
-        
-        // Tải nội dung phù hợp
-        loadMainContent(user.uid);
-      } else {
-        // Người dùng chưa đăng nhập
-        document.getElementById('loginBox').classList.remove('hidden');
-        document.getElementById('appHeader').classList.add('hidden');
-        document.getElementById('mainApp').classList.add('hidden');
-      }
-    });
-
-    // Khởi tạo ứng dụng
-    function initApp() {
-      // Thiết lập listener kiểm tra kết nối
-      setupConnectionListener();
-      
-      // Thêm sự kiện Enter để đăng nhập
-      document.getElementById('password').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleLogin();
-      });
-    }
-
-    // Gán hàm toàn cục
-    window.handleLogin = handleLogin;
-    window.handleLogout = handleLogout;
-
-    // Khởi chạy ứng dụng
-    document.addEventListener('DOMContentLoaded', initApp);
+    // Gắn sự kiện khi tải trang
+    window.onload = () => {
+      updateSummary();
+      ['shipments', 'inventory', 'users', 'expenses', 'revenues'].forEach(loadData);
+      document.querySelector('#addExpenseBtn').addEventListener('click', addExpense);
+      document.querySelector('#addShipmentBtn').addEventListener('click', addShipment);
+      document.querySelector('#addRevenueBtn').addEventListener('click', addRevenue);
+      document.querySelector('#addProductBtn').addEventListener('click', addProduct);
+      document.querySelector('#addUserBtn').addEventListener('click', addUser);
+      document.querySelector('#saveNoteBtn').addEventListener('click', saveNote);
+    };
   </script>
+</head>
+<body>
+  <div class="nav">
+    <h1>📊 Quản lý Kinh doanh</h1>
+    <a href="#">Đăng xuất</a>
+  </div>
+
+  <div class="section">
+    <h2>🔐 Đăng nhập</h2>
+    <input type="text" placeholder="Tên đăng nhập"><br>
+    <input type="password" placeholder="Mật khẩu"><br>
+    <label><input type="checkbox"> Ghi nhớ đăng nhập</label><br>
+    <button onclick="alert('Chức năng đăng nhập chưa được triển khai')">Đăng nhập</button>
+    <p>Đang xác thực...</p>
+  </div>
+
+  <div class="section">
+    <h2>💸 Chi phí</h2>
+    <button id="addExpenseBtn">Thêm chi phí</button>
+    <table>
+      <thead><tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr></thead>
+      <tbody id="expensesTable"></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>📦 Xuất hàng</h2>
+    <button id="addShipmentBtn">Thêm xuất hàng</button>
+    <table>
+      <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Hành động</th></tr></thead>
+      <tbody id="shipmentsTable"></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>💰 Doanh thu</h2>
+    <button id="addRevenueBtn">Thêm doanh thu</button>
+    <table>
+      <thead><tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr></thead>
+      <tbody id="revenuesTable"></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>📝 Tổng kết ngày</h2>
+    <p id="revenue">Doanh thu: 0₫</p>
+    <p id="expense">Tổng chi phí: 0₫</p>
+    <p id="balance">Số dư: 0₫</p>
+    <p>📌 Ghi chú cá nhân:</p>
+    <button id="saveNoteBtn">💾 Lưu dữ liệu</button>
+  </div>
+
+  <div class="section">
+    <h2>📦 Quản lý Kho hàng</h2>
+    <button id="addProductBtn">➕ Thêm sản phẩm</button>
+    <table>
+      <thead><tr><th>Tên sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Giá đơn vị</th><th>Hành động</th></tr></thead>
+      <tbody id="inventoryTable"></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>📊 Báo cáo</h2>
+    <button onclick="alert('Chức năng báo cáo ngày chưa được triển khai')">📅 Báo cáo ngày</button>
+    <button onclick="alert('Chức năng báo cáo tháng chưa được triển khai')">📆 Báo cáo tháng</button>
+    <button onclick="alert('Chức năng in báo cáo chưa được triển khai')">🖨️ In báo cáo</button>
+    <div class="filter">
+      <select><option>Tất cả người dùng</option></select>
+      <select><option>Tất cả danh mục</option></select>
+      <button onclick="alert('Chức năng áp dụng chưa được triển khai')">🔍 Áp dụng</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>👥 Quản lý Người dùng</h2>
+    <select>
+      <option>Nhân viên</option>
+      <option>Quản lý</option>
+    </select>
+    <button id="addUserBtn">➕ Thêm người dùng</button>
+    <table>
+      <thead><tr><th>Tên đăng nhập</th><th>Vai trò</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+      <tbody id="usersTable"></tbody>
+    </table>
+  </div>
 </body>
 </html>
