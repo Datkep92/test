@@ -2,33 +2,95 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <title>Test Firebase</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Quản lý kinh doanh</title>
+  <style>
+    * { box-sizing: border-box; font-family: sans-serif; }
+    body { margin: 0; padding: 0; background: #f5f5f5; }
+    header, .content, .login-box, .admin-panel { padding: 16px; }
+    header { background: #333; color: #fff; text-align: center; }
+    .section { background: white; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+    input, button, select { padding: 8px; margin: 4px 0; border: 1px solid #ccc; border-radius: 6px; }
+    .flex { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    .table th, .table td { padding: 8px; border: 1px solid #ccc; text-align: left; }
+    .right { text-align: right; }
+    .hidden { display: none; }
+    .actions button { margin-right: 4px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📊 Quản lý Kinh doanh</h1>
+    <div id="currentDate"></div>
+    <button onclick="handleLogout()">🚪 Đăng xuất</button>
+  </header>
+  <div class="login-box" id="loginBox">
+    <h3>🔐 Đăng nhập</h3>
+    <input type="text" id="username" placeholder="Email đăng nhập" />
+    <input type="password" id="password" placeholder="Mật khẩu" />
+    <button onclick="handleLogin()">Đăng nhập</button>
+  </div>
+
+  <div class="content hidden" id="mainApp">
+    <div class="section">
+      <h3>📝 Nhập giao dịch</h3>
+      <div class="flex">
+        <input type="text" id="transactionInput" placeholder="VD: bán cà phê 12000" />
+        <button onclick="alert('Tính năng nhập giao dịch đang phát triển')">Nhập</button>
+      </div>
+    </div>
+
+    <div class="section admin-panel hidden" id="adminPanel">
+      <h3>🛠 Quản trị</h3>
+      <p>Chức năng admin hiển thị ở đây.</p>
+    </div>
+  </div>
+
   <script type="module">
-    // ✅ Import từ Firebase CDN module
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
       authDomain: "quanly-d7e54.firebaseapp.com",
       projectId: "quanly-d7e54",
-      storageBucket: "quanly-d7e54.firebasestorage.app",
+      storageBucket: "quanly-d7e54.appspot.com",
       messagingSenderId: "482686011267",
       appId: "1:482686011267:web:f2fe9d400fe618487a98b6",
       measurementId: "G-G3H6MTCWCM"
     };
 
-    // ✅ Khởi tạo Firebase
     const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
+    const auth = getAuth(app);
 
-    console.log("✅ Firebase đã được khởi tạo thành công.");
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById('loginBox').classList.add('hidden');
+        document.getElementById('mainApp').classList.remove('hidden');
+        document.getElementById('currentDate').innerText = new Date().toLocaleDateString('vi-VN');
+        if (user.email === 'admin@example.com') {
+          document.getElementById('adminPanel').classList.remove('hidden');
+        }
+      } else {
+        document.getElementById('loginBox').classList.remove('hidden');
+        document.getElementById('mainApp').classList.add('hidden');
+      }
+    });
+
+    window.handleLogin = async function () {
+      const email = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (error) {
+        alert("❌ Đăng nhập lỗi: " + error.message);
+      }
+    };
+
+    window.handleLogout = async function () {
+      await signOut(auth);
+    };
   </script>
-</head>
-<body>
-  <h1>🚀 Firebase Test</h1>
-  <p>Nếu bạn thấy không có lỗi trên console, nghĩa là kết nối thành công!</p>
-  <p>Mở DevTools (F12) để kiểm tra log.</p>
 </body>
 </html>
