@@ -251,6 +251,7 @@ addInventoryBtn.onclick = async () => {
 async function loadUsers() {
   if (userRole !== "manager") return;
   userTableBody.innerHTML = "<tr><td colspan='4'>⏳ Đang tải...</td></tr>";
+
   const snapshot = await getDocs(collection(db, "users"));
   let html = "";
   snapshot.forEach(doc => {
@@ -262,7 +263,9 @@ async function loadUsers() {
       <td><button class="deleteUserBtn" data-id="${doc.id}">Xóa</button></td>
     </tr>`;
   });
+
   userTableBody.innerHTML = html || "<tr><td colspan='4'>📭 Không có dữ liệu</td></tr>";
+
   document.querySelectorAll(".deleteUserBtn").forEach(btn => {
     btn.onclick = async () => {
       const id = btn.getAttribute("data-id");
@@ -271,6 +274,7 @@ async function loadUsers() {
     };
   });
 }
+
 
 addUserBtn.onclick = async () => {
   if (userRole !== "manager") return;
