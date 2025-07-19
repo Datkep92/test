@@ -4,19 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Quản lý Kinh doanh</title>
+  <link rel="icon" href="data:,">
   <style>
     /* Reset CSS */
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: 'Arial', sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     
     body {
-      background: #f5f7fa;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
       color: #333;
       line-height: 1.6;
+      min-height: 100vh;
     }
     
     /* Layout */
@@ -26,7 +28,7 @@
     }
     
     header {
-      background: #2c3e50;
+      background: linear-gradient(90deg, #2c3e50 0%, #1a2530 100%);
       color: #fff;
       padding: 15px;
       display: flex;
@@ -35,6 +37,7 @@
       position: sticky;
       top: 0;
       z-index: 100;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     
     .login-box {
@@ -42,80 +45,112 @@
       margin: 50px auto;
       padding: 30px;
       background: white;
-      border-radius: 10px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      transition: transform 0.3s ease;
+    }
+    
+    .login-box:hover {
+      transform: translateY(-5px);
     }
     
     .section {
       background: white;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     }
     
     /* Form elements */
     input, button, select {
       width: 100%;
-      padding: 12px;
-      margin: 8px 0;
+      padding: 14px;
+      margin: 10px 0;
       border: 1px solid #ddd;
-      border-radius: 6px;
+      border-radius: 8px;
       font-size: 16px;
+      transition: all 0.3s;
+    }
+    
+    input:focus, select:focus {
+      border-color: #3498db;
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+      outline: none;
     }
     
     button {
-      background: #3498db;
+      background: linear-gradient(90deg, #3498db 0%, #2c80c0 100%);
       color: white;
       border: none;
       cursor: pointer;
-      transition: background 0.3s;
       font-weight: bold;
+      letter-spacing: 0.5px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    button:after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -60%;
+      width: 20%;
+      height: 200%;
+      background: rgba(255,255,255,0.2);
+      transform: rotate(30deg);
+      transition: all 0.8s;
+    }
+    
+    button:hover:after {
+      left: 140%;
     }
     
     button:hover {
-      background: #2980b9;
+      background: linear-gradient(90deg, #2c80c0 0%, #3498db 100%);
     }
     
     button.danger {
-      background: #e74c3c;
+      background: linear-gradient(90deg, #e74c3c 0%, #c0392b 100%);
     }
     
     button.danger:hover {
-      background: #c0392b;
+      background: linear-gradient(90deg, #c0392b 0%, #e74c3c 100%);
     }
     
     button.success {
-      background: #2ecc71;
+      background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%);
     }
     
     button.success:hover {
-      background: #27ae60;
+      background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%);
     }
     
     button.warning {
-      background: #f39c12;
+      background: linear-gradient(90deg, #f39c12 0%, #d35400 100%);
     }
     
     button.warning:hover {
-      background: #d35400;
+      background: linear-gradient(90deg, #d35400 0%, #f39c12 100%);
     }
     
     /* Tables */
     .table-responsive {
       overflow-x: auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin: 15px 0;
     }
     
     .table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 15px;
       font-size: 14px;
       min-width: 600px;
     }
     
     .table th, .table td {
-      padding: 12px;
+      padding: 14px;
       border: 1px solid #eee;
       text-align: left;
     }
@@ -123,33 +158,39 @@
     .table th {
       background: #f8f9fa;
       font-weight: 600;
+      color: #2c3e50;
     }
     
     .table tr:nth-child(even) {
       background-color: #f9f9f9;
     }
     
+    .table tr:hover {
+      background-color: #f1f9ff;
+    }
+    
     /* Tabs */
     .tab-container {
       display: flex;
       overflow-x: auto;
-      margin-bottom: 15px;
-      border-bottom: 1px solid #ddd;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #3498db;
       -webkit-overflow-scrolling: touch;
     }
     
     .tab {
-      padding: 10px 15px;
+      padding: 12px 20px;
       cursor: pointer;
       background: #f1f1f1;
-      border-radius: 5px 5px 0 0;
+      border-radius: 8px 8px 0 0;
       margin-right: 5px;
       white-space: nowrap;
       transition: all 0.3s;
+      font-weight: 500;
     }
     
     .tab:hover {
-      background: #ddd;
+      background: #e1e1e1;
     }
     
     .tab.active {
@@ -160,28 +201,32 @@
     /* Product grid */
     .product-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 15px;
       margin-top: 15px;
     }
     
     .product-item {
       border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 10px;
+      border-radius: 12px;
+      padding: 15px;
       text-align: center;
       cursor: pointer;
       transition: all 0.3s;
+      background: white;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
     }
     
     .product-item:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      transform: translateY(-5px);
+      box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+      border-color: #3498db;
     }
     
     .product-item.selected {
       background-color: #e1f0ff;
       border-color: #3498db;
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
     }
     
     /* Utility classes */
@@ -199,35 +244,39 @@
     
     .error-message {
       color: #e74c3c;
-      margin: 10px 0;
+      margin: 15px 0;
       text-align: center;
       font-weight: bold;
       background: #ffebee;
-      padding: 10px;
-      border-radius: 6px;
+      padding: 12px;
+      border-radius: 8px;
+      border-left: 4px solid #e74c3c;
     }
     
     .success-message {
       color: #27ae60;
-      margin: 10px 0;
+      margin: 15px 0;
       text-align: center;
       font-weight: bold;
       background: #eafaf1;
-      padding: 10px;
-      border-radius: 6px;
+      padding: 12px;
+      border-radius: 8px;
+      border-left: 4px solid #27ae60;
     }
     
     .category-badge {
       display: inline-block;
-      padding: 3px 8px;
+      padding: 4px 10px;
       background: #e1f0ff;
-      border-radius: 10px;
+      border-radius: 20px;
       font-size: 12px;
       margin-left: 5px;
+      color: #2c80c0;
+      font-weight: 500;
     }
     
     .spinner {
-      border: 3px solid #f3f3f3;
+      border: 3px solid rgba(243, 243, 243, 0.8);
       border-top: 3px solid #3498db;
       border-radius: 50%;
       width: 20px;
@@ -244,24 +293,68 @@
     
     .loading-container {
       text-align: center;
+      padding: 30px;
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.8rem;
+    }
+    
+    .logo-icon {
+      font-size: 2rem;
+    }
+    
+    .summary-card {
+      background: linear-gradient(135deg, #f8fafc 0%, #e6f0f7 100%);
+      border-radius: 12px;
       padding: 20px;
+      margin: 15px 0;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      border: 1px solid #e1e8ed;
     }
     
     /* Responsive adjustments */
     @media (min-width: 768px) {
       .container {
-        padding: 20px;
+        padding: 25px;
         max-width: 1200px;
         margin: 0 auto;
       }
       
       .flex-md {
         display: flex;
-        gap: 15px;
+        gap: 20px;
       }
       
       .flex-md > * {
         flex: 1;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .login-box {
+        margin: 20px auto;
+        padding: 20px;
+      }
+      
+      header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+      }
+      
+      .user-info {
+        width: 100%;
+        justify-content: center;
       }
     }
     
@@ -278,13 +371,17 @@
         left: 0;
         top: 0;
         width: 100%;
+        padding: 20px;
       }
     }
   </style>
 </head>
 <body>
   <header id="appHeader" class="hidden">
-    <h1>📊 Quản lý Kinh doanh</h1>
+    <div class="logo">
+      <span class="logo-icon">📊</span>
+      <h1>Quản lý Kinh doanh</h1>
+    </div>
     <div class="user-info">
       <span id="currentUser"></span>
       <button onclick="handleLogout()" class="logout-btn danger">Đăng xuất</button>
@@ -296,9 +393,9 @@
     <div class="login-box" id="loginBox">
       <h2 class="text-center">🔐 Đăng nhập</h2>
       <div id="errorContainer"></div>
-      <input type="text" id="username" placeholder="Tên đăng nhập" autocomplete="username" />
+      <input type="email" id="username" placeholder="Email đăng nhập" autocomplete="username" />
       <input type="password" id="password" placeholder="Mật khẩu" autocomplete="current-password" />
-      <label style="display: block; margin: 10px 0;">
+      <label style="display: block; margin: 15px 0;">
         <input type="checkbox" id="rememberMe" /> Ghi nhớ đăng nhập
       </label>
       <button onclick="handleLogin()" class="success">Đăng nhập</button>
@@ -311,9 +408,9 @@
   <!-- Sale Screen -->
   <div class="container hidden" id="saleApp">
     <div class="tab-container">
-      <div class="tab active" onclick="switchTab('expense')">Chi phí</div>
-      <div class="tab" onclick="switchTab('export')">Xuất hàng</div>
-      <div class="tab" onclick="switchTab('revenue')">Doanh thu</div>
+      <div class="tab active" onclick="switchTab('expense')">💸 Chi phí</div>
+      <div class="tab" onclick="switchTab('export')">📦 Xuất hàng</div>
+      <div class="tab" onclick="switchTab('revenue')">💰 Doanh thu</div>
     </div>
     
     <!-- Expense Tab -->
@@ -321,7 +418,7 @@
       <h3>💸 Chi phí</h3>
       <div class="flex-md">
         <input type="text" id="expenseInput" placeholder="VD: mua xăng 60000" />
-        <button onclick="addExpense()">Thêm</button>
+        <button onclick="addExpense()">Thêm chi phí</button>
       </div>
       <div class="table-responsive">
         <table class="table" id="expenseTable">
@@ -356,21 +453,21 @@
       <h3>💰 Doanh thu</h3>
       <div class="flex-md">
         <input type="text" id="revenueAmount" placeholder="Số tiền (VD: 500000)" />
-        <button onclick="addRevenue()">Thêm</button>
+        <button onclick="addRevenue()">Thêm doanh thu</button>
       </div>
     </div>
     
     <!-- Daily Summary -->
     <div class="section">
       <h3>📝 Tổng kết ngày <span id="summaryDate"></span></h3>
-      <div class="table-responsive">
+      <div class="summary-card">
         <table class="table">
           <tr>
-            <td>Doanh thu:</td>
+            <td><strong>Doanh thu:</strong></td>
             <td class="text-right" id="totalRevenue">0₫</td>
           </tr>
           <tr>
-            <td>Tổng chi phí:</td>
+            <td><strong>Tổng chi phí:</strong></td>
             <td class="text-right" id="totalExpense">0₫</td>
           </tr>
           <tr>
@@ -382,9 +479,9 @@
       
       <div id="exportSummary"></div>
       
-      <h4>Ghi chú cá nhân:</h4>
-      <textarea id="dailyNote" class="note-input" placeholder="Nhập ghi chú trong ngày..." rows="3" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px;"></textarea>
-      <button onclick="saveDailyData()" class="success">Lưu dữ liệu</button>
+      <h4>📌 Ghi chú cá nhân:</h4>
+      <textarea id="dailyNote" class="note-input" placeholder="Nhập ghi chú trong ngày..." rows="3" style="width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; resize: vertical;"></textarea>
+      <button onclick="saveDailyData()" class="success">💾 Lưu dữ liệu</button>
     </div>
   </div>
 
@@ -397,7 +494,7 @@
         <input type="number" id="productQuantity" placeholder="Số lượng" min="0" />
         <input type="text" id="productUnit" placeholder="ĐVT (kg, ly, chai...)" />
         <input type="number" id="productPrice" placeholder="Giá đơn vị (VNĐ)" min="0" />
-        <button onclick="addProduct()">Thêm sản phẩm</button>
+        <button onclick="addProduct()">➕ Thêm sản phẩm</button>
       </div>
       <div class="table-responsive">
         <table class="table" id="productTable">
@@ -413,9 +510,9 @@
       <h3>📊 Báo cáo</h3>
       <div class="flex-md">
         <input type="date" id="reportDate" />
-        <button onclick="generateDailyReport()">Báo cáo ngày</button>
-        <button onclick="generateMonthlyReport()">Báo cáo tháng</button>
-        <button onclick="printReport()" class="warning">In báo cáo</button>
+        <button onclick="generateDailyReport()">📅 Báo cáo ngày</button>
+        <button onclick="generateMonthlyReport()">📆 Báo cáo tháng</button>
+        <button onclick="printReport()" class="warning">🖨️ In báo cáo</button>
       </div>
       
       <div id="reportFilters" style="margin-top: 15px;">
@@ -426,11 +523,11 @@
           <select id="reportCategoryFilter">
             <option value="all">Tất cả danh mục</option>
           </select>
-          <button onclick="applyReportFilters()">Áp dụng</button>
+          <button onclick="applyReportFilters()">🔍 Áp dụng</button>
         </div>
       </div>
       
-      <div id="reportOutput" style="margin-top: 20px;"></div>
+      <div id="reportOutput" style="margin-top: 20px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);"></div>
     </div>
     
     <div class="section">
@@ -442,7 +539,7 @@
           <option value="staff">Nhân viên</option>
           <option value="admin">Quản lý</option>
         </select>
-        <button onclick="addUser()" class="success">Thêm người dùng</button>
+        <button onclick="addUser()" class="success">➕ Thêm người dùng</button>
       </div>
       
       <div class="table-responsive">
@@ -467,8 +564,7 @@
       signInWithEmailAndPassword, 
       signOut, 
       onAuthStateChanged, 
-      createUserWithEmailAndPassword,
-      updateProfile
+      createUserWithEmailAndPassword
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     
     import { 
@@ -476,18 +572,13 @@
       ref, 
       set, 
       get, 
-      child, 
       push, 
       update, 
       remove,
-      onValue,
-      query,
-      orderByChild,
-      equalTo
+      onValue
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-    // Firebase configuration
-    const firebaseConfig = {
+   const firebaseConfig = {
       apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
       authDomain: "quanly-d7e54.firebaseapp.com",
       databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com",
@@ -603,6 +694,7 @@
       try {
         await signOut(auth);
         currentUser = null;
+        showSuccess('Bạn đã đăng xuất thành công');
       } catch (error) {
         showError(`Lỗi khi đăng xuất: ${error.message}`);
       }
@@ -628,9 +720,15 @@
         if (snapshot.exists()) {
           const userData = snapshot.val();
           return userData.role === 'admin';
+        } else {
+          // Create new user record if not exists
+          await set(userRef, {
+            email: currentUser.email,
+            role: 'staff',
+            active: true
+          });
+          return false;
         }
-        
-        return false;
       } catch (error) {
         showError(`Lỗi khi kiểm tra quyền admin: ${error.message}`);
         return false;
@@ -648,7 +746,13 @@
         const snapshot = await get(productsRef);
         
         if (snapshot.exists()) {
-          products = Object.values(snapshot.val());
+          products = [];
+          snapshot.forEach(childSnapshot => {
+            products.push({
+              id: childSnapshot.key,
+              ...childSnapshot.val()
+            });
+          });
           renderProducts();
           renderProductSelection();
         } else {
@@ -674,7 +778,8 @@
       
       // Load today's data
       try {
-        const dailyRef = ref(database, `dailyData/${today.replace(/\//g, '_')}/${currentUser.uid}`);
+        const dateKey = today.replace(/\//g, '_');
+        const dailyRef = ref(database, `dailyData/${dateKey}/${currentUser.uid}`);
         const snapshot = await get(dailyRef);
         
         if (snapshot.exists()) {
@@ -701,9 +806,11 @@
       const today = new Date().toLocaleDateString('vi-VN');
       dailyData.note = document.getElementById('dailyNote').value;
       dailyData.date = today;
+      dailyData.user = currentUser.email;
       
       try {
-        const dailyRef = ref(database, `dailyData/${today.replace(/\//g, '_')}/${currentUser.uid}`);
+        const dateKey = today.replace(/\//g, '_');
+        const dailyRef = ref(database, `dailyData/${dateKey}/${currentUser.uid}`);
         await set(dailyRef, dailyData);
         showSuccess('Đã lưu dữ liệu ngày ' + dailyData.date);
       } catch (error) {
@@ -810,6 +917,7 @@
         productItem.innerHTML = `
           <div><strong>${product.name}</strong></div>
           <div>Tồn kho: ${product.quantity} ${product.unit}</div>
+          <div style="margin-top: 8px; color: #27ae60;">${product.price.toLocaleString('vi-VN')}₫/${product.unit}</div>
         `;
         
         productItem.addEventListener('click', () => {
@@ -963,10 +1071,10 @@
         const summaryDiv = document.createElement('div');
         summaryDiv.style.marginTop = '15px';
         summaryDiv.innerHTML = `
-          <h4>Xuất hàng hôm nay:</h4>
+          <h4>📦 Xuất hàng hôm nay:</h4>
           <ul>
             ${dailyData.exports.map(e => 
-              `<li>${e.productName}: ${e.quantity} ${e.unit}</li>`
+              `<li>${e.productName}: ${e.quantity} ${e.unit} (${(e.quantity * e.price).toLocaleString('vi-VN')}₫)</li>`
             ).join('')}
           </ul>
         `;
@@ -1091,8 +1199,8 @@
           <td>${product.unit}</td>
           <td class="text-right">${product.price.toLocaleString('vi-VN')}₫</td>
           <td class="actions">
-            <button onclick="editProduct(${index})">Sửa</button>
-            <button onclick="deleteProduct(${index})" class="danger">Xóa</button>
+            <button onclick="editProduct(${index})">✏️ Sửa</button>
+            <button onclick="deleteProduct(${index})" class="danger">🗑️ Xóa</button>
           </td>
         `;
         table.appendChild(row);
@@ -1192,9 +1300,9 @@
               <td>${user.active ? 'Đang hoạt động' : 'Đã khóa'}</td>
               <td class="actions">
                 <button onclick="toggleUserStatus('${uid}')" class="${user.active ? 'warning' : 'success'}">
-                  ${user.active ? 'Khóa' : 'Mở khóa'}
+                  ${user.active ? '🔒 Khóa' : '🔓 Mở khóa'}
                 </button>
-                <button onclick="deleteUser('${uid}')" class="danger">Xóa</button>
+                <button onclick="deleteUser('${uid}')" class="danger">🗑️ Xóa</button>
               </td>
             `;
             table.appendChild(row);
@@ -1313,8 +1421,34 @@
         return;
       }
       
-      // ... (rest of the report generation code remains the same)
-      // This part is the same as your original report generation code
+      // Generate report content
+      let reportHTML = `<h3>Báo cáo ${isMonthly ? 'tháng' : 'ngày'} ${dateStr}</h3>`;
+      
+      if (allDailyData.length === 0) {
+        reportHTML += `<p>Không có dữ liệu ${isMonthly ? 'tháng' : 'ngày'} ${dateStr}</p>`;
+      } else {
+        reportHTML += `
+          <div class="summary-section">
+            <h4>Tổng hợp</h4>
+            <p>Đã ghi nhận ${allDailyData.length} bản ghi dữ liệu</p>
+          </div>
+        `;
+      }
+      
+      document.getElementById('reportOutput').innerHTML = reportHTML;
+    }
+    
+    function applyReportFilters() {
+      const dateInput = document.getElementById('reportDate').value;
+      if (!dateInput) {
+        alert('Vui lòng chọn ngày');
+        return;
+      }
+      
+      const userFilter = document.getElementById('reportUserFilter').value;
+      const categoryFilter = document.getElementById('reportCategoryFilter').value;
+      
+      generateReport(dateInput, userFilter, categoryFilter);
     }
     
     function printReport() {
