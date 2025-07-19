@@ -1,1492 +1,330 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quản lý Kinh doanh</title>
-  <link rel="icon" href="data:,">
   <style>
-    /* Reset CSS */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    
-    body {
-      background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
-      color: #333;
-      line-height: 1.6;
-      min-height: 100vh;
-    }
-    
-    /* Layout */
-    .container {
-      padding: 15px;
-      max-width: 100%;
-    }
-    
-    header {
-      background: linear-gradient(90deg, #2c3e50 0%, #1a2530 100%);
-      color: #fff;
-      padding: 15px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    
-    .login-box {
-      max-width: 400px;
-      margin: 50px auto;
-      padding: 30px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-      transition: transform 0.3s ease;
-    }
-    
-    .login-box:hover {
-      transform: translateY(-5px);
-    }
-    
-    .section {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    }
-    
-    /* Form elements */
-    input, button, select {
-      width: 100%;
-      padding: 14px;
-      margin: 10px 0;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 16px;
-      transition: all 0.3s;
-    }
-    
-    input:focus, select:focus {
-      border-color: #3498db;
-      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-      outline: none;
-    }
-    
-    button {
-      background: linear-gradient(90deg, #3498db 0%, #2c80c0 100%);
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-      letter-spacing: 0.5px;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    button:after {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -60%;
-      width: 20%;
-      height: 200%;
-      background: rgba(255,255,255,0.2);
-      transform: rotate(30deg);
-      transition: all 0.8s;
-    }
-    
-    button:hover:after {
-      left: 140%;
-    }
-    
-    button:hover {
-      background: linear-gradient(90deg, #2c80c0 0%, #3498db 100%);
-    }
-    
-    button.danger {
-      background: linear-gradient(90deg, #e74c3c 0%, #c0392b 100%);
-    }
-    
-    button.danger:hover {
-      background: linear-gradient(90deg, #c0392b 0%, #e74c3c 100%);
-    }
-    
-    button.success {
-      background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%);
-    }
-    
-    button.success:hover {
-      background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%);
-    }
-    
-    button.warning {
-      background: linear-gradient(90deg, #f39c12 0%, #d35400 100%);
-    }
-    
-    button.warning:hover {
-      background: linear-gradient(90deg, #d35400 0%, #f39c12 100%);
-    }
-    
-    /* Tables */
-    .table-responsive {
-      overflow-x: auto;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      margin: 15px 0;
-    }
-    
-    .table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-      min-width: 600px;
-    }
-    
-    .table th, .table td {
-      padding: 14px;
-      border: 1px solid #eee;
-      text-align: left;
-    }
-    
-    .table th {
-      background: #f8f9fa;
-      font-weight: 600;
-      color: #2c3e50;
-    }
-    
-    .table tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
-    
-    .table tr:hover {
-      background-color: #f1f9ff;
-    }
-    
-    /* Tabs */
-    .tab-container {
-      display: flex;
-      overflow-x: auto;
-      margin-bottom: 20px;
-      border-bottom: 2px solid #3498db;
-      -webkit-overflow-scrolling: touch;
-    }
-    
-    .tab {
-      padding: 12px 20px;
-      cursor: pointer;
-      background: #f1f1f1;
-      border-radius: 8px 8px 0 0;
-      margin-right: 5px;
-      white-space: nowrap;
-      transition: all 0.3s;
-      font-weight: 500;
-    }
-    
-    .tab:hover {
-      background: #e1e1e1;
-    }
-    
-    .tab.active {
-      background: #3498db;
-      color: white;
-    }
-    
-    /* Product grid */
-    .product-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 15px;
-      margin-top: 15px;
-    }
-    
-    .product-item {
-      border: 1px solid #ddd;
-      border-radius: 12px;
-      padding: 15px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s;
-      background: white;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-    }
-    
-    .product-item:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-      border-color: #3498db;
-    }
-    
-    .product-item.selected {
-      background-color: #e1f0ff;
-      border-color: #3498db;
-      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-    }
-    
-    /* Utility classes */
-    .hidden {
-      display: none;
-    }
-    
-    .text-right {
-      text-align: right;
-    }
-    
-    .text-center {
-      text-align: center;
-    }
-    
-    .error-message {
-      color: #e74c3c;
-      margin: 15px 0;
-      text-align: center;
-      font-weight: bold;
-      background: #ffebee;
-      padding: 12px;
-      border-radius: 8px;
-      border-left: 4px solid #e74c3c;
-    }
-    
-    .success-message {
-      color: #27ae60;
-      margin: 15px 0;
-      text-align: center;
-      font-weight: bold;
-      background: #eafaf1;
-      padding: 12px;
-      border-radius: 8px;
-      border-left: 4px solid #27ae60;
-    }
-    
-    .category-badge {
-      display: inline-block;
-      padding: 4px 10px;
-      background: #e1f0ff;
-      border-radius: 20px;
-      font-size: 12px;
-      margin-left: 5px;
-      color: #2c80c0;
-      font-weight: 500;
-    }
-    
-    .spinner {
-      border: 3px solid rgba(243, 243, 243, 0.8);
-      border-top: 3px solid #3498db;
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      animation: spin 1s linear infinite;
-      display: inline-block;
-      margin-right: 10px;
-    }
-    
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    
-    .loading-container {
-      text-align: center;
-      padding: 30px;
-    }
-    
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-    
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 1.8rem;
-    }
-    
-    .logo-icon {
-      font-size: 2rem;
-    }
-    
-    .summary-card {
-      background: linear-gradient(135deg, #f8fafc 0%, #e6f0f7 100%);
-      border-radius: 12px;
-      padding: 20px;
-      margin: 15px 0;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      border: 1px solid #e1e8ed;
-    }
-    
-    /* Responsive adjustments */
-    @media (min-width: 768px) {
-      .container {
-        padding: 25px;
-        max-width: 1200px;
-        margin: 0 auto;
-      }
-      
-      .flex-md {
-        display: flex;
-        gap: 20px;
-      }
-      
-      .flex-md > * {
-        flex: 1;
-      }
-    }
-    
-    @media (max-width: 768px) {
-      .login-box {
-        margin: 20px auto;
-        padding: 20px;
-      }
-      
-      header {
-        flex-direction: column;
-        gap: 15px;
-        text-align: center;
-      }
-      
-      .user-info {
-        width: 100%;
-        justify-content: center;
-      }
-    }
-    
-    /* Print styles */
-    @media print {
-      body * {
-        visibility: hidden;
-      }
-      #reportOutput, #reportOutput * {
-        visibility: visible;
-      }
-      #reportOutput {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        padding: 20px;
-      }
-    }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+    .nav { display: flex; justify-content: space-between; align-items: center; background: #f4f4f4; padding: 10px; }
+    .nav a { color: #000; text-decoration: none; }
+    .section { margin: 20px 0; }
+    .section h2 { border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    table, th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #f4f4f4; }
+    button { padding: 5px 10px; cursor: pointer; background: #4CAF50; color: white; border: none; }
+    button:hover { background: #45a049; }
+    .summary p { margin: 5px 0; }
+    .filter { margin: 10px 0; }
   </style>
+  <!-- Thêm SDK Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
+  <script>
+    // Cấu hình Firebase (thay bằng cấu hình thực từ Firebase Console)
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "quanly-d7e54.firebaseapp.com",
+      databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com/",
+      projectId: "quanly-d7e54",
+      storageBucket: "quanly-d7e54.appspot.com",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // Khởi tạo Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // Hàm thêm chi phí
+    function addExpense() {
+      const description = prompt("Nhập mô tả chi phí:");
+      const amount = prompt("Nhập số tiền (₫):");
+      if (description && amount) {
+        database.ref('expenses').push({
+          description: description,
+          amount: parseInt(amount),
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => {
+          alert("Thêm chi phí thành công!");
+          updateSummary();
+        }).catch((error) => {
+          alert("Lỗi: " + error.message);
+        });
+      }
+    }
+
+    // Hàm thêm xuất hàng
+    function addShipment() {
+      const product = prompt("Nhập sản phẩm:");
+      const quantity = prompt("Nhập số lượng:");
+      const unit = prompt("Nhập đơn vị tính:");
+      if (product && quantity && unit) {
+        database.ref('shipments').push({
+          product: product,
+          quantity: parseInt(quantity),
+          unit: unit,
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => {
+          alert("Thêm xuất hàng thành công!");
+          loadShipments();
+        }).catch((error) => {
+          alert("Lỗi: " + error.message);
+        });
+      }
+    }
+
+    // Hàm thêm doanh thu
+    function addRevenue() {
+      const description = prompt("Nhập mô tả doanh thu:");
+      const amount = prompt("Nhập số tiền (₫):");
+      if (description && amount) {
+        database.ref('revenues').push({
+          description: description,
+          amount: parseInt(amount),
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => {
+          alert("Thêm doanh thu thành công!");
+          updateSummary();
+        }).catch((error) => {
+          alert("Lỗi: " + error.message);
+        });
+      }
+    }
+
+    // Hàm thêm sản phẩm vào kho
+    function addProduct() {
+      const name = prompt("Nhập tên sản phẩm:");
+      const quantity = prompt("Nhập số lượng:");
+      const unit = prompt("Nhập đơn vị tính:");
+      const price = prompt("Nhập giá đơn vị (₫):");
+      if (name && quantity && unit && price) {
+        database.ref('inventory').push({
+          name: name,
+          quantity: parseInt(quantity),
+          unit: unit,
+          price: parseInt(price),
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => {
+          alert("Thêm sản phẩm thành công!");
+          loadInventory();
+        }).catch((error) => {
+          alert("Lỗi: " + error.message);
+        });
+      }
+    }
+
+    // Hàm thêm người dùng
+    function addUser() {
+      const username = prompt("Nhập tên đăng nhập:");
+      const role = prompt("Nhập vai trò (Nhân viên/Quản lý):");
+      const status = prompt("Nhập trạng thái (Hoạt động/Không hoạt động):");
+      if (username && role && status) {
+        database.ref('users').push({
+          username: username,
+          role: role,
+          status: status,
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => {
+          alert("Thêm người dùng thành công!");
+          loadUsers();
+        }).catch((error) => {
+          alert("Lỗi: " + error.message);
+        });
+      }
+    }
+
+    // Hàm tải và hiển thị xuất hàng
+    function loadShipments() {
+      database.ref('shipments').on('value', (snapshot) => {
+        const shipmentsTable = document.querySelector('#shipmentsTable tbody');
+        shipmentsTable.innerHTML = '';
+        snapshot.forEach((childSnapshot) => {
+          const data = childSnapshot.val();
+          const row = document.createElement('tr');
+          row.innerHTML = `<td>${data.product}</td><td>${data.quantity}</td><td>${data.unit}</td><td>Xóa</td>`;
+          shipmentsTable.appendChild(row);
+        });
+      });
+    }
+
+    // Hàm tải và hiển thị kho hàng
+    function loadInventory() {
+      database.ref('inventory').on('value', (snapshot) => {
+        const inventoryTable = document.querySelector('#inventoryTable tbody');
+        inventoryTable.innerHTML = '';
+        snapshot.forEach((childSnapshot) => {
+          const data = childSnapshot.val();
+          const row = document.createElement('tr');
+          row.innerHTML = `<td>${data.name}</td><td>${data.quantity}</td><td>${data.unit}</td><td>${data.price}₫</td><td>Xóa</td>`;
+          inventoryTable.appendChild(row);
+        });
+      });
+    }
+
+    // Hàm tải và hiển thị người dùng
+    function loadUsers() {
+      database.ref('users').on('value', (snapshot) => {
+        const usersTable = document.querySelector('#usersTable tbody');
+        usersTable.innerHTML = '';
+        snapshot.forEach((childSnapshot) => {
+          const data = childSnapshot.val();
+          const row = document.createElement('tr');
+          row.innerHTML = `<td>${data.username}</td><td>${data.role}</td><td>${data.status}</td><td>Xóa</td>`;
+          usersTable.appendChild(row);
+        });
+      });
+    }
+
+    // Hàm cập nhật tổng kết
+    function updateSummary() {
+      let totalExpense = 0;
+      let totalRevenue = 0;
+
+      database.ref('expenses').once('value').then((snapshot) => {
+        snapshot.forEach((childSnapshot) => {
+          totalExpense += childSnapshot.val().amount || 0;
+        });
+        database.ref('revenues').once('value').then((snapshot) => {
+          snapshot.forEach((childSnapshot) => {
+            totalRevenue += childSnapshot.val().amount || 0;
+          });
+          const balance = totalRevenue - totalExpense;
+          document.querySelector('#revenue').textContent = `Doanh thu: ${totalRevenue}₫`;
+          document.querySelector('#expense').textContent = `Tổng chi phí: ${totalExpense}₫`;
+          document.querySelector('#balance').textContent = `Số dư: ${balance}₫`;
+        });
+      });
+    }
+
+    // Hàm lưu ghi chú
+    function saveNote() {
+      const note = prompt("Nhập ghi chú cá nhân:");
+      if (note) {
+        database.ref('notes').push({
+          content: note,
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => {
+          alert("Lưu ghi chú thành công!");
+        }).catch((error) => {
+          alert("Lỗi: " + error.message);
+        });
+      }
+    }
+
+    // Gắn sự kiện khi tải trang
+    window.onload = () => {
+      updateSummary();
+      loadShipments();
+      loadInventory();
+      loadUsers();
+      document.querySelector('#addExpenseBtn').addEventListener('click', addExpense);
+      document.querySelector('#addShipmentBtn').addEventListener('click', addShipment);
+      document.querySelector('#addRevenueBtn').addEventListener('click', addRevenue);
+      document.querySelector('#addProductBtn').addEventListener('click', addProduct);
+      document.querySelector('#addUserBtn').addEventListener('click', addUser);
+      document.querySelector('#saveNoteBtn').addEventListener('click', saveNote);
+    };
+  </script>
 </head>
 <body>
-  <header id="appHeader" class="hidden">
-    <div class="logo">
-      <span class="logo-icon">📊</span>
-      <h1>Quản lý Kinh doanh</h1>
-    </div>
-    <div class="user-info">
-      <span id="currentUser"></span>
-      <button onclick="handleLogout()" class="logout-btn danger">Đăng xuất</button>
-    </div>
-  </header>
-  
-  <!-- Login Screen -->
-  <div class="container">
-    <div class="login-box" id="loginBox">
-      <h2 class="text-center">🔐 Đăng nhập</h2>
-      <div id="errorContainer"></div>
-      <input type="email" id="username" placeholder="Email đăng nhập" autocomplete="username" />
-      <input type="password" id="password" placeholder="Mật khẩu" autocomplete="current-password" />
-      <label style="display: block; margin: 15px 0;">
-        <input type="checkbox" id="rememberMe" /> Ghi nhớ đăng nhập
-      </label>
-      <button onclick="handleLogin()" class="success">Đăng nhập</button>
-      <div id="loadingIndicator" class="loading-container hidden">
-        <div class="spinner"></div> Đang xác thực...
-      </div>
+  <div class="nav">
+    <h1>📊 Quản lý Kinh doanh</h1>
+    <a href="#">Đăng xuất</a>
+  </div>
+
+  <div class="login-section">
+    <h2>🔐 Đăng nhập</h2>
+    <input type="text" placeholder="Tên đăng nhập"><br>
+    <input type="password" placeholder="Mật khẩu"><br>
+    <label><input type="checkbox"> Ghi nhớ đăng nhập</label><br>
+    <button>Đăng nhập</button>
+    <p>Đang xác thực...</p>
+  </div>
+
+  <div class="menu">
+    <h2>💸 Chi phí | 📦 Xuất hàng | 💰 Doanh thu</h2>
+  </div>
+
+  <div class="section">
+    <h2>💸 Chi phí</h2>
+    <button id="addExpenseBtn">Thêm chi phí</button>
+    <table>
+      <thead>
+        <tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr>
+      </thead>
+      <tbody id="expensesTable"></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>📦 Xuất hàng</h2>
+    <button id="addShipmentBtn">Thêm xuất hàng</button>
+    <table>
+      <thead>
+        <tr><th>Sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Hành động</th></tr>
+      </thead>
+      <tbody id="shipmentsTable"></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>💰 Doanh thu</h2>
+    <button id="addRevenueBtn">Thêm doanh thu</button>
+    <table>
+      <thead>
+        <tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr>
+      </thead>
+      <tbody id="revenuesTable"></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>📝 Tổng kết ngày</h2>
+    <p id="revenue">Doanh thu: 0₫</p>
+    <p id="expense">Tổng chi phí: 0₫</p>
+    <p id="balance">Số dư: 0₫</p>
+    <p>📌 Ghi chú cá nhân:</p>
+    <button id="saveNoteBtn">💾 Lưu dữ liệu</button>
+  </div>
+
+  <div class="section">
+    <h2>📦 Quản lý Kho hàng</h2>
+    <button id="addProductBtn">➕ Thêm sản phẩm</button>
+    <table>
+      <thead>
+        <tr><th>Tên sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Giá đơn vị</th><th>Hành động</th></tr>
+      </thead>
+      <tbody id="inventoryTable"></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>📊 Báo cáo</h2>
+    <button>📅 Báo cáo ngày</button>
+    <button>📆 Báo cáo tháng</button>
+    <button>🖨️ In báo cáo</button>
+    <div class="filter">
+      <select><option>Tất cả người dùng</option></select>
+      <select><option>Tất cả danh mục</option></select>
+      <button>🔍 Áp dụng</button>
     </div>
   </div>
 
-  <!-- Sale Screen -->
-  <div class="container hidden" id="saleApp">
-    <div class="tab-container">
-      <div class="tab active" onclick="switchTab('expense')">💸 Chi phí</div>
-      <div class="tab" onclick="switchTab('export')">📦 Xuất hàng</div>
-      <div class="tab" onclick="switchTab('revenue')">💰 Doanh thu</div>
-    </div>
-    
-    <!-- Expense Tab -->
-    <div class="section" id="expenseTab">
-      <h3>💸 Chi phí</h3>
-      <div class="flex-md">
-        <input type="text" id="expenseInput" placeholder="VD: mua xăng 60000" />
-        <button onclick="addExpense()">Thêm chi phí</button>
-      </div>
-      <div class="table-responsive">
-        <table class="table" id="expenseTable">
-          <thead>
-            <tr><th>Mô tả</th><th class="text-right">Số tiền</th><th>Hành động</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-    
-    <!-- Export Tab -->
-    <div class="section hidden" id="exportTab">
-      <h3>📦 Xuất hàng</h3>
-      <div id="productList" class="product-grid"></div>
-      <div class="flex-md" style="margin-top: 15px;">
-        <input type="number" id="exportQuantity" placeholder="Số lượng" value="1" min="1" />
-        <button onclick="addExport()" class="success">Thêm xuất hàng</button>
-      </div>
-      <div class="table-responsive">
-        <table class="table" id="exportTable">
-          <thead>
-            <tr><th>Sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Hành động</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-    
-    <!-- Revenue Tab -->
-    <div class="section hidden" id="revenueTab">
-      <h3>💰 Doanh thu</h3>
-      <div class="flex-md">
-        <input type="text" id="revenueAmount" placeholder="Số tiền (VD: 500000)" />
-        <button onclick="addRevenue()">Thêm doanh thu</button>
-      </div>
-    </div>
-    
-    <!-- Daily Summary -->
-    <div class="section">
-      <h3>📝 Tổng kết ngày <span id="summaryDate"></span></h3>
-      <div class="summary-card">
-        <table class="table">
-          <tr>
-            <td><strong>Doanh thu:</strong></td>
-            <td class="text-right" id="totalRevenue">0₫</td>
-          </tr>
-          <tr>
-            <td><strong>Tổng chi phí:</strong></td>
-            <td class="text-right" id="totalExpense">0₫</td>
-          </tr>
-          <tr>
-            <td><strong>Số dư:</strong></td>
-            <td class="text-right" id="dailyBalance"><strong>0₫</strong></td>
-          </tr>
-        </table>
-      </div>
-      
-      <div id="exportSummary"></div>
-      
-      <h4>📌 Ghi chú cá nhân:</h4>
-      <textarea id="dailyNote" class="note-input" placeholder="Nhập ghi chú trong ngày..." rows="3" style="width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; resize: vertical;"></textarea>
-      <button onclick="saveDailyData()" class="success">💾 Lưu dữ liệu</button>
-    </div>
+  <div class="section">
+    <h2>👥 Quản lý Người dùng</h2>
+    <select>
+      <option>Nhân viên</option>
+      <option>Quản lý</option>
+    </select>
+    <button id="addUserBtn">➕ Thêm người dùng</button>
+    <table>
+      <thead>
+        <tr><th>Tên đăng nhập</th><th>Vai trò</th><th>Trạng thái</th><th>Hành động</th></tr>
+      </thead>
+      <tbody id="usersTable"></tbody>
+    </table>
   </div>
-
-  <!-- Admin Screen -->
-  <div class="container hidden" id="adminApp">
-    <div class="section">
-      <h3>📦 Quản lý Kho hàng</h3>
-      <div class="flex-md">
-        <input type="text" id="productName" placeholder="Tên sản phẩm" />
-        <input type="number" id="productQuantity" placeholder="Số lượng" min="0" />
-        <input type="text" id="productUnit" placeholder="ĐVT (kg, ly, chai...)" />
-        <input type="number" id="productPrice" placeholder="Giá đơn vị (VNĐ)" min="0" />
-        <button onclick="addProduct()">➕ Thêm sản phẩm</button>
-      </div>
-      <div class="table-responsive">
-        <table class="table" id="productTable">
-          <thead>
-            <tr><th>Tên sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th class="text-right">Giá đơn vị</th><th>Hành động</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-    
-    <div class="section">
-      <h3>📊 Báo cáo</h3>
-      <div class="flex-md">
-        <input type="date" id="reportDate" />
-        <button onclick="generateDailyReport()">📅 Báo cáo ngày</button>
-        <button onclick="generateMonthlyReport()">📆 Báo cáo tháng</button>
-        <button onclick="printReport()" class="warning">🖨️ In báo cáo</button>
-      </div>
-      
-      <div id="reportFilters" style="margin-top: 15px;">
-        <div class="flex-md">
-          <select id="reportUserFilter">
-            <option value="all">Tất cả người dùng</option>
-          </select>
-          <select id="reportCategoryFilter">
-            <option value="all">Tất cả danh mục</option>
-          </select>
-          <button onclick="applyReportFilters()">🔍 Áp dụng</button>
-        </div>
-      </div>
-      
-      <div id="reportOutput" style="margin-top: 20px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);"></div>
-    </div>
-    
-    <div class="section">
-      <h3>👥 Quản lý Người dùng</h3>
-      <div class="flex-md">
-        <input type="email" id="newUsername" placeholder="Email đăng nhập" />
-        <input type="password" id="newPassword" placeholder="Mật khẩu" />
-        <select id="newUserRole">
-          <option value="staff">Nhân viên</option>
-          <option value="admin">Quản lý</option>
-        </select>
-        <button onclick="addUser()" class="success">➕ Thêm người dùng</button>
-      </div>
-      
-      <div class="table-responsive">
-        <table class="table" id="userTable" style="margin-top: 15px;">
-          <thead>
-            <tr><th>Tên đăng nhập</th><th>Vai trò</th><th>Trạng thái</th><th>Hành động</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- Firebase SDK -->
-  <script type="module">
-    // Firebase App (the core Firebase SDK) is always required
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    
-    // Firebase services
-    import { 
-      getAuth, 
-      signInWithEmailAndPassword, 
-      signOut, 
-      onAuthStateChanged, 
-      createUserWithEmailAndPassword
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    
-    import { 
-      getDatabase, 
-      ref, 
-      set, 
-      get, 
-      push, 
-      update, 
-      remove,
-      onValue
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-    // Firebase configuration
-    const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "quanly-d7e54.firebaseapp.com",
-  databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com/",
-  projectId: "quanly-d7e54",
-  storageBucket: "quanly-d7e54.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
-firebase.initializeApp(firebaseConfig);
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const database = getDatabase(app);
-
-    // System Data
-    let products = [];
-    let expenseCategories = [];
-    let dailyData = {
-      date: '',
-      expenses: [],
-      exports: [],
-      revenue: 0,
-      note: '',
-      user: ''
-    };
-    
-    let currentUser = null;
-    let currentTab = 'expense';
-    let selectedProduct = null;
-
-    // Initialize the app
-    function initApp() {
-      // Set current date in report date picker
-      const today = new Date().toISOString().split('T')[0];
-      document.getElementById('reportDate').value = today;
-      
-      // Event listeners
-      document.getElementById('password').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') handleLogin();
-      });
-      
-      document.getElementById('expenseInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') addExpense();
-      });
-      
-      document.getElementById('revenueAmount').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') addRevenue();
-      });
-      
-      // Listen for auth state changes
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          currentUser = user;
-          handleSuccessfulLogin();
-        } else {
-          // User is signed out
-          document.getElementById('loginBox').classList.remove('hidden');
-          document.getElementById('appHeader').classList.add('hidden');
-          document.getElementById('adminApp').classList.add('hidden');
-          document.getElementById('saleApp').classList.add('hidden');
-        }
-      });
-    }
-    
-    // Login functions
-    async function handleLogin() {
-      const email = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value.trim();
-      
-      // Clear previous errors
-      document.getElementById('errorContainer').innerHTML = '';
-      
-      if (!email || !password) {
-        showError('Vui lòng nhập đầy đủ thông tin đăng nhập');
-        return;
-      }
-      
-      try {
-        document.getElementById('loadingIndicator').classList.remove('hidden');
-        
-        // Sign in with Firebase Authentication
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        currentUser = userCredential.user;
-        
-        // Hide loading indicator
-        document.getElementById('loadingIndicator').classList.add('hidden');
-      } catch (error) {
-        document.getElementById('loadingIndicator').classList.add('hidden');
-        showError(`Đăng nhập thất bại: ${error.message}`);
-      }
-    }
-    
-    function handleSuccessfulLogin() {
-      document.getElementById('loginBox').classList.add('hidden');
-      document.getElementById('appHeader').classList.remove('hidden');
-      document.getElementById('currentUser').textContent = currentUser.email;
-      
-      // Check if user is admin
-      checkAdminStatus().then(isAdmin => {
-        if (isAdmin) {
-          document.getElementById('adminApp').classList.remove('hidden');
-          loadReportFilters();
-          renderUserList();
-        } else {
-          document.getElementById('saleApp').classList.remove('hidden');
-        }
-        
-        loadData();
-      });
-    }
-    
-    async function handleLogout() {
-      try {
-        await signOut(auth);
-        currentUser = null;
-        showSuccess('Bạn đã đăng xuất thành công');
-      } catch (error) {
-        showError(`Lỗi khi đăng xuất: ${error.message}`);
-      }
-    }
-    
-    function showError(message) {
-      const errorContainer = document.getElementById('errorContainer');
-      errorContainer.innerHTML = `<div class="error-message">${message}</div>`;
-    }
-    
-    function showSuccess(message) {
-      const errorContainer = document.getElementById('errorContainer');
-      errorContainer.innerHTML = `<div class="success-message">${message}</div>`;
-      setTimeout(() => errorContainer.innerHTML = '', 3000);
-    }
-    
-    // Check if user is admin
-    async function checkAdminStatus() {
-      try {
-        const userRef = ref(database, `users/${currentUser.uid}`);
-        const snapshot = await get(userRef);
-        
-        if (snapshot.exists()) {
-          const userData = snapshot.val();
-          return userData.role === 'admin';
-        } else {
-          // Create new user record if not exists
-          await set(userRef, {
-            email: currentUser.email,
-            role: 'staff',
-            active: true
-          });
-          return false;
-        }
-      } catch (error) {
-        showError(`Lỗi khi kiểm tra quyền admin: ${error.message}`);
-        return false;
-      }
-    }
-    
-    // Data functions
-    async function loadData() {
-      const today = new Date().toLocaleDateString('vi-VN');
-      document.getElementById('summaryDate').textContent = today;
-      
-      // Load products
-      try {
-        const productsRef = ref(database, 'products');
-        const snapshot = await get(productsRef);
-        
-        if (snapshot.exists()) {
-          products = [];
-          snapshot.forEach(childSnapshot => {
-            products.push({
-              id: childSnapshot.key,
-              ...childSnapshot.val()
-            });
-          });
-          renderProducts();
-          renderProductSelection();
-        } else {
-          products = [];
-        }
-      } catch (error) {
-        showError(`Lỗi khi tải sản phẩm: ${error.message}`);
-      }
-      
-      // Load expense categories
-      try {
-        const categoriesRef = ref(database, 'expenseCategories');
-        const snapshot = await get(categoriesRef);
-        
-        if (snapshot.exists()) {
-          expenseCategories = snapshot.val();
-        } else {
-          expenseCategories = [];
-        }
-      } catch (error) {
-        showError(`Lỗi khi tải danh mục chi phí: ${error.message}`);
-      }
-      
-      // Load today's data
-      try {
-        const dateKey = today.replace(/\//g, '_');
-        const dailyRef = ref(database, `dailyData/${dateKey}/${currentUser.uid}`);
-        const snapshot = await get(dailyRef);
-        
-        if (snapshot.exists()) {
-          dailyData = snapshot.val();
-        } else {
-          dailyData = {
-            date: today,
-            expenses: [],
-            exports: [],
-            revenue: 0,
-            note: '',
-            user: currentUser.email
-          };
-        }
-        
-        document.getElementById('dailyNote').value = dailyData.note || '';
-        renderDailyData();
-      } catch (error) {
-        showError(`Lỗi khi tải dữ liệu ngày: ${error.message}`);
-      }
-    }
-    
-    async function saveDailyData() {
-      const today = new Date().toLocaleDateString('vi-VN');
-      dailyData.note = document.getElementById('dailyNote').value;
-      dailyData.date = today;
-      dailyData.user = currentUser.email;
-      
-      try {
-        const dateKey = today.replace(/\//g, '_');
-        const dailyRef = ref(database, `dailyData/${dateKey}/${currentUser.uid}`);
-        await set(dailyRef, dailyData);
-        showSuccess('Đã lưu dữ liệu ngày ' + dailyData.date);
-      } catch (error) {
-        showError(`Lỗi khi lưu dữ liệu ngày: ${error.message}`);
-      }
-    }
-    
-    // Sale functions
-    function switchTab(tab) {
-      currentTab = tab;
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
-      
-      document.getElementById('expenseTab').classList.add('hidden');
-      document.getElementById('exportTab').classList.add('hidden');
-      document.getElementById('revenueTab').classList.add('hidden');
-      
-      document.getElementById(`${tab}Tab`).classList.remove('hidden');
-      
-      if (tab === 'export') {
-        renderProductSelection();
-      }
-    }
-    
-    function parseExpenseInput(input) {
-      const normalized = input.toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9\s]/g, "");
-      
-      const amountMatch = normalized.match(/(\d+)\s*$/);
-      const amount = amountMatch ? parseInt(amountMatch[1]) : 0;
-      
-      let description = normalized;
-      if (amountMatch) {
-        description = normalized.substring(0, amountMatch.index).trim();
-      }
-      
-      const categoryMatch = description.match(/^\s*(\S+)/);
-      const category = categoryMatch ? categoryMatch[1] : 'khác';
-      
-      // Add new category if not exists
-      if (!expenseCategories.includes(category)) {
-        expenseCategories.push(category);
-        
-        // Save to Firebase
-        const categoriesRef = ref(database, 'expenseCategories');
-        set(categoriesRef, expenseCategories);
-      }
-      
-      return {
-        description: capitalizeFirstLetter(description),
-        amount: amount,
-        category: capitalizeFirstLetter(category)
-      };
-    }
-    
-    function capitalizeFirstLetter(string) {
-      return string.split(' ').map(word => 
-        word.charAt(0).toUpperCase() + word.slice(1)
-      ).join(' ');
-    }
-    
-    function addExpense() {
-      const input = document.getElementById('expenseInput').value.trim();
-      if (!input) {
-        showError('Vui lòng nhập thông tin chi phí');
-        return;
-      }
-      
-      const { description, amount, category } = parseExpenseInput(input);
-      
-      if (!description || amount <= 0) {
-        showError('Không thể xác định mô tả hoặc số tiền từ thông tin nhập');
-        return;
-      }
-      
-      dailyData.expenses.push({
-        description: `${description}`,
-        amount: amount,
-        category: category,
-        user: currentUser.email,
-        timestamp: new Date().getTime()
-      });
-      
-      document.getElementById('expenseInput').value = '';
-      renderDailyData();
-    }
-    
-    function deleteExpense(index) {
-      if (confirm('Xóa chi phí này?')) {
-        dailyData.expenses.splice(index, 1);
-        renderDailyData();
-      }
-    }
-    
-    function renderProductSelection() {
-      const container = document.getElementById('productList');
-      container.innerHTML = '';
-      
-      products.forEach((product) => {
-        const productItem = document.createElement('div');
-        productItem.className = 'product-item';
-        productItem.innerHTML = `
-          <div><strong>${product.name}</strong></div>
-          <div>Tồn kho: ${product.quantity} ${product.unit}</div>
-          <div style="margin-top: 8px; color: #27ae60;">${product.price.toLocaleString('vi-VN')}₫/${product.unit}</div>
-        `;
-        
-        productItem.addEventListener('click', () => {
-          document.querySelectorAll('.product-item').forEach(item => {
-            item.classList.remove('selected');
-          });
-          productItem.classList.add('selected');
-          selectedProduct = product;
-        });
-        
-        container.appendChild(productItem);
-      });
-    }
-    
-    function addExport() {
-      if (!selectedProduct) {
-        showError('Vui lòng chọn sản phẩm');
-        return;
-      }
-      
-      const quantity = parseInt(document.getElementById('exportQuantity').value) || 1;
-      
-      if (quantity <= 0) {
-        showError('Số lượng phải lớn hơn 0');
-        return;
-      }
-      
-      if (quantity > selectedProduct.quantity) {
-        showError(`Số lượng xuất vượt quá tồn kho (${selectedProduct.quantity} ${selectedProduct.unit})`);
-        return;
-      }
-      
-      // Check if product already exported today
-      const existingExport = dailyData.exports.find(e => e.productId === selectedProduct.id);
-      
-      if (existingExport) {
-        existingExport.quantity += quantity;
-      } else {
-        dailyData.exports.push({
-          productId: selectedProduct.id,
-          productName: selectedProduct.name,
-          quantity: quantity,
-          unit: selectedProduct.unit,
-          price: selectedProduct.price,
-          user: currentUser.email,
-          timestamp: new Date().getTime()
-        });
-      }
-      
-      // Update product quantity
-      selectedProduct.quantity -= quantity;
-      
-      // Update product in Firebase
-      const productRef = ref(database, `products/${selectedProduct.id}`);
-      set(productRef, selectedProduct);
-      
-      document.getElementById('exportQuantity').value = '1';
-      selectedProduct = null;
-      document.querySelectorAll('.product-item').forEach(item => {
-        item.classList.remove('selected');
-      });
-      
-      renderDailyData();
-      renderProductSelection();
-    }
-    
-    function deleteExport(index) {
-      if (confirm('Xóa xuất hàng này?')) {
-        const exportItem = dailyData.exports[index];
-        
-        // Return quantity to product
-        const product = products.find(p => p.id === exportItem.productId);
-        if (product) {
-          product.quantity += exportItem.quantity;
-          
-          // Update product in Firebase
-          const productRef = ref(database, `products/${product.id}`);
-          set(productRef, product);
-        }
-        
-        dailyData.exports.splice(index, 1);
-        renderDailyData();
-        renderProductSelection();
-      }
-    }
-    
-    function addRevenue() {
-      const amount = parseNumber(document.getElementById('revenueAmount').value);
-      
-      if (isNaN(amount)) {
-        showError('Vui lòng nhập số tiền hợp lệ');
-        return;
-      }
-      
-      dailyData.revenue += amount;
-      document.getElementById('revenueAmount').value = '';
-      renderDailyData();
-    }
-    
-    function renderDailyData() {
-      // Render expenses
-      const expenseTable = document.querySelector('#expenseTable tbody');
-      expenseTable.innerHTML = '';
-      
-      dailyData.expenses.forEach((expense, index) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${expense.description} <span class="category-badge">${expense.category}</span></td>
-          <td class="text-right">${expense.amount.toLocaleString('vi-VN')}₫</td>
-          <td class="actions">
-            <button onclick="deleteExpense(${index})" class="danger">Xóa</button>
-          </td>
-        `;
-        expenseTable.appendChild(row);
-      });
-      
-      // Render exports
-      const exportTable = document.querySelector('#exportTable tbody');
-      exportTable.innerHTML = '';
-      
-      dailyData.exports.forEach((exportItem, index) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${exportItem.productName}</td>
-          <td>${exportItem.quantity}</td>
-          <td>${exportItem.unit}</td>
-          <td class="actions">
-            <button onclick="deleteExport(${index})" class="danger">Xóa</button>
-          </td>
-        `;
-        exportTable.appendChild(row);
-      });
-      
-      // Calculate and render summary
-      const totalExpense = dailyData.expenses.reduce((sum, e) => sum + e.amount, 0);
-      const totalExportCost = dailyData.exports.reduce((sum, e) => sum + (e.quantity * e.price), 0);
-      const balance = dailyData.revenue - totalExpense;
-      
-      document.getElementById('totalRevenue').textContent = 
-        dailyData.revenue.toLocaleString('vi-VN') + '₫';
-      document.getElementById('totalExpense').textContent = 
-        totalExpense.toLocaleString('vi-VN') + '₫';
-      document.getElementById('dailyBalance').innerHTML = 
-        `<strong>${balance.toLocaleString('vi-VN')}₫</strong>`;
-      
-      // Render export summary
-      const exportSummary = document.getElementById('exportSummary');
-      exportSummary.innerHTML = '';
-      
-      if (dailyData.exports.length > 0) {
-        const summaryDiv = document.createElement('div');
-        summaryDiv.style.marginTop = '15px';
-        summaryDiv.innerHTML = `
-          <h4>📦 Xuất hàng hôm nay:</h4>
-          <ul>
-            ${dailyData.exports.map(e => 
-              `<li>${e.productName}: ${e.quantity} ${e.unit} (${(e.quantity * e.price).toLocaleString('vi-VN')}₫)</li>`
-            ).join('')}
-          </ul>
-        `;
-        exportSummary.appendChild(summaryDiv);
-      }
-    }
-    
-    // Product management
-    async function addProduct() {
-      const name = document.getElementById('productName').value.trim();
-      const quantity = parseInt(document.getElementById('productQuantity').value) || 0;
-      const unit = document.getElementById('productUnit').value.trim();
-      const price = parseInt(document.getElementById('productPrice').value) || 0;
-      
-      if (!name || !unit || isNaN(quantity) || isNaN(price)) {
-        showError('Vui lòng nhập đầy đủ thông tin sản phẩm');
-        return;
-      }
-      
-      const newProduct = {
-        id: Date.now().toString(),
-        name: name,
-        quantity: quantity,
-        unit: unit,
-        price: price
-      };
-      
-      try {
-        // Save product to Firebase
-        const productRef = ref(database, `products/${newProduct.id}`);
-        await set(productRef, newProduct);
-        
-        // Add to local products array
-        products.push(newProduct);
-        
-        // Clear inputs
-        document.getElementById('productName').value = '';
-        document.getElementById('productQuantity').value = '';
-        document.getElementById('productUnit').value = '';
-        document.getElementById('productPrice').value = '';
-        
-        renderProducts();
-        renderProductSelection();
-        
-        showSuccess('Sản phẩm đã được thêm thành công');
-      } catch (error) {
-        showError(`Lỗi khi thêm sản phẩm: ${error.message}`);
-      }
-    }
-    
-    async function editProduct(index) {
-      const product = products[index];
-      const newName = prompt('Tên sản phẩm:', product.name);
-      if (!newName) return;
-      
-      const newQuantity = parseInt(prompt('Số lượng:', product.quantity)) || 0;
-      if (isNaN(newQuantity)) return alert('Số lượng không hợp lệ');
-      
-      const newUnit = prompt('Đơn vị tính:', product.unit);
-      if (!newUnit) return;
-      
-      const newPrice = parseInt(prompt('Giá đơn vị:', product.price)) || 0;
-      if (isNaN(newPrice)) return alert('Giá không hợp lệ');
-      
-      try {
-        // Update product in Firebase
-        const productRef = ref(database, `products/${product.id}`);
-        await set(productRef, {
-          ...product,
-          name: newName,
-          quantity: newQuantity,
-          unit: newUnit,
-          price: newPrice
-        });
-        
-        // Update local product
-        product.name = newName;
-        product.quantity = newQuantity;
-        product.unit = newUnit;
-        product.price = newPrice;
-        
-        renderProducts();
-        renderProductSelection();
-        
-        showSuccess('Sản phẩm đã được cập nhật');
-      } catch (error) {
-        showError(`Lỗi khi cập nhật sản phẩm: ${error.message}`);
-      }
-    }
-    
-    async function deleteProduct(index) {
-      if (confirm('Xóa sản phẩm này?')) {
-        const product = products[index];
-        
-        try {
-          // Remove product from Firebase
-          const productRef = ref(database, `products/${product.id}`);
-          await remove(productRef);
-          
-          // Remove from local products array
-          products.splice(index, 1);
-          
-          renderProducts();
-          renderProductSelection();
-          
-          showSuccess('Sản phẩm đã được xóa');
-        } catch (error) {
-          showError(`Lỗi khi xóa sản phẩm: ${error.message}`);
-        }
-      }
-    }
-    
-    function renderProducts() {
-      const table = document.querySelector('#productTable tbody');
-      table.innerHTML = '';
-      
-      products.forEach((product, index) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${product.name}</td>
-          <td>${product.quantity}</td>
-          <td>${product.unit}</td>
-          <td class="text-right">${product.price.toLocaleString('vi-VN')}₫</td>
-          <td class="actions">
-            <button onclick="editProduct(${index})">✏️ Sửa</button>
-            <button onclick="deleteProduct(${index})" class="danger">🗑️ Xóa</button>
-          </td>
-        `;
-        table.appendChild(row);
-      });
-    }
-    
-    // User management
-    async function addUser() {
-      const email = document.getElementById('newUsername').value.trim();
-      const password = document.getElementById('newPassword').value.trim();
-      const role = document.getElementById('newUserRole').value;
-      
-      if (!email || !password) {
-        showError('Vui lòng nhập đầy đủ email và mật khẩu');
-        return;
-      }
-      
-      try {
-        // Create user in Firebase Authentication
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-        
-        // Save user info to Firebase Realtime Database
-        const userRef = ref(database, `users/${user.uid}`);
-        await set(userRef, {
-          email: email,
-          role: role,
-          active: true
-        });
-        
-        // Clear inputs
-        document.getElementById('newUsername').value = '';
-        document.getElementById('newPassword').value = '';
-        
-        // Refresh user list
-        renderUserList();
-        
-        showSuccess(`Người dùng ${email} đã được thêm thành công`);
-      } catch (error) {
-        showError(`Lỗi khi thêm người dùng: ${error.message}`);
-      }
-    }
-    
-    async function toggleUserStatus(uid) {
-      try {
-        const userRef = ref(database, `users/${uid}`);
-        const snapshot = await get(userRef);
-        
-        if (snapshot.exists()) {
-          const userData = snapshot.val();
-          const newStatus = !userData.active;
-          
-          await update(userRef, { active: newStatus });
-          renderUserList();
-          
-          showSuccess(`Trạng thái người dùng đã được cập nhật`);
-        }
-      } catch (error) {
-        showError(`Lỗi khi cập nhật trạng thái người dùng: ${error.message}`);
-      }
-    }
-    
-    async function deleteUser(uid) {
-      if (confirm('Bạn có chắc muốn xóa người dùng này?')) {
-        try {
-          // Remove user from Realtime Database
-          const userRef = ref(database, `users/${uid}`);
-          await remove(userRef);
-          
-          // Refresh user list
-          renderUserList();
-          
-          showSuccess('Người dùng đã được xóa');
-        } catch (error) {
-          showError(`Lỗi khi xóa người dùng: ${error.message}`);
-        }
-      }
-    }
-    
-    async function renderUserList() {
-      const table = document.querySelector('#userTable tbody');
-      table.innerHTML = '';
-      
-      try {
-        const usersRef = ref(database, 'users');
-        const snapshot = await get(usersRef);
-        
-        if (snapshot.exists()) {
-          const users = snapshot.val();
-          
-          for (const uid in users) {
-            const user = users[uid];
-            const row = document.createElement('tr');
-            row.innerHTML = `
-              <td>${user.email}</td>
-              <td>${user.role === 'admin' ? 'Quản lý' : 'Nhân viên'}</td>
-              <td>${user.active ? 'Đang hoạt động' : 'Đã khóa'}</td>
-              <td class="actions">
-                <button onclick="toggleUserStatus('${uid}')" class="${user.active ? 'warning' : 'success'}">
-                  ${user.active ? '🔒 Khóa' : '🔓 Mở khóa'}
-                </button>
-                <button onclick="deleteUser('${uid}')" class="danger">🗑️ Xóa</button>
-              </td>
-            `;
-            table.appendChild(row);
-          }
-        }
-      } catch (error) {
-        showError(`Lỗi khi tải danh sách người dùng: ${error.message}`);
-      }
-    }
-    
-    // Report functions
-    async function loadReportFilters() {
-      const userFilter = document.getElementById('reportUserFilter');
-      const categoryFilter = document.getElementById('reportCategoryFilter');
-      
-      // Clear existing options except first
-      while (userFilter.options.length > 1) userFilter.remove(1);
-      while (categoryFilter.options.length > 1) categoryFilter.remove(1);
-      
-      // Add users
-      try {
-        const usersRef = ref(database, 'users');
-        const snapshot = await get(usersRef);
-        
-        if (snapshot.exists()) {
-          const users = snapshot.val();
-          
-          for (const uid in users) {
-            const user = users[uid];
-            if (user.active) {
-              const option = document.createElement('option');
-              option.value = user.email;
-              option.textContent = user.email;
-              userFilter.appendChild(option);
-            }
-          }
-        }
-      } catch (error) {
-        showError(`Lỗi khi tải danh sách người dùng: ${error.message}`);
-      }
-      
-      // Add categories
-      expenseCategories.forEach(category => {
-        const option = document.createElement('option');
-        option.value = category;
-        option.textContent = category;
-        categoryFilter.appendChild(option);
-      });
-    }
-    
-    async function generateDailyReport() {
-      const dateInput = document.getElementById('reportDate').value;
-      if (!dateInput) {
-        alert('Vui lòng chọn ngày');
-        return;
-      }
-      
-      const userFilter = document.getElementById('reportUserFilter').value;
-      const categoryFilter = document.getElementById('reportCategoryFilter').value;
-      
-      generateReport(dateInput, userFilter, categoryFilter);
-    }
-    
-    async function generateMonthlyReport() {
-      const dateInput = document.getElementById('reportDate').value;
-      if (!dateInput) {
-        alert('Vui lòng chọn ngày trong tháng cần báo cáo');
-        return;
-      }
-      
-      const date = new Date(dateInput);
-      const month = date.getMonth() + 1;
-      const year = date.getFullYear();
-      
-      const userFilter = document.getElementById('reportUserFilter').value;
-      const categoryFilter = document.getElementById('reportCategoryFilter').value;
-      
-      generateReport(`${year}-${month.toString().padStart(2, '0')}`, userFilter, categoryFilter, true);
-    }
-    
-    async function generateReport(dateFilter, userFilter = 'all', categoryFilter = 'all', isMonthly = false) {
-      let allDailyData = [];
-      const dateStr = isMonthly 
-        ? dateFilter // Format: "YYYY-MM"
-        : new Date(dateFilter).toLocaleDateString('vi-VN');
-      
-      try {
-        const dailyRef = ref(database, 'dailyData');
-        const snapshot = await get(dailyRef);
-        
-        if (snapshot.exists()) {
-          const allData = snapshot.val();
-          
-          for (const dateKey in allData) {
-            for (const userId in allData[dateKey]) {
-              const dailyData = allData[dateKey][userId];
-              
-              // Apply date filter
-              if (isMonthly) {
-                const [day, month, year] = dailyData.date.split('/');
-                const dataMonth = `${year}-${month.padStart(2, '0')}`;
-                if (dataMonth !== dateFilter) continue;
-              } else {
-                if (dailyData.date !== dateStr) continue;
-              }
-              
-              // Apply user filter
-              if (userFilter !== 'all' && userFilter !== dailyData.user) continue;
-              
-              allDailyData.push(dailyData);
-            }
-          }
-        }
-      } catch (error) {
-        showError(`Lỗi khi tạo báo cáo: ${error.message}`);
-        return;
-      }
-      
-      // Generate report content
-      let reportHTML = `<h3>Báo cáo ${isMonthly ? 'tháng' : 'ngày'} ${dateStr}</h3>`;
-      
-      if (allDailyData.length === 0) {
-        reportHTML += `<p>Không có dữ liệu ${isMonthly ? 'tháng' : 'ngày'} ${dateStr}</p>`;
-      } else {
-        reportHTML += `
-          <div class="summary-section">
-            <h4>Tổng hợp</h4>
-            <p>Đã ghi nhận ${allDailyData.length} bản ghi dữ liệu</p>
-          </div>
-        `;
-      }
-      
-      document.getElementById('reportOutput').innerHTML = reportHTML;
-    }
-    
-    function applyReportFilters() {
-      const dateInput = document.getElementById('reportDate').value;
-      if (!dateInput) {
-        alert('Vui lòng chọn ngày');
-        return;
-      }
-      
-      const userFilter = document.getElementById('reportUserFilter').value;
-      const categoryFilter = document.getElementById('reportCategoryFilter').value;
-      
-      generateReport(dateInput, userFilter, categoryFilter);
-    }
-    
-    function printReport() {
-      window.print();
-    }
-    
-    // Helper functions
-    function parseNumber(input) {
-      if (!input) return 0;
-      const cleaned = input.toString().replace(/[^\d]/g, '');
-      return parseInt(cleaned) || 0;
-    }
-    
-    // Initialize the app
-    document.addEventListener('DOMContentLoaded', initApp);
-    
-    // Expose functions to global scope for HTML onclick handlers
-    window.handleLogin = handleLogin;
-    window.handleLogout = handleLogout;
-    window.switchTab = switchTab;
-    window.addExpense = addExpense;
-    window.deleteExpense = deleteExpense;
-    window.addExport = addExport;
-    window.deleteExport = deleteExport;
-    window.addRevenue = addRevenue;
-    window.saveDailyData = saveDailyData;
-    window.addProduct = addProduct;
-    window.editProduct = editProduct;
-    window.deleteProduct = deleteProduct;
-    window.addUser = addUser;
-    window.toggleUserStatus = toggleUserStatus;
-    window.deleteUser = deleteUser;
-    window.generateDailyReport = generateDailyReport;
-    window.generateMonthlyReport = generateMonthlyReport;
-    window.applyReportFilters = applyReportFilters;
-    window.printReport = printReport;
-  </script>
 </body>
 </html>
