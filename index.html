@@ -5,34 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quản lý Kinh doanh</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-    .nav { display: flex; justify-content: space-between; align-items: center; background: #f4f4f4; padding: 10px; }
-    .nav a { color: #000; text-decoration: none; }
-    .section { margin: 20px 0; }
-    .section h2 { border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f9f9f9; }
+    .nav { display: flex; justify-content: space-between; align-items: center; background: #333; padding: 10px; color: white; }
+    .nav a { color: white; text-decoration: none; }
+    .section { margin: 20px 0; background: white; padding: 15px; border-radius: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    .section h2 { border-bottom: 1px solid #ccc; padding-bottom: 5px; color: #333; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     table, th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
     th { background: #f4f4f4; }
-    button { padding: 5px 10px; cursor: pointer; background: #4CAF50; color: white; border: none; }
+    button { padding: 5px 10px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 3px; }
     button:hover { background: #45a049; }
-    .summary p { margin: 5px 0; }
+    .summary p { margin: 5px 0; font-weight: bold; }
     .filter { margin: 10px 0; }
+    .action-btn { background: #ff4444; }
+    .action-btn:hover { background: #cc0000; }
+    input[type="text"], input[type="password"] { padding: 5px; margin: 5px 0; }
   </style>
   <!-- Thêm SDK Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
   <script>
     // Cấu hình Firebase (thay bằng cấu hình thực từ Firebase Console)
-   const firebaseConfig = {
-  apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
-  authDomain: "quanly-d7e54.firebaseapp.com",
-  databaseURL: "https://quanly-d7e54-default-rtdb.asia-southeast1.firebasedatabase.app", // Đảm bảo không có dấu / ở cuối
-  projectId: "quanly-d7e54",
-  storageBucket: "quanly-d7e54.appspot.com",
-  messagingSenderId: "482686011267",
-  appId: "1:482686011267:web:f2fe9d400fe618487a98b6",
-  measurementId: "G-G3H6MTCWCM"
-};
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "quanly-d7e54.firebaseapp.com",
+      databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com/",
+      projectId: "quanly-d7e54",
+      storageBucket: "quanly-d7e54.appspot.com",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
 
     // Khởi tạo Firebase
     firebase.initializeApp(firebaseConfig);
@@ -47,12 +49,7 @@
           description: description,
           amount: parseInt(amount),
           timestamp: firebase.database.ServerValue.TIMESTAMP
-        }).then(() => {
-          alert("Thêm chi phí thành công!");
-          updateSummary();
-        }).catch((error) => {
-          alert("Lỗi: " + error.message);
-        });
+        }).then(() => updateSummary()).catch((error) => alert("Lỗi: " + error.message));
       }
     }
 
@@ -67,12 +64,7 @@
           quantity: parseInt(quantity),
           unit: unit,
           timestamp: firebase.database.ServerValue.TIMESTAMP
-        }).then(() => {
-          alert("Thêm xuất hàng thành công!");
-          loadShipments();
-        }).catch((error) => {
-          alert("Lỗi: " + error.message);
-        });
+        }).then(() => loadData('shipments')).catch((error) => alert("Lỗi: " + error.message));
       }
     }
 
@@ -85,12 +77,7 @@
           description: description,
           amount: parseInt(amount),
           timestamp: firebase.database.ServerValue.TIMESTAMP
-        }).then(() => {
-          alert("Thêm doanh thu thành công!");
-          updateSummary();
-        }).catch((error) => {
-          alert("Lỗi: " + error.message);
-        });
+        }).then(() => updateSummary()).catch((error) => alert("Lỗi: " + error.message));
       }
     }
 
@@ -107,12 +94,7 @@
           unit: unit,
           price: parseInt(price),
           timestamp: firebase.database.ServerValue.TIMESTAMP
-        }).then(() => {
-          alert("Thêm sản phẩm thành công!");
-          loadInventory();
-        }).catch((error) => {
-          alert("Lỗi: " + error.message);
-        });
+        }).then(() => loadData('inventory')).catch((error) => alert("Lỗi: " + error.message));
       }
     }
 
@@ -127,55 +109,44 @@
           role: role,
           status: status,
           timestamp: firebase.database.ServerValue.TIMESTAMP
-        }).then(() => {
-          alert("Thêm người dùng thành công!");
-          loadUsers();
-        }).catch((error) => {
-          alert("Lỗi: " + error.message);
+        }).then(() => loadData('users')).catch((error) => alert("Lỗi: " + error.message));
+      }
+    }
+
+    // Hàm tải và hiển thị dữ liệu
+    function loadData(tableName) {
+      const tables = {
+        'shipments': '#shipmentsTable',
+        'inventory': '#inventoryTable',
+        'users': '#usersTable'
+      };
+      if (tables[tableName]) {
+        database.ref(tableName).on('value', (snapshot) => {
+          const tbody = document.querySelector(tables[tableName] + ' tbody');
+          tbody.innerHTML = '';
+          snapshot.forEach((childSnapshot) => {
+            const data = childSnapshot.val();
+            const row = document.createElement('tr');
+            let cols = '';
+            if (tableName === 'shipments') cols = `<td>${data.product}</td><td>${data.quantity}</td><td>${data.unit}</td>`;
+            else if (tableName === 'inventory') cols = `<td>${data.name}</td><td>${data.quantity}</td><td>${data.unit}</td><td>${data.price}₫</td>`;
+            else if (tableName === 'users') cols = `<td>${data.username}</td><td>${data.role}</td><td>${data.status}</td>`;
+            row.innerHTML = cols + `<td><button class="action-btn" onclick="deleteItem('${tableName}', '${childSnapshot.key}')">Xóa</button></td>`;
+            tbody.appendChild(row);
+          });
         });
       }
     }
 
-    // Hàm tải và hiển thị xuất hàng
-    function loadShipments() {
-      database.ref('shipments').on('value', (snapshot) => {
-        const shipmentsTable = document.querySelector('#shipmentsTable tbody');
-        shipmentsTable.innerHTML = '';
-        snapshot.forEach((childSnapshot) => {
-          const data = childSnapshot.val();
-          const row = document.createElement('tr');
-          row.innerHTML = `<td>${data.product}</td><td>${data.quantity}</td><td>${data.unit}</td><td>Xóa</td>`;
-          shipmentsTable.appendChild(row);
-        });
-      });
-    }
-
-    // Hàm tải và hiển thị kho hàng
-    function loadInventory() {
-      database.ref('inventory').on('value', (snapshot) => {
-        const inventoryTable = document.querySelector('#inventoryTable tbody');
-        inventoryTable.innerHTML = '';
-        snapshot.forEach((childSnapshot) => {
-          const data = childSnapshot.val();
-          const row = document.createElement('tr');
-          row.innerHTML = `<td>${data.name}</td><td>${data.quantity}</td><td>${data.unit}</td><td>${data.price}₫</td><td>Xóa</td>`;
-          inventoryTable.appendChild(row);
-        });
-      });
-    }
-
-    // Hàm tải và hiển thị người dùng
-    function loadUsers() {
-      database.ref('users').on('value', (snapshot) => {
-        const usersTable = document.querySelector('#usersTable tbody');
-        usersTable.innerHTML = '';
-        snapshot.forEach((childSnapshot) => {
-          const data = childSnapshot.val();
-          const row = document.createElement('tr');
-          row.innerHTML = `<td>${data.username}</td><td>${data.role}</td><td>${data.status}</td><td>Xóa</td>`;
-          usersTable.appendChild(row);
-        });
-      });
+    // Hàm xóa mục
+    function deleteItem(tableName, key) {
+      if (confirm("Bạn có chắc muốn xóa?")) {
+        database.ref(tableName).child(key).remove().then(() => {
+          alert("Xóa thành công!");
+          if (tableName === 'expenses' || tableName === 'revenues') updateSummary();
+          else loadData(tableName);
+        }).catch((error) => alert("Lỗi: " + error.message));
+      }
     }
 
     // Hàm cập nhật tổng kết
@@ -184,17 +155,12 @@
       let totalRevenue = 0;
 
       database.ref('expenses').once('value').then((snapshot) => {
-        snapshot.forEach((childSnapshot) => {
-          totalExpense += childSnapshot.val().amount || 0;
-        });
+        snapshot.forEach((childSnapshot) => totalExpense += childSnapshot.val().amount || 0);
         database.ref('revenues').once('value').then((snapshot) => {
-          snapshot.forEach((childSnapshot) => {
-            totalRevenue += childSnapshot.val().amount || 0;
-          });
-          const balance = totalRevenue - totalExpense;
+          snapshot.forEach((childSnapshot) => totalRevenue += childSnapshot.val().amount || 0);
           document.querySelector('#revenue').textContent = `Doanh thu: ${totalRevenue}₫`;
           document.querySelector('#expense').textContent = `Tổng chi phí: ${totalExpense}₫`;
-          document.querySelector('#balance').textContent = `Số dư: ${balance}₫`;
+          document.querySelector('#balance').textContent = `Số dư: ${totalRevenue - totalExpense}₫`;
         });
       });
     }
@@ -206,20 +172,14 @@
         database.ref('notes').push({
           content: note,
           timestamp: firebase.database.ServerValue.TIMESTAMP
-        }).then(() => {
-          alert("Lưu ghi chú thành công!");
-        }).catch((error) => {
-          alert("Lỗi: " + error.message);
-        });
+        }).then(() => alert("Lưu ghi chú thành công!")).catch((error) => alert("Lỗi: " + error.message));
       }
     }
 
     // Gắn sự kiện khi tải trang
     window.onload = () => {
       updateSummary();
-      loadShipments();
-      loadInventory();
-      loadUsers();
+      ['shipments', 'inventory', 'users'].forEach(loadData);
       document.querySelector('#addExpenseBtn').addEventListener('click', addExpense);
       document.querySelector('#addShipmentBtn').addEventListener('click', addShipment);
       document.querySelector('#addRevenueBtn').addEventListener('click', addRevenue);
@@ -235,26 +195,20 @@
     <a href="#">Đăng xuất</a>
   </div>
 
-  <div class="login-section">
+  <div class="section">
     <h2>🔐 Đăng nhập</h2>
     <input type="text" placeholder="Tên đăng nhập"><br>
     <input type="password" placeholder="Mật khẩu"><br>
     <label><input type="checkbox"> Ghi nhớ đăng nhập</label><br>
-    <button>Đăng nhập</button>
+    <button onclick="alert('Chức năng đăng nhập chưa được triển khai')">Đăng nhập</button>
     <p>Đang xác thực...</p>
-  </div>
-
-  <div class="menu">
-    <h2>💸 Chi phí | 📦 Xuất hàng | 💰 Doanh thu</h2>
   </div>
 
   <div class="section">
     <h2>💸 Chi phí</h2>
     <button id="addExpenseBtn">Thêm chi phí</button>
     <table>
-      <thead>
-        <tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr>
-      </thead>
+      <thead><tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr></thead>
       <tbody id="expensesTable"></tbody>
     </table>
   </div>
@@ -263,9 +217,7 @@
     <h2>📦 Xuất hàng</h2>
     <button id="addShipmentBtn">Thêm xuất hàng</button>
     <table>
-      <thead>
-        <tr><th>Sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Hành động</th></tr>
-      </thead>
+      <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Hành động</th></tr></thead>
       <tbody id="shipmentsTable"></tbody>
     </table>
   </div>
@@ -274,9 +226,7 @@
     <h2>💰 Doanh thu</h2>
     <button id="addRevenueBtn">Thêm doanh thu</button>
     <table>
-      <thead>
-        <tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr>
-      </thead>
+      <thead><tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr></thead>
       <tbody id="revenuesTable"></tbody>
     </table>
   </div>
@@ -294,22 +244,20 @@
     <h2>📦 Quản lý Kho hàng</h2>
     <button id="addProductBtn">➕ Thêm sản phẩm</button>
     <table>
-      <thead>
-        <tr><th>Tên sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Giá đơn vị</th><th>Hành động</th></tr>
-      </thead>
+      <thead><tr><th>Tên sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Giá đơn vị</th><th>Hành động</th></tr></thead>
       <tbody id="inventoryTable"></tbody>
     </table>
   </div>
 
   <div class="section">
     <h2>📊 Báo cáo</h2>
-    <button>📅 Báo cáo ngày</button>
-    <button>📆 Báo cáo tháng</button>
-    <button>🖨️ In báo cáo</button>
+    <button onclick="alert('Chức năng báo cáo ngày chưa được triển khai')">📅 Báo cáo ngày</button>
+    <button onclick="alert('Chức năng báo cáo tháng chưa được triển khai')">📆 Báo cáo tháng</button>
+    <button onclick="alert('Chức năng in báo cáo chưa được triển khai')">🖨️ In báo cáo</button>
     <div class="filter">
       <select><option>Tất cả người dùng</option></select>
       <select><option>Tất cả danh mục</option></select>
-      <button>🔍 Áp dụng</button>
+      <button onclick="alert('Chức năng áp dụng chưa được triển khai')">🔍 Áp dụng</button>
     </div>
   </div>
 
@@ -321,9 +269,7 @@
     </select>
     <button id="addUserBtn">➕ Thêm người dùng</button>
     <table>
-      <thead>
-        <tr><th>Tên đăng nhập</th><th>Vai trò</th><th>Trạng thái</th><th>Hành động</th></tr>
-      </thead>
+      <thead><tr><th>Tên đăng nhập</th><th>Vai trò</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
       <tbody id="usersTable"></tbody>
     </table>
   </div>
