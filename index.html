@@ -29,6 +29,7 @@
       <button id="tabKhoHang">Kho hàng</button>
       <button id="tabBaoCao">Báo cáo</button>
       <button id="tabNguoiDung" class="hidden">Quản lý Người dùng</button>
+      <button id="tabQuickTransaction">Giao dịch nhanh</button>
     </div>
     <div id="content">
       <div id="chiPhiContent" class="hidden">
@@ -126,9 +127,14 @@
         <textarea id="notesTextarea" placeholder="Ghi chú của bạn"></textarea>
         <button id="saveNotesBtn">Lưu dữ liệu</button>
       </div>
+      <div id="quickTransactionContent" class="hidden">
+        <h3>📝 Giao dịch nhanh</h3>
+        <input type="text" id="quickTransactionInput" placeholder="VD: bán cà phê 12000" />
+        <button id="addQuickTransactionBtn">Thêm giao dịch</button>
+      </div>
     </div>
   </div>
 
-  <script type="module" src="script.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
