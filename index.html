@@ -1,12 +1,23 @@
+```html
 <!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quản lý Kinh doanh</title>
   <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
     .hidden { display: none; }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid black; padding: 8px; text-align: left; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    button { padding: 8px 12px; margin: 5px; cursor: pointer; }
+    input, select, textarea { padding: 8px; margin: 5px; width: 200px; }
+    h3 { margin-top: 20px; }
+    #errorContainer, #registerErrorContainer, #editErrorContainer { color: red; }
+    .section { margin-bottom: 20px; }
+    .tab { cursor: pointer; padding: 10px; background-color: #e0e0e0; display: inline-block; margin-right: 5px; }
+    .tab.active { background-color: #007bff; color: white; }
   </style>
 </head>
 <body>
@@ -17,18 +28,19 @@
   </div>
 
   <!-- Đăng nhập -->
-  <div id="loginSection">
+  <div id="loginSection" class="section">
     <h3>🔐 Đăng nhập</h3>
     <input type="text" id="username" placeholder="Nhập tên đăng nhập (ví dụ: test)">
     <input type="password" id="password" placeholder="Nhập mật khẩu">
     <input type="checkbox" id="rememberMe"> <label for="rememberMe">Ghi nhớ đăng nhập</label>
+    <br>
     <button id="loginButton">Đăng nhập</button>
     <button id="registerButton">Đăng ký</button>
-    <div id="errorContainer" style="color: red;"></div>
+    <div id="errorContainer"></div>
   </div>
 
   <!-- Đăng ký -->
-  <div id="registerSection" class="hidden">
+  <div id="registerSection" class="hidden section">
     <h3>📝 Đăng ký</h3>
     <input type="text" id="regUsername" placeholder="Nhập tên đăng nhập (ví dụ: test)">
     <input type="password" id="regPassword" placeholder="Nhập mật khẩu">
@@ -36,13 +48,14 @@
       <option value="admin">Quản lý</option>
       <option value="employee">Nhân viên</option>
     </select>
+    <br>
     <button id="submitRegisterButton">Đăng ký</button>
     <button id="backToLoginButton">Quay lại đăng nhập</button>
-    <div id="registerErrorContainer" style="color: red;"></div>
+    <div id="registerErrorContainer"></div>
   </div>
 
   <!-- Chỉnh sửa người dùng -->
-  <div id="editUserSection" class="hidden">
+  <div id="editUserSection" class="hidden section">
     <h3>✏️ Chỉnh sửa Người dùng</h3>
     <input type="hidden" id="editUserId">
     <input type="text" id="editUsername" placeholder="Tên đăng nhập">
@@ -54,13 +67,14 @@
       <option value="active">Hoạt động</option>
       <option value="inactive">Không hoạt động</option>
     </select>
+    <br>
     <button id="saveUserButton">Lưu</button>
     <button id="cancelEditButton">Hủy</button>
-    <div id="editErrorContainer" style="color: red;"></div>
+    <div id="editErrorContainer"></div>
   </div>
 
   <!-- Quản lý Người dùng -->
-  <div id="userManagementSection" class="hidden">
+  <div id="userManagementSection" class="hidden section">
     <h3>👥 Quản lý Người dùng</h3>
     <button id="addUserBtn">Thêm người dùng</button>
     <table id="userTable">
@@ -76,9 +90,11 @@
     </table>
   </div>
 
-  <!-- Các phần khác (giữ nguyên, thêm ID) -->
-  <div id="expenseSection" class="hidden">
+  <!-- Chi phí -->
+  <div id="expenseSection" class="hidden section">
     <h3>💸 Chi phí</h3>
+    <input type="text" id="expenseInput" placeholder="Mô tả chi phí">
+    <input type="number" id="expenseAmount" placeholder="Số tiền">
     <button id="addExpenseBtn">Thêm</button>
     <table>
       <thead>
@@ -92,7 +108,8 @@
     </table>
   </div>
 
-  <div id="exportSection" class="hidden">
+  <!-- Xuất hàng -->
+  <div id="exportSection" class="hidden section">
     <h3>📦 Xuất hàng</h3>
     <button id="addExportBtn">Thêm xuất hàng</button>
     <table>
@@ -108,23 +125,28 @@
     </table>
   </div>
 
-  <div id="revenueSection" class="hidden">
+  <!-- Doanh thu -->
+  <div id="revenueSection" class="hidden section">
     <h3>💰 Doanh thu</h3>
+    <input type="number" id="revenueAmount" placeholder="Số tiền">
     <button id="addRevenueBtn">Thêm</button>
     <table id="revenueTableBody"></table>
   </div>
 
-  <div id="dailySummarySection" class="hidden">
+  <!-- Tổng kết ngày -->
+  <div id="dailySummarySection" class="hidden section">
     <h3>📝 Tổng kết ngày</h3>
     <p>Doanh thu: <span id="dailyRevenue">0₫</span></p>
     <p>Tổng chi phí: <span id="dailyExpense">0₫</span></p>
     <p>Số dư: <span id="dailyBalance">0₫</span></p>
     <label>Ghi chú cá nhân:</label>
     <textarea id="dailyNote"></textarea>
+    <br>
     <button id="saveDailyDataBtn">Lưu dữ liệu</button>
   </div>
 
-  <div id="inventorySection" class="hidden">
+  <!-- Quản lý Kho hàng -->
+  <div id="inventorySection" class="hidden section">
     <h3>📦 Quản lý Kho hàng</h3>
     <button id="addProductBtn">Thêm sản phẩm</button>
     <table>
@@ -141,8 +163,10 @@
     </table>
   </div>
 
-  <div id="reportSection" class="hidden">
+  <!-- Báo cáo -->
+  <div id="reportSection" class="hidden section">
     <h3>📊 Báo cáo</h3>
+    <input type="date" id="reportDate">
     <button id="generateDailyReportBtn">Báo cáo ngày</button>
     <button id="generateMonthlyReportBtn">Báo cáo tháng</button>
     <button id="printReportBtn">In báo cáo</button>
@@ -156,6 +180,420 @@
     <div id="reportTable"></div>
   </div>
 
-  <script src="index.js" type="module"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    // Cấu hình Firebase
+    const firebaseConfig = {
+      // Thay bằng cấu hình Firebase của bạn
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      databaseURL: "YOUR_DATABASE_URL",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    let currentUser = null;
+
+    // Hàm hiển thị thông báo lỗi
+    function showError(message, containerId = "errorContainer") {
+      const container = document.getElementById(containerId);
+      if (container) container.innerHTML = message;
+      else console.error(`Không tìm thấy container: ${containerId}`);
+    }
+
+    // Hàm hiển thị/ẩn biểu mẫu
+    function showRegisterForm() {
+      const loginSection = document.getElementById("loginSection");
+      const registerSection = document.getElementById("registerSection");
+      const editUserSection = document.getElementById("editUserSection");
+      if (loginSection && registerSection && editUserSection) {
+        loginSection.style.display = "none";
+        registerSection.style.display = "block";
+        editUserSection.style.display = "none";
+      }
+    }
+
+    function showLoginForm() {
+      const loginSection = document.getElementById("loginSection");
+      const registerSection = document.getElementById("registerSection");
+      const editUserSection = document.getElementById("editUserSection");
+      if (loginSection && registerSection && editUserSection) {
+        registerSection.style.display = "none";
+        editUserSection.style.display = "none";
+        loginSection.style.display = "block";
+      }
+    }
+
+    function showEditUserForm(userId, username, role, status) {
+      const loginSection = document.getElementById("loginSection");
+      const registerSection = document.getElementById("registerSection");
+      const editUserSection = document.getElementById("editUserSection");
+      if (loginSection && registerSection && editUserSection) {
+        loginSection.style.display = "none";
+        registerSection.style.display = "none";
+        editUserSection.style.display = "block";
+        document.getElementById("editUserId").value = userId;
+        document.getElementById("editUsername").value = username;
+        document.getElementById("editRole").value = role;
+        document.getElementById("editStatus").value = status;
+      }
+    }
+
+    // Hàm đăng ký
+    async function handleRegister() {
+      const username = document.getElementById("regUsername").value.trim();
+      const password = document.getElementById("regPassword").value.trim();
+      const role = document.getElementById("regRole").value;
+
+      document.getElementById("registerErrorContainer").innerHTML = "";
+
+      if (!username || !password) {
+        showError("Vui lòng nhập đầy đủ thông tin đăng ký", "registerErrorContainer");
+        return;
+      }
+
+      if (password.length < 6) {
+        showError("Mật khẩu phải có ít nhất 6 ký tự", "registerErrorContainer");
+        return;
+      }
+
+      const email = `${username}@quanly-hkd.com`;
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const userId = userCredential.user.uid;
+
+        const db = getDatabase();
+        await set(ref(db, `users/${userId}`), {
+          username: username,
+          email: email,
+          role: role,
+          status: "active"
+        });
+
+        alert("Đăng ký thành công! Vui lòng đăng nhập.");
+        showLoginForm();
+      } catch (error) {
+        console.error("Register error:", error.code, error.message);
+        let errorMessage = "Đăng ký thất bại";
+        switch (error.code) {
+          case "auth/email-already-in-use":
+            errorMessage = "Email đã được sử dụng";
+            break;
+          case "auth/invalid-email":
+            errorMessage = "Email không hợp lệ";
+            break;
+          default:
+            errorMessage = `Lỗi: ${error.message}`;
+        }
+        showError(errorMessage, "registerErrorContainer");
+      }
+    }
+
+    // Hàm đăng nhập
+    async function handleLogin() {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const rememberMe = document.getElementById("rememberMe").checked;
+
+      document.getElementById("errorContainer").innerHTML = "";
+
+      if (!username || !password) {
+        showError("Vui lòng nhập đầy đủ thông tin đăng nhập");
+        return;
+      }
+
+      const email = `${username}@quanly-hkd.com`;
+
+      try {
+        console.log("Đang đăng nhập với email:", email);
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+        if (rememberMe) {
+          localStorage.setItem("rememberedUser", username);
+        } else {
+          localStorage.removeItem("rememberedUser");
+        }
+
+        currentUser = userCredential.user.uid;
+        loadUserData();
+      } catch (error) {
+        console.error("Login error:", error.code, error.message);
+        let errorMessage = "Đăng nhập thất bại";
+        switch (error.code) {
+          case "auth/invalid-credential":
+            errorMessage = "Sai tên đăng nhập hoặc mật khẩu";
+            break;
+          case "auth/invalid-email":
+            errorMessage = "Email không hợp lệ";
+            break;
+          case "auth/user-not-found":
+            errorMessage = "Email chưa được đăng ký";
+            break;
+          case "auth/too-many-requests":
+            errorMessage = "Quá nhiều lần thử, vui lòng thử lại sau";
+            break;
+          default:
+            errorMessage = `Lỗi: ${error.message}`;
+        }
+        showError(errorMessage);
+      }
+    }
+
+    // Hàm tải dữ liệu người dùng
+    async function loadUserData() {
+      const db = getDatabase();
+      const userRef = ref(db, `users/${currentUser}`);
+      try {
+        const snapshot = await get(userRef);
+        if (snapshot.exists()) {
+          const userData = snapshot.val();
+          const currentUserElement = document.getElementById("currentUser");
+          if (currentUserElement) {
+            currentUserElement.textContent = userData.username;
+          }
+          handleSuccessfulLogin(userData.role);
+          if (userData.role === "admin") {
+            loadUsers();
+          }
+        } else {
+          showError("Không tìm thấy thông tin người dùng");
+          handleLogout();
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+        showError("Lỗi khi tải dữ liệu người dùng");
+        handleLogout();
+      }
+    }
+
+    // Hàm xử lý đăng nhập thành công (phân quyền)
+    function handleSuccessfulLogin(role) {
+      const userManagementSection = document.getElementById("userManagementSection");
+      const reportSection = document.getElementById("reportSection");
+      const inventorySection = document.getElementById("inventorySection");
+      const expenseSection = document.getElementById("expenseSection");
+      const exportSection = document.getElementById("exportSection");
+      const revenueSection = document.getElementById("revenueSection");
+      const dailySummarySection = document.getElementById("dailySummarySection");
+      const loginSection = document.getElementById("loginSection");
+      const logoutBtn = document.getElementById("logoutBtn");
+
+      if (loginSection) loginSection.style.display = "none";
+      if (logoutBtn) logoutBtn.style.display = "block";
+
+      if (userManagementSection && reportSection && inventorySection && expenseSection && exportSection && revenueSection && dailySummarySection) {
+        if (role === "admin") {
+          userManagementSection.style.display = "block";
+          reportSection.style.display = "block";
+          inventorySection.style.display = "block";
+          expenseSection.style.display = "block";
+          exportSection.style.display = "block";
+          revenueSection.style.display = "block";
+          dailySummarySection.style.display = "block";
+        } else if (role === "employee") {
+          userManagementSection.style.display = "none";
+          reportSection.style.display = "block";
+          inventorySection.style.display = "block";
+          expenseSection.style.display = "block";
+          exportSection.style.display = "block";
+          revenueSection.style.display = "block";
+          dailySummarySection.style.display = "block";
+        } else {
+          showError("Vai trò không hợp lệ");
+          handleLogout();
+        }
+      }
+    }
+
+    // Hàm đăng xuất
+    function handleLogout() {
+      auth.signOut().then(() => {
+        currentUser = null;
+        const currentUserElement = document.getElementById("currentUser");
+        if (currentUserElement) currentUserElement.textContent = "";
+        showLoginForm();
+        document.getElementById("userManagementSection").style.display = "none";
+        document.getElementById("reportSection").style.display = "none";
+        document.getElementById("inventorySection").style.display = "none";
+        document.getElementById("expenseSection").style.display = "none";
+        document.getElementById("exportSection").style.display = "none";
+        document.getElementById("revenueSection").style.display = "none";
+        document.getElementById("dailySummarySection").style.display = "none";
+        document.getElementById("logoutBtn").style.display = "none";
+      });
+    }
+
+    // Hàm tải danh sách người dùng
+    async function loadUsers() {
+      const db = getDatabase();
+      const usersRef = ref(db, "users");
+      try {
+        const snapshot = await get(usersRef);
+        const userTableBody = document.getElementById("userTableBody");
+        if (userTableBody) {
+          userTableBody.innerHTML = "";
+          if (snapshot.exists()) {
+            snapshot.forEach((childSnapshot) => {
+              const user = childSnapshot.val();
+              const userId = childSnapshot.key;
+              const row = document.createElement("tr");
+              row.innerHTML = `
+                <td>${user.username}</td>
+                <td>${user.role === "admin" ? "Quản lý" : "Nhân viên"}</td>
+                <td>${user.status === "active" ? "Hoạt động" : "Không hoạt động"}</td>
+                <td>
+                  <button onclick="showEditUserForm('${userId}', '${user.username}', '${user.role}', '${user.status}')">Chỉnh sửa</button>
+                </td>
+              `;
+              userTableBody.appendChild(row);
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error loading users:", error);
+        showError("Lỗi khi tải danh sách người dùng");
+      }
+    }
+
+    // Hàm chỉnh sửa người dùng
+    async function handleEditUser() {
+      const userId = document.getElementById("editUserId").value;
+      const username = document.getElementById("editUsername").value.trim();
+      const role = document.getElementById("editRole").value;
+      const status = document.getElementById("editStatus").value;
+
+      document.getElementById("editErrorContainer").innerHTML = "";
+
+      if (!username) {
+        showError("Vui lòng nhập tên đăng nhập", "editErrorContainer");
+        return;
+      }
+
+      const db = getDatabase();
+      try {
+        await update(ref(db, `users/${userId}`), {
+          username: username,
+          role: role,
+          status: status
+        });
+        alert("Cập nhật người dùng thành công!");
+        showLoginForm();
+        loadUsers();
+      } catch (error) {
+        console.error("Edit user error:", error);
+        showError("Lỗi khi cập nhật người dùng", "editErrorContainer");
+      }
+    }
+
+    // Hàm giả định cho các chức năng khác
+    function addExpense() { console.log("Thêm chi phí"); }
+    function addExport() { console.log("Thêm xuất hàng"); }
+    function addRevenue() { console.log("Thêm doanh thu"); }
+    function saveDailyData() { console.log("Lưu dữ liệu ngày"); }
+    function addProduct() { console.log("Thêm sản phẩm"); }
+    function addUser() { showRegisterForm(); }
+    function generateDailyReport() { console.log("Tạo báo cáo ngày"); }
+    function generateMonthlyReport() { console.log("Tạo báo cáo tháng"); }
+    function printReport() { console.log("In báo cáo"); }
+    function applyReportFilters() { console.log("Áp dụng bộ lọc báo cáo"); }
+    function switchTab(tab) { console.log("Chuyển tab:", tab); }
+
+    // Hàm khởi tạo
+    function initApp() {
+      document.addEventListener("DOMContentLoaded", () => {
+        const today = new Date().toISOString().split("T")[0];
+        const reportDate = document.getElementById("reportDate");
+        if (reportDate) reportDate.value = today;
+
+        const rememberedUser = localStorage.getItem("rememberedUser");
+        if (rememberedUser) {
+          const usernameInput = document.getElementById("username");
+          if (usernameInput) {
+            usernameInput.value = rememberedUser;
+            const passwordInput = document.getElementById("password");
+            if (passwordInput) passwordInput.focus();
+          }
+        }
+
+        const loginBtn = document.getElementById("loginButton");
+        const logoutBtn = document.getElementById("logoutBtn");
+        const registerBtn = document.getElementById("registerButton");
+        const submitRegisterBtn = document.getElementById("submitRegisterButton");
+        const backToLoginBtn = document.getElementById("backToLoginButton");
+        const addExpenseBtn = document.getElementById("addExpenseBtn");
+        const addExportBtn = document.getElementById("addExportBtn");
+        const addRevenueBtn = document.getElementById("addRevenueBtn");
+        const saveDailyDataBtn = document.getElementById("saveDailyDataBtn");
+        const addProductBtn = document.getElementById("addProductBtn");
+        const addUserBtn = document.getElementById("addUserBtn");
+        const generateDailyReportBtn = document.getElementById("generateDailyReportBtn");
+        const generateMonthlyReportBtn = document.getElementById("generateMonthlyReportBtn");
+        const printReportBtn = document.getElementById("printReportBtn");
+        const applyReportFiltersBtn = document.getElementById("applyReportFiltersBtn");
+        const saveUserBtn = document.getElementById("saveUserButton");
+        const cancelEditBtn = document.getElementById("cancelEditButton");
+        const tabs = document.querySelectorAll(".tab");
+
+        if (loginBtn) loginBtn.addEventListener("click", handleLogin);
+        if (logoutBtn) logoutBtn.addEventListener("click", handleLogout);
+        if (registerBtn) registerBtn.addEventListener("click", showRegisterForm);
+        if (submitRegisterBtn) submitRegisterBtn.addEventListener("click", handleRegister);
+        if (backToLoginBtn) backToLoginBtn.addEventListener("click", showLoginForm);
+        if (addExpenseBtn) addExpenseBtn.addEventListener("click", addExpense);
+        if (addExportBtn) addExportBtn.addEventListener("click", addExport);
+        if (addRevenueBtn) addRevenueBtn.addEventListener("click", addRevenue);
+        if (saveDailyDataBtn) saveDailyDataBtn.addEventListener("click", saveDailyData);
+        if (addProductBtn) addProductBtn.addEventListener("click", addProduct);
+        if (addUserBtn) addUserBtn.addEventListener("click", addUser);
+        if (generateDailyReportBtn) generateDailyReportBtn.addEventListener("click", generateDailyReport);
+        if (generateMonthlyReportBtn) generateMonthlyReportBtn.addEventListener("click", generateMonthlyReport);
+        if (printReportBtn) printReportBtn.addEventListener("click", printReport);
+        if (applyReportFiltersBtn) applyReportFiltersBtn.addEventListener("click", applyReportFilters);
+        if (saveUserBtn) saveUserBtn.addEventListener("click", handleEditUser);
+        if (cancelEditBtn) cancelEditBtn.addEventListener("click", showLoginForm);
+        if (tabs) tabs.forEach(tab => tab.addEventListener("click", () => switchTab(tab.dataset.tab)));
+
+        const passwordInput = document.getElementById("password");
+        if (passwordInput) {
+          passwordInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") handleLogin();
+          });
+        }
+
+        const expenseInput = document.getElementById("expenseInput");
+        if (expenseInput) {
+          expenseInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") addExpense();
+          });
+        }
+
+        const revenueAmount = document.getElementById("revenueAmount");
+        if (revenueAmount) {
+          revenueAmount.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") addRevenue();
+          });
+        }
+
+        onAuthStateChanged(auth, (user) => {
+          if (user) {
+            currentUser = user.uid;
+            loadUserData();
+          } else {
+            showLoginForm();
+          }
+        });
+      });
+    }
+
+    initApp();
+  </script>
 </body>
 </html>
+```
