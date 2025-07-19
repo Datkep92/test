@@ -42,6 +42,8 @@ const printReportBtn = document.getElementById("printReportBtn");
 const reportUser = document.getElementById("reportUser");
 const reportCategory = document.getElementById("reportCategory");
 const applyReportBtn = document.getElementById("applyReportBtn");
+const quickTransactionInput = document.getElementById("quickTransactionInput");
+const addQuickTransactionBtn = document.getElementById("addQuickTransactionBtn");
 
 let currentUser = null;
 let userRole = null;
@@ -266,7 +268,7 @@ async function loadUsers() {
       const id = btn.getAttribute("data-id");
       await deleteDoc(doc(db, "users", id));
       loadUsers();
-    });
+    };
   });
 }
 
@@ -317,46 +319,55 @@ async function loadReportUsers() {
 async function generateReport(isDaily) {
   const today = new Date();
   const start = new Date(today.getFullYear(), today.getMonth(), isDaily ? today.getDate() : 1);
-  const end = new Date(today.getFullYear(), today.getMonth(), isDaily ? today.getDate() + 1 : today.getMonth() + 1);
+  const end = new Date(today.getFullYear(), isDaily ? today.getDate() + 1 : today.getMonth() + 1, isDaily ? today.getDate() : 1);
   const userId = reportUser.value === "all" ? null : reportUser.value;
   const category = reportCategory.value;
 
   let queries = [];
   if (category === "all" || category === "expenses") {
-    queries.push(userId ? query(collection(db, "expenses"), where("uid", "==", userId), where("timestamp", ">=", start), where("timestamp", "<", end)) : query(collection(db, "expenses"), where("timestamp", ">=", start), where("timestamp", "<", end)));
+    queries.push(userId
+      ? query(collection(db, "expenses"), where("uid", "==", userId), where("timestamp", ">=", start), where("timestamp", "<", end))
+      : query(collection(db, "expenses"), where("timestamp", ">=", start), where("timestamp", "<", end)));
   }
   if (category === "all" || category === "revenue") {
-    queries.push(userId ? query(collection(db, "revenue"), where("uid", "==", userId), where("timestamp", ">=", start), where("timestamp", "<", end)) : query(collection(db, "revenue"), where("timestamp", ">=", start), where("timestamp", "<", end)));
+    queries.push(userId
+      ? query(collection(db, "revenue"), where("uid", "==", userId), where("timestamp", ">=", start), where("timestamp", "<", end))
+      : query(collection(db, "revenue"), where("timestamp", ">=", start), where("timestamp", "<", end)));
   }
   if (category === "all" || category === "shipments") {
-    queries.push(userId ? query(collection(db, "shipments"), where("uid", "==", userId), where("timestamp", ">=", start), where("timestamp", "<", end)) : query(collection(db, "shipments"), where("timestamp", ">=", start), where("timestamp", "<", end)));
+    queries.push(userId
+      ? query(collection(db, "shipments"), where("uid", "==", userId), where("timestamp", ">=", start), where("timestamp", "<", end))
+      : query(collection(db, "shipments"), where("timestamp", ">=", start), where("timestamp", "<", end)));
   }
 
   const snapshots = await Promise.all(queries.map(q => getDocs(q)));
   let totalExpenses = 0, totalRevenue = 0;
   let reportHtml = "<h4>Kết quả báo cáo</h4>";
+  let snapshotIndex = 0;
 
   if (category === "all" || category === "expenses") {
     reportHtml += "<h5>Chi phí</h5><table><tr><th>Mô tả</th><th>Số tiền</th></tr>";
-    snapshots[0].forEach(doc => {
+    snapshots[snapshotIndex].forEach(doc => {
       const expense = doc.data();
       totalExpenses += expense.amount;
       reportHtml += `<tr><td>${expense.description}</td><td>${expense.amount.toLocaleString("vi-VN")}₫</td></tr>`;
     });
     reportHtml += "</table>";
+    snapshotIndex++;
   }
   if (category === "all" || category === "revenue") {
     reportHtml += "<h5>Doanh thu</h5><table><tr><th>Mô tả</th><th>Số tiền</th></tr>";
-    snapshots[category === "all" ? (category === "expenses" ? 0 : 1) : 0].forEach(doc => {
+    snapshots[snapshotIndex].forEach(doc => {
       const revenue = doc.data();
       totalRevenue += revenue.amount;
       reportHtml += `<tr><td>${revenue.description}</td><td>${revenue.amount.toLocaleString("vi-VN")}₫</td></tr>`;
     });
     reportHtml += "</table>";
+    snapshotIndex++;
   }
   if (category === "all" || category === "shipments") {
     reportHtml += "<h5>Xuất hàng</h5><table><tr><th>Sản phẩm</th><th>Số lượng</th><th>ĐVT</th></tr>";
-    snapshots[category === "all" ? (category === "expenses" ? 1 : category === "revenue" ? 1 : 2) : 0].forEach(doc => {
+    snapshots[snapshotIndex].forEach(doc => {
       const shipment = doc.data();
       reportHtml += `<tr><td>${shipment.product}</td><td>${shipment.quantity}</td><td>${shipment.unit}</td></tr>`;
     });
@@ -377,12 +388,35 @@ printReportBtn.onclick = () => {
   const printWindow = window.open('', '_blank');
   printWindow.document.write(`
     <html>
-      <head><title>Báo cáo</title><style>${document.querySelector('style').innerText}</style></head>
+      <head><title>Báo cáo</title><style>${document.querySelector('link').href}</style></head>
       <body>${document.getElementById("reportResults").innerHTML}</body>
     </html>
   `);
   printWindow.document.close();
   printWindow.print();
+};
+
+addQuickTransactionBtn.onclick = async () => {
+  const raw = quickTransactionInput.value.trim();
+  const match = raw.match(/(\d[\d.,]*)/);
+  if (!match) return alert("❌ Không tìm thấy số tiền");
+  const amount = parseInt(match[1].replace(/[.,]/g, ""));
+  const label = raw.replace(match[0], "").trim();
+  const type = label.toLowerCase().includes("bán") || label.toLowerCase().includes("thu") ? "revenue" : "expenses";
+  const newData = {
+    uid: currentUser.uid,
+    description: label,
+    amount,
+    timestamp: serverTimestamp()
+  };
+  try {
+    await addDoc(collection(db, type), newData);
+    quickTransactionInput.value = "";
+    if (type === "revenue") loadRevenue();
+    else loadExpenses();
+  } catch (err) {
+    alert("❌ Không thể thêm giao dịch: " + err.message);
+  }
 };
 
 function bindDeleteButtons() {
@@ -400,14 +434,15 @@ function bindDeleteButtons() {
 }
 
 // Tab functionality
-const tabs = ["chiPhi", "xuatHang", "doanhThu", "khoHang", "baoCao", "nguoiDung"];
+const tabs = ["chiPhi", "xuatHang", "doanhThu", "khoHang", "baoCao", "nguoiDung", "quickTransaction"];
 tabs.forEach(tab => {
   const btn = document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`);
   if (btn) {
     btn.onclick = () => {
       tabs.forEach(t => {
         document.getElementById(`${t}Content`).classList.add("hidden");
-        document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.remove("active");
+        const tabBtn = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        if (tabBtn) tabBtn.classList.remove("active");
       });
       document.getElementById(`${tab}Content`).classList.remove("hidden");
       btn.classList.add("active");
