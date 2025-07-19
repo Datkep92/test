@@ -4,19 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Quản lý Kinh doanh</title>
+  <link rel="icon" href="data:,">
   <style>
     /* Reset CSS */
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: 'Arial', sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     
     body {
-      background: #f5f7fa;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
       color: #333;
       line-height: 1.6;
+      min-height: 100vh;
     }
     
     /* Layout */
@@ -26,7 +28,7 @@
     }
     
     header {
-      background: #2c3e50;
+      background: linear-gradient(90deg, #2c3e50 0%, #1a2530 100%);
       color: #fff;
       padding: 15px;
       display: flex;
@@ -35,74 +37,120 @@
       position: sticky;
       top: 0;
       z-index: 100;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     
     .login-box {
-      max-width: 100%;
-      margin: 20px auto;
-      padding: 20px;
+      max-width: 400px;
+      margin: 50px auto;
+      padding: 30px;
       background: white;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      transition: transform 0.3s ease;
+    }
+    
+    .login-box:hover {
+      transform: translateY(-5px);
     }
     
     .section {
       background: white;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     }
     
     /* Form elements */
     input, button, select {
       width: 100%;
-      padding: 12px;
-      margin: 8px 0;
+      padding: 14px;
+      margin: 10px 0;
       border: 1px solid #ddd;
-      border-radius: 6px;
+      border-radius: 8px;
       font-size: 16px;
+      transition: all 0.3s;
+    }
+    
+    input:focus, select:focus {
+      border-color: #3498db;
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+      outline: none;
     }
     
     button {
-      background: #3498db;
+      background: linear-gradient(90deg, #3498db 0%, #2c80c0 100%);
       color: white;
       border: none;
       cursor: pointer;
-      transition: background 0.3s;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    button:after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -60%;
+      width: 20%;
+      height: 200%;
+      background: rgba(255,255,255,0.2);
+      transform: rotate(30deg);
+      transition: all 0.8s;
+    }
+    
+    button:hover:after {
+      left: 140%;
     }
     
     button:hover {
-      background: #2980b9;
+      background: linear-gradient(90deg, #2c80c0 0%, #3498db 100%);
     }
     
     button.danger {
-      background: #e74c3c;
+      background: linear-gradient(90deg, #e74c3c 0%, #c0392b 100%);
+    }
+    
+    button.danger:hover {
+      background: linear-gradient(90deg, #c0392b 0%, #e74c3c 100%);
     }
     
     button.success {
-      background: #2ecc71;
+      background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%);
+    }
+    
+    button.success:hover {
+      background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%);
     }
     
     button.warning {
-      background: #f39c12;
+      background: linear-gradient(90deg, #f39c12 0%, #d35400 100%);
+    }
+    
+    button.warning:hover {
+      background: linear-gradient(90deg, #d35400 0%, #f39c12 100%);
     }
     
     /* Tables */
     .table-responsive {
       overflow-x: auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin: 15px 0;
     }
     
     .table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 15px;
       font-size: 14px;
       min-width: 600px;
     }
     
     .table th, .table td {
-      padding: 12px;
+      padding: 14px;
       border: 1px solid #eee;
       text-align: left;
     }
@@ -110,24 +158,39 @@
     .table th {
       background: #f8f9fa;
       font-weight: 600;
+      color: #2c3e50;
+    }
+    
+    .table tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    
+    .table tr:hover {
+      background-color: #f1f9ff;
     }
     
     /* Tabs */
     .tab-container {
       display: flex;
       overflow-x: auto;
-      margin-bottom: 15px;
-      border-bottom: 1px solid #ddd;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #3498db;
       -webkit-overflow-scrolling: touch;
     }
     
     .tab {
-      padding: 10px 15px;
+      padding: 12px 20px;
       cursor: pointer;
       background: #f1f1f1;
-      border-radius: 5px 5px 0 0;
+      border-radius: 8px 8px 0 0;
       margin-right: 5px;
       white-space: nowrap;
+      transition: all 0.3s;
+      font-weight: 500;
+    }
+    
+    .tab:hover {
+      background: #e1e1e1;
     }
     
     .tab.active {
@@ -138,9 +201,32 @@
     /* Product grid */
     .product-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 15px;
       margin-top: 15px;
+    }
+    
+    .product-item {
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 15px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: white;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+    
+    .product-item:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+      border-color: #3498db;
+    }
+    
+    .product-item.selected {
+      background-color: #e1f0ff;
+      border-color: #3498db;
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
     }
     
     /* Utility classes */
@@ -158,35 +244,117 @@
     
     .error-message {
       color: #e74c3c;
-      margin: 10px 0;
+      margin: 15px 0;
       text-align: center;
       font-weight: bold;
+      background: #ffebee;
+      padding: 12px;
+      border-radius: 8px;
+      border-left: 4px solid #e74c3c;
+    }
+    
+    .success-message {
+      color: #27ae60;
+      margin: 15px 0;
+      text-align: center;
+      font-weight: bold;
+      background: #eafaf1;
+      padding: 12px;
+      border-radius: 8px;
+      border-left: 4px solid #27ae60;
     }
     
     .category-badge {
       display: inline-block;
-      padding: 3px 8px;
+      padding: 4px 10px;
       background: #e1f0ff;
-      border-radius: 10px;
+      border-radius: 20px;
       font-size: 12px;
       margin-left: 5px;
+      color: #2c80c0;
+      font-weight: 500;
+    }
+    
+    .spinner {
+      border: 3px solid rgba(243, 243, 243, 0.8);
+      border-top: 3px solid #3498db;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      margin-right: 10px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .loading-container {
+      text-align: center;
+      padding: 30px;
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.8rem;
+    }
+    
+    .logo-icon {
+      font-size: 2rem;
+    }
+    
+    .summary-card {
+      background: linear-gradient(135deg, #f8fafc 0%, #e6f0f7 100%);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 15px 0;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      border: 1px solid #e1e8ed;
     }
     
     /* Responsive adjustments */
     @media (min-width: 768px) {
       .container {
-        padding: 20px;
+        padding: 25px;
         max-width: 1200px;
         margin: 0 auto;
       }
       
       .flex-md {
         display: flex;
-        gap: 15px;
+        gap: 20px;
       }
       
       .flex-md > * {
         flex: 1;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .login-box {
+        margin: 20px auto;
+        padding: 20px;
+      }
+      
+      header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+      }
+      
+      .user-info {
+        width: 100%;
+        justify-content: center;
       }
     }
     
@@ -203,13 +371,17 @@
         left: 0;
         top: 0;
         width: 100%;
+        padding: 20px;
       }
     }
   </style>
 </head>
 <body>
   <header id="appHeader" class="hidden">
-    <h1>📊 Quản lý Kinh doanh</h1>
+    <div class="logo">
+      <span class="logo-icon">📊</span>
+      <h1>Quản lý Kinh doanh</h1>
+    </div>
     <div class="user-info">
       <span id="currentUser"></span>
       <button onclick="handleLogout()" class="logout-btn danger">Đăng xuất</button>
@@ -219,23 +391,26 @@
   <!-- Login Screen -->
   <div class="container">
     <div class="login-box" id="loginBox">
-      <h3 class="text-center">🔐 Đăng nhập</h3>
+      <h2 class="text-center">🔐 Đăng nhập</h2>
       <div id="errorContainer"></div>
-      <input type="text" id="username" placeholder="Tên đăng nhập" autocomplete="username" />
+      <input type="email" id="username" placeholder="Email đăng nhập" autocomplete="username" />
       <input type="password" id="password" placeholder="Mật khẩu" autocomplete="current-password" />
-      <label>
-        <input type="checkbox" id="rememberMe" checked /> Ghi nhớ đăng nhập
+      <label style="display: block; margin: 15px 0;">
+        <input type="checkbox" id="rememberMe" /> Ghi nhớ đăng nhập
       </label>
       <button onclick="handleLogin()" class="success">Đăng nhập</button>
+      <div id="loadingIndicator" class="loading-container hidden">
+        <div class="spinner"></div> Đang xác thực...
+      </div>
     </div>
   </div>
 
   <!-- Sale Screen -->
   <div class="container hidden" id="saleApp">
     <div class="tab-container">
-      <div class="tab active" onclick="switchTab('expense')">Chi phí</div>
-      <div class="tab" onclick="switchTab('export')">Xuất hàng</div>
-      <div class="tab" onclick="switchTab('revenue')">Doanh thu</div>
+      <div class="tab active" onclick="switchTab('expense')">💸 Chi phí</div>
+      <div class="tab" onclick="switchTab('export')">📦 Xuất hàng</div>
+      <div class="tab" onclick="switchTab('revenue')">💰 Doanh thu</div>
     </div>
     
     <!-- Expense Tab -->
@@ -243,7 +418,7 @@
       <h3>💸 Chi phí</h3>
       <div class="flex-md">
         <input type="text" id="expenseInput" placeholder="VD: mua xăng 60000" />
-        <button onclick="addExpense()">Thêm</button>
+        <button onclick="addExpense()">Thêm chi phí</button>
       </div>
       <div class="table-responsive">
         <table class="table" id="expenseTable">
@@ -278,21 +453,21 @@
       <h3>💰 Doanh thu</h3>
       <div class="flex-md">
         <input type="text" id="revenueAmount" placeholder="Số tiền (VD: 500000)" />
-        <button onclick="addRevenue()">Thêm</button>
+        <button onclick="addRevenue()">Thêm doanh thu</button>
       </div>
     </div>
     
     <!-- Daily Summary -->
     <div class="section">
       <h3>📝 Tổng kết ngày <span id="summaryDate"></span></h3>
-      <div class="table-responsive">
+      <div class="summary-card">
         <table class="table">
           <tr>
-            <td>Doanh thu:</td>
+            <td><strong>Doanh thu:</strong></td>
             <td class="text-right" id="totalRevenue">0₫</td>
           </tr>
           <tr>
-            <td>Tổng chi phí:</td>
+            <td><strong>Tổng chi phí:</strong></td>
             <td class="text-right" id="totalExpense">0₫</td>
           </tr>
           <tr>
@@ -304,9 +479,9 @@
       
       <div id="exportSummary"></div>
       
-      <h4>Ghi chú cá nhân:</h4>
-      <textarea id="dailyNote" class="note-input" placeholder="Nhập ghi chú trong ngày..."></textarea>
-      <button onclick="saveDailyData()" class="success">Lưu dữ liệu</button>
+      <h4>📌 Ghi chú cá nhân:</h4>
+      <textarea id="dailyNote" class="note-input" placeholder="Nhập ghi chú trong ngày..." rows="3" style="width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; resize: vertical;"></textarea>
+      <button onclick="saveDailyData()" class="success">💾 Lưu dữ liệu</button>
     </div>
   </div>
 
@@ -319,7 +494,7 @@
         <input type="number" id="productQuantity" placeholder="Số lượng" min="0" />
         <input type="text" id="productUnit" placeholder="ĐVT (kg, ly, chai...)" />
         <input type="number" id="productPrice" placeholder="Giá đơn vị (VNĐ)" min="0" />
-        <button onclick="addProduct()">Thêm sản phẩm</button>
+        <button onclick="addProduct()">➕ Thêm sản phẩm</button>
       </div>
       <div class="table-responsive">
         <table class="table" id="productTable">
@@ -335,9 +510,9 @@
       <h3>📊 Báo cáo</h3>
       <div class="flex-md">
         <input type="date" id="reportDate" />
-        <button onclick="generateDailyReport()">Báo cáo ngày</button>
-        <button onclick="generateMonthlyReport()">Báo cáo tháng</button>
-        <button onclick="printReport()" class="warning">In báo cáo</button>
+        <button onclick="generateDailyReport()">📅 Báo cáo ngày</button>
+        <button onclick="generateMonthlyReport()">📆 Báo cáo tháng</button>
+        <button onclick="printReport()" class="warning">🖨️ In báo cáo</button>
       </div>
       
       <div id="reportFilters" style="margin-top: 15px;">
@@ -348,23 +523,23 @@
           <select id="reportCategoryFilter">
             <option value="all">Tất cả danh mục</option>
           </select>
-          <button onclick="applyReportFilters()">Áp dụng</button>
+          <button onclick="applyReportFilters()">🔍 Áp dụng</button>
         </div>
       </div>
       
-      <div id="reportOutput" style="margin-top: 20px;"></div>
+      <div id="reportOutput" style="margin-top: 20px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);"></div>
     </div>
     
     <div class="section">
       <h3>👥 Quản lý Người dùng</h3>
       <div class="flex-md">
-        <input type="text" id="newUsername" placeholder="Tên đăng nhập" />
+        <input type="email" id="newUsername" placeholder="Email đăng nhập" />
         <input type="password" id="newPassword" placeholder="Mật khẩu" />
         <select id="newUserRole">
           <option value="staff">Nhân viên</option>
           <option value="admin">Quản lý</option>
         </select>
-        <button onclick="addUser()" class="success">Thêm người dùng</button>
+        <button onclick="addUser()" class="success">➕ Thêm người dùng</button>
       </div>
       
       <div class="table-responsive">
@@ -378,16 +553,52 @@
     </div>
   </div>
 
-  <script>
-    // System Data
-    let users = JSON.parse(localStorage.getItem('users')) || {
-      admin: { password: '123123', role: 'admin', active: true },
-      test: { password: '1234', role: 'staff', active: true }
-    };
+  <!-- Firebase SDK -->
+  <script type="module">
+    // Firebase App (the core Firebase SDK) is always required
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     
-    // Business Data
-    let products = JSON.parse(localStorage.getItem('products')) || [];
-    let expenseCategories = JSON.parse(localStorage.getItem('expenseCategories')) || [];
+    // Firebase services
+    import { 
+      getAuth, 
+      signInWithEmailAndPassword, 
+      signOut, 
+      onAuthStateChanged, 
+      createUserWithEmailAndPassword
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    
+    import { 
+      getDatabase, 
+      ref, 
+      set, 
+      get, 
+      push, 
+      update, 
+      remove,
+      onValue
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
+      authDomain: "quanly-d7e54.firebaseapp.com",
+      databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com",
+      projectId: "quanly-d7e54",
+      storageBucket: "quanly-d7e54.firebasestorage.app",
+      messagingSenderId: "482686011267",
+      appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
+    };
+
+firebase.initializeApp(firebaseConfig);
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const database = getDatabase(app);
+
+    // System Data
+    let products = [];
+    let expenseCategories = [];
     let dailyData = {
       date: '',
       expenses: [],
@@ -407,13 +618,6 @@
       const today = new Date().toISOString().split('T')[0];
       document.getElementById('reportDate').value = today;
       
-      // Load remembered user
-      const rememberedUser = localStorage.getItem('rememberedUser');
-      if (rememberedUser) {
-        document.getElementById('username').value = rememberedUser;
-        document.getElementById('password').focus();
-      }
-      
       // Event listeners
       document.getElementById('password').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') handleLogin();
@@ -427,79 +631,76 @@
         if (e.key === 'Enter') addRevenue();
       });
       
-      // Load data if already logged in
-      if (localStorage.getItem('currentUser')) {
-        currentUser = localStorage.getItem('currentUser');
-        handleSuccessfulLogin();
-      }
+      // Listen for auth state changes
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          currentUser = user;
+          handleSuccessfulLogin();
+        } else {
+          // User is signed out
+          document.getElementById('loginBox').classList.remove('hidden');
+          document.getElementById('appHeader').classList.add('hidden');
+          document.getElementById('adminApp').classList.add('hidden');
+          document.getElementById('saleApp').classList.add('hidden');
+        }
+      });
     }
     
     // Login functions
-    function handleLogin() {
-      const username = document.getElementById('username').value.trim();
+    async function handleLogin() {
+      const email = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value.trim();
-      const rememberMe = document.getElementById('rememberMe').checked;
       
       // Clear previous errors
       document.getElementById('errorContainer').innerHTML = '';
       
-      if (!username || !password) {
+      if (!email || !password) {
         showError('Vui lòng nhập đầy đủ thông tin đăng nhập');
         return;
       }
       
-      if (!users[username]) {
-        showError('Sai tên đăng nhập');
-        return;
+      try {
+        document.getElementById('loadingIndicator').classList.remove('hidden');
+        
+        // Sign in with Firebase Authentication
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        currentUser = userCredential.user;
+        
+        // Hide loading indicator
+        document.getElementById('loadingIndicator').classList.add('hidden');
+      } catch (error) {
+        document.getElementById('loadingIndicator').classList.add('hidden');
+        showError(`Đăng nhập thất bại: ${error.message}`);
       }
-      
-      if (users[username].password !== password) {
-        showError('Sai mật khẩu');
-        return;
-      }
-      
-      if (!users[username].active) {
-        showError('Tài khoản đã bị khóa');
-        return;
-      }
-      
-      // Successful login
-      if (rememberMe) {
-        localStorage.setItem('rememberedUser', username);
-      } else {
-        localStorage.removeItem('rememberedUser');
-      }
-      
-      currentUser = username;
-      localStorage.setItem('currentUser', username);
-      handleSuccessfulLogin();
     }
     
     function handleSuccessfulLogin() {
       document.getElementById('loginBox').classList.add('hidden');
       document.getElementById('appHeader').classList.remove('hidden');
-      document.getElementById('currentUser').textContent = currentUser;
+      document.getElementById('currentUser').textContent = currentUser.email;
       
-      if (users[currentUser].role === 'admin') {
-        document.getElementById('adminApp').classList.remove('hidden');
-        renderUserList();
-        loadReportFilters();
-      } else {
-        document.getElementById('saleApp').classList.remove('hidden');
-      }
-      
-      loadData();
+      // Check if user is admin
+      checkAdminStatus().then(isAdmin => {
+        if (isAdmin) {
+          document.getElementById('adminApp').classList.remove('hidden');
+          loadReportFilters();
+          renderUserList();
+        } else {
+          document.getElementById('saleApp').classList.remove('hidden');
+        }
+        
+        loadData();
+      });
     }
     
-    function handleLogout() {
-      currentUser = null;
-      localStorage.removeItem('currentUser');
-      document.getElementById('loginBox').classList.remove('hidden');
-      document.getElementById('appHeader').classList.add('hidden');
-      document.getElementById('adminApp').classList.add('hidden');
-      document.getElementById('saleApp').classList.add('hidden');
-      document.getElementById('username').value = '';
-      document.getElementById('password').value = '';
+    async function handleLogout() {
+      try {
+        await signOut(auth);
+        currentUser = null;
+        showSuccess('Bạn đã đăng xuất thành công');
+      } catch (error) {
+        showError(`Lỗi khi đăng xuất: ${error.message}`);
+      }
     }
     
     function showError(message) {
@@ -507,53 +708,117 @@
       errorContainer.innerHTML = `<div class="error-message">${message}</div>`;
     }
     
+    function showSuccess(message) {
+      const errorContainer = document.getElementById('errorContainer');
+      errorContainer.innerHTML = `<div class="success-message">${message}</div>`;
+      setTimeout(() => errorContainer.innerHTML = '', 3000);
+    }
+    
+    // Check if user is admin
+    async function checkAdminStatus() {
+      try {
+        const userRef = ref(database, `users/${currentUser.uid}`);
+        const snapshot = await get(userRef);
+        
+        if (snapshot.exists()) {
+          const userData = snapshot.val();
+          return userData.role === 'admin';
+        } else {
+          // Create new user record if not exists
+          await set(userRef, {
+            email: currentUser.email,
+            role: 'staff',
+            active: true
+          });
+          return false;
+        }
+      } catch (error) {
+        showError(`Lỗi khi kiểm tra quyền admin: ${error.message}`);
+        return false;
+      }
+    }
+    
     // Data functions
-    function loadData() {
+    async function loadData() {
+      const today = new Date().toLocaleDateString('vi-VN');
+      document.getElementById('summaryDate').textContent = today;
+      
       // Load products
-      const savedProducts = localStorage.getItem('products');
-      if (savedProducts) {
-        products = JSON.parse(savedProducts);
-        renderProducts();
+      try {
+        const productsRef = ref(database, 'products');
+        const snapshot = await get(productsRef);
+        
+        if (snapshot.exists()) {
+          products = [];
+          snapshot.forEach(childSnapshot => {
+            products.push({
+              id: childSnapshot.key,
+              ...childSnapshot.val()
+            });
+          });
+          renderProducts();
+          renderProductSelection();
+        } else {
+          products = [];
+        }
+      } catch (error) {
+        showError(`Lỗi khi tải sản phẩm: ${error.message}`);
       }
       
       // Load expense categories
-      const savedCategories = localStorage.getItem('expenseCategories');
-      if (savedCategories) {
-        expenseCategories = JSON.parse(savedCategories);
+      try {
+        const categoriesRef = ref(database, 'expenseCategories');
+        const snapshot = await get(categoriesRef);
+        
+        if (snapshot.exists()) {
+          expenseCategories = snapshot.val();
+        } else {
+          expenseCategories = [];
+        }
+      } catch (error) {
+        showError(`Lỗi khi tải danh mục chi phí: ${error.message}`);
       }
       
       // Load today's data
-      const today = new Date().toLocaleDateString('vi-VN');
-      const savedDailyData = localStorage.getItem(`dailyData_${today}_${currentUser}`);
-      if (savedDailyData) {
-        dailyData = JSON.parse(savedDailyData);
-      } else {
-        dailyData = {
-          date: today,
-          expenses: [],
-          exports: [],
-          revenue: 0,
-          note: '',
-          user: currentUser
-        };
+      try {
+        const dateKey = today.replace(/\//g, '_');
+        const dailyRef = ref(database, `dailyData/${dateKey}/${currentUser.uid}`);
+        const snapshot = await get(dailyRef);
+        
+        if (snapshot.exists()) {
+          dailyData = snapshot.val();
+        } else {
+          dailyData = {
+            date: today,
+            expenses: [],
+            exports: [],
+            revenue: 0,
+            note: '',
+            user: currentUser.email
+          };
+        }
+        
+        document.getElementById('dailyNote').value = dailyData.note || '';
+        renderDailyData();
+      } catch (error) {
+        showError(`Lỗi khi tải dữ liệu ngày: ${error.message}`);
       }
-      
-      document.getElementById('summaryDate').textContent = today;
-      document.getElementById('currentDate').textContent = today;
-      document.getElementById('dailyNote').value = dailyData.note || '';
-      
-      renderDailyData();
     }
     
-    function saveData() {
-      localStorage.setItem('products', JSON.stringify(products));
-      localStorage.setItem('expenseCategories', JSON.stringify(expenseCategories));
-    }
-    
-    function saveDailyData() {
+    async function saveDailyData() {
+      const today = new Date().toLocaleDateString('vi-VN');
       dailyData.note = document.getElementById('dailyNote').value;
-      localStorage.setItem(`dailyData_${dailyData.date}_${currentUser}`, JSON.stringify(dailyData));
-      alert('Đã lưu dữ liệu ngày ' + dailyData.date);
+      dailyData.date = today;
+      dailyData.user = currentUser.email;
+      
+      try {
+        const dateKey = today.replace(/\//g, '_');
+        const dailyRef = ref(database, `dailyData/${dateKey}/${currentUser.uid}`);
+        await set(dailyRef, dailyData);
+        showSuccess('Đã lưu dữ liệu ngày ' + dailyData.date);
+      } catch (error) {
+        showError(`Lỗi khi lưu dữ liệu ngày: ${error.message}`);
+      }
     }
     
     // Sale functions
@@ -593,7 +858,10 @@
       // Add new category if not exists
       if (!expenseCategories.includes(category)) {
         expenseCategories.push(category);
-        saveData();
+        
+        // Save to Firebase
+        const categoriesRef = ref(database, 'expenseCategories');
+        set(categoriesRef, expenseCategories);
       }
       
       return {
@@ -627,7 +895,7 @@
         description: `${description}`,
         amount: amount,
         category: category,
-        user: currentUser,
+        user: currentUser.email,
         timestamp: new Date().getTime()
       });
       
@@ -652,6 +920,7 @@
         productItem.innerHTML = `
           <div><strong>${product.name}</strong></div>
           <div>Tồn kho: ${product.quantity} ${product.unit}</div>
+          <div style="margin-top: 8px; color: #27ae60;">${product.price.toLocaleString('vi-VN')}₫/${product.unit}</div>
         `;
         
         productItem.addEventListener('click', () => {
@@ -696,14 +965,17 @@
           quantity: quantity,
           unit: selectedProduct.unit,
           price: selectedProduct.price,
-          user: currentUser,
+          user: currentUser.email,
           timestamp: new Date().getTime()
         });
       }
       
       // Update product quantity
       selectedProduct.quantity -= quantity;
-      saveData();
+      
+      // Update product in Firebase
+      const productRef = ref(database, `products/${selectedProduct.id}`);
+      set(productRef, selectedProduct);
       
       document.getElementById('exportQuantity').value = '1';
       selectedProduct = null;
@@ -723,7 +995,10 @@
         const product = products.find(p => p.id === exportItem.productId);
         if (product) {
           product.quantity += exportItem.quantity;
-          saveData();
+          
+          // Update product in Firebase
+          const productRef = ref(database, `products/${product.id}`);
+          set(productRef, product);
         }
         
         dailyData.exports.splice(index, 1);
@@ -799,10 +1074,10 @@
         const summaryDiv = document.createElement('div');
         summaryDiv.style.marginTop = '15px';
         summaryDiv.innerHTML = `
-          <h4>Xuất hàng hôm nay:</h4>
+          <h4>📦 Xuất hàng hôm nay:</h4>
           <ul>
             ${dailyData.exports.map(e => 
-              `<li>${e.productName}: ${e.quantity} ${e.unit}</li>`
+              `<li>${e.productName}: ${e.quantity} ${e.unit} (${(e.quantity * e.price).toLocaleString('vi-VN')}₫)</li>`
             ).join('')}
           </ul>
         `;
@@ -811,7 +1086,7 @@
     }
     
     // Product management
-    function addProduct() {
+    async function addProduct() {
       const name = document.getElementById('productName').value.trim();
       const quantity = parseInt(document.getElementById('productQuantity').value) || 0;
       const unit = document.getElementById('productUnit').value.trim();
@@ -830,19 +1105,30 @@
         price: price
       };
       
-      products.push(newProduct);
-      saveData();
-      
-      // Clear inputs
-      document.getElementById('productName').value = '';
-      document.getElementById('productQuantity').value = '';
-      document.getElementById('productUnit').value = '';
-      document.getElementById('productPrice').value = '';
-      
-      renderProducts();
+      try {
+        // Save product to Firebase
+        const productRef = ref(database, `products/${newProduct.id}`);
+        await set(productRef, newProduct);
+        
+        // Add to local products array
+        products.push(newProduct);
+        
+        // Clear inputs
+        document.getElementById('productName').value = '';
+        document.getElementById('productQuantity').value = '';
+        document.getElementById('productUnit').value = '';
+        document.getElementById('productPrice').value = '';
+        
+        renderProducts();
+        renderProductSelection();
+        
+        showSuccess('Sản phẩm đã được thêm thành công');
+      } catch (error) {
+        showError(`Lỗi khi thêm sản phẩm: ${error.message}`);
+      }
     }
     
-    function editProduct(index) {
+    async function editProduct(index) {
       const product = products[index];
       const newName = prompt('Tên sản phẩm:', product.name);
       if (!newName) return;
@@ -856,20 +1142,51 @@
       const newPrice = parseInt(prompt('Giá đơn vị:', product.price)) || 0;
       if (isNaN(newPrice)) return alert('Giá không hợp lệ');
       
-      product.name = newName;
-      product.quantity = newQuantity;
-      product.unit = newUnit;
-      product.price = newPrice;
-      
-      saveData();
-      renderProducts();
+      try {
+        // Update product in Firebase
+        const productRef = ref(database, `products/${product.id}`);
+        await set(productRef, {
+          ...product,
+          name: newName,
+          quantity: newQuantity,
+          unit: newUnit,
+          price: newPrice
+        });
+        
+        // Update local product
+        product.name = newName;
+        product.quantity = newQuantity;
+        product.unit = newUnit;
+        product.price = newPrice;
+        
+        renderProducts();
+        renderProductSelection();
+        
+        showSuccess('Sản phẩm đã được cập nhật');
+      } catch (error) {
+        showError(`Lỗi khi cập nhật sản phẩm: ${error.message}`);
+      }
     }
     
-    function deleteProduct(index) {
+    async function deleteProduct(index) {
       if (confirm('Xóa sản phẩm này?')) {
-        products.splice(index, 1);
-        saveData();
-        renderProducts();
+        const product = products[index];
+        
+        try {
+          // Remove product from Firebase
+          const productRef = ref(database, `products/${product.id}`);
+          await remove(productRef);
+          
+          // Remove from local products array
+          products.splice(index, 1);
+          
+          renderProducts();
+          renderProductSelection();
+          
+          showSuccess('Sản phẩm đã được xóa');
+        } catch (error) {
+          showError(`Lỗi khi xóa sản phẩm: ${error.message}`);
+        }
       }
     }
     
@@ -885,8 +1202,8 @@
           <td>${product.unit}</td>
           <td class="text-right">${product.price.toLocaleString('vi-VN')}₫</td>
           <td class="actions">
-            <button onclick="editProduct(${index})">Sửa</button>
-            <button onclick="deleteProduct(${index})" class="danger">Xóa</button>
+            <button onclick="editProduct(${index})">✏️ Sửa</button>
+            <button onclick="deleteProduct(${index})" class="danger">🗑️ Xóa</button>
           </td>
         `;
         table.appendChild(row);
@@ -894,88 +1211,113 @@
     }
     
     // User management
-    function addUser() {
-      const username = document.getElementById('newUsername').value.trim();
+    async function addUser() {
+      const email = document.getElementById('newUsername').value.trim();
       const password = document.getElementById('newPassword').value.trim();
       const role = document.getElementById('newUserRole').value;
       
-      if (!username || !password) {
-        showError('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu');
+      if (!email || !password) {
+        showError('Vui lòng nhập đầy đủ email và mật khẩu');
         return;
       }
       
-      if (users[username]) {
-        showError('Tên đăng nhập đã tồn tại');
-        return;
-      }
-      
-      users[username] = {
-        password: password,
-        role: role,
-        active: true
-      };
-      
-      saveUsers();
-      renderUserList();
-      loadReportFilters();
-      
-      // Clear inputs
-      document.getElementById('newUsername').value = '';
-      document.getElementById('newPassword').value = '';
-    }
-    
-    function toggleUserStatus(username) {
-      if (confirm(`Bạn có chắc muốn ${users[username].active ? 'khóa' : 'mở khóa'} tài khoản ${username}?`)) {
-        users[username].active = !users[username].active;
-        saveUsers();
+      try {
+        // Create user in Firebase Authentication
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        // Save user info to Firebase Realtime Database
+        const userRef = ref(database, `users/${user.uid}`);
+        await set(userRef, {
+          email: email,
+          role: role,
+          active: true
+        });
+        
+        // Clear inputs
+        document.getElementById('newUsername').value = '';
+        document.getElementById('newPassword').value = '';
+        
+        // Refresh user list
         renderUserList();
+        
+        showSuccess(`Người dùng ${email} đã được thêm thành công`);
+      } catch (error) {
+        showError(`Lỗi khi thêm người dùng: ${error.message}`);
       }
     }
     
-    function deleteUser(username) {
-      if (username === 'admin') {
-        alert('Không thể xóa tài khoản admin');
-        return;
-      }
-      
-      if (confirm(`Bạn có chắc muốn xóa tài khoản ${username}?`)) {
-        delete users[username];
-        saveUsers();
-        renderUserList();
-        loadReportFilters();
+    async function toggleUserStatus(uid) {
+      try {
+        const userRef = ref(database, `users/${uid}`);
+        const snapshot = await get(userRef);
+        
+        if (snapshot.exists()) {
+          const userData = snapshot.val();
+          const newStatus = !userData.active;
+          
+          await update(userRef, { active: newStatus });
+          renderUserList();
+          
+          showSuccess(`Trạng thái người dùng đã được cập nhật`);
+        }
+      } catch (error) {
+        showError(`Lỗi khi cập nhật trạng thái người dùng: ${error.message}`);
       }
     }
     
-    function saveUsers() {
-      localStorage.setItem('users', JSON.stringify(users));
+    async function deleteUser(uid) {
+      if (confirm('Bạn có chắc muốn xóa người dùng này?')) {
+        try {
+          // Remove user from Realtime Database
+          const userRef = ref(database, `users/${uid}`);
+          await remove(userRef);
+          
+          // Refresh user list
+          renderUserList();
+          
+          showSuccess('Người dùng đã được xóa');
+        } catch (error) {
+          showError(`Lỗi khi xóa người dùng: ${error.message}`);
+        }
+      }
     }
     
-    function renderUserList() {
+    async function renderUserList() {
       const table = document.querySelector('#userTable tbody');
       table.innerHTML = '';
       
-      for (const username in users) {
-        const user = users[username];
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${username}</td>
-          <td>${user.role === 'admin' ? 'Quản lý' : 'Nhân viên'}</td>
-          <td>${user.active ? 'Đang hoạt động' : 'Đã khóa'}</td>
-          <td class="actions">
-            <button onclick="toggleUserStatus('${username}')" class="${user.active ? 'warning' : 'success'}">
-              ${user.active ? 'Khóa' : 'Mở khóa'}
-            </button>
-            ${username !== 'admin' ? `
-              <button onclick="deleteUser('${username}')" class="danger">Xóa</button>
-            ` : ''}
-          </td>
-        `;
-        table.appendChild(row);
+      try {
+        const usersRef = ref(database, 'users');
+        const snapshot = await get(usersRef);
+        
+        if (snapshot.exists()) {
+          const users = snapshot.val();
+          
+          for (const uid in users) {
+            const user = users[uid];
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${user.email}</td>
+              <td>${user.role === 'admin' ? 'Quản lý' : 'Nhân viên'}</td>
+              <td>${user.active ? 'Đang hoạt động' : 'Đã khóa'}</td>
+              <td class="actions">
+                <button onclick="toggleUserStatus('${uid}')" class="${user.active ? 'warning' : 'success'}">
+                  ${user.active ? '🔒 Khóa' : '🔓 Mở khóa'}
+                </button>
+                <button onclick="deleteUser('${uid}')" class="danger">🗑️ Xóa</button>
+              </td>
+            `;
+            table.appendChild(row);
+          }
+        }
+      } catch (error) {
+        showError(`Lỗi khi tải danh sách người dùng: ${error.message}`);
       }
     }
     
     // Report functions
-    function loadReportFilters() {
+    async function loadReportFilters() {
       const userFilter = document.getElementById('reportUserFilter');
       const categoryFilter = document.getElementById('reportCategoryFilter');
       
@@ -984,11 +1326,25 @@
       while (categoryFilter.options.length > 1) categoryFilter.remove(1);
       
       // Add users
-      for (const username in users) {
-        const option = document.createElement('option');
-        option.value = username;
-        option.textContent = username;
-        userFilter.appendChild(option);
+      try {
+        const usersRef = ref(database, 'users');
+        const snapshot = await get(usersRef);
+        
+        if (snapshot.exists()) {
+          const users = snapshot.val();
+          
+          for (const uid in users) {
+            const user = users[uid];
+            if (user.active) {
+              const option = document.createElement('option');
+              option.value = user.email;
+              option.textContent = user.email;
+              userFilter.appendChild(option);
+            }
+          }
+        }
+      } catch (error) {
+        showError(`Lỗi khi tải danh sách người dùng: ${error.message}`);
       }
       
       // Add categories
@@ -1000,7 +1356,7 @@
       });
     }
     
-    function applyReportFilters() {
+    async function generateDailyReport() {
       const dateInput = document.getElementById('reportDate').value;
       if (!dateInput) {
         alert('Vui lòng chọn ngày');
@@ -1013,20 +1369,7 @@
       generateReport(dateInput, userFilter, categoryFilter);
     }
     
-    function generateDailyReport() {
-      const dateInput = document.getElementById('reportDate').value;
-      if (!dateInput) {
-        alert('Vui lòng chọn ngày');
-        return;
-      }
-      
-      const userFilter = document.getElementById('reportUserFilter').value;
-      const categoryFilter = document.getElementById('reportCategoryFilter').value;
-      
-      generateReport(dateInput, userFilter, categoryFilter);
-    }
-    
-    function generateMonthlyReport() {
+    async function generateMonthlyReport() {
       const dateInput = document.getElementById('reportDate').value;
       if (!dateInput) {
         alert('Vui lòng chọn ngày trong tháng cần báo cáo');
@@ -1043,277 +1386,72 @@
       generateReport(`${year}-${month.toString().padStart(2, '0')}`, userFilter, categoryFilter, true);
     }
     
-    function generateReport(dateFilter, userFilter = 'all', categoryFilter = 'all', isMonthly = false) {
+    async function generateReport(dateFilter, userFilter = 'all', categoryFilter = 'all', isMonthly = false) {
       let allDailyData = [];
       const dateStr = isMonthly 
         ? dateFilter // Format: "YYYY-MM"
         : new Date(dateFilter).toLocaleDateString('vi-VN');
       
-      // Get all matching data
-      for (const user in users) {
-        if (userFilter !== 'all' && userFilter !== user) continue;
+      try {
+        const dailyRef = ref(database, 'dailyData');
+        const snapshot = await get(dailyRef);
         
-        if (isMonthly) {
-          // Monthly report - check all days in month
-          const [year, month] = dateFilter.split('-');
-          const daysInMonth = new Date(year, month, 0).getDate();
+        if (snapshot.exists()) {
+          const allData = snapshot.val();
           
-          for (let day = 1; day <= daysInMonth; day++) {
-            const dayStr = `${day}/${month}/${year}`;
-            const dailyDataStr = localStorage.getItem(`dailyData_${dayStr}_${user}`);
-            if (dailyDataStr) {
-              const data = JSON.parse(dailyDataStr);
-              allDailyData.push(data);
+          for (const dateKey in allData) {
+            for (const userId in allData[dateKey]) {
+              const dailyData = allData[dateKey][userId];
+              
+              // Apply date filter
+              if (isMonthly) {
+                const [day, month, year] = dailyData.date.split('/');
+                const dataMonth = `${year}-${month.padStart(2, '0')}`;
+                if (dataMonth !== dateFilter) continue;
+              } else {
+                if (dailyData.date !== dateStr) continue;
+              }
+              
+              // Apply user filter
+              if (userFilter !== 'all' && userFilter !== dailyData.user) continue;
+              
+              allDailyData.push(dailyData);
             }
           }
-        } else {
-          // Daily report
-          const dailyDataStr = localStorage.getItem(`dailyData_${dateStr}_${user}`);
-          if (dailyDataStr) {
-            const data = JSON.parse(dailyDataStr);
-            allDailyData.push(data);
-          }
         }
-      }
-      
-      if (allDailyData.length === 0) {
-        document.getElementById('reportOutput').innerHTML = 
-          `<p>Không có dữ liệu ${isMonthly ? 'tháng' : 'ngày'} ${dateStr}</p>`;
+      } catch (error) {
+        showError(`Lỗi khi tạo báo cáo: ${error.message}`);
         return;
       }
       
-      // Process data
-      let totalRevenue = 0;
-      let totalExpense = 0;
-      let totalExportCost = 0;
-      let expenseDetails = {};
-      let exportDetails = {};
-      let userNotes = [];
-      let dailySummaries = [];
+      // Generate report content
+      let reportHTML = `<h3>Báo cáo ${isMonthly ? 'tháng' : 'ngày'} ${dateStr}</h3>`;
       
-      allDailyData.forEach(data => {
-        // Apply category filter
-        const filteredExpenses = data.expenses.filter(expense => 
-          categoryFilter === 'all' || expense.category === categoryFilter
-        );
-        
-        // Calculate totals
-        const dayExpense = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
-        const dayExportCost = data.exports.reduce((sum, e) => sum + (e.quantity * e.price), 0);
-        
-        totalRevenue += data.revenue || 0;
-        totalExpense += dayExpense;
-        totalExportCost += dayExportCost;
-        
-        // Group expense details by category
-        filteredExpenses.forEach(expense => {
-          if (!expenseDetails[expense.category]) {
-            expenseDetails[expense.category] = {
-              amount: 0,
-              items: []
-            };
-          }
-          expenseDetails[expense.category].amount += expense.amount;
-          expenseDetails[expense.category].items.push({
-            description: expense.description,
-            amount: expense.amount,
-            user: data.user,
-            date: data.date
-          });
-        });
-        
-        // Group export details by product
-        data.exports.forEach(exportItem => {
-          if (!exportDetails[exportItem.productName]) {
-            exportDetails[exportItem.productName] = {
-              quantity: 0,
-              cost: 0,
-              unit: exportItem.unit,
-              items: []
-            };
-          }
-          exportDetails[exportItem.productName].quantity += exportItem.quantity;
-          exportDetails[exportItem.productName].cost += exportItem.quantity * exportItem.price;
-          exportDetails[exportItem.productName].items.push({
-            quantity: exportItem.quantity,
-            user: data.user,
-            date: data.date
-          });
-        });
-        
-        // Collect notes
-        if (data.note && data.user) {
-          userNotes.push({
-            user: data.user,
-            note: data.note,
-            date: data.date
-          });
-        }
-        
-        // For monthly report, collect daily summaries
-        if (isMonthly) {
-          dailySummaries.push({
-            date: data.date,
-            revenue: data.revenue || 0,
-            expense: dayExpense,
-            exportCost: dayExportCost,
-            profit: (data.revenue || 0) - dayExpense - dayExportCost
-          });
-        }
-      });
-      
-      const profit = totalRevenue - totalExpense - totalExportCost;
-      
-      // Generate report HTML
-      let reportHTML = `
-        <h4>Báo cáo ${isMonthly ? 'tháng' : 'ngày'} ${dateStr}</h4>
-        ${userFilter !== 'all' ? `<p>Người dùng: ${userFilter}</p>` : ''}
-        ${categoryFilter !== 'all' ? `<p>Danh mục: ${categoryFilter}</p>` : ''}
-        
-        <div class="summary-section">
-          <h5>Tổng hợp</h5>
-          <table class="table">
-            <tr>
-              <td>Tổng doanh thu:</td>
-              <td class="text-right">${totalRevenue.toLocaleString('vi-VN')}₫</td>
-            </tr>
-            <tr>
-              <td>Tổng chi phí:</td>
-              <td class="text-right">${totalExpense.toLocaleString('vi-VN')}₫</td>
-            </tr>
-            <tr>
-              <td>Tổng giá trị hàng xuất:</td>
-              <td class="text-right">${totalExportCost.toLocaleString('vi-VN')}₫</td>
-            </tr>
-            <tr>
-              <td><strong>Lợi nhuận thực:</strong></td>
-              <td class="text-right"><strong>${profit.toLocaleString('vi-VN')}₫</strong></td>
-            </tr>
-          </table>
-        </div>
-      `;
-      
-      // Add expense details
-      reportHTML += `
-        <div class="expense-section">
-          <h5>Chi tiết chi phí</h5>
-          ${Object.entries(expenseDetails).map(([category, data]) => `
-            <div class="category-section">
-              <h6>${category}: ${data.amount.toLocaleString('vi-VN')}₫</h6>
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Mô tả</th>
-                    <th class="text-right">Số tiền</th>
-                    <th>Người nhập</th>
-                    <th>Ngày</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${data.items.map(item => `
-                    <tr>
-                      <td>${item.description}</td>
-                      <td class="text-right">${item.amount.toLocaleString('vi-VN')}₫</td>
-                      <td>${item.user}</td>
-                      <td>${item.date}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-          `).join('')}
-        </div>
-      `;
-      
-      // Add export details
-      reportHTML += `
-        <div class="export-section">
-          <h5>Chi tiết xuất hàng</h5>
-          ${Object.entries(exportDetails).map(([product, data]) => `
-            <div class="product-section">
-              <h6>${product}: ${data.quantity} ${data.unit} (${data.cost.toLocaleString('vi-VN')}₫)</h6>
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Số lượng</th>
-                    <th>Người nhập</th>
-                    <th>Ngày</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${data.items.map(item => `
-                    <tr>
-                      <td>${item.quantity}</td>
-                      <td>${item.user}</td>
-                      <td>${item.date}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-          `).join('')}
-        </div>
-      `;
-      
-      // Add daily summaries for monthly report
-      if (isMonthly && dailySummaries.length > 0) {
+      if (allDailyData.length === 0) {
+        reportHTML += `<p>Không có dữ liệu ${isMonthly ? 'tháng' : 'ngày'} ${dateStr}</p>`;
+      } else {
         reportHTML += `
-          <div class="daily-summary-section">
-            <h5>Tổng hợp từng ngày</h5>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Ngày</th>
-                  <th class="text-right">Doanh thu</th>
-                  <th class="text-right">Chi phí</th>
-                  <th class="text-right">Xuất hàng</th>
-                  <th class="text-right">Lợi nhuận</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${dailySummaries.map(day => `
-                  <tr>
-                    <td>${day.date}</td>
-                    <td class="text-right">${day.revenue.toLocaleString('vi-VN')}₫</td>
-                    <td class="text-right">${day.expense.toLocaleString('vi-VN')}₫</td>
-                    <td class="text-right">${day.exportCost.toLocaleString('vi-VN')}₫</td>
-                    <td class="text-right">${day.profit.toLocaleString('vi-VN')}₫</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        `;
-      }
-      
-      // Add user notes
-      if (userNotes.length > 0) {
-        reportHTML += `
-          <div class="notes-section">
-            <h5>Ghi chú từ nhân viên</h5>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Người ghi</th>
-                  <th>Ghi chú</th>
-                  <th>Ngày</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${userNotes.map(note => `
-                  <tr>
-                    <td>${note.user}</td>
-                    <td>${note.note}</td>
-                    <td>${note.date}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
+          <div class="summary-section">
+            <h4>Tổng hợp</h4>
+            <p>Đã ghi nhận ${allDailyData.length} bản ghi dữ liệu</p>
           </div>
         `;
       }
       
       document.getElementById('reportOutput').innerHTML = reportHTML;
+    }
+    
+    function applyReportFilters() {
+      const dateInput = document.getElementById('reportDate').value;
+      if (!dateInput) {
+        alert('Vui lòng chọn ngày');
+        return;
+      }
+      
+      const userFilter = document.getElementById('reportUserFilter').value;
+      const categoryFilter = document.getElementById('reportCategoryFilter').value;
+      
+      generateReport(dateInput, userFilter, categoryFilter);
     }
     
     function printReport() {
@@ -1329,37 +1467,27 @@
     
     // Initialize the app
     document.addEventListener('DOMContentLoaded', initApp);
+    
+    // Expose functions to global scope for HTML onclick handlers
+    window.handleLogin = handleLogin;
+    window.handleLogout = handleLogout;
+    window.switchTab = switchTab;
+    window.addExpense = addExpense;
+    window.deleteExpense = deleteExpense;
+    window.addExport = addExport;
+    window.deleteExport = deleteExport;
+    window.addRevenue = addRevenue;
+    window.saveDailyData = saveDailyData;
+    window.addProduct = addProduct;
+    window.editProduct = editProduct;
+    window.deleteProduct = deleteProduct;
+    window.addUser = addUser;
+    window.toggleUserStatus = toggleUserStatus;
+    window.deleteUser = deleteUser;
+    window.generateDailyReport = generateDailyReport;
+    window.generateMonthlyReport = generateMonthlyReport;
+    window.applyReportFilters = applyReportFilters;
+    window.printReport = printReport;
   </script>
-<!-- Thêm Firebase vào trang web -->
-<script type="module">
-  // Bước 1: Nhập các thư viện cần thiết
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-  // Bước 2: Dán cấu hình Firebase của bạn vào đây
- const firebaseConfig = {
-      apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
-      authDomain: "quanly-d7e54.firebaseapp.com",
-      databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com",
-      projectId: "quanly-d7e54",
-      storageBucket: "quanly-d7e54.firebasestorage.app",
-      messagingSenderId: "482686011267",
-      appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
-    };
-
-
-  // Bước 3: Khởi tạo Firebase
-  const app = initializeApp(firebaseConfig);
-  
-  // Bước 4: Lấy các dịch vụ cần dùng
-  const auth = getAuth(app);
-  const database = getDatabase(app);
-
-  // Bước 5: Test thử kết nối
-  console.log("Firebase đã được khởi tạo thành công!");
-  console.log("Auth service:", auth);
-  console.log("Database service:", database);
-</script>
 </body>
 </html>
