@@ -1,32 +1,1344 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Quản lý Kinh doanh</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f9f9f9; }
-    .nav { display: flex; justify-content: space-between; align-items: center; background: #333; padding: 10px; color: white; }
-    .nav a { color: white; text-decoration: none; }
-    .section { margin: 20px 0; background: white; padding: 15px; border-radius: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
-    .section h2 { border-bottom: 1px solid #ccc; padding-bottom: 5px; color: #333; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    table, th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    th { background: #f4f4f4; }
-    button { padding: 5px 10px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 3px; }
-    button:hover { background: #45a049; }
-    .summary p { margin: 5px 0; font-weight: bold; }
-    .filter { margin: 10px 0; }
-    .action-btn { background: #ff4444; }
-    .action-btn:hover { background: #cc0000; }
-    input[type="text"], input[type="password"] { padding: 5px; margin: 5px 0; }
+    /* Reset CSS */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+    }
+    
+    body {
+      background: #f5f7fa;
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    /* Layout */
+    .container {
+      padding: 15px;
+      max-width: 100%;
+    }
+    
+    header {
+      background: #2c3e50;
+      color: #fff;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    .login-box {
+      max-width: 100%;
+      margin: 20px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    
+    .section {
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    
+    /* Form elements */
+    input, button, select {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+    
+    button {
+      background: #3498db;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    
+    button:hover {
+      background: #2980b9;
+    }
+    
+    button.danger {
+      background: #e74c3c;
+    }
+    
+    button.success {
+      background: #2ecc71;
+    }
+    
+    button.warning {
+      background: #f39c12;
+    }
+    
+    /* Tables */
+    .table-responsive {
+      overflow-x: auto;
+    }
+    
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 14px;
+      min-width: 600px;
+    }
+    
+    .table th, .table td {
+      padding: 12px;
+      border: 1px solid #eee;
+      text-align: left;
+    }
+    
+    .table th {
+      background: #f8f9fa;
+      font-weight: 600;
+    }
+    
+    /* Tabs */
+    .tab-container {
+      display: flex;
+      overflow-x: auto;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #ddd;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .tab {
+      padding: 10px 15px;
+      cursor: pointer;
+      background: #f1f1f1;
+      border-radius: 5px 5px 0 0;
+      margin-right: 5px;
+      white-space: nowrap;
+    }
+    
+    .tab.active {
+      background: #3498db;
+      color: white;
+    }
+    
+    /* Product grid */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    /* Utility classes */
+    .hidden {
+      display: none;
+    }
+    
+    .text-right {
+      text-align: right;
+    }
+    
+    .text-center {
+      text-align: center;
+    }
+    
+    .error-message {
+      color: #e74c3c;
+      margin: 10px 0;
+      text-align: center;
+      font-weight: bold;
+    }
+    
+    .category-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      background: #e1f0ff;
+      border-radius: 10px;
+      font-size: 12px;
+      margin-left: 5px;
+    }
+    
+    /* Responsive adjustments */
+    @media (min-width: 768px) {
+      .container {
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      
+      .flex-md {
+        display: flex;
+        gap: 15px;
+      }
+      
+      .flex-md > * {
+        flex: 1;
+      }
+    }
+    
+    /* Print styles */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #reportOutput, #reportOutput * {
+        visibility: visible;
+      }
+      #reportOutput {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+    }
   </style>
-  <!-- Thêm SDK Firebase qua CDN -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
+</head>
+<body>
+  <header id="appHeader" class="hidden">
+    <h1>📊 Quản lý Kinh doanh</h1>
+    <div class="user-info">
+      <span id="currentUser"></span>
+      <button onclick="handleLogout()" class="logout-btn danger">Đăng xuất</button>
+    </div>
+  </header>
+  
+  <!-- Login Screen -->
+  <div class="container">
+    <div class="login-box" id="loginBox">
+      <h3 class="text-center">🔐 Đăng nhập</h3>
+      <div id="errorContainer"></div>
+      <input type="text" id="username" placeholder="Tên đăng nhập" autocomplete="username" />
+      <input type="password" id="password" placeholder="Mật khẩu" autocomplete="current-password" />
+      <label>
+        <input type="checkbox" id="rememberMe" checked /> Ghi nhớ đăng nhập
+      </label>
+      <button onclick="handleLogin()" class="success">Đăng nhập</button>
+    </div>
+  </div>
+
+  <!-- Sale Screen -->
+  <div class="container hidden" id="saleApp">
+    <div class="tab-container">
+      <div class="tab active" onclick="switchTab('expense')">Chi phí</div>
+      <div class="tab" onclick="switchTab('export')">Xuất hàng</div>
+      <div class="tab" onclick="switchTab('revenue')">Doanh thu</div>
+    </div>
+    
+    <!-- Expense Tab -->
+    <div class="section" id="expenseTab">
+      <h3>💸 Chi phí</h3>
+      <div class="flex-md">
+        <input type="text" id="expenseInput" placeholder="VD: mua xăng 60000" />
+        <button onclick="addExpense()">Thêm</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table" id="expenseTable">
+          <thead>
+            <tr><th>Mô tả</th><th class="text-right">Số tiền</th><th>Hành động</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- Export Tab -->
+    <div class="section hidden" id="exportTab">
+      <h3>📦 Xuất hàng</h3>
+      <div id="productList" class="product-grid"></div>
+      <div class="flex-md" style="margin-top: 15px;">
+        <input type="number" id="exportQuantity" placeholder="Số lượng" value="1" min="1" />
+        <button onclick="addExport()" class="success">Thêm xuất hàng</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table" id="exportTable">
+          <thead>
+            <tr><th>Sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Hành động</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- Revenue Tab -->
+    <div class="section hidden" id="revenueTab">
+      <h3>💰 Doanh thu</h3>
+      <div class="flex-md">
+        <input type="text" id="revenueAmount" placeholder="Số tiền (VD: 500000)" />
+        <button onclick="addRevenue()">Thêm</button>
+      </div>
+    </div>
+    
+    <!-- Daily Summary -->
+    <div class="section">
+      <h3>📝 Tổng kết ngày <span id="summaryDate"></span></h3>
+      <div class="table-responsive">
+        <table class="table">
+          <tr>
+            <td>Doanh thu:</td>
+            <td class="text-right" id="totalRevenue">0₫</td>
+          </tr>
+          <tr>
+            <td>Tổng chi phí:</td>
+            <td class="text-right" id="totalExpense">0₫</td>
+          </tr>
+          <tr>
+            <td><strong>Số dư:</strong></td>
+            <td class="text-right" id="dailyBalance"><strong>0₫</strong></td>
+          </tr>
+        </table>
+      </div>
+      
+      <div id="exportSummary"></div>
+      
+      <h4>Ghi chú cá nhân:</h4>
+      <textarea id="dailyNote" class="note-input" placeholder="Nhập ghi chú trong ngày..."></textarea>
+      <button onclick="saveDailyData()" class="success">Lưu dữ liệu</button>
+    </div>
+  </div>
+
+  <!-- Admin Screen -->
+  <div class="container hidden" id="adminApp">
+    <div class="section">
+      <h3>📦 Quản lý Kho hàng</h3>
+      <div class="flex-md">
+        <input type="text" id="productName" placeholder="Tên sản phẩm" />
+        <input type="number" id="productQuantity" placeholder="Số lượng" min="0" />
+        <input type="text" id="productUnit" placeholder="ĐVT (kg, ly, chai...)" />
+        <input type="number" id="productPrice" placeholder="Giá đơn vị (VNĐ)" min="0" />
+        <button onclick="addProduct()">Thêm sản phẩm</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table" id="productTable">
+          <thead>
+            <tr><th>Tên sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th class="text-right">Giá đơn vị</th><th>Hành động</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    
+    <div class="section">
+      <h3>📊 Báo cáo</h3>
+      <div class="flex-md">
+        <input type="date" id="reportDate" />
+        <button onclick="generateDailyReport()">Báo cáo ngày</button>
+        <button onclick="generateMonthlyReport()">Báo cáo tháng</button>
+        <button onclick="printReport()" class="warning">In báo cáo</button>
+      </div>
+      
+      <div id="reportFilters" style="margin-top: 15px;">
+        <div class="flex-md">
+          <select id="reportUserFilter">
+            <option value="all">Tất cả người dùng</option>
+          </select>
+          <select id="reportCategoryFilter">
+            <option value="all">Tất cả danh mục</option>
+          </select>
+          <button onclick="applyReportFilters()">Áp dụng</button>
+        </div>
+      </div>
+      
+      <div id="reportOutput" style="margin-top: 20px;"></div>
+    </div>
+    
+    <div class="section">
+      <h3>👥 Quản lý Người dùng</h3>
+      <div class="flex-md">
+        <input type="text" id="newUsername" placeholder="Tên đăng nhập" />
+        <input type="password" id="newPassword" placeholder="Mật khẩu" />
+        <select id="newUserRole">
+          <option value="staff">Nhân viên</option>
+          <option value="admin">Quản lý</option>
+        </select>
+        <button onclick="addUser()" class="success">Thêm người dùng</button>
+      </div>
+      
+      <div class="table-responsive">
+        <table class="table" id="userTable" style="margin-top: 15px;">
+          <thead>
+            <tr><th>Tên đăng nhập</th><th>Vai trò</th><th>Trạng thái</th><th>Hành động</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // Cấu hình Firebase từ dự án quanly-d7e54
-    const firebaseConfig = {
+    // System Data
+    let users = JSON.parse(localStorage.getItem('users')) || {
+      admin: { password: '123123', role: 'admin', active: true },
+      test: { password: '1234', role: 'staff', active: true }
+    };
+    
+    // Business Data
+    let products = JSON.parse(localStorage.getItem('products')) || [];
+    let expenseCategories = JSON.parse(localStorage.getItem('expenseCategories')) || [];
+    let dailyData = {
+      date: '',
+      expenses: [],
+      exports: [],
+      revenue: 0,
+      note: '',
+      user: ''
+    };
+    
+    let currentUser = null;
+    let currentTab = 'expense';
+    let selectedProduct = null;
+
+    // Initialize the app
+    function initApp() {
+      // Set current date in report date picker
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('reportDate').value = today;
+      
+      // Load remembered user
+      const rememberedUser = localStorage.getItem('rememberedUser');
+      if (rememberedUser) {
+        document.getElementById('username').value = rememberedUser;
+        document.getElementById('password').focus();
+      }
+      
+      // Event listeners
+      document.getElementById('password').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') handleLogin();
+      });
+      
+      document.getElementById('expenseInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') addExpense();
+      });
+      
+      document.getElementById('revenueAmount').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') addRevenue();
+      });
+      
+      // Load data if already logged in
+      if (localStorage.getItem('currentUser')) {
+        currentUser = localStorage.getItem('currentUser');
+        handleSuccessfulLogin();
+      }
+    }
+    
+    // Login functions
+    function handleLogin() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const rememberMe = document.getElementById('rememberMe').checked;
+      
+      // Clear previous errors
+      document.getElementById('errorContainer').innerHTML = '';
+      
+      if (!username || !password) {
+        showError('Vui lòng nhập đầy đủ thông tin đăng nhập');
+        return;
+      }
+      
+      if (!users[username]) {
+        showError('Sai tên đăng nhập');
+        return;
+      }
+      
+      if (users[username].password !== password) {
+        showError('Sai mật khẩu');
+        return;
+      }
+      
+      if (!users[username].active) {
+        showError('Tài khoản đã bị khóa');
+        return;
+      }
+      
+      // Successful login
+      if (rememberMe) {
+        localStorage.setItem('rememberedUser', username);
+      } else {
+        localStorage.removeItem('rememberedUser');
+      }
+      
+      currentUser = username;
+      localStorage.setItem('currentUser', username);
+      handleSuccessfulLogin();
+    }
+    
+    function handleSuccessfulLogin() {
+      document.getElementById('loginBox').classList.add('hidden');
+      document.getElementById('appHeader').classList.remove('hidden');
+      document.getElementById('currentUser').textContent = currentUser;
+      
+      if (users[currentUser].role === 'admin') {
+        document.getElementById('adminApp').classList.remove('hidden');
+        renderUserList();
+        loadReportFilters();
+      } else {
+        document.getElementById('saleApp').classList.remove('hidden');
+      }
+      
+      loadData();
+    }
+    
+    function handleLogout() {
+      currentUser = null;
+      localStorage.removeItem('currentUser');
+      document.getElementById('loginBox').classList.remove('hidden');
+      document.getElementById('appHeader').classList.add('hidden');
+      document.getElementById('adminApp').classList.add('hidden');
+      document.getElementById('saleApp').classList.add('hidden');
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+    }
+    
+    function showError(message) {
+      const errorContainer = document.getElementById('errorContainer');
+      errorContainer.innerHTML = `<div class="error-message">${message}</div>`;
+    }
+    
+    // Data functions
+    function loadData() {
+      // Load products
+      const savedProducts = localStorage.getItem('products');
+      if (savedProducts) {
+        products = JSON.parse(savedProducts);
+        renderProducts();
+      }
+      
+      // Load expense categories
+      const savedCategories = localStorage.getItem('expenseCategories');
+      if (savedCategories) {
+        expenseCategories = JSON.parse(savedCategories);
+      }
+      
+      // Load today's data
+      const today = new Date().toLocaleDateString('vi-VN');
+      const savedDailyData = localStorage.getItem(`dailyData_${today}_${currentUser}`);
+      if (savedDailyData) {
+        dailyData = JSON.parse(savedDailyData);
+      } else {
+        dailyData = {
+          date: today,
+          expenses: [],
+          exports: [],
+          revenue: 0,
+          note: '',
+          user: currentUser
+        };
+      }
+      
+      document.getElementById('summaryDate').textContent = today;
+      document.getElementById('currentDate').textContent = today;
+      document.getElementById('dailyNote').value = dailyData.note || '';
+      
+      renderDailyData();
+    }
+    
+    function saveData() {
+      localStorage.setItem('products', JSON.stringify(products));
+      localStorage.setItem('expenseCategories', JSON.stringify(expenseCategories));
+    }
+    
+    function saveDailyData() {
+      dailyData.note = document.getElementById('dailyNote').value;
+      localStorage.setItem(`dailyData_${dailyData.date}_${currentUser}`, JSON.stringify(dailyData));
+      alert('Đã lưu dữ liệu ngày ' + dailyData.date);
+    }
+    
+    // Sale functions
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+      
+      document.getElementById('expenseTab').classList.add('hidden');
+      document.getElementById('exportTab').classList.add('hidden');
+      document.getElementById('revenueTab').classList.add('hidden');
+      
+      document.getElementById(`${tab}Tab`).classList.remove('hidden');
+      
+      if (tab === 'export') {
+        renderProductSelection();
+      }
+    }
+    
+    function parseExpenseInput(input) {
+      const normalized = input.toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\s]/g, "");
+      
+      const amountMatch = normalized.match(/(\d+)\s*$/);
+      const amount = amountMatch ? parseInt(amountMatch[1]) : 0;
+      
+      let description = normalized;
+      if (amountMatch) {
+        description = normalized.substring(0, amountMatch.index).trim();
+      }
+      
+      const categoryMatch = description.match(/^\s*(\S+)/);
+      const category = categoryMatch ? categoryMatch[1] : 'khác';
+      
+      // Add new category if not exists
+      if (!expenseCategories.includes(category)) {
+        expenseCategories.push(category);
+        saveData();
+      }
+      
+      return {
+        description: capitalizeFirstLetter(description),
+        amount: amount,
+        category: capitalizeFirstLetter(category)
+      };
+    }
+    
+    function capitalizeFirstLetter(string) {
+      return string.split(' ').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ');
+    }
+    
+    function addExpense() {
+      const input = document.getElementById('expenseInput').value.trim();
+      if (!input) {
+        showError('Vui lòng nhập thông tin chi phí');
+        return;
+      }
+      
+      const { description, amount, category } = parseExpenseInput(input);
+      
+      if (!description || amount <= 0) {
+        showError('Không thể xác định mô tả hoặc số tiền từ thông tin nhập');
+        return;
+      }
+      
+      dailyData.expenses.push({
+        description: `${description}`,
+        amount: amount,
+        category: category,
+        user: currentUser,
+        timestamp: new Date().getTime()
+      });
+      
+      document.getElementById('expenseInput').value = '';
+      renderDailyData();
+    }
+    
+    function deleteExpense(index) {
+      if (confirm('Xóa chi phí này?')) {
+        dailyData.expenses.splice(index, 1);
+        renderDailyData();
+      }
+    }
+    
+    function renderProductSelection() {
+      const container = document.getElementById('productList');
+      container.innerHTML = '';
+      
+      products.forEach((product) => {
+        const productItem = document.createElement('div');
+        productItem.className = 'product-item';
+        productItem.innerHTML = `
+          <div><strong>${product.name}</strong></div>
+          <div>Tồn kho: ${product.quantity} ${product.unit}</div>
+        `;
+        
+        productItem.addEventListener('click', () => {
+          document.querySelectorAll('.product-item').forEach(item => {
+            item.classList.remove('selected');
+          });
+          productItem.classList.add('selected');
+          selectedProduct = product;
+        });
+        
+        container.appendChild(productItem);
+      });
+    }
+    
+    function addExport() {
+      if (!selectedProduct) {
+        showError('Vui lòng chọn sản phẩm');
+        return;
+      }
+      
+      const quantity = parseInt(document.getElementById('exportQuantity').value) || 1;
+      
+      if (quantity <= 0) {
+        showError('Số lượng phải lớn hơn 0');
+        return;
+      }
+      
+      if (quantity > selectedProduct.quantity) {
+        showError(`Số lượng xuất vượt quá tồn kho (${selectedProduct.quantity} ${selectedProduct.unit})`);
+        return;
+      }
+      
+      // Check if product already exported today
+      const existingExport = dailyData.exports.find(e => e.productId === selectedProduct.id);
+      
+      if (existingExport) {
+        existingExport.quantity += quantity;
+      } else {
+        dailyData.exports.push({
+          productId: selectedProduct.id,
+          productName: selectedProduct.name,
+          quantity: quantity,
+          unit: selectedProduct.unit,
+          price: selectedProduct.price,
+          user: currentUser,
+          timestamp: new Date().getTime()
+        });
+      }
+      
+      // Update product quantity
+      selectedProduct.quantity -= quantity;
+      saveData();
+      
+      document.getElementById('exportQuantity').value = '1';
+      selectedProduct = null;
+      document.querySelectorAll('.product-item').forEach(item => {
+        item.classList.remove('selected');
+      });
+      
+      renderDailyData();
+      renderProductSelection();
+    }
+    
+    function deleteExport(index) {
+      if (confirm('Xóa xuất hàng này?')) {
+        const exportItem = dailyData.exports[index];
+        
+        // Return quantity to product
+        const product = products.find(p => p.id === exportItem.productId);
+        if (product) {
+          product.quantity += exportItem.quantity;
+          saveData();
+        }
+        
+        dailyData.exports.splice(index, 1);
+        renderDailyData();
+        renderProductSelection();
+      }
+    }
+    
+    function addRevenue() {
+      const amount = parseNumber(document.getElementById('revenueAmount').value);
+      
+      if (isNaN(amount)) {
+        showError('Vui lòng nhập số tiền hợp lệ');
+        return;
+      }
+      
+      dailyData.revenue += amount;
+      document.getElementById('revenueAmount').value = '';
+      renderDailyData();
+    }
+    
+    function renderDailyData() {
+      // Render expenses
+      const expenseTable = document.querySelector('#expenseTable tbody');
+      expenseTable.innerHTML = '';
+      
+      dailyData.expenses.forEach((expense, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${expense.description} <span class="category-badge">${expense.category}</span></td>
+          <td class="text-right">${expense.amount.toLocaleString('vi-VN')}₫</td>
+          <td class="actions">
+            <button onclick="deleteExpense(${index})" class="danger">Xóa</button>
+          </td>
+        `;
+        expenseTable.appendChild(row);
+      });
+      
+      // Render exports
+      const exportTable = document.querySelector('#exportTable tbody');
+      exportTable.innerHTML = '';
+      
+      dailyData.exports.forEach((exportItem, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${exportItem.productName}</td>
+          <td>${exportItem.quantity}</td>
+          <td>${exportItem.unit}</td>
+          <td class="actions">
+            <button onclick="deleteExport(${index})" class="danger">Xóa</button>
+          </td>
+        `;
+        exportTable.appendChild(row);
+      });
+      
+      // Calculate and render summary
+      const totalExpense = dailyData.expenses.reduce((sum, e) => sum + e.amount, 0);
+      const totalExportCost = dailyData.exports.reduce((sum, e) => sum + (e.quantity * e.price), 0);
+      const balance = dailyData.revenue - totalExpense;
+      
+      document.getElementById('totalRevenue').textContent = 
+        dailyData.revenue.toLocaleString('vi-VN') + '₫';
+      document.getElementById('totalExpense').textContent = 
+        totalExpense.toLocaleString('vi-VN') + '₫';
+      document.getElementById('dailyBalance').innerHTML = 
+        `<strong>${balance.toLocaleString('vi-VN')}₫</strong>`;
+      
+      // Render export summary
+      const exportSummary = document.getElementById('exportSummary');
+      exportSummary.innerHTML = '';
+      
+      if (dailyData.exports.length > 0) {
+        const summaryDiv = document.createElement('div');
+        summaryDiv.style.marginTop = '15px';
+        summaryDiv.innerHTML = `
+          <h4>Xuất hàng hôm nay:</h4>
+          <ul>
+            ${dailyData.exports.map(e => 
+              `<li>${e.productName}: ${e.quantity} ${e.unit}</li>`
+            ).join('')}
+          </ul>
+        `;
+        exportSummary.appendChild(summaryDiv);
+      }
+    }
+    
+    // Product management
+    function addProduct() {
+      const name = document.getElementById('productName').value.trim();
+      const quantity = parseInt(document.getElementById('productQuantity').value) || 0;
+      const unit = document.getElementById('productUnit').value.trim();
+      const price = parseInt(document.getElementById('productPrice').value) || 0;
+      
+      if (!name || !unit || isNaN(quantity) || isNaN(price)) {
+        showError('Vui lòng nhập đầy đủ thông tin sản phẩm');
+        return;
+      }
+      
+      const newProduct = {
+        id: Date.now().toString(),
+        name: name,
+        quantity: quantity,
+        unit: unit,
+        price: price
+      };
+      
+      products.push(newProduct);
+      saveData();
+      
+      // Clear inputs
+      document.getElementById('productName').value = '';
+      document.getElementById('productQuantity').value = '';
+      document.getElementById('productUnit').value = '';
+      document.getElementById('productPrice').value = '';
+      
+      renderProducts();
+    }
+    
+    function editProduct(index) {
+      const product = products[index];
+      const newName = prompt('Tên sản phẩm:', product.name);
+      if (!newName) return;
+      
+      const newQuantity = parseInt(prompt('Số lượng:', product.quantity)) || 0;
+      if (isNaN(newQuantity)) return alert('Số lượng không hợp lệ');
+      
+      const newUnit = prompt('Đơn vị tính:', product.unit);
+      if (!newUnit) return;
+      
+      const newPrice = parseInt(prompt('Giá đơn vị:', product.price)) || 0;
+      if (isNaN(newPrice)) return alert('Giá không hợp lệ');
+      
+      product.name = newName;
+      product.quantity = newQuantity;
+      product.unit = newUnit;
+      product.price = newPrice;
+      
+      saveData();
+      renderProducts();
+    }
+    
+    function deleteProduct(index) {
+      if (confirm('Xóa sản phẩm này?')) {
+        products.splice(index, 1);
+        saveData();
+        renderProducts();
+      }
+    }
+    
+    function renderProducts() {
+      const table = document.querySelector('#productTable tbody');
+      table.innerHTML = '';
+      
+      products.forEach((product, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${product.name}</td>
+          <td>${product.quantity}</td>
+          <td>${product.unit}</td>
+          <td class="text-right">${product.price.toLocaleString('vi-VN')}₫</td>
+          <td class="actions">
+            <button onclick="editProduct(${index})">Sửa</button>
+            <button onclick="deleteProduct(${index})" class="danger">Xóa</button>
+          </td>
+        `;
+        table.appendChild(row);
+      });
+    }
+    
+    // User management
+    function addUser() {
+      const username = document.getElementById('newUsername').value.trim();
+      const password = document.getElementById('newPassword').value.trim();
+      const role = document.getElementById('newUserRole').value;
+      
+      if (!username || !password) {
+        showError('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu');
+        return;
+      }
+      
+      if (users[username]) {
+        showError('Tên đăng nhập đã tồn tại');
+        return;
+      }
+      
+      users[username] = {
+        password: password,
+        role: role,
+        active: true
+      };
+      
+      saveUsers();
+      renderUserList();
+      loadReportFilters();
+      
+      // Clear inputs
+      document.getElementById('newUsername').value = '';
+      document.getElementById('newPassword').value = '';
+    }
+    
+    function toggleUserStatus(username) {
+      if (confirm(`Bạn có chắc muốn ${users[username].active ? 'khóa' : 'mở khóa'} tài khoản ${username}?`)) {
+        users[username].active = !users[username].active;
+        saveUsers();
+        renderUserList();
+      }
+    }
+    
+    function deleteUser(username) {
+      if (username === 'admin') {
+        alert('Không thể xóa tài khoản admin');
+        return;
+      }
+      
+      if (confirm(`Bạn có chắc muốn xóa tài khoản ${username}?`)) {
+        delete users[username];
+        saveUsers();
+        renderUserList();
+        loadReportFilters();
+      }
+    }
+    
+    function saveUsers() {
+      localStorage.setItem('users', JSON.stringify(users));
+    }
+    
+    function renderUserList() {
+      const table = document.querySelector('#userTable tbody');
+      table.innerHTML = '';
+      
+      for (const username in users) {
+        const user = users[username];
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${username}</td>
+          <td>${user.role === 'admin' ? 'Quản lý' : 'Nhân viên'}</td>
+          <td>${user.active ? 'Đang hoạt động' : 'Đã khóa'}</td>
+          <td class="actions">
+            <button onclick="toggleUserStatus('${username}')" class="${user.active ? 'warning' : 'success'}">
+              ${user.active ? 'Khóa' : 'Mở khóa'}
+            </button>
+            ${username !== 'admin' ? `
+              <button onclick="deleteUser('${username}')" class="danger">Xóa</button>
+            ` : ''}
+          </td>
+        `;
+        table.appendChild(row);
+      }
+    }
+    
+    // Report functions
+    function loadReportFilters() {
+      const userFilter = document.getElementById('reportUserFilter');
+      const categoryFilter = document.getElementById('reportCategoryFilter');
+      
+      // Clear existing options except first
+      while (userFilter.options.length > 1) userFilter.remove(1);
+      while (categoryFilter.options.length > 1) categoryFilter.remove(1);
+      
+      // Add users
+      for (const username in users) {
+        const option = document.createElement('option');
+        option.value = username;
+        option.textContent = username;
+        userFilter.appendChild(option);
+      }
+      
+      // Add categories
+      expenseCategories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        categoryFilter.appendChild(option);
+      });
+    }
+    
+    function applyReportFilters() {
+      const dateInput = document.getElementById('reportDate').value;
+      if (!dateInput) {
+        alert('Vui lòng chọn ngày');
+        return;
+      }
+      
+      const userFilter = document.getElementById('reportUserFilter').value;
+      const categoryFilter = document.getElementById('reportCategoryFilter').value;
+      
+      generateReport(dateInput, userFilter, categoryFilter);
+    }
+    
+    function generateDailyReport() {
+      const dateInput = document.getElementById('reportDate').value;
+      if (!dateInput) {
+        alert('Vui lòng chọn ngày');
+        return;
+      }
+      
+      const userFilter = document.getElementById('reportUserFilter').value;
+      const categoryFilter = document.getElementById('reportCategoryFilter').value;
+      
+      generateReport(dateInput, userFilter, categoryFilter);
+    }
+    
+    function generateMonthlyReport() {
+      const dateInput = document.getElementById('reportDate').value;
+      if (!dateInput) {
+        alert('Vui lòng chọn ngày trong tháng cần báo cáo');
+        return;
+      }
+      
+      const date = new Date(dateInput);
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+      
+      const userFilter = document.getElementById('reportUserFilter').value;
+      const categoryFilter = document.getElementById('reportCategoryFilter').value;
+      
+      generateReport(`${year}-${month.toString().padStart(2, '0')}`, userFilter, categoryFilter, true);
+    }
+    
+    function generateReport(dateFilter, userFilter = 'all', categoryFilter = 'all', isMonthly = false) {
+      let allDailyData = [];
+      const dateStr = isMonthly 
+        ? dateFilter // Format: "YYYY-MM"
+        : new Date(dateFilter).toLocaleDateString('vi-VN');
+      
+      // Get all matching data
+      for (const user in users) {
+        if (userFilter !== 'all' && userFilter !== user) continue;
+        
+        if (isMonthly) {
+          // Monthly report - check all days in month
+          const [year, month] = dateFilter.split('-');
+          const daysInMonth = new Date(year, month, 0).getDate();
+          
+          for (let day = 1; day <= daysInMonth; day++) {
+            const dayStr = `${day}/${month}/${year}`;
+            const dailyDataStr = localStorage.getItem(`dailyData_${dayStr}_${user}`);
+            if (dailyDataStr) {
+              const data = JSON.parse(dailyDataStr);
+              allDailyData.push(data);
+            }
+          }
+        } else {
+          // Daily report
+          const dailyDataStr = localStorage.getItem(`dailyData_${dateStr}_${user}`);
+          if (dailyDataStr) {
+            const data = JSON.parse(dailyDataStr);
+            allDailyData.push(data);
+          }
+        }
+      }
+      
+      if (allDailyData.length === 0) {
+        document.getElementById('reportOutput').innerHTML = 
+          `<p>Không có dữ liệu ${isMonthly ? 'tháng' : 'ngày'} ${dateStr}</p>`;
+        return;
+      }
+      
+      // Process data
+      let totalRevenue = 0;
+      let totalExpense = 0;
+      let totalExportCost = 0;
+      let expenseDetails = {};
+      let exportDetails = {};
+      let userNotes = [];
+      let dailySummaries = [];
+      
+      allDailyData.forEach(data => {
+        // Apply category filter
+        const filteredExpenses = data.expenses.filter(expense => 
+          categoryFilter === 'all' || expense.category === categoryFilter
+        );
+        
+        // Calculate totals
+        const dayExpense = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+        const dayExportCost = data.exports.reduce((sum, e) => sum + (e.quantity * e.price), 0);
+        
+        totalRevenue += data.revenue || 0;
+        totalExpense += dayExpense;
+        totalExportCost += dayExportCost;
+        
+        // Group expense details by category
+        filteredExpenses.forEach(expense => {
+          if (!expenseDetails[expense.category]) {
+            expenseDetails[expense.category] = {
+              amount: 0,
+              items: []
+            };
+          }
+          expenseDetails[expense.category].amount += expense.amount;
+          expenseDetails[expense.category].items.push({
+            description: expense.description,
+            amount: expense.amount,
+            user: data.user,
+            date: data.date
+          });
+        });
+        
+        // Group export details by product
+        data.exports.forEach(exportItem => {
+          if (!exportDetails[exportItem.productName]) {
+            exportDetails[exportItem.productName] = {
+              quantity: 0,
+              cost: 0,
+              unit: exportItem.unit,
+              items: []
+            };
+          }
+          exportDetails[exportItem.productName].quantity += exportItem.quantity;
+          exportDetails[exportItem.productName].cost += exportItem.quantity * exportItem.price;
+          exportDetails[exportItem.productName].items.push({
+            quantity: exportItem.quantity,
+            user: data.user,
+            date: data.date
+          });
+        });
+        
+        // Collect notes
+        if (data.note && data.user) {
+          userNotes.push({
+            user: data.user,
+            note: data.note,
+            date: data.date
+          });
+        }
+        
+        // For monthly report, collect daily summaries
+        if (isMonthly) {
+          dailySummaries.push({
+            date: data.date,
+            revenue: data.revenue || 0,
+            expense: dayExpense,
+            exportCost: dayExportCost,
+            profit: (data.revenue || 0) - dayExpense - dayExportCost
+          });
+        }
+      });
+      
+      const profit = totalRevenue - totalExpense - totalExportCost;
+      
+      // Generate report HTML
+      let reportHTML = `
+        <h4>Báo cáo ${isMonthly ? 'tháng' : 'ngày'} ${dateStr}</h4>
+        ${userFilter !== 'all' ? `<p>Người dùng: ${userFilter}</p>` : ''}
+        ${categoryFilter !== 'all' ? `<p>Danh mục: ${categoryFilter}</p>` : ''}
+        
+        <div class="summary-section">
+          <h5>Tổng hợp</h5>
+          <table class="table">
+            <tr>
+              <td>Tổng doanh thu:</td>
+              <td class="text-right">${totalRevenue.toLocaleString('vi-VN')}₫</td>
+            </tr>
+            <tr>
+              <td>Tổng chi phí:</td>
+              <td class="text-right">${totalExpense.toLocaleString('vi-VN')}₫</td>
+            </tr>
+            <tr>
+              <td>Tổng giá trị hàng xuất:</td>
+              <td class="text-right">${totalExportCost.toLocaleString('vi-VN')}₫</td>
+            </tr>
+            <tr>
+              <td><strong>Lợi nhuận thực:</strong></td>
+              <td class="text-right"><strong>${profit.toLocaleString('vi-VN')}₫</strong></td>
+            </tr>
+          </table>
+        </div>
+      `;
+      
+      // Add expense details
+      reportHTML += `
+        <div class="expense-section">
+          <h5>Chi tiết chi phí</h5>
+          ${Object.entries(expenseDetails).map(([category, data]) => `
+            <div class="category-section">
+              <h6>${category}: ${data.amount.toLocaleString('vi-VN')}₫</h6>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Mô tả</th>
+                    <th class="text-right">Số tiền</th>
+                    <th>Người nhập</th>
+                    <th>Ngày</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${data.items.map(item => `
+                    <tr>
+                      <td>${item.description}</td>
+                      <td class="text-right">${item.amount.toLocaleString('vi-VN')}₫</td>
+                      <td>${item.user}</td>
+                      <td>${item.date}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      
+      // Add export details
+      reportHTML += `
+        <div class="export-section">
+          <h5>Chi tiết xuất hàng</h5>
+          ${Object.entries(exportDetails).map(([product, data]) => `
+            <div class="product-section">
+              <h6>${product}: ${data.quantity} ${data.unit} (${data.cost.toLocaleString('vi-VN')}₫)</h6>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Số lượng</th>
+                    <th>Người nhập</th>
+                    <th>Ngày</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${data.items.map(item => `
+                    <tr>
+                      <td>${item.quantity}</td>
+                      <td>${item.user}</td>
+                      <td>${item.date}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      
+      // Add daily summaries for monthly report
+      if (isMonthly && dailySummaries.length > 0) {
+        reportHTML += `
+          <div class="daily-summary-section">
+            <h5>Tổng hợp từng ngày</h5>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Ngày</th>
+                  <th class="text-right">Doanh thu</th>
+                  <th class="text-right">Chi phí</th>
+                  <th class="text-right">Xuất hàng</th>
+                  <th class="text-right">Lợi nhuận</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${dailySummaries.map(day => `
+                  <tr>
+                    <td>${day.date}</td>
+                    <td class="text-right">${day.revenue.toLocaleString('vi-VN')}₫</td>
+                    <td class="text-right">${day.expense.toLocaleString('vi-VN')}₫</td>
+                    <td class="text-right">${day.exportCost.toLocaleString('vi-VN')}₫</td>
+                    <td class="text-right">${day.profit.toLocaleString('vi-VN')}₫</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+      
+      // Add user notes
+      if (userNotes.length > 0) {
+        reportHTML += `
+          <div class="notes-section">
+            <h5>Ghi chú từ nhân viên</h5>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Người ghi</th>
+                  <th>Ghi chú</th>
+                  <th>Ngày</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${userNotes.map(note => `
+                  <tr>
+                    <td>${note.user}</td>
+                    <td>${note.note}</td>
+                    <td>${note.date}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+      
+      document.getElementById('reportOutput').innerHTML = reportHTML;
+    }
+    
+    function printReport() {
+      window.print();
+    }
+    
+    // Helper functions
+    function parseNumber(input) {
+      if (!input) return 0;
+      const cleaned = input.toString().replace(/[^\d]/g, '');
+      return parseInt(cleaned) || 0;
+    }
+    
+    // Initialize the app
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+<!-- Thêm Firebase vào trang web -->
+<script type="module">
+  // Bước 1: Nhập các thư viện cần thiết
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+  // Bước 2: Dán cấu hình Firebase của bạn vào đây
+ const firebaseConfig = {
       apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
       authDomain: "quanly-d7e54.firebaseapp.com",
       databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com",
@@ -36,246 +1348,18 @@
       appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
     };
 
-    // Khởi tạo Firebase
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
 
-    // Hàm thêm chi phí
-    function addExpense() {
-      const description = prompt("Nhập mô tả chi phí:");
-      const amount = prompt("Nhập số tiền (₫):");
-      if (description && amount) {
-        database.ref('expenses').push({
-          description: description,
-          amount: parseInt(amount),
-          timestamp: firebase.database.ServerValue.TIMESTAMP
-        }).then(() => updateSummary()).catch((error) => alert("Lỗi: " + error.message));
-      }
-    }
+  // Bước 3: Khởi tạo Firebase
+  const app = initializeApp(firebaseConfig);
+  
+  // Bước 4: Lấy các dịch vụ cần dùng
+  const auth = getAuth(app);
+  const database = getDatabase(app);
 
-    // Hàm thêm xuất hàng
-    function addShipment() {
-      const product = prompt("Nhập sản phẩm:");
-      const quantity = prompt("Nhập số lượng:");
-      const unit = prompt("Nhập đơn vị tính:");
-      if (product && quantity && unit) {
-        database.ref('shipments').push({
-          product: product,
-          quantity: parseInt(quantity),
-          unit: unit,
-          timestamp: firebase.database.ServerValue.TIMESTAMP
-        }).then(() => loadData('shipments')).catch((error) => alert("Lỗi: " + error.message));
-      }
-    }
-
-    // Hàm thêm doanh thu
-    function addRevenue() {
-      const description = prompt("Nhập mô tả doanh thu:");
-      const amount = prompt("Nhập số tiền (₫):");
-      if (description && amount) {
-        database.ref('revenues').push({
-          description: description,
-          amount: parseInt(amount),
-          timestamp: firebase.database.ServerValue.TIMESTAMP
-        }).then(() => updateSummary()).catch((error) => alert("Lỗi: " + error.message));
-      }
-    }
-
-    // Hàm thêm sản phẩm vào kho
-    function addProduct() {
-      const name = prompt("Nhập tên sản phẩm:");
-      const quantity = prompt("Nhập số lượng:");
-      const unit = prompt("Nhập đơn vị tính:");
-      const price = prompt("Nhập giá đơn vị (₫):");
-      if (name && quantity && unit && price) {
-        database.ref('inventory').push({
-          name: name,
-          quantity: parseInt(quantity),
-          unit: unit,
-          price: parseInt(price),
-          timestamp: firebase.database.ServerValue.TIMESTAMP
-        }).then(() => loadData('inventory')).catch((error) => alert("Lỗi: " + error.message));
-      }
-    }
-
-    // Hàm thêm người dùng
-    function addUser() {
-      const username = prompt("Nhập tên đăng nhập:");
-      const role = prompt("Nhập vai trò (Nhân viên/Quản lý):");
-      const status = prompt("Nhập trạng thái (Hoạt động/Không hoạt động):");
-      if (username && role && status) {
-        database.ref('users').push({
-          username: username,
-          role: role,
-          status: status,
-          timestamp: firebase.database.ServerValue.TIMESTAMP
-        }).then(() => loadData('users')).catch((error) => alert("Lỗi: " + error.message));
-      }
-    }
-
-    // Hàm tải và hiển thị dữ liệu
-    function loadData(tableName) {
-      const tables = {
-        'shipments': '#shipmentsTable',
-        'inventory': '#inventoryTable',
-        'users': '#usersTable',
-        'expenses': '#expensesTable',
-        'revenues': '#revenuesTable'
-      };
-      if (tables[tableName]) {
-        database.ref(tableName).on('value', (snapshot) => {
-          const tbody = document.querySelector(tables[tableName] + ' tbody');
-          tbody.innerHTML = '';
-          snapshot.forEach((childSnapshot) => {
-            const data = childSnapshot.val();
-            const row = document.createElement('tr');
-            let cols = '';
-            if (tableName === 'shipments') cols = `<td>${data.product}</td><td>${data.quantity}</td><td>${data.unit}</td>`;
-            else if (tableName === 'inventory') cols = `<td>${data.name}</td><td>${data.quantity}</td><td>${data.unit}</td><td>${data.price}₫</td>`;
-            else if (tableName === 'users') cols = `<td>${data.username}</td><td>${data.role}</td><td>${data.status}</td>`;
-            else if (tableName === 'expenses') cols = `<td>${data.description}</td><td>${data.amount}₫</td>`;
-            else if (tableName === 'revenues') cols = `<td>${data.description}</td><td>${data.amount}₫</td>`;
-            row.innerHTML = cols + `<td><button class="action-btn" onclick="deleteItem('${tableName}', '${childSnapshot.key}')">Xóa</button></td>`;
-            tbody.appendChild(row);
-          });
-        });
-      }
-    }
-
-    // Hàm xóa mục
-    function deleteItem(tableName, key) {
-      if (confirm("Bạn có chắc muốn xóa?")) {
-        database.ref(tableName).child(key).remove().then(() => {
-          alert("Xóa thành công!");
-          if (tableName === 'expenses' || tableName === 'revenues') updateSummary();
-          else loadData(tableName);
-        }).catch((error) => alert("Lỗi: " + error.message));
-      }
-    }
-
-    // Hàm cập nhật tổng kết
-    function updateSummary() {
-      let totalExpense = 0;
-      let totalRevenue = 0;
-
-      database.ref('expenses').once('value').then((snapshot) => {
-        snapshot.forEach((childSnapshot) => totalExpense += childSnapshot.val().amount || 0);
-        database.ref('revenues').once('value').then((snapshot) => {
-          snapshot.forEach((childSnapshot) => totalRevenue += childSnapshot.val().amount || 0);
-          document.querySelector('#revenue').textContent = `Doanh thu: ${totalRevenue}₫`;
-          document.querySelector('#expense').textContent = `Tổng chi phí: ${totalExpense}₫`;
-          document.querySelector('#balance').textContent = `Số dư: ${totalRevenue - totalExpense}₫`;
-        });
-      });
-    }
-
-    // Hàm lưu ghi chú
-    function saveNote() {
-      const note = prompt("Nhập ghi chú cá nhân:");
-      if (note) {
-        database.ref('notes').push({
-          content: note,
-          timestamp: firebase.database.ServerValue.TIMESTAMP
-        }).then(() => alert("Lưu ghi chú thành công!")).catch((error) => alert("Lỗi: " + error.message));
-      }
-    }
-
-    // Gắn sự kiện khi tải trang
-    window.onload = () => {
-      updateSummary();
-      ['shipments', 'inventory', 'users', 'expenses', 'revenues'].forEach(loadData);
-      document.querySelector('#addExpenseBtn').addEventListener('click', addExpense);
-      document.querySelector('#addShipmentBtn').addEventListener('click', addShipment);
-      document.querySelector('#addRevenueBtn').addEventListener('click', addRevenue);
-      document.querySelector('#addProductBtn').addEventListener('click', addProduct);
-      document.querySelector('#addUserBtn').addEventListener('click', addUser);
-      document.querySelector('#saveNoteBtn').addEventListener('click', saveNote);
-    };
-  </script>
-</head>
-<body>
-  <div class="nav">
-    <h1>📊 Quản lý Kinh doanh</h1>
-    <a href="#">Đăng xuất</a>
-  </div>
-
-  <div class="section">
-    <h2>🔐 Đăng nhập</h2>
-    <input type="text" placeholder="Tên đăng nhập"><br>
-    <input type="password" placeholder="Mật khẩu"><br>
-    <label><input type="checkbox"> Ghi nhớ đăng nhập</label><br>
-    <button onclick="alert('Chức năng đăng nhập chưa được triển khai')">Đăng nhập</button>
-    <p>Đang xác thực...</p>
-  </div>
-
-  <div class="section">
-    <h2>💸 Chi phí</h2>
-    <button id="addExpenseBtn">Thêm chi phí</button>
-    <table>
-      <thead><tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr></thead>
-      <tbody id="expensesTable"></tbody>
-    </table>
-  </div>
-
-  <div class="section">
-    <h2>📦 Xuất hàng</h2>
-    <button id="addShipmentBtn">Thêm xuất hàng</button>
-    <table>
-      <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Hành động</th></tr></thead>
-      <tbody id="shipmentsTable"></tbody>
-    </table>
-  </div>
-
-  <div class="section">
-    <h2>💰 Doanh thu</h2>
-    <button id="addRevenueBtn">Thêm doanh thu</button>
-    <table>
-      <thead><tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr></thead>
-      <tbody id="revenuesTable"></tbody>
-    </table>
-  </div>
-
-  <div class="section">
-    <h2>📝 Tổng kết ngày</h2>
-    <p id="revenue">Doanh thu: 0₫</p>
-    <p id="expense">Tổng chi phí: 0₫</p>
-    <p id="balance">Số dư: 0₫</p>
-    <p>📌 Ghi chú cá nhân:</p>
-    <button id="saveNoteBtn">💾 Lưu dữ liệu</button>
-  </div>
-
-  <div class="section">
-    <h2>📦 Quản lý Kho hàng</h2>
-    <button id="addProductBtn">➕ Thêm sản phẩm</button>
-    <table>
-      <thead><tr><th>Tên sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Giá đơn vị</th><th>Hành động</th></tr></thead>
-      <tbody id="inventoryTable"></tbody>
-    </table>
-  </div>
-
-  <div class="section">
-    <h2>📊 Báo cáo</h2>
-    <button onclick="alert('Chức năng báo cáo ngày chưa được triển khai')">📅 Báo cáo ngày</button>
-    <button onclick="alert('Chức năng báo cáo tháng chưa được triển khai')">📆 Báo cáo tháng</button>
-    <button onclick="alert('Chức năng in báo cáo chưa được triển khai')">🖨️ In báo cáo</button>
-    <div class="filter">
-      <select><option>Tất cả người dùng</option></select>
-      <select><option>Tất cả danh mục</option></select>
-      <button onclick="alert('Chức năng áp dụng chưa được triển khai')">🔍 Áp dụng</button>
-    </div>
-  </div>
-
-  <div class="section">
-    <h2>👥 Quản lý Người dùng</h2>
-    <select>
-      <option>Nhân viên</option>
-      <option>Quản lý</option>
-    </select>
-    <button id="addUserBtn">➕ Thêm người dùng</button>
-    <table>
-      <thead><tr><th>Tên đăng nhập</th><th>Vai trò</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
-      <tbody id="usersTable"></tbody>
-    </table>
-  </div>
+  // Bước 5: Test thử kết nối
+  console.log("Firebase đã được khởi tạo thành công!");
+  console.log("Auth service:", auth);
+  console.log("Database service:", database);
+</script>
 </body>
 </html>
