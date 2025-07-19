@@ -2,244 +2,276 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Quản lý Kinh doanh (Firebase)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý Kinh doanh</title>
   <style>
-    * { box-sizing: border-box; font-family: Arial; }
-    body { margin: 0; background: #f5f5f5; }
-    header { padding: 12px; background: #333; color: white; display: flex; justify-content: space-between; align-items: center; }
-    .btn { padding: 8px 12px; border: none; cursor: pointer; border-radius:4px; }
-    .btn-danger { background: #e74c3c; color:white; }
-    .container { max-width:800px; margin:20px auto; background:white; padding:16px; border-radius:6px; }
-    input,button,textarea,select { width:100%; margin:6px 0; padding:8px; border:1px solid #ccc; border-radius:4px; }
-    table { width:100%; border-collapse:collapse; margin-top:12px; }
-    th,td { padding:8px; border:1px solid #ddd; }
-    th { background:#eee; }
-    .hidden { display:none; }
-    .tabs { display:flex; gap:10px; flex-wrap:wrap; }
-    .tabs button.active { background:#3498db; color:white; }
-    .tabs button { background:#ddd; }
-    #logoutBtn { background:#e74c3c; color:white; padding:6px 10px; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f9f9f9; }
+    .nav { display: flex; justify-content: space-between; align-items: center; background: #333; padding: 10px; color: white; }
+    .nav a { color: white; text-decoration: none; }
+    .section { margin: 20px 0; background: white; padding: 15px; border-radius: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    .section h2 { border-bottom: 1px solid #ccc; padding-bottom: 5px; color: #333; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    table, th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #f4f4f4; }
+    button { padding: 5px 10px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 3px; }
+    button:hover { background: #45a049; }
+    .summary p { margin: 5px 0; font-weight: bold; }
+    .filter { margin: 10px 0; }
+    .action-btn { background: #ff4444; }
+    .action-btn:hover { background: #cc0000; }
+    input[type="text"], input[type="password"] { padding: 5px; margin: 5px 0; }
   </style>
-</head>
-<body>
-
-  <header>
-    <div><h2>Quản lý Kinh doanh</h2></div>
-    <div>
-      <span id="currentUser" style="margin-right:10px"></span>
-      <button id="logoutBtn" class="hidden">🚪 Đăng xuất</button>
-    </div>
-  </header>
-
-  <div class="container" id="loginBox">
-    <h3>🔐 Đăng nhập</h3>
-    <input type="email" id="loginEmail" placeholder="Email người dùng" />
-    <input type="password" id="loginPassword" placeholder="Mật khẩu" />
-    <button id="loginBtn" class="btn">Đăng nhập</button>
-  </div>
-
-  <div class="container hidden" id="mainApp">
-    <!-- Tabs -->
-    <div class="tabs">
-      <button id="tabChiPhi" class="active">Chi phí</button>
-      <button id="tabGhiChu">Ghi chú</button>
-      <button id="tabBaoCao">Báo cáo</button>
-      <button id="tabNguoiDung" class="hidden">Quản lý User</button>
-    </div>
-
-    <!-- Chi phí -->
-    <div id="chiPhiTab">
-      <input type="text" id="expenseInput" placeholder="VD: mua xăng 50000" />
-      <button id="addExpenseBtn" class="btn btn-success">Thêm Chi phí</button>
-      <table>
-        <thead><tr><th>Mô tả</th><th>Số tiền</th><th>Xoá</th></tr></thead>
-        <tbody id="expenseTable"></tbody>
-      </table>
-    </div>
-
-    <!-- Ghi chú -->
-    <div id="ghiChuTab" class="hidden">
-      <textarea id="notesTextarea" rows="4" placeholder="Viết ghi chú cá nhân..."></textarea>
-      <button id="saveNotesBtn" class="btn btn-success">Lưu Ghi chú</button>
-    </div>
-
-    <!-- Báo cáo -->
-    <div id="baoCaoTab" class="hidden">
-      <button id="reportBtn" class="btn">Xem báo cáo hôm nay</button>
-      <p>Doanh thu: <span id="dailyRevenue">0₫</span></p>
-      <p>Chi phí: <span id="dailyExpenses">0₫</span></p>
-      <p>Lợi nhuận: <span id="dailyBalance">0₫</span></p>
-    </div>
-
-    <!-- Quản lý người dùng -->
-    <div id="nguoiDungTab" class="hidden">
-      <input type="email" id="newUserEmail" placeholder="Email user" />
-      <input type="password" id="newUserPassword" placeholder="Mật khẩu" />
-      <select id="newUserRole">
-        <option value="staff">Nhân viên</option>
-        <option value="manager">Quản lý</option>
-      </select>
-      <button id="addUserBtn" class="btn btn-success">Thêm User</button>
-      <table>
-        <thead><tr><th>Email</th><th>Role</th><th>Xoá</th></tr></thead>
-        <tbody id="userTable"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs, doc, setDoc, deleteDoc, query, where, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-    const config = {
-      apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
+  <!-- Thêm SDK Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
+  <script>
+    // Cấu hình Firebase (thay bằng cấu hình thực từ Firebase Console)
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
       authDomain: "quanly-d7e54.firebaseapp.com",
+      databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com/",
       projectId: "quanly-d7e54",
       storageBucket: "quanly-d7e54.appspot.com",
-      messagingSenderId: "482686011267",
-      appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
-    const app = initializeApp(config);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
 
-    // UI elements
-    const loginBox = document.getElementById("loginBox");
-    const mainApp = document.getElementById("mainApp");
-    const currentUserSpan = document.getElementById("currentUser");
-    const logoutBtn = document.getElementById("logoutBtn");
-    const expenseInput = document.getElementById("expenseInput");
-    const addExpenseBtn = document.getElementById("addExpenseBtn");
-    const expenseTable = document.getElementById("expenseTable");
-    const notesTextarea = document.getElementById("notesTextarea");
-    const saveNotesBtn = document.getElementById("saveNotesBtn");
-    const reportBtn = document.getElementById("reportBtn");
-    const dailyRevenue = document.getElementById("dailyRevenue");
-    const dailyExpenses = document.getElementById("dailyExpenses");
-    const dailyBalance = document.getElementById("dailyBalance");
-    const newUserEmail = document.getElementById("newUserEmail");
-    const newUserPassword = document.getElementById("newUserPassword");
-    const newUserRole = document.getElementById("newUserRole");
-    const addUserBtn = document.getElementById("addUserBtn");
-    const userTable = document.getElementById("userTable");
-    const tabChiPhi = document.getElementById("tabChiPhi");
-    const tabGhiChu = document.getElementById("tabGhiChu");
-    const tabBaoCao = document.getElementById("tabBaoCao");
-    const tabNguoiDung = document.getElementById("tabNguoiDung");
-    const chiPhiTab = document.getElementById("chiPhiTab");
-    const ghiChuTab = document.getElementById("ghiChuTab");
-    const baoCaoTab = document.getElementById("baoCaoTab");
-    const nguoiDungTab = document.getElementById("nguoiDungTab");
+    // Khởi tạo Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
 
-    let currentUser = null;
-    let userRole = "staff";
-
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        currentUser = user;
-        loginBox.classList.add("hidden");
-        mainApp.classList.remove("hidden");
-        logoutBtn.classList.remove("hidden");
-        currentUserSpan.textContent = user.email;
-
-        const docUser = await getDoc(doc(db, "users", user.uid));
-        if (docUser.exists()) userRole = docUser.data().role || "staff";
-        if (userRole === "manager") tabNguoiDung.classList.remove("hidden");
-
-        loadExpenses();
-        loadNotes();
-        if (userRole === "manager") loadUsers();
-      } else {
-        currentUser = null;
-        loginBox.classList.remove("hidden");
-        mainApp.classList.add("hidden");
-        logoutBtn.classList.add("hidden");
+    // Hàm thêm chi phí
+    function addExpense() {
+      const description = prompt("Nhập mô tả chi phí:");
+      const amount = prompt("Nhập số tiền (₫):");
+      if (description && amount) {
+        database.ref('expenses').push({
+          description: description,
+          amount: parseInt(amount),
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => updateSummary()).catch((error) => alert("Lỗi: " + error.message));
       }
-    });
-
-    document.getElementById("loginBtn").onclick = () => {
-      signInWithEmailAndPassword(auth, document.getElementById("loginEmail").value, document.getElementById("loginPassword").value)
-        .catch(e => alert("Đăng nhập lỗi: " + e.message));
-    };
-    logoutBtn.onclick = () => signOut(auth);
-
-    addExpenseBtn.onclick = async () => {
-      const [m, d] = expenseInput.value.trim().match(/(.+?)\s+(\d+)/) || [];
-      if (!m || !d) return alert("Sai cú pháp chi phí");
-      await addDoc(collection(db, "expenses"), { uid: currentUser.uid, description: m, amount: parseInt(d), timestamp: serverTimestamp() });
-      expenseInput.value = "";
-      loadExpenses();
-    };
-
-    async function loadExpenses() {
-      expenseTable.innerHTML = "<tr><td colspan=3>Đang tải...</td></tr>";
-      const q = query(collection(db, "expenses"), where("uid", "==", currentUser.uid));
-      const snap = await getDocs(q);
-      let html = "";
-      snap.forEach(docSnap => {
-        const e = docSnap.data();
-        html += `<tr><td>${e.description}</td><td>${e.amount}₫</td><td><button onclick="deleteExpense('${docSnap.id}')">❌</button></td></tr>`;
-      });
-      expenseTable.innerHTML = html || "<tr><td colspan=3>Không có</td></tr>";
-    }
-    window.deleteExpense = async id => { await deleteDoc(doc(db, "expenses", id)); loadExpenses(); };
-
-    saveNotesBtn.onclick = async () => {
-      await setDoc(doc(db, "notes", currentUser.uid), { note: notesTextarea.value });
-      alert("Ghi chú đã lưu");
-    };
-    async function loadNotes() {
-      const nd = await getDoc(doc(db, "notes", currentUser.uid));
-      if (nd.exists()) notesTextarea.value = nd.data().note;
     }
 
-    reportBtn.onclick = async () => {
-      const td = new Date().toISOString().split("T")[0];
-      const s = new Date(td), e = new Date(td); e.setDate(e.getDate()+1);
-      const pe = query(collection(db,"expenses"), where("uid","==",currentUser.uid), where("timestamp",">=",s), where("timestamp","<",e));
-      const pr = query(collection(db,"revenue"), where("uid","==",currentUser.uid), where("timestamp",">=",s), where("timestamp","<",e));
-      const [xe, xr] = await Promise.all([getDocs(pe), getDocs(pr)]);
-      let te=0, tr=0;
-      xe.forEach(d=>te+=d.data().amount);
-      xr.forEach(d=>tr+=d.data().amount);
-      dailyExpenses.textContent = te.toLocaleString("vi-VN") + "₫";
-      dailyRevenue.textContent = tr.toLocaleString("vi-VN") + "₫";
-      dailyBalance.textContent = (tr - te).toLocaleString("vi-VN") + "₫";
-    };
-
-    addUserBtn.onclick = async () => {
-      if (userRole!=="manager") return;
-      const em = newUserEmail.value, pw = newUserPassword.value, rl = newUserRole.value;
-      try {
-        const cr = await createUserWithEmailAndPassword(auth,em,pw);
-        await setDoc(doc(db,"users",cr.user.uid),{email:em,role:rl});
-        newUserEmail.value=""; newUserPassword.value="";
-        loadUsers();
-      } catch(e){ alert("Lỗi tạo user: "+e.message); }
-    };
-    async function loadUsers() {
-      if (userRole!=="manager") return;
-      const snap = await getDocs(collection(db,"users"));
-      let html="";
-      snap.forEach(docSnap => {
-        const u = docSnap.data();
-        html += `<tr><td>${u.email}</td><td>${u.role}</td><td><button onclick="deleteUser('${docSnap.id}')">❌</button></td></tr>`;
-      });
-      userTable.innerHTML=html||"<tr><td colspan=3>Không có</td></tr>";
+    // Hàm thêm xuất hàng
+    function addShipment() {
+      const product = prompt("Nhập sản phẩm:");
+      const quantity = prompt("Nhập số lượng:");
+      const unit = prompt("Nhập đơn vị tính:");
+      if (product && quantity && unit) {
+        database.ref('shipments').push({
+          product: product,
+          quantity: parseInt(quantity),
+          unit: unit,
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => loadData('shipments')).catch((error) => alert("Lỗi: " + error.message));
+      }
     }
-    window.deleteUser = async uid => { if (userRole==="manager") await deleteDoc(doc(db,"users",uid)); loadUsers(); };
 
-    // Tab switching
-    [tabChiPhi,tabGhiChu,tabBaoCao,tabNguoiDung].forEach((btn,i) => {
-      btn.onclick = () => {
-        [chiPhiTab,ghiChuTab,baoCaoTab,nguoiDungTab].forEach(el=>el.classList.add("hidden"));
-        [tabChiPhi,tabGhiChu,tabBaoCao,tabNguoiDung].forEach(b=>b.classList.remove("active"));
-        [chiPhiTab,ghiChuTab,baoCaoTab,nguoiDungTab][i].classList.remove("hidden");
-        btn.classList.add("active");
+    // Hàm thêm doanh thu
+    function addRevenue() {
+      const description = prompt("Nhập mô tả doanh thu:");
+      const amount = prompt("Nhập số tiền (₫):");
+      if (description && amount) {
+        database.ref('revenues').push({
+          description: description,
+          amount: parseInt(amount),
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => updateSummary()).catch((error) => alert("Lỗi: " + error.message));
+      }
+    }
+
+    // Hàm thêm sản phẩm vào kho
+    function addProduct() {
+      const name = prompt("Nhập tên sản phẩm:");
+      const quantity = prompt("Nhập số lượng:");
+      const unit = prompt("Nhập đơn vị tính:");
+      const price = prompt("Nhập giá đơn vị (₫):");
+      if (name && quantity && unit && price) {
+        database.ref('inventory').push({
+          name: name,
+          quantity: parseInt(quantity),
+          unit: unit,
+          price: parseInt(price),
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => loadData('inventory')).catch((error) => alert("Lỗi: " + error.message));
+      }
+    }
+
+    // Hàm thêm người dùng
+    function addUser() {
+      const username = prompt("Nhập tên đăng nhập:");
+      const role = prompt("Nhập vai trò (Nhân viên/Quản lý):");
+      const status = prompt("Nhập trạng thái (Hoạt động/Không hoạt động):");
+      if (username && role && status) {
+        database.ref('users').push({
+          username: username,
+          role: role,
+          status: status,
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => loadData('users')).catch((error) => alert("Lỗi: " + error.message));
+      }
+    }
+
+    // Hàm tải và hiển thị dữ liệu
+    function loadData(tableName) {
+      const tables = {
+        'shipments': '#shipmentsTable',
+        'inventory': '#inventoryTable',
+        'users': '#usersTable'
       };
-    });
+      if (tables[tableName]) {
+        database.ref(tableName).on('value', (snapshot) => {
+          const tbody = document.querySelector(tables[tableName] + ' tbody');
+          tbody.innerHTML = '';
+          snapshot.forEach((childSnapshot) => {
+            const data = childSnapshot.val();
+            const row = document.createElement('tr');
+            let cols = '';
+            if (tableName === 'shipments') cols = `<td>${data.product}</td><td>${data.quantity}</td><td>${data.unit}</td>`;
+            else if (tableName === 'inventory') cols = `<td>${data.name}</td><td>${data.quantity}</td><td>${data.unit}</td><td>${data.price}₫</td>`;
+            else if (tableName === 'users') cols = `<td>${data.username}</td><td>${data.role}</td><td>${data.status}</td>`;
+            row.innerHTML = cols + `<td><button class="action-btn" onclick="deleteItem('${tableName}', '${childSnapshot.key}')">Xóa</button></td>`;
+            tbody.appendChild(row);
+          });
+        });
+      }
+    }
+
+    // Hàm xóa mục
+    function deleteItem(tableName, key) {
+      if (confirm("Bạn có chắc muốn xóa?")) {
+        database.ref(tableName).child(key).remove().then(() => {
+          alert("Xóa thành công!");
+          if (tableName === 'expenses' || tableName === 'revenues') updateSummary();
+          else loadData(tableName);
+        }).catch((error) => alert("Lỗi: " + error.message));
+      }
+    }
+
+    // Hàm cập nhật tổng kết
+    function updateSummary() {
+      let totalExpense = 0;
+      let totalRevenue = 0;
+
+      database.ref('expenses').once('value').then((snapshot) => {
+        snapshot.forEach((childSnapshot) => totalExpense += childSnapshot.val().amount || 0);
+        database.ref('revenues').once('value').then((snapshot) => {
+          snapshot.forEach((childSnapshot) => totalRevenue += childSnapshot.val().amount || 0);
+          document.querySelector('#revenue').textContent = `Doanh thu: ${totalRevenue}₫`;
+          document.querySelector('#expense').textContent = `Tổng chi phí: ${totalExpense}₫`;
+          document.querySelector('#balance').textContent = `Số dư: ${totalRevenue - totalExpense}₫`;
+        });
+      });
+    }
+
+    // Hàm lưu ghi chú
+    function saveNote() {
+      const note = prompt("Nhập ghi chú cá nhân:");
+      if (note) {
+        database.ref('notes').push({
+          content: note,
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => alert("Lưu ghi chú thành công!")).catch((error) => alert("Lỗi: " + error.message));
+      }
+    }
+
+    // Gắn sự kiện khi tải trang
+    window.onload = () => {
+      updateSummary();
+      ['shipments', 'inventory', 'users'].forEach(loadData);
+      document.querySelector('#addExpenseBtn').addEventListener('click', addExpense);
+      document.querySelector('#addShipmentBtn').addEventListener('click', addShipment);
+      document.querySelector('#addRevenueBtn').addEventListener('click', addRevenue);
+      document.querySelector('#addProductBtn').addEventListener('click', addProduct);
+      document.querySelector('#addUserBtn').addEventListener('click', addUser);
+      document.querySelector('#saveNoteBtn').addEventListener('click', saveNote);
+    };
   </script>
+</head>
+<body>
+  <div class="nav">
+    <h1>📊 Quản lý Kinh doanh</h1>
+    <a href="#">Đăng xuất</a>
+  </div>
+
+  <div class="section">
+    <h2>🔐 Đăng nhập</h2>
+    <input type="text" placeholder="Tên đăng nhập"><br>
+    <input type="password" placeholder="Mật khẩu"><br>
+    <label><input type="checkbox"> Ghi nhớ đăng nhập</label><br>
+    <button onclick="alert('Chức năng đăng nhập chưa được triển khai')">Đăng nhập</button>
+    <p>Đang xác thực...</p>
+  </div>
+
+  <div class="section">
+    <h2>💸 Chi phí</h2>
+    <button id="addExpenseBtn">Thêm chi phí</button>
+    <table>
+      <thead><tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr></thead>
+      <tbody id="expensesTable"></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>📦 Xuất hàng</h2>
+    <button id="addShipmentBtn">Thêm xuất hàng</button>
+    <table>
+      <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Hành động</th></tr></thead>
+      <tbody id="shipmentsTable"></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>💰 Doanh thu</h2>
+    <button id="addRevenueBtn">Thêm doanh thu</button>
+    <table>
+      <thead><tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr></thead>
+      <tbody id="revenuesTable"></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>📝 Tổng kết ngày</h2>
+    <p id="revenue">Doanh thu: 0₫</p>
+    <p id="expense">Tổng chi phí: 0₫</p>
+    <p id="balance">Số dư: 0₫</p>
+    <p>📌 Ghi chú cá nhân:</p>
+    <button id="saveNoteBtn">💾 Lưu dữ liệu</button>
+  </div>
+
+  <div class="section">
+    <h2>📦 Quản lý Kho hàng</h2>
+    <button id="addProductBtn">➕ Thêm sản phẩm</button>
+    <table>
+      <thead><tr><th>Tên sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Giá đơn vị</th><th>Hành động</th></tr></thead>
+      <tbody id="inventoryTable"></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>📊 Báo cáo</h2>
+    <button onclick="alert('Chức năng báo cáo ngày chưa được triển khai')">📅 Báo cáo ngày</button>
+    <button onclick="alert('Chức năng báo cáo tháng chưa được triển khai')">📆 Báo cáo tháng</button>
+    <button onclick="alert('Chức năng in báo cáo chưa được triển khai')">🖨️ In báo cáo</button>
+    <div class="filter">
+      <select><option>Tất cả người dùng</option></select>
+      <select><option>Tất cả danh mục</option></select>
+      <button onclick="alert('Chức năng áp dụng chưa được triển khai')">🔍 Áp dụng</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>👥 Quản lý Người dùng</h2>
+    <select>
+      <option>Nhân viên</option>
+      <option>Quản lý</option>
+    </select>
+    <button id="addUserBtn">➕ Thêm người dùng</button>
+    <table>
+      <thead><tr><th>Tên đăng nhập</th><th>Vai trò</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+      <tbody id="usersTable"></tbody>
+    </table>
+  </div>
 </body>
 </html>
