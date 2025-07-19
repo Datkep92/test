@@ -280,27 +280,48 @@
       alert("Ghi chú đã được lưu");
     };
 
-    daily(reportBtn.onclick = async () => {
-      const today = new Date().toISOString().split('T')[0];
-      const start = new Date(today);
-      const end = new Date(today);
-      end.setDate(end.getDate() + 1);
-      const qExpenses = query(collection(db, "expenses"), where("uid", "==", currentUser.uid), where("timestamp", ">=", start), where("timestamp", "<", end));
-      const qRevenue = query(collection(db, "revenue"), where("uid", "==", currentUser.uid), where("timestamp", ">=", start), where("timestamp", "<", end));
-      const [expensesSnapshot, revenueSnapshot] = await Promise.all([getDocs(qExpenses), getDocs(qRevenue)]);
-      let totalExpenses = 0;
-      expensesSnapshot.forEach(doc => {
-        totalExpenses += doc.data().amount;
-      });
-      let totalRevenue = 0;
-      revenueSnapshot.forEach(doc => {
-        totalRevenue += doc.data().amount;
-      });
-      const balance = totalRevenue - totalExpenses;
-      document.getElementById("dailyRevenue").innerText = totalRevenue.toLocaleString("vi-VN") + "₫";
-      document.getElementById("dailyExpenses").innerText = totalExpenses.toLocaleString("vi-VN") + "₫";
-      document.getElementById("dailyBalance").innerText = balance.toLocaleString("vi-VN") + "₫";
-    };
+    reportBtn.onclick = async () => {
+  const today = new Date().toISOString().split('T')[0];
+  const start = new Date(today);
+  const end = new Date(today);
+  end.setDate(end.getDate() + 1);
+
+  const qExpenses = query(
+    collection(db, "expenses"),
+    where("uid", "==", currentUser.uid),
+    where("timestamp", ">=", start),
+    where("timestamp", "<", end)
+  );
+
+  const qRevenue = query(
+    collection(db, "revenue"),
+    where("uid", "==", currentUser.uid),
+    where("timestamp", ">=", start),
+    where("timestamp", "<", end)
+  );
+
+  const [expensesSnapshot, revenueSnapshot] = await Promise.all([
+    getDocs(qExpenses),
+    getDocs(qRevenue)
+  ]);
+
+  let totalExpenses = 0;
+  expensesSnapshot.forEach(doc => {
+    totalExpenses += doc.data().amount;
+  });
+
+  let totalRevenue = 0;
+  revenueSnapshot.forEach(doc => {
+    totalRevenue += doc.data().amount;
+  });
+
+  const balance = totalRevenue - totalExpenses;
+
+  document.getElementById("dailyRevenue").innerText = totalRevenue.toLocaleString("vi-VN") + "₫";
+  document.getElementById("dailyExpenses").innerText = totalExpenses.toLocaleString("vi-VN") + "₫";
+  document.getElementById("dailyBalance").innerText = balance.toLocaleString("vi-VN") + "₫";
+};
+
 
     // Tab functionality
     const tabs = ["chiPhi", "xuatHang", "doanhThu", "khoHang", "baoCao", "nguoiDung"];
