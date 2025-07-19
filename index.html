@@ -208,19 +208,28 @@
     </div>
   </header>
   
-  <!-- Login Screen -->
-  <div class="container">
-    <div class="login-box" id="loginBox">
-      <h3 class="text-center">🔐 Đăng nhập</h3>
-      <div id="errorContainer"></div>
-      <input type="text" id="username" placeholder="Tên đăng nhập" autocomplete="username" />
-      <input type="password" id="password" placeholder="Mật khẩu" autocomplete="current-password" />
-      <label>
-        <input type="checkbox" id="rememberMe" checked /> Ghi nhớ đăng nhập
-      </label>
-      <button id="loginBtn" class="success">Đăng nhập</button>
-    </div>
-  </div>
+ <div id="loginSection">
+  <h3>🔐 Đăng nhập</h3>
+  <input type="text" id="username" placeholder="Nhập tên đăng nhập (ví dụ: test)">
+  <input type="password" id="password" placeholder="Nhập mật khẩu">
+  <input type="checkbox" id="rememberMe"> <label for="rememberMe">Ghi nhớ đăng nhập</label>
+  <button onclick="handleLogin()">Đăng nhập</button>
+  <button onclick="showRegisterForm()">Đăng ký</button>
+  <div id="errorContainer" style="color: red;"></div>
+</div>
+
+<div id="registerSection" style="display: none;">
+  <h3>📝 Đăng ký</h3>
+  <input type="text" id="regUsername" placeholder="Nhập tên đăng nhập (ví dụ: test)">
+  <input type="password" id="regPassword" placeholder="Nhập mật khẩu">
+  <select id="regRole">
+    <option value="admin">Quản lý</option>
+    <option value="employee">Nhân viên</option>
+  </select>
+  <button onclick="handleRegister()">Đăng ký</button>
+  <button onclick="showLoginForm()">Quay lại đăng nhập</button>
+  <div id="registerErrorContainer" style="color: red;"></div>
+</div>
 
   <!-- Sale Screen -->
   <div class="container hidden" id="saleApp">
