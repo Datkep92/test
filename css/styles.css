@@ -1,0 +1,75 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  background: #f4f4f4;
+  color: #333;
+}
+#loginScreen, #appScreen {
+  max-width: 600px;
+  margin: auto;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+}
+input, select, button {
+  padding: 10px;
+  margin: 5px 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+h2, h3 {
+  color: #005577;
+}
+.section {
+  margin-top: 20px;
+}
+.entry {
+  background: #e6f2ff;
+  padding: 10px;
+  margin: 5px 0;
+  border-left: 5px solid #0077cc;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th, td {
+  padding: 8px;
+  text-align: left;
+}
+th {
+  background: #0077cc;
+  color: white;
+}
+td.text-right {
+  text-align: right;
+}
+.actions button {
+  padding: 5px 10px;
+  margin-right: 5px;
+}
+.danger {
+  background: #ff4444;
+  color: white;
+  border: none;
+}
+.warning {
+  background: #ffbb33;
+  color: white;
+  border: none;
+}
+.success {
+  background: #00C851;
+  color: white;
+  border: none;
+}
+.category-badge {
+  background: #0077cc;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-left: 5px;
+}
+.hidden {
+  display: none;
+}
