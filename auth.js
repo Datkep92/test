@@ -44,9 +44,18 @@ function checkUserRole(uid) {
       loadSharedReports('manager-shared-reports');
     } else {
       document.getElementById('login-page').classList.add('hidden');
-      document.getElementById('employee-page').classList.remove('hidden');
-      loadInventory('employee-inventory-list');
-      loadSharedReports('shared-reports');
+      // Chờ giao diện nhân viên hiển thị trước khi gọi hàm
+      setTimeout(() => {
+        const employeePage = document.getElementById('employee-page');
+        if (employeePage && !employeePage.classList.contains('hidden')) {
+          loadInventory('employee-inventory-list');
+          loadProducts();
+          loadSharedReports('shared-reports');
+        } else {
+          console.error('Giao diện nhân viên chưa sẵn sàng.');
+          alert('Lỗi: Giao diện nhân viên chưa tải. Vui lòng thử lại.');
+        }
+      }, 100); // Delay nhẹ để đảm bảo DOM sẵn sàng
     }
   }).catch(error => {
     console.error('Lỗi kiểm tra vai trò:', error);
