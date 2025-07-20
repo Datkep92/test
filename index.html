@@ -770,7 +770,8 @@ select {
 
     
     // Data functions
-    async function loadData() {
+// Data functions
+async function loadData() {
   const today = new Date().toLocaleDateString('vi-VN');
   document.getElementById('summaryDate').textContent = today;
 
@@ -822,7 +823,7 @@ select {
       dailyData = {};
     }
 
-    // ✅ Đảm bảo tất cả field tồn tại
+    // ✅ Bổ sung đầy đủ các trường
     dailyData.date = today;
     dailyData.user = currentUser.email;
     dailyData.note = dailyData.note || '';
@@ -836,6 +837,7 @@ select {
     showError(`Lỗi khi tải dữ liệu ngày: ${error.message}`);
   }
 }
+
 
       
       // Load expense categories
@@ -1570,6 +1572,8 @@ select {
     window.generateMonthlyReport = generateMonthlyReport;
     window.applyReportFilters = applyReportFilters;
     window.printReport = printReport;
+    window.handleLogin = handleLogin;
+
   </script>
 </body>
 </html>
