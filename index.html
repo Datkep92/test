@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
   <link rel="icon" href="https://www.google.com/favicon.ico">
   <title>Quản lý Kinh doanh</title>
   <style>
@@ -198,7 +197,7 @@
         width: 100%;
       }
     }
-  </style>
+ </style>
 </head>
 <body>
   <header id="appHeader" class="hidden">
@@ -209,7 +208,7 @@
     </div>
   </header>
   
-  <!-- Login Screen -->
+ <!-- Login Screen -->
   <div class="container">
     <div class="login-box" id="loginBox">
       <h3 class="text-center">🔐 Đăng nhập</h3>
@@ -225,6 +224,7 @@
 
   <!-- Sale Screen -->
   <div class="container hidden" id="saleApp">
+    <!-- Giữ nguyên nội dung Sale Screen -->
     <div class="tab-container">
       <div class="tab active" data-tab="expense">Chi phí</div>
       <div class="tab" data-tab="export">Xuất hàng</div>
@@ -303,8 +303,9 @@
     </div>
   </div>
 
-  <!-- Admin Screen -->
+ <!-- Admin Screen -->
   <div class="container hidden" id="adminApp">
+    <!-- Giữ nguyên nội dung Admin Screen -->
     <div class="section">
       <h3>📦 Quản lý Kho hàng</h3>
       <div class="flex-md">
@@ -371,15 +372,16 @@
     </div>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+<script type="module">
+    // Import các thành phần từ cùng phiên bản (10.12.2 để đồng nhất)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { 
       getAuth, 
       signInWithEmailAndPassword, 
       signOut,
       onAuthStateChanged,
       createUserWithEmailAndPassword
-    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { 
       getDatabase, 
       ref, 
@@ -390,7 +392,7 @@
       remove,
       onValue,
       off
-    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     // Firebase configuration
     const firebaseConfig = {
@@ -403,7 +405,7 @@
       appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
     };
 
-    // Initialize Firebase
+   // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const database = getDatabase(app);
@@ -485,6 +487,9 @@
         if (user) {
           currentUser = user.uid;
           loadUserData();
+        } else {
+          currentUser = null;
+          resetUI();
         }
       });
     }
@@ -523,6 +528,8 @@
           errorMessage = "Sai tên đăng nhập hoặc mật khẩu";
         } else if (error.code === "auth/too-many-requests") {
           errorMessage = "Quá nhiều lần thử, vui lòng thử lại sau";
+        } else if (error.code === "auth/invalid-email") {
+          errorMessage = "Email không hợp lệ";
         }
         
         showError(errorMessage);
@@ -1515,7 +1522,7 @@
       return parseInt(cleaned) || 0;
     }
 
-    // Expose functions to global scope for inline event handlers
+   // Expose functions to global scope for inline event handlers
     window.deleteExpense = deleteExpense;
     window.deleteExport = deleteExport;
     window.editProduct = editProduct;
@@ -1525,6 +1532,6 @@
 
     // Initialize the app
     document.addEventListener('DOMContentLoaded', initApp);
- <script type="module">
+  </script>
 </body>
 </html>
