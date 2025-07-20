@@ -745,28 +745,29 @@ select {
     }
     
     // Check if user is admin
-    async function checkAdminStatus() {
-      try {
-        const userRef = ref(database, `users/${currentUser.uid}`);
-        const snapshot = await get(userRef);
-        
-        if (snapshot.exists()) {
-          const userData = snapshot.val();
-          return userData.role === 'admin';
-        } else {
-          // Create new user record if not exists
-          await set(userRef, {
-            email: currentUser.email,
-            role: 'staff',
-            active: true
-          });
-          return false;
-        }
-      } catch (error) {
-        showError(`Lỗi khi kiểm tra quyền admin: ${error.message}`);
-        return false;
-      }
+   async function checkAdminStatus() {
+  try {
+    const userRef = ref(database, `users/${currentUser.uid}`);
+    const snapshot = await get(userRef);
+
+    if (snapshot.exists()) {
+      const userData = snapshot.val();
+      return userData.role === 'admin';
+    } else {
+      // Create new user record if not exists
+      await set(userRef, {
+        email: currentUser.email,
+        role: 'staff',
+        active: true
+      });
+      return false;
     }
+  } catch (error) {
+    showError(`Lỗi khi kiểm tra quyền admin: ${error.message}`);
+    return false;
+  }
+}
+
     
     // Data functions
     async function loadData() {
