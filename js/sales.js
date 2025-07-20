@@ -66,21 +66,7 @@ export function deleteExpense(index) {
   }
 }
 
-export async function saveDailyData() {
-  const today = new Date().toLocaleDateString('vi-VN');
-  dailyData.note = document.getElementById('dailyNote').value;
-  dailyData.date = today;
-  dailyData.user = currentUser.email;
 
-  try {
-    const dateKey = today.replace(/\//g, '_');
-    const dailyRef = ref(database, `dailyData/${dateKey}/${currentUser.uid}`);
-    await set(dailyRef, dailyData);
-    showSuccess('Đã lưu dữ liệu ngày ' + dailyData.date);
-  } catch (error) {
-    showError(`Lỗi khi lưu dữ liệu ngày: ${error.message}`);
-  }
-}
 
 
 
