@@ -64,7 +64,13 @@ async function handleSuccessfulLogin() {
 
 // Initialize the app
 document.addEventListener('DOMContentLoaded', initApp);
+document.getElementById('expenseInput').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') addExpense();
+});
 
+document.getElementById('revenueAmount').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') addRevenue();
+});
 // Expose functions to global scope for HTML onclick handlers
 window.handleLogin = handleLogin;
 window.handleLogout = handleLogout;
