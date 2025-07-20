@@ -1,7 +1,7 @@
 import { database } from './firebase-config.js';
 import { ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showError, showSuccess, parseNumber, capitalizeFirstLetter } from './utils.js';
-import { products, renderProductSelection } from './products.js';
+import { products, renderProductSelection, loadProducts } from './products.js';
 
 // Daily Data
 let dailyData = {
@@ -15,11 +15,12 @@ let dailyData = {
 
 let currentTab = 'expense';
 let selectedProduct = null;
+let currentUser = null; // Thêm dòng này
 
 export function switchTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+  document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
   
   document.getElementById('expenseTab').classList.add('hidden');
   document.getElementById('exportTab').classList.add('hidden');
@@ -33,6 +34,7 @@ document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('act
 }
 
 export async function loadData(user) {
+  currentUser = user; // Gán giá trị cho currentUser
   const today = new Date().toLocaleDateString('vi-VN');
   document.getElementById('summaryDate').textContent = today;
   
@@ -65,6 +67,15 @@ export async function loadData(user) {
   }
 }
 
+// Thêm hàm deleteExpense
+export function deleteExpense(index) {
+  if (confirm('Xóa chi phí này?')) {
+    dailyData.expenses.splice(index, 1);
+    renderDailyData();
+  }
+}
+
+// Các hàm còn lại giữ nguyên...
 export async function saveDailyData() {
   const today = new Date().toLocaleDateString('vi-VN');
   dailyData.note = document.getElementById('dailyNote').value;
@@ -143,7 +154,7 @@ export function renderDailyData() {
 
   dailyData.exports.forEach((item, index) => {
     const isApproved = item.approved === true;
-    const isMine = item.user === currentUser.email || !item.user; // fallback
+    const isMine = item.user === currentUser.email || !item.user;
 
     const row = document.createElement('tr');
     row.innerHTML = `
@@ -189,3 +200,4 @@ window.switchTab = switchTab;
 window.addExport = addExport;
 window.deleteExport = deleteExport;
 window.saveDailyData = saveDailyData;
+window.deleteExpense = deleteExpense; // Thêm dòng này
