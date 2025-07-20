@@ -1,3 +1,4 @@
+
 // Thiết lập persistence để giữ trạng thái đăng nhập
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
   .then(() => {
@@ -47,14 +48,15 @@ function checkUserRole(uid) {
   db.ref('users/' + uid).once('value').then(snapshot => {
     const userData = snapshot.val();
     if (userData && userData.role === 'manager') {
+      console.log('Đăng nhập quản lý, hiển thị giao diện quản lý...');
       document.getElementById('login-page').classList.add('hidden');
       document.getElementById('manager-page').classList.remove('hidden');
       loadInventory();
       loadSharedReports('manager-shared-reports');
     } else {
+      console.log('Đăng nhập nhân viên, hiển thị giao diện nhân viên...');
       document.getElementById('login-page').classList.add('hidden');
-      // Hàm thử tải giao diện nhân viên với cơ chế thử lại
-      tryLoadEmployeePage(0, 3); // Thử tối đa 3 lần
+      loadEmployeePage();
     }
   }).catch(error => {
     console.error('Lỗi kiểm tra vai trò:', error);
@@ -62,24 +64,43 @@ function checkUserRole(uid) {
   });
 }
 
-function tryLoadEmployeePage(attempt, maxAttempts) {
+function loadEmployeePage() {
   const employeePage = document.getElementById('employee-page');
   if (employeePage && !employeePage.classList.contains('hidden')) {
     console.log('Giao diện nhân viên đã sẵn sàng, tải dữ liệu...');
+    employeePage.classList.remove('hidden');
     loadInventory('employee-inventory-list');
     loadProducts();
     loadSharedReports('shared-reports');
     return;
   }
 
-  if (attempt >= maxAttempts) {
-    console.error(`Không thể tải giao diện nhân viên sau ${maxAttempts} lần thử.`);
-    alert('Lỗi: Không thể tải giao diện nhân viên. Vui lòng làm mới trang hoặc kiểm tra giao diện.');
-    return;
-  }
+  console.log('Giao diện nhân viên chưa sẵn sàng, thiết lập MutationObserver...');
+  const observer = new MutationObserver((mutations, obs) => {
+    const employeePage = document.getElementById('employee-page');
+    if (employeePage && !employeePage.classList.contains('hidden')) {
+      console.log('MutationObserver: Giao diện nhân viên đã xuất hiện, tải dữ liệu...');
+      employeePage.classList.remove('hidden');
+      loadInventory('employee-inventory-list');
+      loadProducts();
+      loadSharedReports('shared-reports');
+      obs.disconnect(); // Ngừng quan sát sau khi tải thành công
+    }
+  });
 
-  console.warn(`Giao diện nhân viên chưa sẵn sàng, thử lại lần ${attempt + 1}/${maxAttempts}...`);
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class']
+  });
+
+  // Timeout sau 5 giây nếu không phát hiện giao diện
   setTimeout(() => {
-    tryLoadEmployeePage(attempt + 1, maxAttempts);
-  }, 500); // Delay 500ms trước khi thử lại
+    if (document.getElementById('employee-page').classList.contains('hidden')) {
+      console.error('Timeout: Không thể tải giao diện nhân viên sau 5 giây.');
+      alert('Lỗi: Không thể tải giao diện nhân viên. Vui lòng làm mới trang hoặc kiểm tra giao diện.');
+      observer.disconnect();
+    }
+  }, 5000);
 }
