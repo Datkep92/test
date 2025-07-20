@@ -1,163 +1,208 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📊 Quản lý Kinh doanh</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản lý Kinh doanh</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-  <div id="appHeader" class="hidden">
-    <h2>📊 Quản lý Kinh doanh</h2>
-    <button id="logout-button">Đăng xuất</button>
-  </div>
-
-  <div id="loginBox">
-    <h2>🔐 Đăng nhập</h2>
-    <div id="loginScreen">
-      <input type="text" id="username" placeholder="Tên đăng nhập"><br>
-      <input type="password" id="password" placeholder="Mật khẩu"><br>
-      <label><input type="checkbox" id="rememberMe"> Ghi nhớ đăng nhập</label><br>
-      <button id="login-button">Đăng nhập</button>
-      <div id="loginErrorContainer"></div>
+  <header id="appHeader" class="hidden">
+    <div class="logo">
+      <span class="logo-icon">📊</span>
+      <h1>Quản lý Kinh doanh</h1>
+    </div>
+    <div class="user-info">
+      <span id="currentUser"></span>
+      <button onclick="handleLogout()" class="logout-btn danger">Đăng xuất</button>
+    </div>
+  </header>
+  
+  <!-- Login Screen -->
+  <div class="container">
+    <div class="login-box" id="loginBox">
+      <h2 class="text-center">🔐 Đăng nhập</h2>
+      <div id="errorContainer"></div>
+      <input type="email" id="username" placeholder="Email đăng nhập" autocomplete="username" />
+      <input type="password" id="password" placeholder="Mật khẩu" autocomplete="current-password" />
+      <label style="display: block; margin: 15px 0;">
+        <input type="checkbox" id="rememberMe" /> Ghi nhớ đăng nhập
+      </label>
+      <button onclick="handleLogin()" class="success">Đăng nhập</button>
+      <div id="loadingIndicator" class="loading-container hidden">
+        <div class="spinner"></div> Đang xác thực...
+      </div>
     </div>
   </div>
 
-  <div id="saleApp" class="hidden">
-    <div class="section">
-      <h3>Chi phí</h3>
-      <div id="expensesApp">
-        <button id="add-expense">Thêm</button>
-        <input type="text" id="expenseInput" placeholder="Nhập chi phí (VD: ăn 100000)"><br>
-        <table id="expenseTable">
-          <thead><tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr></thead>
+  <!-- Sale Screen -->
+  <div class="container hidden" id="saleApp">
+    <div class="tab-container">
+      <div class="tab active" onclick="switchTab('expense')">💸 Chi phí</div>
+      <div class="tab" onclick="switchTab('export')">📦 Xuất hàng</div>
+      <div class="tab" onclick="switchTab('revenue')">💰 Doanh thu</div>
+    </div>
+    
+    <!-- Expense Tab -->
+    <div class="section" id="expenseTab">
+      <h3>💸 Chi phí</h3>
+      <div class="flex-md">
+        <input type="text" id="expenseInput" placeholder="VD: mua xăng 60000" />
+        <button onclick="addExpense()">Thêm chi phí</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table" id="expenseTable">
+          <thead>
+            <tr><th>Mô tả</th><th class="text-right">Số tiền</th><th>Hành động</th></tr>
+          </thead>
           <tbody></tbody>
         </table>
-        <div id="expenseErrorContainer"></div>
       </div>
     </div>
-
-    <div class="section">
-      <h3>Xuất hàng</h3>
-      <div id="exportsApp">
-        <div id="productList"></div>
-        <input type="number" id="exportQuantity" value="1" min="1"><br>
-        <button id="add-export">Thêm xuất hàng</button>
-        <table id="exportTable">
-          <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Hành động</th></tr></thead>
+    
+    <!-- Export Tab -->
+    <div class="section hidden" id="exportTab">
+      <h3>📦 Xuất hàng</h3>
+      <div id="productList" class="product-grid"></div>
+      <div class="flex-md" style="margin-top: 15px;">
+        <input type="number" id="exportQuantity" placeholder="Số lượng" value="1" min="1" />
+        <button onclick="addExport()" class="success">Thêm xuất hàng</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table" id="exportTable">
+          <thead>
+            <tr><th>Sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Trạng thái</th><th>Hành động</th></tr>
+          </thead>
           <tbody></tbody>
         </table>
-        <div id="exportErrorContainer"></div>
       </div>
     </div>
-
-    <div class="section">
-      <h3>Doanh thu</h3>
-      <div id="revenuesApp">
-        <button id="add-revenue">Thêm</button>
-        <input type="text" id="revenueAmount" placeholder="Nhập doanh thu"><br>
-        <div id="revenueErrorContainer"></div>
+    
+    <!-- Revenue Tab -->
+    <div class="section hidden" id="revenueTab">
+      <h3>💰 Doanh thu</h3>
+      <div class="flex-md">
+        <input type="text" id="revenueAmount" placeholder="Số tiền (VD: 500000)" />
+        <button onclick="addRevenue()">Thêm doanh thu</button>
       </div>
+    </div>
+    
+    <!-- Daily Summary -->
+    <div class="section">
+      <h3>📝 Tổng kết ngày <span id="summaryDate"></span></h3>
+      <div class="summary-card">
+        <table class="table">
+          <tr>
+            <td><strong>Doanh thu:</strong></td>
+            <td class="text-right" id="totalRevenue">0₫</td>
+          </tr>
+          <tr>
+            <td><strong>Tổng chi phí:</strong></td>
+            <td class="text-right" id="totalExpense">0₫</td>
+          </tr>
+          <tr>
+            <td><strong>Số dư:</strong></td>
+            <td class="text-right" id="dailyBalance"><strong>0₫</strong></td>
+          </tr>
+        </table>
+      </div>
+      
+      <h4>📌 Ghi chú cá nhân:</h4>
+      <textarea id="dailyNote" class="note-input" placeholder="Nhập ghi chú trong ngày..." rows="3"></textarea>
+      <button onclick="saveDailyData()" class="success">💾 Lưu dữ liệu</button>
     </div>
   </div>
 
-  <div id="adminApp" class="hidden">
-    <div class="section">
-      <h3>📝 Tổng kết ngày</h3>
-      <div id="dailySummaryApp">
-        <div>
-          <span id="summaryDate"></span><br>
-          Doanh thu: <span id="totalRevenue">0₫</span><br>
-          Tổng chi phí: <span id="totalExpense">0₫</span><br>
-          Số dư: <span id="dailyBalance">0₫</span>
-        </div>
-        <div id="exportSummary"></div>
-        <textarea id="dailyNote" rows="3" placeholder="Ghi chú cá nhân"></textarea><br>
-        <button id="save-daily">Lưu dữ liệu</button>
-        <div id="dailyErrorContainer"></div>
-      </div>
-    </div>
-
+  <!-- Admin Screen -->
+  <div class="container hidden" id="adminApp">
     <div class="section">
       <h3>📦 Quản lý Kho hàng</h3>
-      <div id="inventoryApp">
-        <input type="text" id="productName" placeholder="Tên sản phẩm"><br>
-        <input type="number" id="productQuantity" placeholder="Số lượng"><br>
-        <input type="text" id="productUnit" placeholder="ĐVT"><br>
-        <input type="number" id="productPrice" placeholder="Giá đơn vị"><br>
-        <button id="add-product">Thêm sản phẩm</button>
-        <table id="productTable">
-          <thead><tr><th>Tên sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Giá đơn vị</th><th>Hành động</th></tr></thead>
+      <div class="flex-md">
+        <input type="text" id="productName" placeholder="Tên sản phẩm" />
+        <input type="number" id="productQuantity" placeholder="Số lượng" min="0" />
+        <input type="text" id="productUnit" placeholder="ĐVT (kg, ly, chai...)" />
+        <input type="number" id="productPrice" placeholder="Giá đơn vị (VNĐ)" min="0" />
+        <button onclick="addProduct()">➕ Thêm sản phẩm</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table" id="productTable">
+          <thead>
+            <tr><th>Tên sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th class="text-right">Giá đơn vị</th><th>Hành động</th></tr>
+          </thead>
           <tbody></tbody>
         </table>
-        <div id="inventoryErrorContainer"></div>
       </div>
     </div>
-
+    
+    <div class="section" id="adminApproveSection">
+      <h3>✅ Duyệt Xuất Kho</h3>
+      <div class="table-responsive">
+        <table class="table" id="adminApproveTable">
+          <thead>
+            <tr><th>Người nhập</th><th>Sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Thời gian</th><th>Hành động</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    
     <div class="section">
       <h3>📊 Báo cáo</h3>
-      <div id="reportsApp">
-        <button id="daily-report">Báo cáo ngày</button>
-        <button id="monthly-report">Báo cáo tháng</button>
-        <button id="print-report">In báo cáo</button>
-        <input type="date" id="reportDate"><br>
-        <select id="reportUserFilter">
-          <option value="all">Tất cả người dùng</option>
-        </select>
-        <select id="reportCategoryFilter">
-          <option value="all">Tất cả danh mục</option>
-        </select>
-        <button id="apply-report">Áp dụng</button>
-        <div id="reportOutput"></div>
-        <div id="reportErrorContainer"></div>
+      <div class="flex-md">
+        <input type="date" id="reportDate" />
+        <button onclick="generateDailyReport()">📅 Báo cáo ngày</button>
+        <button onclick="generateMonthlyReport()">📆 Báo cáo tháng</button>
+        <button onclick="printReport()" class="warning">🖨️ In báo cáo</button>
       </div>
+      
+      <div id="reportFilters" style="margin-top: 15px;">
+        <div class="flex-md">
+          <select id="reportUserFilter">
+            <option value="all">Tất cả người dùng</option>
+          </select>
+          <select id="reportCategoryFilter">
+            <option value="all">Tất cả danh mục</option>
+          </select>
+          <button onclick="applyReportFilters()">🔍 Áp dụng</button>
+        </div>
+      </div>
+      
+      <div id="reportOutput"></div>
     </div>
-
+    
     <div class="section">
       <h3>👥 Quản lý Người dùng</h3>
-      <div id="usersApp">
-        <input type="text" id="newUsername" placeholder="Tên đăng nhập"><br>
-        <input type="password" id="newPassword" placeholder="Mật khẩu"><br>
+      <div class="flex-md">
+        <input type="email" id="newUsername" placeholder="Email đăng nhập" />
+        <input type="password" id="newPassword" placeholder="Mật khẩu" />
         <select id="newUserRole">
           <option value="staff">Nhân viên</option>
           <option value="admin">Quản lý</option>
-        </select><br>
-        <button id="add-user">Thêm người dùng</button>
-        <table id="userTable">
-          <thead><tr><th>Tên đăng nhập</th><th>Vai trò</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+        </select>
+        <button onclick="addUser()" class="success">➕ Thêm người dùng</button>
+      </div>
+      
+      <div class="table-responsive">
+        <table class="table" id="userTable">
+          <thead>
+            <tr><th>Tên đăng nhập</th><th>Vai trò</th><th>Trạng thái</th><th>Hành động</th></tr>
+          </thead>
           <tbody></tbody>
         </table>
-        <div id="userErrorContainer"></div>
       </div>
     </div>
   </div>
 
-<script type="module">
-  import { initAuth } from './js/auth.js';
-  import { initExpenses } from './js/expenses.js';
-  import { initExports } from './js/exports.js';
-  import { initRevenues } from './js/revenues.js';
-  import { initDailySummary } from './js/dailySummary.js';
-  import { initInventory } from './js/inventory.js';
-  import { initReports } from './js/reports.js';
-  import { initUsers } from './js/users.js';
-  import { removeDoc, editProduct, deleteExport, toggleUserStatus, deleteUser } from './js/utils.js';
-
-  document.addEventListener('DOMContentLoaded', () => {
-    initAuth();
-    initExpenses();
-    initExports();
-    initRevenues();
-    initDailySummary();
-    initInventory();
-    initReports();
-    initUsers();
-    window.removeDoc = removeDoc;
-    window.editProduct = editProduct;
-    window.deleteExport = deleteExport;
-    window.toggleUserStatus = toggleUserStatus;
-    window.deleteUser = deleteUser;
-  });
-</script>
+  <!-- Firebase SDK -->
+  <script type="module" src="/js/firebase-config.js"></script>
+  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="/js/auth.js"></script>
+  <script type="module" src="/js/products.js"></script>
+  <script type="module" src="/js/sales.js"></script>
+  <script type="module" src="/js/expenses.js"></script>
+  <script type="module" src="/js/reports.js"></script>
+  <script type="module" src="/js/users.js"></script>
+  <script type="module" src="/js/utils.js"></script>
 </body>
 </html>
