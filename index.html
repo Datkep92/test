@@ -634,27 +634,29 @@ async function checkAdminStatus() {
   return snapshot.exists() && snapshot.val().role === 'admin';
 }
     
-    // Data functions
    async function loadData() {
   try {
     const today = new Date().toLocaleDateString('vi-VN');
     document.getElementById('summaryDate').textContent = today;
     const dateKey = today.replace(/\//g, '_');
 
-    // Tải dữ liệu song song (products + dailyData)
     const [productsSnap, dailySnap] = await Promise.all([
       get(ref(database, 'products')),
       get(ref(database, `dailyData/${dateKey}/${currentUser.uid}`))
     ]);
 
-    // Xử lý dữ liệu sản phẩm
+    // Xử lý products
     products = productsSnap.exists() 
       ? Object.entries(productsSnap.val()).map(([id, data]) => ({ id, ...data }))
       : [];
 
-    // Xử lý dữ liệu ngày
+    // Xử lý dailyData - QUAN TRỌNG: Khởi tạo mảng nếu không tồn tại
     dailyData = dailySnap.exists() 
-      ? dailySnap.val() 
+      ? { 
+          ...dailySnap.val(),
+          expenses: dailySnap.val().expenses || [],
+          exports: dailySnap.val().exports || [] 
+        }
       : { 
           date: today, 
           expenses: [], 
@@ -664,8 +666,6 @@ async function checkAdminStatus() {
           user: currentUser.email 
         };
 
-    // Render giao diện
-    document.getElementById('dailyNote').value = dailyData.note || '';
     renderProducts();
     renderDailyData();
 
@@ -897,12 +897,16 @@ async function checkAdminStatus() {
    function renderDailyData() {
   if (!dailyData) return;
 
+  // Đảm bảo expenses và exports luôn là mảng
+  const expenses = dailyData.expenses || [];
+  const exports = dailyData.exports || [];
+
   // Render chi phí
   const expenseTable = document.querySelector('#expenseTable tbody');
-  expenseTable.innerHTML = dailyData.expenses.map((expense, index) => `
+  expenseTable.innerHTML = expenses.map((expense, index) => `
     <tr>
-      <td>${expense.description}</td>
-      <td class="text-right">${expense.amount.toLocaleString('vi-VN')}₫</td>
+      <td>${expense.description || ''}</td>
+      <td class="text-right">${(expense.amount || 0).toLocaleString('vi-VN')}₫</td>
       <td>
         <button onclick="deleteExpense(${index})" class="danger">Xóa</button>
       </td>
@@ -911,11 +915,11 @@ async function checkAdminStatus() {
 
   // Render xuất kho
   const exportTable = document.querySelector('#exportTable tbody');
-  exportTable.innerHTML = dailyData.exports.map((item, index) => `
+  exportTable.innerHTML = exports.map((item, index) => `
     <tr>
-      <td>${item.productName}</td>
-      <td>${item.quantity}</td>
-      <td>${item.unit}</td>
+      <td>${item.productName || ''}</td>
+      <td>${item.quantity || 0}</td>
+      <td>${item.unit || ''}</td>
       <td>${item.approved ? '✅ Đã duyệt' : '⏳ Chờ duyệt'}</td>
       <td>
         ${!item.approved ? `<button onclick="deleteExport(${index})" class="danger">Xóa</button>` : ''}
@@ -924,10 +928,12 @@ async function checkAdminStatus() {
   `).join('');
 
   // Render tổng kết
-  const totalExpense = dailyData.expenses.reduce((sum, e) => sum + e.amount, 0);
+  const totalExpense = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const totalRevenue = dailyData.revenue || 0;
+  
   document.getElementById('totalExpense').textContent = `${totalExpense.toLocaleString('vi-VN')}₫`;
-  document.getElementById('totalRevenue').textContent = `${dailyData.revenue.toLocaleString('vi-VN')}₫`;
-  document.getElementById('dailyBalance').innerHTML = `<strong>${(dailyData.revenue - totalExpense).toLocaleString('vi-VN')}₫</strong>`;
+  document.getElementById('totalRevenue').textContent = `${totalRevenue.toLocaleString('vi-VN')}₫`;
+  document.getElementById('dailyBalance').innerHTML = `<strong>${(totalRevenue - totalExpense).toLocaleString('vi-VN')}₫</strong>`;
 }
     // Product management
     async function addProduct() {
