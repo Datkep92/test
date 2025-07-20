@@ -494,47 +494,67 @@
       });
     }
 
-    // Login functions
-    async function handleLogin() {
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value.trim();
-      const rememberMe = document.getElementById('rememberMe').checked;
-      
-      document.getElementById('errorContainer').innerHTML = '';
-      
-      if (!username || !password) {
-        showError('Vui lòng nhập đầy đủ thông tin đăng nhập');
-        return;
-      }
-      
+   async function handleLogin() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const rememberMe = document.getElementById('rememberMe').checked;
+  
+  document.getElementById('errorContainer').innerHTML = '';
+  
+  if (!username || !password) {
+    showError('Vui lòng nhập đầy đủ thông tin đăng nhập');
+    return;
+  }
+  
+  const email = `${username}@quanly-hkd.com`;
+  
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    if (rememberMe) {
+      localStorage.setItem('rememberedUser', username);
+    } else {
+      localStorage.removeItem('rememberedUser');
+    }
+    currentUser = userCredential.user.uid;
+    loadUserData();
+  } catch (error) {
+    if (error.code === "auth/user-not-found") {
       try {
-        const email = `${username}@quanly-hkd.com`;
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const userId = userCredential.user.uid;
+        await set(ref(database, `users/${userId}`), {
+          username: username,
+          role: 'staff', // Mặc định là staff
+          active: true,
+          createdAt: new Date().toISOString()
+        });
         if (rememberMe) {
           localStorage.setItem('rememberedUser', username);
-        } else {
-          localStorage.removeItem('rememberedUser');
         }
-        
-        currentUser = userCredential.user.uid;
+        currentUser = userId;
         loadUserData();
-        
-      } catch (error) {
-        console.error("Login error:", error);
-        let errorMessage = "Đăng nhập thất bại";
-        
-        if (error.code === "auth/invalid-credential") {
-          errorMessage = "Sai tên đăng nhập hoặc mật khẩu";
-        } else if (error.code === "auth/too-many-requests") {
-          errorMessage = "Quá nhiều lần thử, vui lòng thử lại sau";
-        } else if (error.code === "auth/invalid-email") {
-          errorMessage = "Email không hợp lệ";
-        }
-        
-        showError(errorMessage);
+      } catch (createError) {
+        console.error("Lỗi tạo tài khoản:", createError);
+        showError("Lỗi tạo tài khoản: " + createError.message);
       }
+    } else {
+      console.error("Login error:", error);
+      let errorMessage = "Đăng nhập thất bại";
+      switch (error.code) {
+        case "auth/invalid-email":
+          errorMessage = "Email không hợp lệ. Vui lòng kiểm tra định dạng.";
+          break;
+        case "auth/invalid-credential":
+          errorMessage = "Sai tên đăng nhập hoặc mật khẩu";
+          break;
+        case "auth/too-many-requests":
+          errorMessage = "Quá nhiều lần thử, vui lòng thử lại sau";
+          break;
+      }
+      showError(errorMessage);
     }
+  }
+}
 
     async function loadUserData() {
       const userRef = ref(database, `users/${currentUser}`);
