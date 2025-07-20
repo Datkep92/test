@@ -489,45 +489,21 @@
       });
     }
 
-    // Login functions
-    async function handleLogin() {
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value.trim();
-      const rememberMe = document.getElementById('rememberMe').checked;
-      
-      document.getElementById('errorContainer').innerHTML = '';
-      
-      if (!username || !password) {
-        showError('Vui lòng nhập đầy đủ thông tin đăng nhập');
-        return;
-      }
-      
-      try {
-        const email = `${username}@quanly-hkd.com`;
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    
         
-        if (rememberMe) {
-          localStorage.setItem('rememberedUser', username);
-        } else {
-          localStorage.removeItem('rememberedUser');
-        }
-        
-        currentUser = userCredential.user.uid;
-        loadUserData();
-        
-      } catch (error) {
-        console.error("Login error:", error);
-        let errorMessage = "Đăng nhập thất bại";
-        
-        if (error.code === "auth/invalid-credential") {
-          errorMessage = "Sai tên đăng nhập hoặc mật khẩu";
-        } else if (error.code === "auth/too-many-requests") {
-          errorMessage = "Quá nhiều lần thử, vui lòng thử lại sau";
-        }
-        
-        showError(errorMessage);
-      }
-    }
+        async function handleLogin() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
+  
+  try {
+    const email = `${username}@quanly-hkd.com`;
+    await auth.signInWithEmailAndPassword(email, password);
+    window.location.href = 'dashboard.html'; // Chuyển hướng sau login
+  } catch (error) {
+    console.error(error);
+    alert('Sai tên đăng nhập/mật khẩu hoặc tài khoản chưa được kích hoạt');
+  }
+}
 
     async function loadUserData() {
       const userRef = ref(database, `users/${currentUser}`);
