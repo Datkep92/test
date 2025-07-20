@@ -1521,43 +1521,6 @@ select {
     window.generateMonthlyReport = generateMonthlyReport;
     window.applyReportFilters = applyReportFilters;
     window.printReport = printReport;
-    
-    ///
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { getDatabase, ref, get } from "firebase/database"; // Thay onValue bằng get
-
-const auth = getAuth();
-const db = getDatabase();
-
-async function login(email, password) {
-  try {
-    // 1. Đăng nhập trước
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-    
-    // 2. Lấy dữ liệu role (dùng get thay vì onValue)
-    const userRef = ref(db, `users/${user.uid}`);
-    const snapshot = await get(userRef);
-    
-    // 3. Kiểm tra role
-    const role = snapshot.exists() ? snapshot.val().role : "sale";
-    
-    // 4. Điều hướng
-    window.location.href = role === "admin" ? "/admin.html" : "/sale.html";
-    
-  } catch (error) {
-    console.error("Lỗi đăng nhập:", error.code, error.message);
-    alert(`Lỗi: ${error.message.replace("Firebase: ", "")}`);
-  }
-}
-
-// Xử lý sự kiện đăng nhập
-document.getElementById("login-form")?.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  login(email, password);
-});
   </script>
 </body>
 </html>
