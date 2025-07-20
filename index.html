@@ -638,18 +638,10 @@
     const dailyRef = ref(database, `dailyData/${dateKey}`);
 
     const snapshot = await get(dailyRef);
-    
-    // Xử lý dữ liệu đúng cách
-    dailyData = snapshot.exists() ? {
-      expenses: convertObjectToArray(snapshot.val().expenses),
-      exports: convertObjectToArray(snapshot.val().exports),
-      revenue: snapshot.val().revenue || 0,
-      note: snapshot.val().note || ''
-    } : {
-      expenses: [],
-      exports: [],
-      revenue: 0,
-      note: ''
+    dailyData = snapshot.exists() ? snapshot.val() : {
+      expenses: {},
+      exports: {},
+      revenue: 0
     };
 
     renderDailyData();
@@ -877,9 +869,15 @@ function getDateKey() {
 // Hàm kiểm tra admin
 async function checkAdminStatus() {
   if (!auth.currentUser) return false;
-  const userRef = ref(database, `users/${auth.currentUser.uid}`);
-  const snapshot = await get(userRef);
-  return snapshot.exists() && snapshot.val().role === 'admin';
+  
+  try {
+    const userRef = ref(database, `users/${auth.currentUser.uid}/role`);
+    const snapshot = await get(userRef);
+    return snapshot.exists() && snapshot.val() === 'admin';
+  } catch (error) {
+    console.error("Lỗi kiểm tra admin:", error);
+    return false;
+  }
 }
 
 function canEdit(item) {
@@ -931,36 +929,21 @@ function canEdit(item) {
   document.getElementById('totalRevenue').textContent = `${(dailyData.revenue || 0).toLocaleString('vi-VN')}₫`;
 }
 async function addExpense() {
-  try {
-    const input = document.getElementById('expenseInput').value.trim();
-    if (!input) {
-      showError('Vui lòng nhập thông tin chi phí');
-      return;
-    }
+  const input = document.getElementById('expenseInput').value.trim();
+  const { description, amount } = parseExpenseInput(input);
 
-    const { description, amount } = parseExpenseInput(input);
-    if (!description || amount <= 0) {
-      showError('Thông tin chi phí không hợp lệ');
-      return;
-    }
+  const dateKey = new Date().toLocaleDateString('vi-VN').replace(/\//g, '_');
+  const expensesRef = ref(database, `dailyData/${dateKey}/expenses`);
+  
+  await push(expensesRef, {
+    description,
+    amount,
+    user: currentUser.email,
+    userId: currentUser.uid,
+    timestamp: Date.now()
+  });
 
-    const dateKey = new Date().toLocaleDateString('vi-VN').replace(/\//g, '_');
-    const expensesRef = ref(database, `dailyData/${dateKey}/expenses`);
-    
-    await push(expensesRef, {
-      description,
-      amount,
-      user: currentUser.email,
-      userId: currentUser.uid,
-      timestamp: Date.now()
-    });
-
-    document.getElementById('expenseInput').value = '';
-    showSuccess('Đã thêm chi phí thành công');
-  } catch (error) {
-    console.error("Lỗi khi thêm chi phí:", error);
-    showError(`Lỗi: ${error.message}`);
-  }
+  document.getElementById('expenseInput').value = '';
 }
 
     async function deleteExpense(dateKey, expenseId) {
@@ -1418,15 +1401,14 @@ async function approveExport(dateKey, exportId) {
 }
     // Initialize the app
     document.addEventListener('DOMContentLoaded', initApp);
-    const today = new Date().toLocaleDateString('vi-VN');
+    // Thêm vào initApp()
+const today = new Date().toLocaleDateString('vi-VN');
 const dateKey = today.replace(/\//g, '_');
 const dailyRef = ref(database, `dailyData/${dateKey}`);
 
 onValue(dailyRef, (snapshot) => {
-  if (snapshot.exists()) {
-    dailyData = snapshot.val();
-    renderDailyData();
-  }
+  dailyData = snapshot.exists() ? snapshot.val() : { expenses: {}, exports: {}, revenue: 0 };
+  renderDailyData();
 });
     // Expose functions to global scope for HTML onclick handlers
     window.handleLogin = handleLogin;
