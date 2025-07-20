@@ -638,20 +638,35 @@
     const dailyRef = ref(database, `dailyData/${dateKey}`);
 
     const snapshot = await get(dailyRef);
-    dailyData = snapshot.exists() ? snapshot.val() : { expenses: [], exports: [], revenue: 0 };
-
-    // Lắng nghe thay đổi realtime
-    onValue(dailyRef, (snap) => {
-      if (snap.exists()) {
-        dailyData = snap.val();
-        renderDailyData();
-      }
-    });
+    
+    // Xử lý dữ liệu đúng cách
+    dailyData = snapshot.exists() ? {
+      expenses: convertObjectToArray(snapshot.val().expenses),
+      exports: convertObjectToArray(snapshot.val().exports),
+      revenue: snapshot.val().revenue || 0,
+      note: snapshot.val().note || ''
+    } : {
+      expenses: [],
+      exports: [],
+      revenue: 0,
+      note: ''
+    };
 
     renderDailyData();
   } catch (error) {
+    console.error("Lỗi khi tải dữ liệu:", error);
     showError(`Lỗi khi tải: ${error.message}`);
   }
+}
+
+// Hàm chuyển đổi object thành mảng
+function convertObjectToArray(obj) {
+  if (!obj) return [];
+  if (Array.isArray(obj)) return obj;
+  return Object.keys(obj).map(key => ({
+    id: key,
+    ...obj[key]
+  }));
 }
     
   async function saveDailyData() {
@@ -890,28 +905,28 @@ function canEdit(item) {
     checkAdminStatus() // Hàm kiểm tra admin
   );
 }
-    function renderDailyData() {
+   function renderDailyData() {
   if (!dailyData) return;
 
   // Render chi phí
   const expenseTable = document.querySelector('#expenseTable tbody');
-  expenseTable.innerHTML = (dailyData.expenses || []).map((expense, index) => `
+  expenseTable.innerHTML = dailyData.expenses.map(expense => `
     <tr>
       <td>${expense.description || ''}</td>
       <td class="text-right">${(expense.amount || 0).toLocaleString('vi-VN')}₫</td>
       <td>${expense.user || ''}</td>
       <td>
         ${canEdit(expense) ? `
-          <button onclick="editExpense('${getDateKey()}', '${expense.id || index}')" class="warning">Sửa</button>
-          <button onclick="deleteExpense('${getDateKey()}', '${expense.id || index}')" class="danger">Xóa</button>
+          <button onclick="editExpense('${expense.id}')" class="warning">Sửa</button>
+          <button onclick="deleteExpense('${expense.id}')" class="danger">Xóa</button>
         ` : ''}
       </td>
     </tr>
   `).join('');
 
-  // Render xuất kho - Sửa từ 'exports' thành 'dailyData.exports'
+  // Render xuất kho
   const exportTable = document.querySelector('#exportTable tbody');
-  exportTable.innerHTML = (dailyData.exports || []).map((item, index) => `
+  exportTable.innerHTML = dailyData.exports.map(item => `
     <tr>
       <td>${item.productName || ''}</td>
       <td>${item.quantity || 0}</td>
@@ -921,23 +936,34 @@ function canEdit(item) {
       </td>
       <td>
         ${canEdit(item) && !item.approved ? `
-          <button onclick="deleteExport('${getDateKey()}', '${item.id || index}')" class="danger">Xóa</button>
+          <button onclick="deleteExport('${item.id}')" class="danger">Xóa</button>
         ` : ''}
       </td>
     </tr>
   `).join('');
 
   // Render tổng kết
-  const totalExpense = (dailyData.expenses || []).reduce((sum, e) => sum + (e.amount || 0), 0);
-  const totalRevenue = dailyData.revenue || 0;
-  
+  const totalExpense = dailyData.expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
   document.getElementById('totalExpense').textContent = `${totalExpense.toLocaleString('vi-VN')}₫`;
-  document.getElementById('totalRevenue').textContent = `${totalRevenue.toLocaleString('vi-VN')}₫`;
-  document.getElementById('dailyBalance').innerHTML = `
-    <strong>${(totalRevenue - totalExpense).toLocaleString('vi-VN')}₫</strong>
-  `;
+  document.getElementById('totalRevenue').textContent = `${(dailyData.revenue || 0).toLocaleString('vi-VN')}₫`;
 }
+async function addExpense() {
+  const input = document.getElementById('expenseInput').value.trim();
+  const { description, amount } = parseExpenseInput(input);
 
+  const expenseRef = ref(database, `dailyData/${getDateKey()}/expenses`);
+  const newExpense = {
+    description,
+    amount,
+    user: currentUser.email,
+    userId: currentUser.uid,
+    timestamp: Date.now()
+  };
+
+  // Sử dụng push() để tạo ID tự động
+  await push(expenseRef, newExpense);
+  document.getElementById('expenseInput').value = '';
+}
 
     async function deleteExpense(dateKey, expenseId) {
   try {
