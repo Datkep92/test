@@ -2,11 +2,7 @@ import { database } from './firebase-config.js';
 import { ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showError, showSuccess, parseNumber, capitalizeFirstLetter } from './utils.js';
 // sales.js (phần đầu file)
-import { 
-  products, 
-  renderProductSelection, 
-  loadProducts 
-} from './products.js';
+import productModule from './products.js';
 const { products, renderProductSelection, loadProducts } = productModule;
 
 let dailyData = {
