@@ -616,31 +616,31 @@
     }
     
     // Check if user is admin
-   async function checkAdminStatus() {
-  try {
-    const userRef = ref(database, `users/${currentUser.uid}`);
-    const snapshot = await get(userRef);
-
-    if (snapshot.exists()) {
-      const userData = snapshot.val();
-      return userData.role === 'admin';
-    } else {
-      // Create new user record if not exists
-      await set(userRef, {
-        email: currentUser.email,
-        role: 'staff',
-        active: true
-      });
-      return false;
+    async function checkAdminStatus() {
+      try {
+        const userRef = ref(database, `users/${currentUser.uid}`);
+        const snapshot = await get(userRef);
+        
+        if (snapshot.exists()) {
+          const userData = snapshot.val();
+          return userData.role === 'admin';
+        } else {
+          // Create new user record if not exists
+          await set(userRef, {
+            email: currentUser.email,
+            role: 'staff',
+            active: true
+          });
+          return false;
+        }
+      } catch (error) {
+        showError(`Lỗi khi kiểm tra quyền admin: ${error.message}`);
+        return false;
+      }
     }
-  } catch (error) {
-    showError(`Lỗi khi kiểm tra quyền admin: ${error.message}`);
-    return false;
-  }
-}
-
     
- async function loadData() {
+    // Data functions
+    async function loadData() {
       const today = new Date().toLocaleDateString('vi-VN');
       document.getElementById('summaryDate').textContent = today;
       
@@ -666,46 +666,6 @@
         showError(`Lỗi khi tải sản phẩm: ${error.message}`);
       }
       
-      // Load expense categories
-      try {
-        const categoriesRef = ref(database, 'expenseCategories');
-        const snapshot = await get(categoriesRef);
-        
-        if (snapshot.exists()) {
-          expenseCategories = snapshot.val();
-        } else {
-          expenseCategories = [];
-        }
-      } catch (error) {
-        showError(`Lỗi khi tải danh mục chi phí: ${error.message}`);
-      }
-      
-      // Load today's data
-      try {
-        const dateKey = today.replace(/\//g, '_');
-        const dailyRef = ref(database, `dailyData/${dateKey}/${currentUser.uid}`);
-        const snapshot = await get(dailyRef);
-        
-        if (snapshot.exists()) {
-          dailyData = snapshot.val();
-        } else {
-          dailyData = {
-            date: today,
-            expenses: [],
-            exports: [],
-            revenue: 0,
-            note: '',
-            user: currentUser.email
-          };
-        }
-        
-        document.getElementById('dailyNote').value = dailyData.note || '';
-        renderDailyData();
-      } catch (error) {
-        showError(`Lỗi khi tải dữ liệu ngày: ${error.message}`);
-      }
-    }
-
       // Load expense categories
       try {
         const categoriesRef = ref(database, 'expenseCategories');
@@ -819,36 +779,30 @@
     }
     
     function addExpense() {
-  const input = document.getElementById('expenseInput').value.trim();
-  if (!input) {
-    showError('Vui lòng nhập thông tin chi phí');
-    return;
-  }
-
-  const { description, amount, category } = parseExpenseInput(input);
-
-  if (!description || amount <= 0) {
-    showError('Không thể xác định mô tả hoặc số tiền từ thông tin nhập');
-    return;
-  }
-
-  // ✅ Đảm bảo dailyData.expenses tồn tại
-  if (!Array.isArray(dailyData.expenses)) {
-    dailyData.expenses = [];
-  }
-
-  dailyData.expenses.push({
-    description: `${description}`,
-    amount: amount,
-    category: category,
-    user: currentUser.email,
-    timestamp: new Date().getTime()
-  });
-
-  document.getElementById('expenseInput').value = '';
-  renderDailyData();
-}
-
+      const input = document.getElementById('expenseInput').value.trim();
+      if (!input) {
+        showError('Vui lòng nhập thông tin chi phí');
+        return;
+      }
+      
+      const { description, amount, category } = parseExpenseInput(input);
+      
+      if (!description || amount <= 0) {
+        showError('Không thể xác định mô tả hoặc số tiền từ thông tin nhập');
+        return;
+      }
+      
+      dailyData.expenses.push({
+        description: `${description}`,
+        amount: amount,
+        category: category,
+        user: currentUser.email,
+        timestamp: new Date().getTime()
+      });
+      
+      document.getElementById('expenseInput').value = '';
+      renderDailyData();
+    }
     
     function deleteExpense(index) {
       if (confirm('Xóa chi phí này?')) {
@@ -1437,8 +1391,7 @@
     window.generateDailyReport = generateDailyReport;
     window.generateMonthlyReport = generateMonthlyReport;
     window.applyReportFilters = applyReportFilters;
-    window.printReport = printReport;    
-
+    window.printReport = printReport;
   </script>
 </body>
 </html>
