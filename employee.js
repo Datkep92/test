@@ -58,14 +58,16 @@ function submitSharedReport() {
 function loadInventory(divId) {
   const inventoryDiv = document.getElementById(divId);
   if (!inventoryDiv) {
-    console.error(`Không tìm thấy phần tử ${divId}`);
+    console.error(`Không tìm thấy phần tử ${divId} trong DOM`);
+    alert(`Lỗi: Không tìm thấy phần tử ${divId}. Vui lòng kiểm tra giao diện.`);
     return;
   }
 
   db.ref('inventory').on('value', snapshot => {
     inventoryDiv.innerHTML = '';
     if (!snapshot.exists()) {
-      inventoryDiv.innerHTML = '<p>Không có sản phẩm nào trong tồn kho.</p>';
+      inventoryDiv.innerHTML = '<p class="text-red-500">Không có sản phẩm nào trong tồn kho. Vui lòng yêu cầu quản lý thêm sản phẩm.</p>';
+      console.warn('Node /inventory rỗng hoặc không tồn tại.');
       return;
     }
     snapshot.forEach(productSnapshot => {
@@ -80,6 +82,7 @@ function loadInventory(divId) {
       `;
       inventoryDiv.appendChild(productDiv);
     });
+    console.log('Đã tải danh sách tồn kho thành công.');
   }, error => {
     console.error('Lỗi tải danh sách tồn kho:', error);
     alert('Lỗi tải danh sách tồn kho: ' + error.message);
@@ -87,8 +90,14 @@ function loadInventory(divId) {
 }
 
 function loadProducts() {
+  const productSelect = document.getElementById('product-select');
+  if (!productSelect) {
+    console.error('Không tìm thấy phần tử product-select trong DOM');
+    alert('Lỗi: Không tìm thấy dropdown sản phẩm. Vui lòng kiểm tra giao diện.');
+    return;
+  }
+
   db.ref('inventory').on('value', snapshot => {
-    const productSelect = document.getElementById('product-select');
     productSelect.innerHTML = '<option value="">Chọn sản phẩm</option>';
     if (!snapshot.exists()) {
       const option = document.createElement('option');
@@ -96,6 +105,8 @@ function loadProducts() {
       option.textContent = 'Không có sản phẩm nào';
       option.disabled = true;
       productSelect.appendChild(option);
+      console.warn('Node /inventory rỗng hoặc không tồn tại.');
+      alert('Không có sản phẩm nào trong tồn kho. Vui lòng yêu cầu quản lý thêm sản phẩm.');
       return;
     }
     snapshot.forEach(productSnapshot => {
@@ -105,6 +116,7 @@ function loadProducts() {
       option.textContent = `${product.name} (Số lượng: ${product.quantity}, Đơn giá: ${product.price})`;
       productSelect.appendChild(option);
     });
+    console.log('Đã tải danh sách sản phẩm vào dropdown thành công.');
   }, error => {
     console.error('Lỗi tải danh sách sản phẩm:', error);
     alert('Lỗi tải danh sách sản phẩm: ' + error.message);
@@ -115,6 +127,7 @@ function loadSharedReports(divId) {
   const reportsDiv = document.getElementById(divId);
   if (!reportsDiv) {
     console.error(`Không tìm thấy phần tử ${divId}`);
+    alert(`Lỗi: Không tìm thấy phần tử ${divId}. Vui lòng kiểm tra giao diện.`);
     return;
   }
 
@@ -151,6 +164,7 @@ function loadSharedReports(divId) {
     document.getElementById('total-revenue').textContent = totalRevenue.toFixed(2);
     document.getElementById('net-profit').textContent = (totalRevenue - totalCost).toFixed(2);
     document.getElementById('total-export').textContent = totalExport.toFixed(2);
+    console.log('Đã tải báo cáo chung thành công.');
   }, error => {
     console.error('Lỗi tải báo cáo chung:', error);
     alert('Lỗi tải báo cáo chung: ' + error.message);
