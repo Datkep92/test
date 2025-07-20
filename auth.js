@@ -1,6 +1,27 @@
+// Load saved credentials if available
+window.onload = function() {
+  const savedEmail = localStorage.getItem('savedEmail');
+  const savedPassword = localStorage.getItem('savedPassword');
+  if (savedEmail && savedPassword) {
+    document.getElementById('email').value = savedEmail;
+    document.getElementById('password').value = savedPassword;
+    document.getElementById('save-password').checked = true;
+  }
+};
+
 function login() {
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
+  const savePassword = document.getElementById('save-password').checked;
+
+  if (savePassword) {
+    localStorage.setItem('savedEmail', email);
+    localStorage.setItem('savedPassword', password);
+  } else {
+    localStorage.removeItem('savedEmail');
+    localStorage.removeItem('savedPassword');
+  }
+
   auth.signInWithEmailAndPassword(email, password)
     .then(userCredential => {
       const user = userCredential.user;
@@ -24,7 +45,7 @@ function checkUserRole(uid) {
     } else {
       document.getElementById('login-page').classList.add('hidden');
       document.getElementById('employee-page').classList.remove('hidden');
-      loadProducts();
+      loadInventory('employee-inventory-list');
       loadSharedReports('shared-reports');
     }
   }).catch(error => {
