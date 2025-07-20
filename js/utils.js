@@ -1,13 +1,7 @@
 import { db } from './auth.js';
 import { doc, getDoc, updateDoc, runTransaction } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
 
-export async function deleteDoc(collectionName, docId) {
-  try {
-    await deleteDoc(doc(db, collectionName, docId));
-  } catch (error) {
-    document.getElementById('errorContainer').innerHTML = `<div class="error-message">Lỗi: ${error.message}</div>`;
-  }
-}
+
 
 export async function editProduct(docId) {
   try {
