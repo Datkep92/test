@@ -42,39 +42,5 @@ export async function handleLogout() {
   }
 }
 
-export async function addUser() {
-  const email = document.getElementById('newUsername').value.trim();
-  const password = document.getElementById('newPassword').value.trim();
-  const role = document.getElementById('newUserRole').value;
-  
-  if (!email || !password) {
-    showError('Vui lòng nhập đầy đủ email và mật khẩu');
-    return;
-  }
-  
-  try {
-    // Create user in Firebase Authentication
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-    
-    // Save user info to Firebase Realtime Database
-    const userRef = ref(database, `users/${user.uid}`);
-    await set(userRef, {
-      email: email,
-      role: role,
-      active: true
-    });
-    
-    // Clear inputs
-    document.getElementById('newUsername').value = '';
-    document.getElementById('newPassword').value = '';
-    
-    // Refresh user list
-    renderUserList();
-    
-    showSuccess(`Người dùng ${email} đã được thêm thành công`);
-  } catch (error) {
-    showError(`Lỗi khi thêm người dùng: ${error.message}`);
-  }
-}
+// Cuối file auth.js chỉ giữ lại:
 export { handleLogin, handleLogout, addUser };
