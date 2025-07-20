@@ -2,7 +2,7 @@ import { database } from './firebase-config.js';
 import { ref, set, get, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showError, showSuccess } from './utils.js';
 
-// Global products array
+// Khai báo biến products
 let products = [];
 
 async function addProduct() {
@@ -138,6 +138,7 @@ async function loadProducts() {
   try {
     const productsRef = ref(database, 'products');
     const snapshot = await get(productsRef);
+    products = [];
     if (snapshot.exists()) {
       snapshot.forEach(childSnapshot => {
         products.push({
@@ -151,22 +152,10 @@ async function loadProducts() {
   }
 }
 
-// Expose for inline use
+// Expose functions to window for HTML onclick handlers
 window.addProduct = addProduct;
 window.editProduct = editProduct;
 window.deleteProduct = deleteProduct;
 
-// Export cuối file
-export {
-  products,
-  renderProductSelection,
-  loadProducts,
-  addProduct,
-  editProduct,
-  deleteProduct
-};
-
-// Hoặc có thể export ngay khi khai báo
-// export let products = [];
-// export function renderProductSelection() { ... }
-// ...
+// Export for other modules
+export { products, renderProductSelection, loadProducts };
