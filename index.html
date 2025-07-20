@@ -408,13 +408,16 @@
         </table>
       </div>
     </div>
-    <h3>💼 Duyệt xuất hàng</h3>
-<table id="adminApproveTable">
-  <thead>
-    <tr><th>Người nhập</th><th>Sản phẩm</th><th>Số lượng</th><th>Thời gian</th><th></th></tr>
-  </thead>
-  <tbody></tbody>
-</table>
+    <div id="adminApproveSection" style="display: none">
+  <h3>✅ Duyệt Xuất Kho</h3>
+  <table id="adminApproveTable">
+    <thead>
+      <tr><th>Người nhập</th><th>Sản phẩm</th><th>Số lượng</th><th>Thời gian</th><th>Duyệt</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+   
 
     <div class="section">
       <h3>📊 Báo cáo</h3>
@@ -1391,6 +1394,23 @@ async function approveExport(dateKey, uid, index) {
 
   showSuccess('Đã duyệt xuất kho và trừ tồn kho.');
   loadAllExportsForApproval(); // Tải lại danh sách chờ duyệt nếu có
+}
+async function loadAllExportsForApproval() {
+  const snapshot = await get(ref(database, 'dailyData'));
+
+  if (!snapshot.exists()) return;
+
+  snapshot.forEach(dateSnap => {
+    const dateKey = dateSnap.key;
+
+    dateSnap.forEach(userSnap => {
+      const uid = userSnap.key;
+      const data = userSnap.val();
+      const exports = data.exports || [];
+
+      renderPendingExportsForAdmin(dateKey, uid, exports);
+    });
+  });
 }
 
     // Initialize the app
