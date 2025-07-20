@@ -3,467 +3,161 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quản lý Kinh doanh</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    .section { margin-bottom: 30px; }
-    .hidden { display: none; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    th { background-color: #f2f2f2; }
-    button, input[type="submit"] { padding: 8px 16px; margin: 5px; }
-    input[type="text"], input[type="password"], input[type="number"] { padding: 8px; margin: 5px; }
-    .manager-only { display: none; }
-  </style>
+  <title>📊 Quản lý Kinh doanh</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Đăng nhập -->
-  <div id="login-section">
-    <h2>🔐 Đăng nhập</h2>
-    <input type="text" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Mật khẩu">
-    <label><input type="checkbox" id="remember-me"> Ghi nhớ đăng nhập</label>
-    <button id="login-button">Đăng nhập</button>
-  </div>
-
-  <!-- Nội dung chính -->
-  <div id="main-content" class="hidden">
-    <h1>📊 Quản lý Kinh doanh</h1>
+  <div id="appHeader" class="hidden">
+    <h2>📊 Quản lý Kinh doanh</h2>
     <button id="logout-button">Đăng xuất</button>
+  </div>
 
-    <!-- Chi phí -->
-    <div class="section">
-      <h2>💸 Chi phí</h2>
-      <input type="text" id="cost-description" placeholder="Mô tả">
-      <input type="number" id="cost-amount" placeholder="Số tiền">
-      <button id="add-cost">Thêm</button>
-      <table id="cost-table">
-        <tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr>
-      </table>
-    </div>
-
-    <!-- Xuất hàng -->
-    <div class="section">
-      <h2>📦 Xuất hàng</h2>
-      <input type="text" id="export-product" placeholder="Sản phẩm">
-      <input type="number" id="export-quantity" placeholder="Số lượng">
-      <input type="text" id="export-unit" placeholder="ĐVT">
-      <button id="add-export">Thêm xuất hàng</button>
-      <table id="export-table">
-        <tr><th>Sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Hành động</th></tr>
-      </table>
-    </div>
-
-    <!-- Doanh thu -->
-    <div class="section">
-      <h2>💰 Doanh thu</h2>
-      <input type="text" id="revenue-description" placeholder="Mô tả">
-      <input type="number" id="revenue-amount" placeholder="Số tiền">
-      <button id="add-revenue">Thêm</button>
-      <table id="revenue-table">
-        <tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr>
-      </table>
-    </div>
-
-    <!-- Tổng kết ngày -->
-    <div class="section">
-      <h2>📝 Tổng kết ngày</h2>
-      <p>Doanh thu: <span id="total-revenue">0₫</span></p>
-      <p>Tổng chi phí: <span id="total-cost">0₫</span></p>
-      <p>Số dư: <span id="balance">0₫</span></p>
-      <textarea id="personal-note" placeholder="Ghi chú cá nhân"></textarea>
-      <button id="save-note">Lưu dữ liệu</button>
-    </div>
-
-    <!-- Quản lý kho hàng -->
-    <div class="section">
-      <h2>📦 Quản lý Kho hàng</h2>
-      <input type="text" id="product-name" placeholder="Tên sản phẩm">
-      <input type="number" id="product-quantity" placeholder="Số lượng">
-      <input type="text" id="product-unit" placeholder="ĐVT">
-      <input type="number" id="product-unit-price" placeholder="Giá đơn vị">
-      <button id="add-product" class="manager-only">Thêm sản phẩm</button>
-      <table id="inventory-table">
-        <tr><th>Tên sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Giá đơn vị</th><th>Hành động</th></tr>
-      </table>
-    </div>
-
-    <!-- Báo cáo -->
-    <div class="section">
-      <h2>📊 Báo cáo</h2>
-      <button id="daily-report">Báo cáo ngày</button>
-      <button id="monthly-report">Báo cáo tháng</button>
-      <button id="print-report">In báo cáo</button>
-      <select id="user-filter">
-        <option value="all">Tất cả người dùng</option>
-      </select>
-      <select id="category-filter">
-        <option value="costs">Chi phí</option>
-        <option value="revenues">Doanh thu</option>
-        <option value="exports">Xuất hàng</option>
-      </select>
-      <button id="apply-filter">Áp dụng</button>
-      <div id="report-result"></div>
-    </div>
-
-    <!-- Quản lý người dùng -->
-    <div class="section manager-only" id="user-management">
-      <h2>👥 Quản lý Người dùng</h2>
-      <input type="text" id="username" placeholder="Tên đăng nhập">
-      <select id="role">
-        <option value="employee">Nhân viên</option>
-        <option value="manager">Quản lý</option>
-      </select>
-      <input type="text" id="user-email" placeholder="Email">
-      <input type="password" id="user-password" placeholder="Mật khẩu">
-      <button id="add-user">Thêm người dùng</button>
-      <table id="user-table">
-        <tr><th>Tên đăng nhập</th><th>Vai trò</th><th>Trạng thái</th><th>Hành động</th></tr>
-      </table>
+  <div id="loginBox">
+    <h2>🔐 Đăng nhập</h2>
+    <div id="loginScreen">
+      <input type="text" id="username" placeholder="Tên đăng nhập"><br>
+      <input type="password" id="password" placeholder="Mật khẩu"><br>
+      <label><input type="checkbox" id="rememberMe"> Ghi nhớ đăng nhập</label><br>
+      <button id="login-button">Đăng nhập</button>
+      <div id="errorContainer"></div>
     </div>
   </div>
 
-  <!-- Firebase SDK with type="module" -->
+  <div id="saleApp" class="hidden">
+    <div class="section">
+      <h3>Chi phí</h3>
+      <div id="expensesApp">
+        <button id="add-expense">Thêm</button>
+        <input type="text" id="expenseInput" placeholder="Nhập chi phí (VD: ăn 100000)"><br>
+        <table id="expenseTable">
+          <thead><tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div id="errorContainer"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Xuất hàng</h3>
+      <div id="exportsApp">
+        <div id="productList"></div>
+        <input type="number" id="exportQuantity" value="1" min="1"><br>
+        <button id="add-export">Thêm xuất hàng</button>
+        <table id="exportTable">
+          <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Hành động</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div id="errorContainer"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Doanh thu</h3>
+      <div id="revenuesApp">
+        <button id="add-revenue">Thêm</button>
+        <input type="text" id="revenueAmount" placeholder="Nhập doanh thu"><br>
+        <div id="errorContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="adminApp" class="hidden">
+    <div class="section">
+      <h3>📝 Tổng kết ngày</h3>
+      <div id="dailySummaryApp">
+        <div>
+          <span id="summaryDate"></span><br>
+          Doanh thu: <span id="totalRevenue">0₫</span><br>
+          Tổng chi phí: <span id="totalExpense">0₫</span><br>
+          Số dư: <span id="dailyBalance">0₫</span>
+        </div>
+        <div id="exportSummary"></div>
+        <textarea id="dailyNote" rows="3" placeholder="Ghi chú cá nhân"></textarea><br>
+        <button id="save-daily">Lưu dữ liệu</button>
+        <div id="errorContainer"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>📦 Quản lý Kho hàng</h3>
+      <div id="inventoryApp">
+        <input type="text" id="productName" placeholder="Tên sản phẩm"><br>
+        <input type="number" id="productQuantity" placeholder="Số lượng"><br>
+        <input type="text" id="productUnit" placeholder="ĐVT"><br>
+        <input type="number" id="productPrice" placeholder="Giá đơn vị"><br>
+        <button id="add-product">Thêm sản phẩm</button>
+        <table id="productTable">
+          <thead><tr><th>Tên sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Giá đơn vị</th><th>Hành động</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div id="errorContainer"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>📊 Báo cáo</h3>
+      <div id="reportsApp">
+        <button id="daily-report">Báo cáo ngày</button>
+        <button id="monthly-report">Báo cáo tháng</button>
+        <button id="print-report">In báo cáo</button>
+        <input type="date" id="reportDate"><br>
+        <select id="reportUserFilter">
+          <option value="all">Tất cả người dùng</option>
+        </select>
+        <select id="reportCategoryFilter">
+          <option value="all">Tất cả danh mục</option>
+        </select>
+        <button id="apply-report">Áp dụng</button>
+        <div id="reportOutput"></div>
+        <div id="errorContainer"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>👥 Quản lý Người dùng</h3>
+      <div id="usersApp">
+        <input type="text" id="newUsername" placeholder="Tên đăng nhập"><br>
+        <input type="password" id="newPassword" placeholder="Mật khẩu"><br>
+        <select id="newUserRole">
+          <option value="staff">Nhân viên</option>
+          <option value="admin">Quản lý</option>
+        </select><br>
+        <button id="add-user">Thêm người dùng</button>
+        <table id="userTable">
+          <thead><tr><th>Tên đăng nhập</th><th>Vai trò</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div id="errorContainer"></div>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
-    // Import Firebase SDK
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, where, getDoc, doc, updateDoc, deleteDoc, runTransaction, Timestamp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
+    import { initAuth } from './auth.js';
+    import { initExpenses } from './expenses.js';
+    import { initExports } from './exports.js';
+    import { initRevenues } from './revenues.js';
+    import { initDailySummary } from './dailySummary.js';
+    import { initInventory } from './inventory.js';
+    import { initReports } from './reports.js';
+    import { initUsers } from './users.js';
+    import { deleteDoc, editProduct, deleteExport, toggleUserStatus, deleteUser } from './utils.js';
 
-    // Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
-      authDomain: "quanly-d7e54.firebaseapp.com",
-      projectId: "quanly-d7e54",
-      storageBucket: "quanly-d7e54.firebasestorage.app",
-      messagingSenderId: "482686011267",
-      appId: "1:482686011267:web:f2fe9d400fe618487a98b6",
-      measurementId: "G-G3H6MTCWCM"
-    };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    // Xử lý đăng nhập/đăng xuất
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        document.getElementById('login-section').classList.add('hidden');
-        document.getElementById('main-content').classList.remove('hidden');
-        loadUserData(user.uid);
-      } else {
-        document.getElementById('login-section').classList.remove('hidden');
-        document.getElementById('main-content').classList.add('hidden');
-      }
+    document.addEventListener('DOMContentLoaded', () => {
+      initAuth();
+      initExpenses();
+      initExports();
+      initRevenues();
+      initDailySummary();
+      initInventory();
+      initReports();
+      initUsers();
+      window.deleteDoc = deleteDoc;
+      window.editProduct = editProduct;
+      window.deleteExport = deleteExport;
+      window.toggleUserStatus = toggleUserStatus;
+      window.deleteUser = deleteUser;
     });
-
-    document.getElementById('login-button').addEventListener('click', () => {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      signInWithEmailAndPassword(auth, email, password)
-        .then(() => console.log('Đăng nhập thành công'))
-        .catch((error) => alert('Lỗi đăng nhập: ' + error.message));
-    });
-
-    document.getElementById('logout-button').addEventListener('click', () => {
-      signOut(auth).then(() => console.log('Đăng xuất thành công'));
-    });
-
-    // Tải dữ liệu người dùng và phân quyền
-    async function loadUserData(uid) {
-      const userDoc = await getDoc(doc(db, 'users', uid));
-      if (userDoc.exists() && userDoc.data().role === 'manager') {
-        document.querySelectorAll('.manager-only').forEach(el => el.style.display = 'block');
-      }
-      loadUsers(); // Cập nhật danh sách người dùng cho select filter
-    }
-
-    // Chi phí
-    document.getElementById('add-cost').addEventListener('click', async () => {
-      const description = document.getElementById('cost-description').value;
-      const amount = document.getElementById('cost-amount').value;
-      if (description && amount) {
-        try {
-          await addDoc(collection(db, 'costs'), {
-            description: description,
-            amount: parseFloat(amount),
-            createdBy: auth.currentUser.uid,
-            timestamp: Timestamp.now()
-          });
-          document.getElementById('cost-description').value = '';
-          document.getElementById('cost-amount').value = '';
-        } catch (error) {
-          alert('Lỗi: ' + error.message);
-        }
-      }
-    });
-
-    onSnapshot(query(collection(db, 'costs'), orderBy('timestamp', 'desc')), (snapshot) => {
-      const table = document.getElementById('cost-table');
-      table.innerHTML = '<tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr>';
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        const row = `<tr>
-          <td>${data.description}</td>
-          <td>${data.amount}</td>
-          <td class="manager-only"><button onclick="deleteDoc('costs', '${doc.id}')">Xóa</button></td>
-        </tr>`;
-        table.innerHTML += row;
-      });
-    });
-
-    // Xuất hàng
-    document.getElementById('add-export').addEventListener('click', async () => {
-      const product = document.getElementById('export-product').value;
-      const quantity = document.getElementById('export-quantity').value;
-      const unit = document.getElementById('export-unit').value;
-      if (product && quantity && unit) {
-        try {
-          await runTransaction(db, async (transaction) => {
-            const inventoryRef = doc(db, 'inventory', product);
-            const docSnap = await transaction.get(inventoryRef);
-            if (!docSnap.exists()) throw new Error('Sản phẩm không tồn tại!');
-            const newQuantity = docSnap.data().quantity - parseInt(quantity);
-            if (newQuantity < 0) throw new Error('Số lượng tồn kho không đủ!');
-            transaction.update(inventoryRef, { quantity: newQuantity });
-            transaction.set(doc(collection(db, 'exports')), {
-              product: product,
-              quantity: parseInt(quantity),
-              unit: unit,
-              createdBy: auth.currentUser.uid,
-              timestamp: Timestamp.now()
-            });
-          });
-          document.getElementById('export-product').value = '';
-          document.getElementById('export-quantity').value = '';
-          document.getElementById('export-unit').value = '';
-        } catch (error) {
-          alert('Lỗi: ' + error.message);
-        }
-      }
-    });
-
-    onSnapshot(query(collection(db, 'exports'), orderBy('timestamp', 'desc')), (snapshot) => {
-      const table = document.getElementById('export-table');
-      table.innerHTML = '<tr><th>Sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Hành động</th></tr>';
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        const row = `<tr>
-          <td>${data.product}</td>
-          <td>${data.quantity}</td>
-          <td>${data.unit}</td>
-          <td class="manager-only"><button onclick="deleteDoc('exports', '${doc.id}')">Xóa</button></td>
-        </tr>`;
-        table.innerHTML += row;
-      });
-    });
-
-    // Doanh thu
-    document.getElementById('add-revenue').addEventListener('click', async () => {
-      const description = document.getElementById('revenue-description').value;
-      const amount = document.getElementById('revenue-amount').value;
-      if (description && amount) {
-        try {
-          await addDoc(collection(db, 'revenues'), {
-            description: description,
-            amount: parseFloat(amount),
-            createdBy: auth.currentUser.uid,
-            timestamp: Timestamp.now()
-          });
-          document.getElementById('revenue-description').value = '';
-          document.getElementById('revenue-amount').value = '';
-        } catch (error) {
-          alert('Lỗi: ' + error.message);
-        }
-      }
-    });
-
-    onSnapshot(query(collection(db, 'revenues'), orderBy('timestamp', 'desc')), (snapshot) => {
-      const table = document.getElementById('revenue-table');
-      table.innerHTML = '<tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr>';
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        const row = `<tr>
-          <td>${data.description}</td>
-          <td>${data.amount}</td>
-          <td class="manager-only"><button onclick="deleteDoc('revenues', '${doc.id}')">Xóa</button></td>
-        </tr>`;
-        table.innerHTML += row;
-      });
-    });
-
-    // Tổng kết ngày
-    async function updateDailySummary() {
-      const startOfDay = new Date(new Date().setHours(0, 0, 0, 0));
-      const endOfDay = new Date(new Date().setHours(23, 59, 59, 999));
-      let totalRevenue = 0;
-      let totalCost = 0;
-
-      const revenueSnapshot = await getDocs(query(
-        collection(db, 'revenues'),
-        where('timestamp', '>=', Timestamp.fromDate(startOfDay)),
-        where('timestamp', '<=', Timestamp.fromDate(endOfDay))
-      ));
-      revenueSnapshot.forEach((doc) => totalRevenue += doc.data().amount);
-      document.getElementById('total-revenue').textContent = `${totalRevenue}₫`;
-
-      const costSnapshot = await getDocs(query(
-        collection(db, 'costs'),
-        where('timestamp', '>=', Timestamp.fromDate(startOfDay)),
-        where('timestamp', '<=', Timestamp.fromDate(endOfDay))
-      ));
-      costSnapshot.forEach((doc) => totalCost += doc.data().amount);
-      document.getElementById('total-cost').textContent = `${totalCost}₫`;
-
-      document.getElementById('balance').textContent = `${totalRevenue - totalCost}₫`;
-    }
-
-    document.getElementById('save-note').addEventListener('click', async () => {
-      const note = document.getElementById('personal-note').value;
-      if (note) {
-        try {
-          await addDoc(collection(db, 'daily_notes'), {
-            note: note,
-            createdBy: auth.currentUser.uid,
-            timestamp: Timestamp.now()
-          });
-          document.getElementById('personal-note').value = '';
-        } catch (error) {
-          alert('Lỗi: ' + error.message);
-        }
-      }
-    });
-
-    // Quản lý kho hàng
-    document.getElementById('add-product').addEventListener('click', async () => {
-      const product = document.getElementById('product-name').value;
-      const quantity = document.getElementById('product-quantity').value;
-      const unit = document.getElementById('product-unit').value;
-      const unitPrice = document.getElementById('product-unit-price').value;
-      if (product && quantity && unit && unitPrice) {
-        try {
-          await setDoc(doc(db, 'inventory', product), {
-            product: product,
-            quantity: parseInt(quantity),
-            unit: unit,
-            unitPrice: parseFloat(unitPrice)
-          });
-          document.getElementById('product-name').value = '';
-          document.getElementById('product-quantity').value = '';
-          document.getElementById('product-unit').value = '';
-          document.getElementById('product-unit-price').value = '';
-        } catch (error) {
-          alert('Lỗi: ' + error.message);
-        }
-      }
-    });
-
-    onSnapshot(collection(db, 'inventory'), (snapshot) => {
-      const table = document.getElementById('inventory-table');
-      table.innerHTML = '<tr><th>Tên sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Giá đơn vị</th><th>Hành động</th></tr>';
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        const row = `<tr>
-          <td>${data.product}</td>
-          <td>${data.quantity}</td>
-          <td>${data.unit}</td>
-          <td>${data.unitPrice}</td>
-          <td class="manager-only"><button onclick="deleteDoc('inventory', '${doc.id}')">Xóa</button></td>
-        </tr>`;
-        table.innerHTML += row;
-      });
-    });
-
-    // Báo cáo
-    document.getElementById('daily-report').addEventListener('click', () => {
-      const startOfDay = new Date(new Date().setHours(0, 0, 0, 0));
-      const endOfDay = new Date(new Date().setHours(23, 59, 59, 999));
-      generateReport('daily', startOfDay, endOfDay);
-    });
-
-    document.getElementById('monthly-report').addEventListener('click', () => {
-      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-      const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59, 999);
-      generateReport('monthly', startOfMonth, endOfMonth);
-    });
-
-    async function generateReport(type, start, end) {
-      const category = document.getElementById('category-filter').value;
-      const user = document.getElementById('user-filter').value;
-      let q = query(
-        collection(db, category),
-        where('timestamp', '>=', Timestamp.fromDate(start)),
-        where('timestamp', '<=', Timestamp.fromDate(end))
-      );
-      if (user !== 'all') q = query(q, where('createdBy', '==', user));
-      const snapshot = await getDocs(q);
-      let report = `Báo cáo ${type === 'daily' ? 'ngày' : 'tháng'} (${category}):\n`;
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        report += `${data.description || data.product}: ${data.amount || data.quantity} ${data.unit || '₫'}\n`;
-      });
-      document.getElementById('report-result').textContent = report;
-    }
-
-    document.getElementById('print-report').addEventListener('click', () => {
-      window.print();
-    });
-
-    // Quản lý người dùng
-    async function loadUsers() {
-      onSnapshot(collection(db, 'users'), (snapshot) => {
-        const table = document.getElementById('user-table');
-        const userFilter = document.getElementById('user-filter');
-        table.innerHTML = '<tr><th>Tên đăng nhập</th><th>Vai trò</th><th>Trạng thái</th><th>Hành động</th></tr>';
-        userFilter.innerHTML = '<option value="all">Tất cả người dùng</option>';
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          const row = `<tr>
-            <td>${data.username}</td>
-            <td>${data.role}</td>
-            <td>${data.status}</td>
-            <td class="manager-only"><button onclick="deleteDoc('users', '${doc.id}')">Xóa</button></td>
-          </tr>`;
-          table.innerHTML += row;
-          userFilter.innerHTML += `<option value="${doc.id}">${data.username}</option>`;
-        });
-      });
-    }
-
-    document.getElementById('add-user').addEventListener('click', async () => {
-      const username = document.getElementById('username').value;
-      const role = document.getElementById('role').value;
-      const email = document.getElementById('user-email').value;
-      const password = document.getElementById('user-password').value;
-      try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        await setDoc(doc(db, 'users', userCredential.user.uid), {
-          username: username,
-          role: role,
-          status: 'active'
-        });
-        document.getElementById('username').value = '';
-        document.getElementById('role').value = 'employee';
-        document.getElementById('user-email').value = '';
-        document.getElementById('user-password').value = '';
-      } catch (error) {
-        alert('Lỗi: ' + error.message);
-      }
-    });
-
-    // Hàm xóa tài liệu
-    window.deleteDoc = async function(collection, docId) {
-      try {
-        await deleteDoc(doc(db, collection, docId));
-        console.log('Xóa thành công');
-      } catch (error) {
-        alert('Lỗi: ' + error.message);
-      }
-    };
-
-    // Cập nhật tổng kết ngày khi tải trang
-    updateDailySummary();
   </script>
 </body>
 </html>
