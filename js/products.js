@@ -158,8 +158,9 @@ window.editProduct = editProduct;
 window.deleteProduct = deleteProduct;
 
 // ✅ Export mặc định cho module
-export default {
-  products,
-  loadProducts,
-  renderProductSelection
-};
+export let products = [];
+
+export function renderProductSelection() { ... }
+export async function loadProducts() { ... }
+// các hàm khác cũng export theo cách này
+
