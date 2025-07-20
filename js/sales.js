@@ -190,3 +190,4 @@ window.addExport = addExport;
 window.deleteExport = deleteExport;
 window.saveDailyData = saveDailyData;
 window.deleteExpense = deleteExpense;
+export { dailyData, currentUser };
