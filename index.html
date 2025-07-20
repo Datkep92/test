@@ -132,16 +132,16 @@
     </div>
   </div>
 
-  <script type="module">
-    import { initAuth } from './auth.js';
-    import { initExpenses } from './expenses.js';
-    import { initExports } from './exports.js';
-    import { initRevenues } from './revenues.js';
-    import { initDailySummary } from './dailySummary.js';
-    import { initInventory } from './inventory.js';
-    import { initReports } from './reports.js';
-    import { initUsers } from './users.js';
-    import { deleteDoc, editProduct, deleteExport, toggleUserStatus, deleteUser } from './utils.js';
+<script type="module">
+  import { initAuth } from './js/auth.js';
+  import { initExpenses } from './js/expenses.js';
+  import { initExports } from './js/exports.js';
+  import { initRevenues } from './js/revenues.js';
+  import { initDailySummary } from './js/dailySummary.js';
+  import { initInventory } from './js/inventory.js';
+  import { initReports } from './js/reports.js';
+  import { initUsers } from './js/users.js';
+  import { deleteDoc, editProduct, deleteExport, toggleUserStatus, deleteUser } from './js/utils.js';
 
     document.addEventListener('DOMContentLoaded', () => {
       initAuth();
