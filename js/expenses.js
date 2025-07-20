@@ -1,4 +1,4 @@
-import { dailyData, currentUser, renderDailyData, addExpense, addRevenue } from './sales.js';
+import { dailyData, renderDailyData } from './sales.js';
 import { showError, capitalizeFirstLetter } from './utils.js';
 
 // ... (giữ nguyên phần còn lại của file)
