@@ -408,7 +408,14 @@
         </table>
       </div>
     </div>
-    
+    <h3>💼 Duyệt xuất hàng</h3>
+<table id="adminApproveTable">
+  <thead>
+    <tr><th>Người nhập</th><th>Sản phẩm</th><th>Số lượng</th><th>Thời gian</th><th></th></tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
     <div class="section">
       <h3>📊 Báo cáo</h3>
       <div class="flex-md">
@@ -837,56 +844,37 @@
     }
     
    function addExport() {
-      if (!selectedProduct) {
-        showError('Vui lòng chọn sản phẩm');
-        return;
-      }
-      
-      const quantity = parseInt(document.getElementById('exportQuantity').value) || 1;
-      
-      if (quantity <= 0) {
-        showError('Số lượng phải lớn hơn 0');
-        return;
-      }
-      
-      if (quantity > selectedProduct.quantity) {
-        showError(`Số lượng xuất vượt quá tồn kho (${selectedProduct.quantity} ${selectedProduct.unit})`);
-        return;
-      }
-      
-      // Check if product already exported today
-      const existingExport = dailyData.exports.find(e => e.productId === selectedProduct.id);
-      
-      if (existingExport) {
-        existingExport.quantity += quantity;
-      } else {
-        dailyData.exports.push({
-          productId: selectedProduct.id,
-          productName: selectedProduct.name,
-          quantity: quantity,
-          unit: selectedProduct.unit,
-          price: selectedProduct.price,
-          user: currentUser.email,
-          timestamp: new Date().getTime()
-        });
-      }
-      
-      // Update product quantity
-      selectedProduct.quantity -= quantity;
-      
-      // Update product in Firebase
-      const productRef = ref(database, `products/${selectedProduct.id}`);
-      set(productRef, selectedProduct);
-      
-      document.getElementById('exportQuantity').value = '1';
-      selectedProduct = null;
-      document.querySelectorAll('.product-item').forEach(item => {
-        item.classList.remove('selected');
-      });
-      
-      renderDailyData();
-      renderProductSelection();
-    }
+  const productId = document.getElementById('exportProductSelect').value;
+  const quantity = parseFloat(document.getElementById('exportQuantity').value);
+
+  if (!productId || isNaN(quantity) || quantity <= 0) {
+    showError('Vui lòng chọn sản phẩm và số lượng hợp lệ');
+    return;
+  }
+
+  const selectedProduct = products.find(p => p.id === productId);
+  if (!selectedProduct) {
+    showError('Không tìm thấy sản phẩm');
+    return;
+  }
+
+  if (!Array.isArray(dailyData.exports)) dailyData.exports = [];
+
+  dailyData.exports.push({
+    productId,
+    productName: selectedProduct.name,
+    quantity,
+    unit: selectedProduct.unit || '',
+    price: selectedProduct.price || 0,
+    approved: false,
+    approvedBy: null,
+    timestamp: Date.now()
+  });
+
+  document.getElementById('exportQuantity').value = '';
+  renderDailyData();
+}
+
 
 
     
@@ -923,74 +911,31 @@
       renderDailyData();
     }
     
-    function renderDailyData() {
-  // ✅ Đảm bảo dữ liệu là mảng trước khi dùng
-  if (!Array.isArray(dailyData.expenses)) dailyData.expenses = [];
+   function renderDailyData() {
   if (!Array.isArray(dailyData.exports)) dailyData.exports = [];
+  if (!Array.isArray(dailyData.expenses)) dailyData.expenses = [];
 
-  // Render expenses
-  const expenseTable = document.querySelector('#expenseTable tbody');
-  expenseTable.innerHTML = '';
-
-  dailyData.expenses.forEach((expense, index) => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${expense.description} <span class="category-badge">${expense.category}</span></td>
-      <td class="text-right">${expense.amount.toLocaleString('vi-VN')}₫</td>
-      <td class="actions">
-        <button onclick="deleteExpense(${index})" class="danger">Xóa</button>
-      </td>
-    `;
-    expenseTable.appendChild(row);
-  });
-
-  // Render exports
   const exportTable = document.querySelector('#exportTable tbody');
   exportTable.innerHTML = '';
 
-  dailyData.exports.forEach((exportItem, index) => {
+  dailyData.exports.forEach((item, index) => {
+    const isApproved = item.approved === true;
+    const isMine = item.user === currentUser.email || !item.user; // fallback
+
     const row = document.createElement('tr');
     row.innerHTML = `
-      <td>${exportItem.productName}</td>
-      <td>${exportItem.quantity}</td>
-      <td>${exportItem.unit}</td>
+      <td>${item.productName}</td>
+      <td>${item.quantity}</td>
+      <td>${item.unit}</td>
+      <td>${isApproved ? `<span class="approved-badge">✔️ Đã duyệt</span>` : `<span class="pending-badge">⏳ Chờ duyệt</span>`}</td>
       <td class="actions">
-        <button onclick="deleteExport(${index})" class="danger">Xóa</button>
+        ${!isApproved && isMine ? `<button onclick="deleteExport(${index})" class="danger">Xóa</button>` : ''}
       </td>
     `;
     exportTable.appendChild(row);
   });
-
-  // Calculate and render summary
-  const totalExpense = dailyData.expenses.reduce((sum, e) => sum + e.amount, 0);
-  const totalExportCost = dailyData.exports.reduce((sum, e) => sum + (e.quantity * (e.price || 0)), 0);
-  const balance = (dailyData.revenue || 0) - totalExpense;
-
-  document.getElementById('totalRevenue').textContent =
-    (dailyData.revenue || 0).toLocaleString('vi-VN') + '₫';
-  document.getElementById('totalExpense').textContent =
-    totalExpense.toLocaleString('vi-VN') + '₫';
-  document.getElementById('dailyBalance').innerHTML =
-    `<strong>${balance.toLocaleString('vi-VN')}₫</strong>`;
-
-  // Render export summary
-  const exportSummary = document.getElementById('exportSummary');
-  exportSummary.innerHTML = '';
-
-  if (dailyData.exports.length > 0) {
-    const summaryDiv = document.createElement('div');
-    summaryDiv.style.marginTop = '15px';
-    summaryDiv.innerHTML = `
-      <h4>📦 Xuất hàng hôm nay:</h4>
-      <ul>
-        ${dailyData.exports.map(e =>
-          `<li>${e.productName}: ${e.quantity} ${e.unit} (${(e.quantity * (e.price || 0)).toLocaleString('vi-VN')}₫)</li>`
-        ).join('')}
-      </ul>
-    `;
-    exportSummary.appendChild(summaryDiv);
-  }
 }
+
 
     
     // Product management
@@ -1375,7 +1320,71 @@
       const cleaned = input.toString().replace(/[^\d]/g, '');
       return parseInt(cleaned) || 0;
     }
-    
+    function renderPendingExportsForAdmin(dateKey, uid, exportList) {
+  const table = document.querySelector('#adminApproveTable tbody');
+  table.innerHTML = '';
+
+  exportList.forEach((item, index) => {
+    if (item.approved !== true) {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${uid}</td>
+        <td>${item.productName}</td>
+        <td>${item.quantity} ${item.unit}</td>
+        <td>${new Date(item.timestamp).toLocaleString()}</td>
+        <td><button onclick="approveExport('${dateKey}', '${uid}', ${index})">✅ Duyệt</button></td>
+      `;
+      table.appendChild(row);
+    }
+  });
+}
+async function approveExport(dateKey, uid, index) {
+  const dataRef = ref(database, `dailyData/${dateKey}/${uid}`);
+  const snapshot = await get(dataRef);
+
+  if (!snapshot.exists()) {
+    showError('Không tìm thấy dữ liệu cần duyệt.');
+    return;
+  }
+
+  const userData = snapshot.val();
+  const exportItem = userData.exports?.[index];
+
+  if (!exportItem || exportItem.approved === true) {
+    showError('Dữ liệu không hợp lệ hoặc đã duyệt.');
+    return;
+  }
+
+  // Trừ kho
+  const productRef = ref(database, `products/${exportItem.productId}`);
+  const productSnap = await get(productRef);
+
+  if (!productSnap.exists()) {
+    showError('Không tìm thấy sản phẩm trong kho.');
+    return;
+  }
+
+  const productData = productSnap.val();
+  if ((productData.quantity || 0) < exportItem.quantity) {
+    showError('Số lượng tồn kho không đủ.');
+    return;
+  }
+
+  productData.quantity -= exportItem.quantity;
+
+  // Ghi lại vào Firebase
+  await Promise.all([
+    set(productRef, productData),
+    update(ref(database, `dailyData/${dateKey}/${uid}/exports/${index}`), {
+      approved: true,
+      approvedBy: currentUser.email
+    })
+  ]);
+
+  showSuccess('Đã duyệt xuất kho và trừ tồn kho.');
+  loadAllExportsForApproval(); // Tải lại danh sách chờ duyệt nếu có
+}
+
     // Initialize the app
     document.addEventListener('DOMContentLoaded', initApp);
     
