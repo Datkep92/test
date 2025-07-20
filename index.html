@@ -625,29 +625,13 @@
       setTimeout(() => errorContainer.innerHTML = '', 3000);
     }
     
-    // Check if user is admin
-    async function checkAdminStatus() {
-      try {
-        const userRef = ref(database, `users/${currentUser.uid}`);
-        const snapshot = await get(userRef);
-        
-        if (snapshot.exists()) {
-          const userData = snapshot.val();
-          return userData.role === 'admin';
-        } else {
-          // Create new user record if not exists
-          await set(userRef, {
-            email: currentUser.email,
-            role: 'staff',
-            active: true
-          });
-          return false;
-        }
-      } catch (error) {
-        showError(`Lỗi khi kiểm tra quyền admin: ${error.message}`);
-        return false;
-      }
-    }
+   // Hàm kiểm tra quyền admin
+async function checkAdminStatus() {
+  if (!currentUser) return false;
+  const userRef = ref(database, `users/${currentUser.uid}`);
+  const snapshot = await get(userRef);
+  return snapshot.exists() && snapshot.val().role === 'admin';
+}
     
     // Data functions
     async function loadData() {
@@ -1350,67 +1334,67 @@
   });
 }
 async function approveExport(dateKey, uid, index) {
-  const dataRef = ref(database, `dailyData/${dateKey}/${uid}`);
-  const snapshot = await get(dataRef);
+  try {
+    // 1. Kiểm tra quyền admin
+    const isAdmin = await checkAdminStatus();
+    if (!isAdmin) {
+      showError('Chỉ quản lý mới được duyệt xuất kho');
+      return;
+    }
 
-  if (!snapshot.exists()) {
-    showError('Không tìm thấy dữ liệu cần duyệt.');
-    return;
+    // 2. Lấy dữ liệu xuất kho cần duyệt
+    const exportRef = ref(database, `dailyData/${dateKey}/${uid}/exports/${index}`);
+    const exportSnap = await get(exportRef);
+
+    if (!exportSnap.exists()) {
+      showError('Không tìm thấy phiếu xuất kho này');
+      return;
+    }
+
+    const exportData = exportSnap.val();
+
+    // 3. Kiểm tra nếu đã duyệt rồi
+    if (exportData.approved === true) {
+      showError('Phiếu xuất kho này đã được duyệt trước đó');
+      return;
+    }
+
+    // 4. Kiểm tra tồn kho
+    const productRef = ref(database, `products/${exportData.productId}`);
+    const productSnap = await get(productRef);
+
+    if (!productSnap.exists()) {
+      showError('Sản phẩm không tồn tại trong kho');
+      return;
+    }
+
+    const productData = productSnap.val();
+    const currentQuantity = productData.quantity || 0;
+
+    if (currentQuantity < exportData.quantity) {
+      showError(`Không đủ tồn kho. Hiện có: ${currentQuantity} ${productData.unit}`);
+      return;
+    }
+
+    // 5. Cập nhật dữ liệu - Sử dụng transaction để đảm bảo tính nhất quán
+    const updates = {};
+    updates[`dailyData/${dateKey}/${uid}/exports/${index}/approved`] = true;
+    updates[`dailyData/${dateKey}/${uid}/exports/${index}/approvedBy`] = currentUser.email;
+    updates[`dailyData/${dateKey}/${uid}/exports/${index}/approvedAt`] = Date.now();
+    updates[`products/${exportData.productId}/quantity`] = currentQuantity - exportData.quantity;
+
+    await update(ref(database), updates);
+
+    showSuccess(`Đã duyệt xuất kho ${exportData.productName} (${exportData.quantity} ${exportData.unit})`);
+    
+    // 6. Cập nhật lại giao diện
+    loadAllExportsForApproval();
+    renderProducts(); // Cập nhật lại số lượng tồn kho trên giao diện
+
+  } catch (error) {
+    console.error('Lỗi khi duyệt xuất kho:', error);
+    showError(`Lỗi khi duyệt xuất kho: ${error.message}`);
   }
-
-  const userData = snapshot.val();
-  const exportItem = userData.exports?.[index];
-
-  if (!exportItem || exportItem.approved === true) {
-    showError('Dữ liệu không hợp lệ hoặc đã duyệt.');
-    return;
-  }
-
-  // Trừ kho
-  const productRef = ref(database, `products/${exportItem.productId}`);
-  const productSnap = await get(productRef);
-
-  if (!productSnap.exists()) {
-    showError('Không tìm thấy sản phẩm trong kho.');
-    return;
-  }
-
-  const productData = productSnap.val();
-  if ((productData.quantity || 0) < exportItem.quantity) {
-    showError('Số lượng tồn kho không đủ.');
-    return;
-  }
-
-  productData.quantity -= exportItem.quantity;
-
-  // Ghi lại vào Firebase
-  await Promise.all([
-    set(productRef, productData),
-    update(ref(database, `dailyData/${dateKey}/${uid}/exports/${index}`), {
-      approved: true,
-      approvedBy: currentUser.email
-    })
-  ]);
-
-  showSuccess('Đã duyệt xuất kho và trừ tồn kho.');
-  loadAllExportsForApproval(); // Tải lại danh sách chờ duyệt nếu có
-}
-async function loadAllExportsForApproval() {
-  const snapshot = await get(ref(database, 'dailyData'));
-
-  if (!snapshot.exists()) return;
-
-  snapshot.forEach(dateSnap => {
-    const dateKey = dateSnap.key;
-
-    dateSnap.forEach(userSnap => {
-      const uid = userSnap.key;
-      const data = userSnap.val();
-      const exports = data.exports || [];
-
-      renderPendingExportsForAdmin(dateKey, uid, exports);
-    });
-  });
 }
 
     // Initialize the app
