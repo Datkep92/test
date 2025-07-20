@@ -19,10 +19,13 @@ function checkUserRole(uid) {
     if (userData && userData.role === 'manager') {
       document.getElementById('login-page').classList.add('hidden');
       document.getElementById('manager-page').classList.remove('hidden');
-      loadReports();
+      loadInventory();
+      loadSharedReports('manager-shared-reports');
     } else {
       document.getElementById('login-page').classList.add('hidden');
       document.getElementById('employee-page').classList.remove('hidden');
+      loadProducts();
+      loadSharedReports('shared-reports');
     }
   }).catch(error => {
     console.error('Lỗi kiểm tra vai trò:', error);
