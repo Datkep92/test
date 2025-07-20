@@ -1,7 +1,5 @@
-import { database } from './firebase-config.js';
-import { ref, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { showError, capitalizeFirstLetter } from './utils.js';
 import { dailyData, currentUser, renderDailyData, addExpense, addRevenue } from './sales.js';
+import { showError, capitalizeFirstLetter } from './utils.js';
 
 // ... (giữ nguyên phần còn lại của file)
 let expenseCategories = [];
@@ -84,3 +82,4 @@ export function addRevenue() {
   document.getElementById('revenueAmount').value = '';
   renderDailyData();
 }
+export { parseExpenseInput, deleteExpense };
