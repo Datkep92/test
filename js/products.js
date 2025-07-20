@@ -1,9 +1,8 @@
 import { database } from './firebase-config.js';
 import { ref, set, get, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showError, showSuccess } from './utils.js';
-export let selectedProduct = null;
+import { selectedProduct } from './shared-data.js';
 
-// Khai báo biến products
 let products = [];
 
 async function addProduct() {
@@ -163,5 +162,9 @@ export {
   selectedProduct,
   renderProductSelection,
   loadProducts,
-  renderProducts
+  renderProducts,
+  addProduct,
+  editProduct,
+  deleteProduct
 };
+
