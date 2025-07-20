@@ -1,5 +1,5 @@
 import { db } from './auth.js';
-import { doc, getDoc, updateDoc, runTransaction, deleteDoc } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
+import { doc, getDoc, updateDoc, runTransaction } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
 
 export async function deleteDoc(collectionName, docId) {
   try {
