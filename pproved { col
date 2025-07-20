@@ -170,7 +170,9 @@
     gap: 8px;
     margin-bottom: 15px;
   }
-
+// Thêm CSS cho trạng thái
+.approved { color: #27ae60; }
+.pending { color: #f39c12; font-weight: bold; }
   .tab {
     padding: 10px 16px;
     background: #f1f1f1;
@@ -936,9 +938,7 @@ function canEdit(item) {
   `;
 }
 
-// Thêm CSS cho trạng thái
-.approved { color: #27ae60; }
-.pending { color: #f39c12; font-weight: bold; }
+
     async function deleteExpense(dateKey, expenseId) {
   try {
     if (!confirm('Bạn chắc chắn muốn xóa chi phí này?')) return;
