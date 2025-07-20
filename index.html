@@ -193,7 +193,12 @@
       </div>
     </div>
   </div>
-
+// Thêm vào file app.js sau khi DOM loaded
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelector('[onclick="addExpense()"]').addEventListener('click', addExpense);
+  document.querySelector('[onclick="addRevenue()"]').addEventListener('click', addRevenue);
+  // Xóa các thuộc tính onclick trong HTML
+});
   <!-- Firebase SDK -->
   <script type="module" src="/test/js/firebase-config.js"></script>
   <script type="module" src="/test/js/app.js"></script>
