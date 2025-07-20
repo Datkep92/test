@@ -1,4 +1,3 @@
-
 // Thiết lập persistence để giữ trạng thái đăng nhập
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
   .then(() => {
@@ -54,21 +53,33 @@ function checkUserRole(uid) {
       loadSharedReports('manager-shared-reports');
     } else {
       document.getElementById('login-page').classList.add('hidden');
-      // Chờ giao diện nhân viên hiển thị
-      setTimeout(() => {
-        const employeePage = document.getElementById('employee-page');
-        if (employeePage && !employeePage.classList.contains('hidden')) {
-          loadInventory('employee-inventory-list');
-          loadProducts();
-          loadSharedReports('shared-reports');
-        } else {
-          console.error('Giao diện nhân viên chưa sẵn sàng.');
-          alert('Lỗi: Giao diện nhân viên chưa tải. Vui lòng thử lại.');
-        }
-      }, 100); // Delay để đảm bảo DOM sẵn sàng
+      // Hàm thử tải giao diện nhân viên với cơ chế thử lại
+      tryLoadEmployeePage(0, 3); // Thử tối đa 3 lần
     }
   }).catch(error => {
     console.error('Lỗi kiểm tra vai trò:', error);
     alert('Lỗi kiểm tra vai trò: ' + error.message);
   });
+}
+
+function tryLoadEmployeePage(attempt, maxAttempts) {
+  const employeePage = document.getElementById('employee-page');
+  if (employeePage && !employeePage.classList.contains('hidden')) {
+    console.log('Giao diện nhân viên đã sẵn sàng, tải dữ liệu...');
+    loadInventory('employee-inventory-list');
+    loadProducts();
+    loadSharedReports('shared-reports');
+    return;
+  }
+
+  if (attempt >= maxAttempts) {
+    console.error(`Không thể tải giao diện nhân viên sau ${maxAttempts} lần thử.`);
+    alert('Lỗi: Không thể tải giao diện nhân viên. Vui lòng làm mới trang hoặc kiểm tra giao diện.');
+    return;
+  }
+
+  console.warn(`Giao diện nhân viên chưa sẵn sàng, thử lại lần ${attempt + 1}/${maxAttempts}...`);
+  setTimeout(() => {
+    tryLoadEmployeePage(attempt + 1, maxAttempts);
+  }, 500); // Delay 500ms trước khi thử lại
 }
