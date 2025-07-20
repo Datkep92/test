@@ -5,56 +5,51 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quản Lý Nhân Viên</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
- <link rel="stylesheet" href="styles.css?v=2">
-<body class="bg-gray-100 text-sm sm:text-base">
-
-  <!-- Login Page -->
-  <div id="login-page" class="min-h-screen flex items-center justify-center px-4">
-    <div class="bg-white p-6 sm:p-8 rounded shadow-md w-full max-w-md">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-100">
+  <div id="login-page" class="min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
       <h2 class="text-2xl font-bold mb-6 text-center">Đăng Nhập</h2>
-      <input id="email" type="email" placeholder="Email" class="w-full p-2 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-blue-300 transition">
-      <input id="password" type="password" placeholder="Mật khẩu" class="w-full p-2 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-blue-300 transition">
+      <input id="email" type="email" placeholder="Email" class="w-full p-2 mb-4 border rounded">
+      <input id="password" type="password" placeholder="Mật khẩu" class="w-full p-2 mb-4 border rounded">
       <div class="flex items-center mb-4">
         <input id="save-password" type="checkbox" class="mr-2">
-        <label for="save-password" class="text-gray-700">Lưu mật khẩu</label>
+        <label for="save-password">Lưu mật khẩu</label>
       </div>
-      <button onclick="login()" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition">Đăng Nhập</button>
+      <button onclick="login()" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Đăng Nhập</button>
       <p id="error" class="text-red-500 text-center mt-4 hidden"></p>
     </div>
   </div>
 
-  <!-- Employee Page -->
-  <div id="employee-page" class="hidden p-4 sm:p-8 space-y-6 overflow-auto max-h-screen">
-    <h2 class="text-xl font-bold sticky top-0 bg-gray-100 z-10 py-2">Báo Cáo Nhân Viên</h2>
-
-    <div class="grid grid-cols-1 gap-4">
+  <div id="employee-page" class="hidden p-8">
+    <h2 class="text-2xl font-bold mb-6">Báo Cáo Nhân Viên</h2>
+    <div class="grid grid-cols-1 gap-4 mb-6">
       <div>
-        <label class="block font-medium mb-1">Chi Phí</label>
-        <input id="shared-cost" type="number" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-300">
+        <label class="block">Chi Phí</label>
+        <input id="shared-cost" type="number" class="w-full p-2 border rounded">
       </div>
       <div>
-        <label class="block font-medium mb-1">Doanh Thu</label>
-        <input id="shared-revenue" type="number" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-300">
+        <label class="block">Doanh Thu</label>
+        <input id="shared-revenue" type="number" class="w-full p-2 border rounded">
       </div>
       <div>
-        <label class="block font-medium mb-1">Xuất Kho</label>
-        <select id="product-select" class="w-full p-2 border rounded mb-2 focus:outline-none">
+        <label class="block">Xuất Kho</label>
+        <select id="product-select" class="w-full p-2 border rounded mb-2">
           <option value="">Chọn sản phẩm</option>
         </select>
         <input id="export-quantity" type="number" placeholder="Số lượng xuất kho" class="w-full p-2 border rounded">
       </div>
-      <button onclick="submitSharedReport()" class="bg-green-500 text-white p-2 rounded hover:bg-green-600 transition">Gửi Báo Cáo</button>
+      <button onclick="submitSharedReport()" class="bg-green-500 text-white p-2 rounded hover:bg-green-600">Gửi Báo Cáo</button>
     </div>
-
-    <div>
-      <h3 class="text-lg font-semibold mb-2">Danh Mục Tồn Kho</h3>
-      <div id="employee-inventory-list" class="space-y-2"></div>
+    <div class="mb-6">
+      <h3 class="text-xl font-semibold">Danh Mục Tồn Kho</h3>
+      <div id="employee-inventory-list" class="mt-4"></div>
     </div>
-
     <div>
-      <h3 class="text-lg font-semibold mb-2">Báo Cáo Chung</h3>
-      <div id="shared-reports" class="space-y-2"></div>
-      <div id="total-report" class="mt-4 p-4 border rounded bg-white">
+      <h3 class="text-xl font-semibold">Báo Cáo Chung</h3>
+      <div id="shared-reports" class="mt-4"></div>
+      <div id="total-report" class="mt-4 p-4 border rounded">
         <p><strong>Tổng Chi Phí:</strong> <span id="total-cost">0</span></p>
         <p><strong>Tổng Doanh Thu:</strong> <span id="total-revenue">0</span></p>
         <p><strong>Số Tiền Thực:</strong> <span id="net-profit">0</span></p>
@@ -63,27 +58,23 @@
     </div>
   </div>
 
-  <!-- Manager Page -->
-  <div id="manager-page" class="hidden p-4 sm:p-8 space-y-6 overflow-auto max-h-screen">
-    <h2 class="text-xl font-bold sticky top-0 bg-gray-100 z-10 py-2">Quản Lý</h2>
-
-    <div>
-      <h3 class="text-lg font-semibold mb-2">Tạo Danh Sách Tồn Kho</h3>
+  <div id="manager-page" class="hidden p-8">
+    <h2 class="text-2xl font-bold mb-6">Quản Lý</h2>
+    <div class="mb-6">
+      <h3 class="text-xl font-semibold">Tạo Danh Sách Tồn Kho</h3>
       <input id="product-name" type="text" placeholder="Tên sản phẩm" class="w-full p-2 border rounded mb-2">
       <input id="product-quantity" type="number" placeholder="Số lượng" class="w-full p-2 border rounded mb-2">
       <input id="product-price" type="number" placeholder="Đơn giá" class="w-full p-2 border rounded mb-2">
-      <button onclick="addInventory()" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition">Thêm Sản Phẩm</button>
+      <button onclick="addInventory()" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Thêm Sản Phẩm</button>
     </div>
-
-    <div>
-      <h3 class="text-lg font-semibold mb-2">Danh Sách Tồn Kho</h3>
-      <div id="inventory-list" class="space-y-2"></div>
+    <div class="mb-6">
+      <h3 class="text-xl font-semibold">Danh Sách Tồn Kho</h3>
+      <div id="inventory-list" class="mt-4"></div>
     </div>
-
     <div>
-      <h3 class="text-lg font-semibold mb-2">Báo Cáo Chung</h3>
-      <div id="manager-shared-reports" class="space-y-2"></div>
-      <div id="manager-total-report" class="mt-4 p-4 border rounded bg-white">
+      <h3 class="text-xl font-semibold">Báo Cáo Chung</h3>
+      <div id="manager-shared-reports" class="mt-4"></div>
+      <div id="manager-total-report" class="mt-4 p-4 border rounded">
         <p><strong>Tổng Chi Phí:</strong> <span id="manager-total-cost">0</span></p>
         <p><strong>Tổng Doanh Thu:</strong> <span id="manager-total-revenue">0</span></p>
         <p><strong>Số Tiền Thực:</strong> <span id="manager-net-profit">0</span></p>
@@ -92,7 +83,6 @@
     </div>
   </div>
 
-  <!-- Scripts -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
