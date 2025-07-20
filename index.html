@@ -844,8 +844,16 @@
     }
     
    function addExport() {
-  const productId = document.getElementById('exportProductSelect').value;
-  const quantity = parseFloat(document.getElementById('exportQuantity').value);
+  const qtyInput = document.getElementById('exportQuantity');
+  const select = document.getElementById('exportProductSelect');
+
+  if (!qtyInput || !select) {
+    showError('Không tìm thấy ô nhập số lượng hoặc danh sách sản phẩm');
+    return;
+  }
+
+  const productId = select.value;
+  const quantity = parseFloat(qtyInput.value);
 
   if (!productId || isNaN(quantity) || quantity <= 0) {
     showError('Vui lòng chọn sản phẩm và số lượng hợp lệ');
