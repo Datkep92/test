@@ -7,12 +7,10 @@ import {
 import { ref, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showError, showSuccess } from './utils.js';
 
-export async function handleLogin() {
+// 1. Định nghĩa hàm (KHÔNG export ở đây)
+async function handleLogin() {
   const email = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value.trim();
-  
-  // Clear previous errors
-  document.getElementById('errorContainer').innerHTML = '';
   
   if (!email || !password) {
     showError('Vui lòng nhập đầy đủ thông tin đăng nhập');
@@ -21,11 +19,7 @@ export async function handleLogin() {
   
   try {
     document.getElementById('loadingIndicator').classList.remove('hidden');
-    
-    // Sign in with Firebase Authentication
     await signInWithEmailAndPassword(auth, email, password);
-    
-    // Hide loading indicator
     document.getElementById('loadingIndicator').classList.add('hidden');
   } catch (error) {
     document.getElementById('loadingIndicator').classList.add('hidden');
@@ -33,7 +27,8 @@ export async function handleLogin() {
   }
 }
 
-export async function handleLogout() {
+// 2. Định nghĩa hàm (KHÔNG export ở đây)
+async function handleLogout() {
   try {
     await signOut(auth);
     showSuccess('Bạn đã đăng xuất thành công');
@@ -42,5 +37,15 @@ export async function handleLogout() {
   }
 }
 
-// Cuối file auth.js chỉ giữ lại:
+// 3. Định nghĩa hàm (KHÔNG export ở đây)
+async function addUser() {
+  // ... giữ nguyên nội dung hàm
+}
+
+// 4. Export DUY NHẤT MỘT LẦN ở cuối file
 export { handleLogin, handleLogout, addUser };
+
+// 5. Expose ra window cho các sự kiện HTML
+window.handleLogin = handleLogin;
+window.handleLogout = handleLogout;
+window.addUser = addUser;
