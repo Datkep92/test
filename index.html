@@ -766,23 +766,6 @@ function convertObjectToArray(obj) {
       ).join(' ');
     }
     
-    function addExpense() {
-  const input = document.getElementById('expenseInput').value.trim();
-  const { description, amount } = parseExpenseInput(input);
-
-  const expenseRef = ref(database, `dailyData/${getDateKey()}/expenses`);
-  const newExpense = {
-    description,
-    amount,
-    user: currentUser.email,
-    userId: currentUser.uid,
-    timestamp: Date.now()
-  };
-
-  push(expenseRef, newExpense);
-}
-    
-    
     
     function renderProductSelection() {
       const container = document.getElementById('productList');
@@ -948,21 +931,36 @@ function canEdit(item) {
   document.getElementById('totalRevenue').textContent = `${(dailyData.revenue || 0).toLocaleString('vi-VN')}₫`;
 }
 async function addExpense() {
-  const input = document.getElementById('expenseInput').value.trim();
-  const { description, amount } = parseExpenseInput(input);
+  try {
+    const input = document.getElementById('expenseInput').value.trim();
+    if (!input) {
+      showError('Vui lòng nhập thông tin chi phí');
+      return;
+    }
 
-  const expenseRef = ref(database, `dailyData/${getDateKey()}/expenses`);
-  const newExpense = {
-    description,
-    amount,
-    user: currentUser.email,
-    userId: currentUser.uid,
-    timestamp: Date.now()
-  };
+    const { description, amount } = parseExpenseInput(input);
+    if (!description || amount <= 0) {
+      showError('Thông tin chi phí không hợp lệ');
+      return;
+    }
 
-  // Sử dụng push() để tạo ID tự động
-  await push(expenseRef, newExpense);
-  document.getElementById('expenseInput').value = '';
+    const dateKey = new Date().toLocaleDateString('vi-VN').replace(/\//g, '_');
+    const expensesRef = ref(database, `dailyData/${dateKey}/expenses`);
+    
+    await push(expensesRef, {
+      description,
+      amount,
+      user: currentUser.email,
+      userId: currentUser.uid,
+      timestamp: Date.now()
+    });
+
+    document.getElementById('expenseInput').value = '';
+    showSuccess('Đã thêm chi phí thành công');
+  } catch (error) {
+    console.error("Lỗi khi thêm chi phí:", error);
+    showError(`Lỗi: ${error.message}`);
+  }
 }
 
     async function deleteExpense(dateKey, expenseId) {
