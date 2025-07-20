@@ -156,7 +156,7 @@ window.addProduct = addProduct;
 window.editProduct = editProduct;
 window.deleteProduct = deleteProduct;
 
-// products.js (phần cuối file)
+// Export cuối file
 export {
   products,
   renderProductSelection,
