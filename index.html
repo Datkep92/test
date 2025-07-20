@@ -20,20 +20,34 @@
 
   <div id="employee-page" class="hidden p-8">
     <h2 class="text-2xl font-bold mb-6">Báo Cáo Nhân Viên</h2>
-    <div class="grid grid-cols-1 gap-4">
+    <div class="grid grid-cols-1 gap-4 mb-6">
       <div>
         <label class="block">Chi Phí</label>
-        <input id="cost" type="number" class="w-full p-2 border rounded">
+        <input id="shared-cost" type="number" class="w-full p-2 border rounded">
       </div>
       <div>
         <label class="block">Doanh Thu</label>
-        <input id="revenue" type="number" class="w-full p-2 border rounded">
+        <input id="shared-revenue" type="number" class="w-full p-2 border rounded">
       </div>
       <div>
         <label class="block">Xuất Hàng</label>
-        <input id="export" type="number" class="w-full p-2 border rounded">
+        <input id="shared-export" type="number" class="w-full p-2 border rounded">
       </div>
-      <button onclick="submitReport()" class="bg-green-500 text-white p-2 rounded hover:bg-green-600">Gửi Báo Cáo</button>
+      <button onclick="submitSharedReport()" class="bg-green-500 text
+
+-white p-2 rounded hover:bg-green-600">Gửi Báo Cáo Chung</button>
+    </div>
+    <div class="mb-6">
+      <h3 class="text-xl font-semibold">Xuất Kho</h3>
+      <select id="product-select" class="w-full p-2 border rounded mb-2">
+        <option value="">Chọn sản phẩm</option>
+      </select>
+      <input id="export-quantity" type="number" placeholder="Số lượng xuất kho" class="w-full p-2 border rounded mb-2">
+      <button onclick="exportStock()" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Xuất Kho</button>
+    </div>
+    <div>
+      <h3 class="text-xl font-semibold">Báo Cáo Chung</h3>
+      <div id="shared-reports" class="mt-4"></div>
     </div>
   </div>
 
@@ -44,9 +58,20 @@
       <input id="stock" type="number" placeholder="Số lượng nhập kho" class="w-full p-2 border rounded mb-2">
       <button onclick="addStock()" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Nhập Kho</button>
     </div>
+    <div class="mb-6">
+      <h3 class="text-xl font-semibold">Tạo Danh Sách Tồn Kho</h3>
+      <input id="product-name" type="text" placeholder="Tên sản phẩm" class="w-full p-2 border rounded mb-2">
+      <input id="product-quantity" type="number" placeholder="Số lượng" class="w-full p-2 border rounded mb-2">
+      <input id="product-price" type="number" placeholder="Đơn giá" class="w-full p-2 border rounded mb-2">
+      <button onclick="addInventory()" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Thêm Sản Phẩm</button>
+    </div>
+    <div class="mb-6">
+      <h3 class="text-xl font-semibold">Danh Sách Tồn Kho</h3>
+      <div id="inventory-list" class="mt-4"></div>
+    </div>
     <div>
-      <h3 class="text-xl font-semibold">Báo Cáo Nhân Viên</h3>
-      <div id="reports" class="mt-4"></div>
+      <h3 class="text-xl font-semibold">Báo Cáo Chung</h3>
+      <div id="manager-shared-reports" class="mt-4"></div>
     </div>
   </div>
 
