@@ -1,4 +1,4 @@
-```javascript
+
 const firebaseConfig = {
   apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
   authDomain: "quanly-d7e54.firebaseapp.com",
@@ -12,4 +12,4 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
-```
+
