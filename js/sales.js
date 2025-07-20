@@ -1,28 +1,15 @@
-// Xóa dòng khai báo dailyData cũ
+// sales.js
 import { database } from './firebase-config.js';
 import { ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showError, showSuccess, parseNumber } from './utils.js';
 import { products, renderProductSelection, loadProducts } from './products.js';
-import { dailyData, currentUser, selectedProduct } from './shared-data.js'; // Import từ shared
+import { dailyData, currentUser, selectedProduct } from './shared-data.js';
 
-// Xóa các dòng sau nếu có:
-// let dailyData = {...};
-// let currentUser = null;
-// let selectedProduct = null;
-
-// Các hàm xử lý giữ nguyên...
-
-
-  date: '',
-  expenses: [],
-  exports: [],
-  revenue: 0,
-  note: '',
-  user: ''
-};
+// Đã xóa khai báo dailyData, currentUser, selectedProduct vì đã import từ shared-data.js
 
 let currentTab = 'expense';
 
+// Các hàm xử lý
 export function switchTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -52,16 +39,17 @@ export async function loadData(user) {
     const snapshot = await get(dailyRef);
 
     if (snapshot.exists()) {
-      dailyData = snapshot.val();
+      Object.assign(dailyData, snapshot.val()); // Cập nhật dailyData đã import
     } else {
-      dailyData = {
+      // Reset dailyData về trạng thái mặc định
+      Object.assign(dailyData, {
         date: today,
         expenses: [],
         exports: [],
         revenue: 0,
         note: '',
         user: user.email
-      };
+      });
     }
 
     document.getElementById('dailyNote').value = dailyData.note || '';
@@ -177,6 +165,7 @@ export function renderDailyData() {
   document.getElementById('dailyBalance').textContent = `${balance.toLocaleString('vi-VN')}₫`;
 }
 
+// Chỉ export MỘT LẦN ở cuối file
 export {
   renderDailyData,
   switchTab,
@@ -184,14 +173,12 @@ export {
   deleteExpense,
   saveDailyData,
   addExport,
-  deleteExport, // <-- Chỉ export ở đây
   addExpense,
   addRevenue
 };
 
-// Expose ra window nếu cần
+// Expose ra window
 window.switchTab = switchTab;
 window.addExport = addExport;
-window.deleteExport = deleteExport;
 window.saveDailyData = saveDailyData;
 window.deleteExpense = deleteExpense;
