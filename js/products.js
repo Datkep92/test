@@ -138,7 +138,6 @@ async function loadProducts() {
   try {
     const productsRef = ref(database, 'products');
     const snapshot = await get(productsRef);
-    products = [];
     if (snapshot.exists()) {
       snapshot.forEach(childSnapshot => {
         products.push({
