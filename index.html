@@ -3,10 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- THÊM CDN cho Firebase 9 (thay thế bản 10 hiện tại) -->
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
   <link rel="icon" href="https://www.google.com/favicon.ico">
   <title>Quản lý Kinh doanh</title>
   <style>
@@ -375,13 +372,6 @@
   </div>
 
   <script type="module">
-  import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-
-const auth = getAuth();
-createUserWithEmailAndPassword(auth, "admin@quanly-hkd.com", "Admin@123")
-  .then(() => console.log("User created!"))
-  .catch((error) => console.error("Error:", error));
-  
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { 
       getAuth, 
@@ -402,22 +392,21 @@ createUserWithEmailAndPassword(auth, "admin@quanly-hkd.com", "Admin@123")
       off
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+    // Firebase configuration
     const firebaseConfig = {
-  apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
-  authDomain: "quanly-d7e54.firebaseapp.com",
-  databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com",
-  projectId: "quanly-d7e54",
-  storageBucket: "quanly-d7e54.firebasestorage.app",
-  messagingSenderId: "482686011267",
-  appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
-};
+      apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
+      authDomain: "quanly-d7e54.firebaseapp.com",
+      databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com",
+      projectId: "quanly-d7e54",
+      storageBucket: "quanly-d7e54.firebasestorage.app",
+      messagingSenderId: "482686011267",
+      appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
+    };
 
-// Khởi tạo Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const database = firebase.database();
     // Initialize Firebase
-    
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const database = getDatabase(app);
 
     // Application state
     let currentUser = null;
@@ -500,21 +489,45 @@ const database = firebase.database();
       });
     }
 
-    
+    // Login functions
+    async function handleLogin() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const rememberMe = document.getElementById('rememberMe').checked;
+      
+      document.getElementById('errorContainer').innerHTML = '';
+      
+      if (!username || !password) {
+        showError('Vui lòng nhập đầy đủ thông tin đăng nhập');
+        return;
+      }
+      
+      try {
+        const email = `${username}@quanly-hkd.com`;
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
         
-        async function handleLogin() {
-  const username = document.getElementById('username').value.trim();
-  const password = document.getElementById('password').value.trim();
-  
-  try {
-    const email = `${username}@quanly-hkd.com`;
-    await auth.signInWithEmailAndPassword(email, password);
-    window.location.href = 'dashboard.html'; // Chuyển hướng sau login
-  } catch (error) {
-    console.error(error);
-    alert('Sai tên đăng nhập/mật khẩu hoặc tài khoản chưa được kích hoạt');
-  }
-}
+        if (rememberMe) {
+          localStorage.setItem('rememberedUser', username);
+        } else {
+          localStorage.removeItem('rememberedUser');
+        }
+        
+        currentUser = userCredential.user.uid;
+        loadUserData();
+        
+      } catch (error) {
+        console.error("Login error:", error);
+        let errorMessage = "Đăng nhập thất bại";
+        
+        if (error.code === "auth/invalid-credential") {
+          errorMessage = "Sai tên đăng nhập hoặc mật khẩu";
+        } else if (error.code === "auth/too-many-requests") {
+          errorMessage = "Quá nhiều lần thử, vui lòng thử lại sau";
+        }
+        
+        showError(errorMessage);
+      }
+    }
 
     async function loadUserData() {
       const userRef = ref(database, `users/${currentUser}`);
