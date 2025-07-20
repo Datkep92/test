@@ -171,14 +171,6 @@ export function renderDailyData() {
   document.getElementById('dailyBalance').textContent = `${balance.toLocaleString('vi-VN')}₫`;
 }
 
-// Expose functions to window for HTML onclick handlers
-window.switchTab = switchTab;
-window.addExport = addExport;
-window.deleteExport = deleteExport;
-window.saveDailyData = saveDailyData;
-window.deleteExpense = deleteExpense;
-// Thêm vào cuối file
-// Export các hàm cần thiết
 export {
   renderDailyData,
   switchTab,
@@ -186,7 +178,14 @@ export {
   deleteExpense,
   saveDailyData,
   addExport,
-  deleteExport,  // <-- Giữ lại chỉ một dòng này
+  deleteExport, // <-- Chỉ export ở đây
   addExpense,
   addRevenue
 };
+
+// Expose ra window nếu cần
+window.switchTab = switchTab;
+window.addExport = addExport;
+window.deleteExport = deleteExport;
+window.saveDailyData = saveDailyData;
+window.deleteExpense = deleteExpense;
