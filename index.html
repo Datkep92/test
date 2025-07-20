@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý Nhân Viên</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-100">
+  <div id="login-page" class="min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
+      <h2 class="text-2xl font-bold mb-6 text-center">Đăng Nhập</h2>
+      <input id="email" type="email" placeholder="Email" class="w-full p-2 mb-4 border rounded">
+      <input id="password" type="password" placeholder="Mật khẩu" class="w-full p-2 mb-4 border rounded">
+      <button onclick="login()" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Đăng Nhập</button>
+      <p id="error" class="text-red-500 text-center mt-4 hidden"></p>
+    </div>
+  </div>
+
+  <div id="employee-page" class="hidden p-8">
+    <h2 class="text-2xl font-bold mb-6">Báo Cáo Nhân Viên</h2>
+    <div class="grid grid-cols-1 gap-4">
+      <div>
+        <label class="block">Chi Phí</label>
+        <input id="cost" type="number" class="w-full p-2 border rounded">
+      </div>
+      <div>
+        <label class="block">Doanh Thu</label>
+        <input id="revenue" type="number" class="w-full p-2 border rounded">
+      </div>
+      <div>
+        <label class="block">Xuất Hàng</label>
+        <input id="export" type="number" class="w-full p-2 border rounded">
+      </div>
+      <button onclick="submitReport()" class="bg-green-500 text-white p-2 rounded hover:bg-green-600">Gửi Báo Cáo</button>
+    </div>
+  </div>
+
+  <div id="manager-page" class="hidden p-8">
+    <h2 class="text-2xl font-bold mb-6">Quản Lý</h2>
+    <div class="mb-6">
+      <h3 class="text-xl font-semibold">Nhập Kho</h3>
+      <input id="stock" type="number" placeholder="Số lượng nhập kho" class="w-full p-2 border rounded mb-2">
+      <button onclick="addStock()" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Nhập Kho</button>
+    </div>
+    <div>
+      <h3 class="text-xl font-semibold">Báo Cáo Nhân Viên</h3>
+      <div id="reports" class="mt-4"></div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="auth.js"></script>
+  <script src="employee.js"></script>
+  <script src="manager.js"></script>
+</body>
+</html>
