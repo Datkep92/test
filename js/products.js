@@ -1,6 +1,7 @@
 import { database } from './firebase-config.js';
 import { ref, set, get, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showError, showSuccess } from './utils.js';
+export let selectedProduct = null;
 
 // Khai báo biến products
 let products = [];
@@ -157,5 +158,10 @@ window.addProduct = addProduct;
 window.editProduct = editProduct;
 window.deleteProduct = deleteProduct;
 
-// Export for other modules
-export { products, renderProductSelection, loadProducts };
+export { 
+  products,
+  selectedProduct,
+  renderProductSelection,
+  loadProducts,
+  renderProducts
+};
