@@ -134,7 +134,6 @@ export function renderDailyData() {
 
 // Chỉ export MỘT LẦN ở cuối file
 export {
-  deleteExpense,
   addExport,
   addExpense,
   addRevenue
