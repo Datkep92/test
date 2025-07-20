@@ -442,95 +442,96 @@
     const tabs = document.querySelectorAll('.tab');
 
     // Initialize the app
-    function initApp() {
-      const today = new Date().toISOString().split('T')[0];
-      document.getElementById('reportDate').value = today;
-      
-      const rememberedUser = localStorage.getItem('rememberedUser');
-      if (rememberedUser) {
-        document.getElementById('username').value = rememberedUser;
-        document.getElementById('password').focus();
-      }
-      
-      // Event listeners
-      loginBtn.addEventListener('click', handleLogin);
-      logoutBtn.addEventListener('click', handleLogout);
-      addExpenseBtn.addEventListener('click', addExpense);
-      addExportBtn.addEventListener('click', addExport);
-      addRevenueBtn.addEventListener('click', addRevenue);
-      saveDailyDataBtn.addEventListener('click', saveDailyData);
-      addProductBtn.addEventListener('click', addProduct);
-      addUserBtn.addEventListener('click', addUser);
-      generateDailyReportBtn.addEventListener('click', generateDailyReport);
-      generateMonthlyReportBtn.addEventListener('click', generateMonthlyReport);
-      printReportBtn.addEventListener('click', printReport);
-      applyReportFiltersBtn.addEventListener('click', applyReportFilters);
-      
-      tabs.forEach(tab => {
-        tab.addEventListener('click', () => switchTab(tab.dataset.tab));
-      });
+ function initApp() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('reportDate').value = today;
+  
+  const rememberedUser = localStorage.getItem('rememberedUser');
+  if (rememberedUser) {
+    document.getElementById('username').value = rememberedUser;
+    document.getElementById('password').focus();
+  }
+  
+  // Event listeners
+  loginBtn.addEventListener('click', handleLogin);
+  logoutBtn.addEventListener('click', handleLogout);
+  addExpenseBtn.addEventListener('click', addExpense);
+  addExportBtn.addEventListener('click', addExport);
+  addRevenueBtn.addEventListener('click', addRevenue);
+  saveDailyDataBtn.addEventListener('click', saveDailyData);
+  addProductBtn.addEventListener('click', addProduct);
+  addUserBtn.addEventListener('click', addUser);
+  generateDailyReportBtn.addEventListener('click', generateDailyReport);
+  generateMonthlyReportBtn.addEventListener('click', generateMonthlyReport);
+  printReportBtn.addEventListener('click', printReport);
+  applyReportFiltersBtn.addEventListener('click', applyReportFilters);
+  
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+  });
 
-      document.getElementById('password').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') handleLogin();
-      });
-      
-      document.getElementById('expenseInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') addExpense();
-      });
-      
-      document.getElementById('revenueAmount').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') addRevenue();
-      });
-      
-      // Check auth state
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          currentUser = user.uid;
-          loadUserData();
-        } else {
-          currentUser = null;
-          resetUI();
-        }
-      });
+  // Ngăn chặn lặp từ keypress
+  document.getElementById('password').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && !loginBtn.disabled) handleLogin();
+  });
+  
+  document.getElementById('expenseInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') addExpense();
+  });
+  
+  document.getElementById('revenueAmount').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') addRevenue();
+  });
+  
+  // Check auth state
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUser = user.uid;
+      loadUserData();
+    } else {
+      currentUser = null;
+      resetUI();
     }
+  });
+}
 
 async function handleLogin() {
   const loginBtn = document.getElementById('loginBtn');
   if (loginBtn.disabled) return;
-  
+
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value.trim();
   const rememberMe = document.getElementById('rememberMe').checked;
-  
+
   document.getElementById('errorContainer').innerHTML = '';
-  
+
   if (!username || !password) {
     showError('Vui lòng nhập đầy đủ thông tin đăng nhập');
     return;
   }
-  
+
   if (!/^[a-zA-Z0-9]+$/.test(username)) {
     showError('Tên đăng nhập chỉ được chứa chữ cái và số');
     return;
   }
-  
+
   loginBtn.disabled = true;
   try {
     const email = `${username}@quanly-hkd.com`;
     console.log("Đang thử đăng nhập với email:", email);
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    
+
     if (rememberMe) {
       localStorage.setItem('rememberedUser', username);
     } else {
       localStorage.removeItem('rememberedUser');
     }
-    
+
     currentUser = userCredential.user.uid;
     loadUserData();
-    
+
   } catch (error) {
-    if (error.code === "auth/user-not-found") {
+    if (error.code === "auth/user-not-found" || error.code === "auth/invalid-email") {
       try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const userId = userCredential.user.uid;
@@ -553,9 +554,6 @@ async function handleLogin() {
       console.error("Login error:", error);
       let errorMessage = "Đăng nhập thất bại";
       switch (error.code) {
-        case "auth/invalid-email":
-          errorMessage = "Email không hợp lệ. Kiểm tra định dạng.";
-          break;
         case "auth/invalid-credential":
           errorMessage = "Sai tên đăng nhập hoặc mật khẩu";
           break;
