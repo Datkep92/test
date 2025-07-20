@@ -958,74 +958,16 @@
         summaryDiv.style.marginTop = '15px';
         summaryDiv.innerHTML = `
           <h4>📦 Xuất hàng hôm nay:</h4>
-          <ul>function renderDailyData() {
-  // ✅ Đảm bảo dữ liệu là mảng trước khi dùng
-  if (!Array.isArray(dailyData.expenses)) dailyData.expenses = [];
-  if (!Array.isArray(dailyData.exports)) dailyData.exports = [];
+          <ul>
+            ${dailyData.exports.map(e => 
+              `<li>${e.productName}: ${e.quantity} ${e.unit} (${(e.quantity * e.price).toLocaleString('vi-VN')}₫)</li>`
+            ).join('')}
+          </ul>
+        `;
+        exportSummary.appendChild(summaryDiv);
+      }
+    }
 
-  // Render expenses
-  const expenseTable = document.querySelector('#expenseTable tbody');
-  expenseTable.innerHTML = '';
-
-  dailyData.expenses.forEach((expense, index) => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${expense.description} <span class="category-badge">${expense.category}</span></td>
-      <td class="text-right">${expense.amount.toLocaleString('vi-VN')}₫</td>
-      <td class="actions">
-        <button onclick="deleteExpense(${index})" class="danger">Xóa</button>
-      </td>
-    `;
-    expenseTable.appendChild(row);
-  });
-
-  // Render exports
-  const exportTable = document.querySelector('#exportTable tbody');
-  exportTable.innerHTML = '';
-
-  dailyData.exports.forEach((exportItem, index) => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${exportItem.productName}</td>
-      <td>${exportItem.quantity}</td>
-      <td>${exportItem.unit}</td>
-      <td class="actions">
-        <button onclick="deleteExport(${index})" class="danger">Xóa</button>
-      </td>
-    `;
-    exportTable.appendChild(row);
-  });
-
-  // Calculate and render summary
-  const totalExpense = dailyData.expenses.reduce((sum, e) => sum + e.amount, 0);
-  const totalExportCost = dailyData.exports.reduce((sum, e) => sum + (e.quantity * (e.price || 0)), 0);
-  const balance = (dailyData.revenue || 0) - totalExpense;
-
-  document.getElementById('totalRevenue').textContent =
-    (dailyData.revenue || 0).toLocaleString('vi-VN') + '₫';
-  document.getElementById('totalExpense').textContent =
-    totalExpense.toLocaleString('vi-VN') + '₫';
-  document.getElementById('dailyBalance').innerHTML =
-    `<strong>${balance.toLocaleString('vi-VN')}₫</strong>`;
-
-  // Render export summary
-  const exportSummary = document.getElementById('exportSummary');
-  exportSummary.innerHTML = '';
-
-  if (dailyData.exports.length > 0) {
-    const summaryDiv = document.createElement('div');
-    summaryDiv.style.marginTop = '15px';
-    summaryDiv.innerHTML = `
-      <h4>📦 Xuất hàng hôm nay:</h4>
-      <ul>
-        ${dailyData.exports.map(e =>
-          `<li>${e.productName}: ${e.quantity} ${e.unit} (${(e.quantity * (e.price || 0)).toLocaleString('vi-VN')}₫)</li>`
-        ).join('')}
-      </ul>
-    `;
-    exportSummary.appendChild(summaryDiv);
-  }
-}
 
             ${dailyData.exports.map(e => 
               `<li>${e.productName}: ${e.quantity} ${e.unit} (${(e.quantity * e.price).toLocaleString('vi-VN')}₫)</li>`
