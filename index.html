@@ -13,7 +13,39 @@
       padding: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-    
+    /* Tắt hiệu ứng hover, active, focus cho button */
+button, 
+input[type="button"], 
+input[type="submit"], 
+a.btn {
+    transition: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Loại bỏ hiệu ứng khi nhấn */
+button:active, 
+input[type="button"]:active, 
+input[type="submit"]:active, 
+a.btn:active {
+    transform: none !important;
+    filter: none !important;
+}
+
+/* Ngăn chặn pinch-zoom và double-tap zoom */
+body {
+    touch-action: pan-x pan-y; /* Chỉ cho phép kéo ngang/dọc, không phóng to */
+    -webkit-user-scalable: none; /* Chặn zoom trên iOS Safari */
+    user-scalable: no;
+}
+
+/* Đảm bảo input không làm thay đổi tỉ lệ */
+input, 
+textarea, 
+select {
+    font-size: 16px; /* Ngăn trình duyệt tự động phóng to khi focus */
+}
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
     body {
       background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
       color: #333;
