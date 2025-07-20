@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Quản lý Kinh doanh</title>
   <style>
-    /* Your existing CSS styles remain exactly the same */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -19,11 +18,187 @@
       line-height: 1.6;
     }
     
-    /* ... (keep all your existing styles) ... */
+    .container {
+      padding: 15px;
+      max-width: 100%;
+    }
+    
+    header {
+      background: #2c3e50;
+      color: #fff;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    .login-box {
+      max-width: 100%;
+      margin: 20px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    
+    .section {
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    
+    input, button, select {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+    
+    button {
+      background: #3498db;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    
+    button:hover {
+      background: #2980b9;
+    }
+    
+    button.danger {
+      background: #e74c3c;
+    }
+    
+    button.success {
+      background: #2ecc71;
+    }
+    
+    button.warning {
+      background: #f39c12;
+    }
+    
+    .table-responsive {
+      overflow-x: auto;
+    }
+    
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 14px;
+      min-width: 600px;
+    }
+    
+    .table th, .table td {
+      padding: 12px;
+      border: 1px solid #eee;
+      text-align: left;
+    }
+    
+    .table th {
+      background: #f8f9fa;
+      font-weight: 600;
+    }
+    
+    .tab-container {
+      display: flex;
+      overflow-x: auto;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #ddd;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .tab {
+      padding: 10px 15px;
+      cursor: pointer;
+      background: #f1f1f1;
+      border-radius: 5px 5px 0 0;
+      margin-right: 5px;
+      white-space: nowrap;
+    }
+    
+    .tab.active {
+      background: #3498db;
+      color: white;
+    }
+    
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    .text-right {
+      text-align: right;
+    }
+    
+    .text-center {
+      text-align: center;
+    }
+    
+    .error-message {
+      color: #e74c3c;
+      margin: 10px 0;
+      text-align: center;
+      font-weight: bold;
+    }
+    
+    .category-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      background: #e1f0ff;
+      border-radius: 10px;
+      font-size: 12px;
+      margin-left: 5px;
+    }
+    
+    @media (min-width: 768px) {
+      .container {
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      
+      .flex-md {
+        display: flex;
+        gap: 15px;
+      }
+      
+      .flex-md > * {
+        flex: 1;
+      }
+    }
+    
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #reportOutput, #reportOutput * {
+        visibility: visible;
+      }
+      #reportOutput {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
-  <!-- Your existing HTML structure remains the same -->
   <header id="appHeader" class="hidden">
     <h1>📊 Quản lý Kinh doanh</h1>
     <div class="user-info">
@@ -46,30 +221,176 @@
     </div>
   </div>
 
-  <!-- Your other screens (Sale, Admin) remain exactly the same -->
-  
-  <!-- Firebase Integration -->
+  <!-- Sale Screen -->
+  <div class="container hidden" id="saleApp">
+    <div class="tab-container">
+      <div class="tab active" onclick="switchTab('expense')">Chi phí</div>
+      <div class="tab" onclick="switchTab('export')">Xuất hàng</div>
+      <div class="tab" onclick="switchTab('revenue')">Doanh thu</div>
+    </div>
+    
+    <!-- Expense Tab -->
+    <div class="section" id="expenseTab">
+      <h3>💸 Chi phí</h3>
+      <div class="flex-md">
+        <input type="text" id="expenseInput" placeholder="VD: mua xăng 60000" />
+        <button onclick="addExpense()">Thêm</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table" id="expenseTable">
+          <thead>
+            <tr><th>Mô tả</th><th class="text-right">Số tiền</th><th>Hành động</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- Export Tab -->
+    <div class="section hidden" id="exportTab">
+      <h3>📦 Xuất hàng</h3>
+      <div id="productList" class="product-grid"></div>
+      <div class="flex-md" style="margin-top: 15px;">
+        <input type="number" id="exportQuantity" placeholder="Số lượng" value="1" min="1" />
+        <button onclick="addExport()" class="success">Thêm xuất hàng</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table" id="exportTable">
+          <thead>
+            <tr><th>Sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Hành động</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- Revenue Tab -->
+    <div class="section hidden" id="revenueTab">
+      <h3>💰 Doanh thu</h3>
+      <div class="flex-md">
+        <input type="text" id="revenueAmount" placeholder="Số tiền (VD: 500000)" />
+        <button onclick="addRevenue()">Thêm</button>
+      </div>
+    </div>
+    
+    <!-- Daily Summary -->
+    <div class="section">
+      <h3>📝 Tổng kết ngày <span id="summaryDate"></span></h3>
+      <div class="table-responsive">
+        <table class="table">
+          <tr>
+            <td>Doanh thu:</td>
+            <td class="text-right" id="totalRevenue">0₫</td>
+          </tr>
+          <tr>
+            <td>Tổng chi phí:</td>
+            <td class="text-right" id="totalExpense">0₫</td>
+          </tr>
+          <tr>
+            <td><strong>Số dư:</strong></td>
+            <td class="text-right" id="dailyBalance"><strong>0₫</strong></td>
+          </tr>
+        </table>
+      </div>
+      
+      <div id="exportSummary"></div>
+      
+      <h4>Ghi chú cá nhân:</h4>
+      <textarea id="dailyNote" class="note-input" placeholder="Nhập ghi chú trong ngày..."></textarea>
+      <button onclick="saveDailyData()" class="success">Lưu dữ liệu</button>
+    </div>
+  </div>
+
+  <!-- Admin Screen -->
+  <div class="container hidden" id="adminApp">
+    <div class="section">
+      <h3>📦 Quản lý Kho hàng</h3>
+      <div class="flex-md">
+        <input type="text" id="productName" placeholder="Tên sản phẩm" />
+        <input type="number" id="productQuantity" placeholder="Số lượng" min="0" />
+        <input type="text" id="productUnit" placeholder="ĐVT (kg, ly, chai...)" />
+        <input type="number" id="productPrice" placeholder="Giá đơn vị (VNĐ)" min="0" />
+        <button onclick="addProduct()">Thêm sản phẩm</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table" id="productTable">
+          <thead>
+            <tr><th>Tên sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th class="text-right">Giá đơn vị</th><th>Hành động</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    
+    <div class="section">
+      <h3>📊 Báo cáo</h3>
+      <div class="flex-md">
+        <input type="date" id="reportDate" />
+        <button onclick="generateDailyReport()">Báo cáo ngày</button>
+        <button onclick="generateMonthlyReport()">Báo cáo tháng</button>
+        <button onclick="printReport()" class="warning">In báo cáo</button>
+      </div>
+      
+      <div id="reportFilters" style="margin-top: 15px;">
+        <div class="flex-md">
+          <select id="reportUserFilter">
+            <option value="all">Tất cả người dùng</option>
+          </select>
+          <select id="reportCategoryFilter">
+            <option value="all">Tất cả danh mục</option>
+          </select>
+          <button onclick="applyReportFilters()">Áp dụng</button>
+        </div>
+      </div>
+      
+      <div id="reportOutput" style="margin-top: 20px;"></div>
+    </div>
+    
+    <div class="section">
+      <h3>👥 Quản lý Người dùng</h3>
+      <div class="flex-md">
+        <input type="text" id="newUsername" placeholder="Tên đăng nhập" />
+        <input type="password" id="newPassword" placeholder="Mật khẩu" />
+        <select id="newUserRole">
+          <option value="staff">Nhân viên</option>
+          <option value="admin">Quản lý</option>
+        </select>
+        <button onclick="addUser()" class="success">Thêm người dùng</button>
+      </div>
+      
+      <div class="table-responsive">
+        <table class="table" id="userTable" style="margin-top: 15px;">
+          <thead>
+            <tr><th>Tên đăng nhập</th><th>Vai trò</th><th>Trạng thái</th><th>Hành động</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
-    // Import Firebase services
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { 
       getAuth, 
       signInWithEmailAndPassword, 
       signOut,
-      onAuthStateChanged 
+      onAuthStateChanged,
+      createUserWithEmailAndPassword
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { 
       getDatabase, 
       ref, 
       set, 
       get,
-      child,
       push,
       update,
       remove,
-      onValue 
+      onValue,
+      off
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+    // Firebase configuration
     // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
@@ -86,18 +407,27 @@
     const auth = getAuth(app);
     const database = getDatabase(app);
 
-    // Application data structure
+    // Application state
     let currentUser = null;
     let currentTab = 'expense';
     let selectedProduct = null;
+    let products = [];
+    let expenseCategories = [];
+    let dailyData = {
+      date: '',
+      expenses: [],
+      exports: [],
+      revenue: 0,
+      note: '',
+      user: ''
+    };
+    let users = {};
 
     // Initialize the app
     function initApp() {
-      // Set current date in report date picker
       const today = new Date().toISOString().split('T')[0];
       document.getElementById('reportDate').value = today;
       
-      // Load remembered user
       const rememberedUser = localStorage.getItem('rememberedUser');
       if (rememberedUser) {
         document.getElementById('username').value = rememberedUser;
@@ -121,18 +451,17 @@
       onAuthStateChanged(auth, (user) => {
         if (user) {
           currentUser = user.uid;
-          handleSuccessfulLogin();
+          loadUserData();
         }
       });
     }
-    
+
     // Login functions
     async function handleLogin() {
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value.trim();
       const rememberMe = document.getElementById('rememberMe').checked;
       
-      // Clear previous errors
       document.getElementById('errorContainer').innerHTML = '';
       
       if (!username || !password) {
@@ -141,13 +470,9 @@
       }
       
       try {
-        // Firebase requires email format, so we'll create a dummy email
         const email = `${username}@quanly-hkd.com`;
-        
-        // Sign in with Firebase Auth
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         
-        // Remember user if needed
         if (rememberMe) {
           localStorage.setItem('rememberedUser', username);
         } else {
@@ -155,7 +480,7 @@
         }
         
         currentUser = userCredential.user.uid;
-        handleSuccessfulLogin();
+        loadUserData();
         
       } catch (error) {
         console.error("Login error:", error);
@@ -170,12 +495,8 @@
         showError(errorMessage);
       }
     }
-    
-    async function handleSuccessfulLogin() {
-      document.getElementById('loginBox').classList.add('hidden');
-      document.getElementById('appHeader').classList.remove('hidden');
-      
-      // Get user data from database
+
+    async function loadUserData() {
       const userRef = ref(database, `users/${currentUser}`);
       const snapshot = await get(userRef);
       
@@ -183,38 +504,53 @@
         const userData = snapshot.val();
         document.getElementById('currentUser').textContent = userData.username;
         
-        if (userData.role === 'admin') {
-          document.getElementById('adminApp').classList.remove('hidden');
-          renderUserList();
-          loadReportFilters();
-        } else {
-          document.getElementById('saleApp').classList.remove('hidden');
-        }
-        
+        handleSuccessfulLogin(userData.role);
         loadData();
       } else {
         showError('Không tìm thấy thông tin người dùng');
         handleLogout();
       }
     }
-    
+
+    function handleSuccessfulLogin(role) {
+      document.getElementById('loginBox').classList.add('hidden');
+      document.getElementById('appHeader').classList.remove('hidden');
+      
+      if (role === 'admin') {
+        document.getElementById('adminApp').classList.remove('hidden');
+        loadUsers();
+        loadReportFilters();
+      } else {
+        document.getElementById('saleApp').classList.remove('hidden');
+      }
+    }
+
     async function handleLogout() {
       try {
         await signOut(auth);
         currentUser = null;
-        document.getElementById('loginBox').classList.remove('hidden');
-        document.getElementById('appHeader').classList.add('hidden');
-        document.getElementById('adminApp').classList.add('hidden');
-        document.getElementById('saleApp').classList.add('hidden');
-        document.getElementById('username').value = '';
-        document.getElementById('password').value = '';
+        resetUI();
       } catch (error) {
         console.error("Logout error:", error);
       }
     }
-    
+
+    function resetUI() {
+      document.getElementById('loginBox').classList.remove('hidden');
+      document.getElementById('appHeader').classList.add('hidden');
+      document.getElementById('adminApp').classList.add('hidden');
+      document.getElementById('saleApp').classList.add('hidden');
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+    }
+
+    function showError(message) {
+      const errorContainer = document.getElementById('errorContainer');
+      errorContainer.innerHTML = `<div class="error-message">${message}</div>`;
+    }
+
     // Data functions
-    async function loadData() {
+    function loadData() {
       const today = new Date().toLocaleDateString('vi-VN');
       document.getElementById('summaryDate').textContent = today;
       
@@ -249,7 +585,7 @@
         renderDailyData();
       });
     }
-    
+
     async function saveDailyData() {
       const today = new Date().toLocaleDateString('vi-VN');
       dailyData.note = document.getElementById('dailyNote').value;
@@ -262,11 +598,909 @@
         alert('Lỗi khi lưu dữ liệu');
       }
     }
-    
-    // ... (rest of your existing functions with Firebase database calls) ...
-    
+
+    // Sale functions
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+      
+      document.getElementById('expenseTab').classList.add('hidden');
+      document.getElementById('exportTab').classList.add('hidden');
+      document.getElementById('revenueTab').classList.add('hidden');
+      
+      document.getElementById(`${tab}Tab`).classList.remove('hidden');
+      
+      if (tab === 'export') {
+        renderProductSelection();
+      }
+    }
+
+    function parseExpenseInput(input) {
+      const normalized = input.toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\s]/g, "");
+      
+      const amountMatch = normalized.match(/(\d+)\s*$/);
+      const amount = amountMatch ? parseInt(amountMatch[1]) : 0;
+      
+      let description = normalized;
+      if (amountMatch) {
+        description = normalized.substring(0, amountMatch.index).trim();
+      }
+      
+      const categoryMatch = description.match(/^\s*(\S+)/);
+      const category = categoryMatch ? categoryMatch[1] : 'khác';
+      
+      if (!expenseCategories.includes(category)) {
+        expenseCategories.push(category);
+        update(ref(database, 'expenseCategories'), expenseCategories);
+      }
+      
+      return {
+        description: capitalizeFirstLetter(description),
+        amount: amount,
+        category: capitalizeFirstLetter(category)
+      };
+    }
+
+    function capitalizeFirstLetter(string) {
+      return string.split(' ').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ');
+    }
+
+    async function addExpense() {
+      const input = document.getElementById('expenseInput').value.trim();
+      if (!input) {
+        showError('Vui lòng nhập thông tin chi phí');
+        return;
+      }
+      
+      const { description, amount, category } = parseExpenseInput(input);
+      
+      if (!description || amount <= 0) {
+        showError('Không thể xác định mô tả hoặc số tiền từ thông tin nhập');
+        return;
+      }
+      
+      const newExpense = {
+        description: description,
+        amount: amount,
+        category: category,
+        user: currentUser,
+        timestamp: new Date().getTime()
+      };
+      
+      const today = new Date().toLocaleDateString('vi-VN');
+      const expensesRef = ref(database, `dailyData/${currentUser}/${today}/expenses`);
+      
+      try {
+        await push(expensesRef, newExpense);
+        document.getElementById('expenseInput').value = '';
+      } catch (error) {
+        console.error("Error adding expense:", error);
+        showError('Lỗi khi thêm chi phí');
+      }
+    }
+
+    async function deleteExpense(index) {
+      if (!confirm('Xóa chi phí này?')) return;
+      
+      const today = new Date().toLocaleDateString('vi-VN');
+      const expenseRef = ref(database, `dailyData/${currentUser}/${today}/expenses/${index}`);
+      
+      try {
+        await remove(expenseRef);
+      } catch (error) {
+        console.error("Error deleting expense:", error);
+        showError('Lỗi khi xóa chi phí');
+      }
+    }
+
+    function renderProductSelection() {
+      const container = document.getElementById('productList');
+      container.innerHTML = '';
+      
+      products.forEach((product, index) => {
+        const productItem = document.createElement('div');
+        productItem.className = 'product-item';
+        productItem.innerHTML = `
+          <div><strong>${product.name}</strong></div>
+          <div>Tồn kho: ${product.quantity} ${product.unit}</div>
+        `;
+        
+        productItem.addEventListener('click', () => {
+          document.querySelectorAll('.product-item').forEach(item => {
+            item.classList.remove('selected');
+          });
+          productItem.classList.add('selected');
+          selectedProduct = product;
+        });
+        
+        container.appendChild(productItem);
+      });
+    }
+
+    async function addExport() {
+      if (!selectedProduct) {
+        showError('Vui lòng chọn sản phẩm');
+        return;
+      }
+      
+      const quantity = parseInt(document.getElementById('exportQuantity').value) || 1;
+      
+      if (quantity <= 0) {
+        showError('Số lượng phải lớn hơn 0');
+        return;
+      }
+      
+      if (quantity > selectedProduct.quantity) {
+        showError(`Số lượng xuất vượt quá tồn kho (${selectedProduct.quantity} ${selectedProduct.unit})`);
+        return;
+      }
+      
+      const today = new Date().toLocaleDateString('vi-VN');
+      const exportRef = ref(database, `dailyData/${currentUser}/${today}/exports`);
+      
+      const newExport = {
+        productId: selectedProduct.id,
+        productName: selectedProduct.name,
+        quantity: quantity,
+        unit: selectedProduct.unit,
+        price: selectedProduct.price,
+        user: currentUser,
+        timestamp: new Date().getTime()
+      };
+      
+      try {
+        // Add to exports
+        await push(exportRef, newExport);
+        
+        // Update product quantity
+        const productRef = ref(database, `products/${selectedProduct.id}/quantity`);
+        await set(productRef, selectedProduct.quantity - quantity);
+        
+        document.getElementById('exportQuantity').value = '1';
+        selectedProduct = null;
+        document.querySelectorAll('.product-item').forEach(item => {
+          item.classList.remove('selected');
+        });
+      } catch (error) {
+        console.error("Error adding export:", error);
+        showError('Lỗi khi thêm xuất hàng');
+      }
+    }
+
+    async function deleteExport(index) {
+      if (!confirm('Xóa xuất hàng này?')) return;
+      
+      const today = new Date().toLocaleDateString('vi-VN');
+      const exportRef = ref(database, `dailyData/${currentUser}/${today}/exports/${index}`);
+      
+      try {
+        // Get export item first to return quantity
+        const snapshot = await get(exportRef);
+        const exportItem = snapshot.val();
+        
+        if (exportItem) {
+          // Return quantity to product
+          const productRef = ref(database, `products/${exportItem.productId}/quantity`);
+          const productSnap = await get(productRef);
+          const currentQty = productSnap.val() || 0;
+          await set(productRef, currentQty + exportItem.quantity);
+        }
+        
+        // Remove the export
+        await remove(exportRef);
+      } catch (error) {
+        console.error("Error deleting export:", error);
+        showError('Lỗi khi xóa xuất hàng');
+      }
+    }
+
+    async function addRevenue() {
+      const amount = parseNumber(document.getElementById('revenueAmount').value);
+      
+      if (isNaN(amount)) {
+        showError('Vui lòng nhập số tiền hợp lệ');
+        return;
+      }
+      
+      const today = new Date().toLocaleDateString('vi-VN');
+      const revenueRef = ref(database, `dailyData/${currentUser}/${today}/revenue`);
+      
+      try {
+        const snapshot = await get(revenueRef);
+        const currentRevenue = snapshot.val() || 0;
+        await set(revenueRef, currentRevenue + amount);
+        
+        document.getElementById('revenueAmount').value = '';
+      } catch (error) {
+        console.error("Error adding revenue:", error);
+        showError('Lỗi khi thêm doanh thu');
+      }
+    }
+
+    function renderDailyData() {
+      // Render expenses
+      const expenseTable = document.querySelector('#expenseTable tbody');
+      expenseTable.innerHTML = '';
+      
+      dailyData.expenses.forEach((expense, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${expense.description} <span class="category-badge">${expense.category}</span></td>
+          <td class="text-right">${expense.amount.toLocaleString('vi-VN')}₫</td>
+          <td class="actions">
+            <button onclick="deleteExpense('${index}')" class="danger">Xóa</button>
+          </td>
+        `;
+        expenseTable.appendChild(row);
+      });
+      
+      // Render exports
+      const exportTable = document.querySelector('#exportTable tbody');
+      exportTable.innerHTML = '';
+      
+      dailyData.exports.forEach((exportItem, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${exportItem.productName}</td>
+          <td>${exportItem.quantity}</td>
+          <td>${exportItem.unit}</td>
+          <td class="actions">
+            <button onclick="deleteExport('${index}')" class="danger">Xóa</button>
+          </td>
+        `;
+        exportTable.appendChild(row);
+      });
+      
+      // Calculate and render summary
+      const totalExpense = dailyData.expenses.reduce((sum, e) => sum + e.amount, 0);
+      const totalExportCost = dailyData.exports.reduce((sum, e) => sum + (e.quantity * e.price), 0);
+      const balance = dailyData.revenue - totalExpense;
+      
+      document.getElementById('totalRevenue').textContent = 
+        dailyData.revenue.toLocaleString('vi-VN') + '₫';
+      document.getElementById('totalExpense').textContent = 
+        totalExpense.toLocaleString('vi-VN') + '₫';
+      document.getElementById('dailyBalance').innerHTML = 
+        `<strong>${balance.toLocaleString('vi-VN')}₫</strong>`;
+      
+      // Render export summary
+      const exportSummary = document.getElementById('exportSummary');
+      exportSummary.innerHTML = '';
+      
+      if (dailyData.exports.length > 0) {
+        const summaryDiv = document.createElement('div');
+        summaryDiv.style.marginTop = '15px';
+        summaryDiv.innerHTML = `
+          <h4>Xuất hàng hôm nay:</h4>
+          <ul>
+            ${dailyData.exports.map(e => 
+              `<li>${e.productName}: ${e.quantity} ${e.unit}</li>`
+            ).join('')}
+          </ul>
+        `;
+        exportSummary.appendChild(summaryDiv);
+      }
+    }
+
+    // Product management
+    async function addProduct() {
+      const name = document.getElementById('productName').value.trim();
+      const quantity = parseInt(document.getElementById('productQuantity').value) || 0;
+      const unit = document.getElementById('productUnit').value.trim();
+      const price = parseInt(document.getElementById('productPrice').value) || 0;
+      
+      if (!name || !unit || isNaN(quantity) || isNaN(price)) {
+        showError('Vui lòng nhập đầy đủ thông tin sản phẩm');
+        return;
+      }
+      
+      const newProduct = {
+        id: Date.now().toString(),
+        name: name,
+        quantity: quantity,
+        unit: unit,
+        price: price
+      };
+      
+      try {
+        await set(ref(database, `products/${newProduct.id}`), newProduct);
+        
+        // Clear inputs
+        document.getElementById('productName').value = '';
+        document.getElementById('productQuantity').value = '';
+        document.getElementById('productUnit').value = '';
+        document.getElementById('productPrice').value = '';
+      } catch (error) {
+        console.error("Error adding product:", error);
+        showError('Lỗi khi thêm sản phẩm');
+      }
+    }
+
+    async function editProduct(productId) {
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
+      
+      const newName = prompt('Tên sản phẩm:', product.name);
+      if (!newName) return;
+      
+      const newQuantity = parseInt(prompt('Số lượng:', product.quantity)) || 0;
+      if (isNaN(newQuantity)) return alert('Số lượng không hợp lệ');
+      
+      const newUnit = prompt('Đơn vị tính:', product.unit);
+      if (!newUnit) return;
+      
+      const newPrice = parseInt(prompt('Giá đơn vị:', product.price)) || 0;
+      if (isNaN(newPrice)) return alert('Giá không hợp lệ');
+      
+      try {
+        const updates = {
+          [`products/${productId}/name`]: newName,
+          [`products/${productId}/quantity`]: newQuantity,
+          [`products/${productId}/unit`]: newUnit,
+          [`products/${productId}/price`]: newPrice
+        };
+        
+        await update(ref(database), updates);
+      } catch (error) {
+        console.error("Error updating product:", error);
+        alert('Lỗi khi cập nhật sản phẩm');
+      }
+    }
+
+    async function deleteProduct(productId) {
+      if (!confirm('Xóa sản phẩm này?')) return;
+      
+      try {
+        await remove(ref(database, `products/${productId}`));
+      } catch (error) {
+        console.error("Error deleting product:", error);
+        alert('Lỗi khi xóa sản phẩm');
+      }
+    }
+
+    function renderProducts() {
+      const table = document.querySelector('#productTable tbody');
+      table.innerHTML = '';
+      
+      products.forEach((product) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${product.name}</td>
+          <td>${product.quantity}</td>
+          <td>${product.unit}</td>
+          <td class="text-right">${product.price.toLocaleString('vi-VN')}₫</td>
+          <td class="actions">
+            <button onclick="editProduct('${product.id}')">Sửa</button>
+            <button onclick="deleteProduct('${product.id}')" class="danger">Xóa</button>
+          </td>
+        `;
+        table.appendChild(row);
+      });
+    }
+
+    // User management
+    async function loadUsers() {
+      const usersRef = ref(database, 'users');
+      onValue(usersRef, (snapshot) => {
+        users = snapshot.val() || {};
+        renderUserList();
+      });
+    }
+
+    async function addUser() {
+      const username = document.getElementById('newUsername').value.trim();
+      const password = document.getElementById('newPassword').value.trim();
+      const role = document.getElementById('newUserRole').value;
+      
+      if (!username || !password) {
+        showError('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu');
+        return;
+      }
+      
+      if (Object.values(users).some(u => u.username === username)) {
+        showError('Tên đăng nhập đã tồn tại');
+        return;
+      }
+      
+      try {
+        const email = `${username}@quanly-hkd.com`;
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const userId = userCredential.user.uid;
+        
+        const newUser = {
+          username: username,
+          role: role,
+          active: true,
+          createdAt: new Date().toISOString()
+        };
+        
+        await set(ref(database, `users/${userId}`), newUser);
+        
+        // Clear inputs
+        document.getElementById('newUsername').value = '';
+        document.getElementById('newPassword').value = '';
+      } catch (error) {
+        console.error("Error adding user:", error);
+        showError('Lỗi khi thêm người dùng');
+      }
+    }
+
+    async function toggleUserStatus(userId) {
+      const user = users[userId];
+      if (!user) return;
+      
+      if (!confirm(`Bạn có chắc muốn ${user.active ? 'khóa' : 'mở khóa'} tài khoản ${user.username}?`)) return;
+      
+      try {
+        await update(ref(database, `users/${userId}`), {
+          active: !user.active
+        });
+      } catch (error) {
+        console.error("Error toggling user status:", error);
+        alert('Lỗi khi thay đổi trạng thái người dùng');
+      }
+    }
+
+    async function deleteUser(userId) {
+      const user = users[userId];
+      if (!user) return;
+      
+      if (user.role === 'admin') {
+        alert('Không thể xóa tài khoản admin');
+        return;
+      }
+      
+      if (!confirm(`Bạn có chắc muốn xóa tài khoản ${user.username}?`)) return;
+      
+      try {
+        // Delete from Authentication
+        // Note: In a real app, you would need Cloud Functions to delete auth users
+        
+        // Delete from Database
+        await remove(ref(database, `users/${userId}`));
+      } catch (error) {
+        console.error("Error deleting user:", error);
+        alert('Lỗi khi xóa người dùng');
+      }
+    }
+
+    function renderUserList() {
+      const table = document.querySelector('#userTable tbody');
+      table.innerHTML = '';
+      
+      for (const userId in users) {
+        const user = users[userId];
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${user.username}</td>
+          <td>${user.role === 'admin' ? 'Quản lý' : 'Nhân viên'}</td>
+          <td>${user.active ? 'Đang hoạt động' : 'Đã khóa'}</td>
+          <td class="actions">
+            <button onclick="toggleUserStatus('${userId}')" class="${user.active ? 'warning' : 'success'}">
+              ${user.active ? 'Khóa' : 'Mở khóa'}
+            </button>
+            ${user.role !== 'admin' ? `
+              <button onclick="deleteUser('${userId}')" class="danger">Xóa</button>
+            ` : ''}
+          </td>
+        `;
+        table.appendChild(row);
+      }
+    }
+
+    // Report functions
+    function loadReportFilters() {
+      const userFilter = document.getElementById('reportUserFilter');
+      const categoryFilter = document.getElementById('reportCategoryFilter');
+      
+      // Clear existing options except first
+      while (userFilter.options.length > 1) userFilter.remove(1);
+      while (categoryFilter.options.length > 1) categoryFilter.remove(1);
+      
+      // Add users
+      for (const userId in users) {
+        const user = users[userId];
+        const option = document.createElement('option');
+        option.value = userId;
+        option.textContent = user.username;
+        userFilter.appendChild(option);
+      }
+      
+      // Add categories
+      expenseCategories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        categoryFilter.appendChild(option);
+      });
+    }
+
+    async function generateReport(dateFilter, userFilter = 'all', categoryFilter = 'all', isMonthly = false) {
+      let reportData = [];
+      const dateStr = isMonthly 
+        ? dateFilter // Format: "YYYY-MM"
+        : new Date(dateFilter).toLocaleDateString('vi-VN');
+      
+      // Get report data from Firebase
+      try {
+        if (isMonthly) {
+          const [year, month] = dateFilter.split('-');
+          const daysInMonth = new Date(year, month, 0).getDate();
+          
+          for (let day = 1; day <= daysInMonth; day++) {
+            const dayStr = `${day}/${month}/${year}`;
+            const snapshot = await get(ref(database, `dailyData`));
+            if (snapshot.exists()) {
+              const allData = snapshot.val();
+              for (const userId in allData) {
+                if (userFilter !== 'all' && userFilter !== userId) continue;
+                if (allData[userId][dayStr]) {
+                  reportData.push({
+                    ...allData[userId][dayStr],
+                    userId: userId
+                  });
+                }
+              }
+            }
+          }
+        } else {
+          const snapshot = await get(ref(database, `dailyData`));
+          if (snapshot.exists()) {
+            const allData = snapshot.val();
+            for (const userId in allData) {
+              if (userFilter !== 'all' && userFilter !== userId) continue;
+              if (allData[userId][dateStr]) {
+                reportData.push({
+                  ...allData[userId][dateStr],
+                  userId: userId
+                });
+              }
+            }
+          }
+        }
+        
+        renderReport(reportData, dateStr, userFilter, categoryFilter, isMonthly);
+      } catch (error) {
+        console.error("Error generating report:", error);
+        document.getElementById('reportOutput').innerHTML = 
+          `<p class="error-message">Lỗi khi tạo báo cáo: ${error.message}</p>`;
+      }
+    }
+
+    function renderReport(reportData, dateStr, userFilter, categoryFilter, isMonthly) {
+      if (reportData.length === 0) {
+        document.getElementById('reportOutput').innerHTML = 
+          `<p>Không có dữ liệu ${isMonthly ? 'tháng' : 'ngày'} ${dateStr}</p>`;
+        return;
+      }
+      
+      // Process data
+      let totalRevenue = 0;
+      let totalExpense = 0;
+      let totalExportCost = 0;
+      let expenseDetails = {};
+      let exportDetails = {};
+      let userNotes = [];
+      let dailySummaries = [];
+      
+      reportData.forEach(data => {
+        // Apply category filter
+        const filteredExpenses = data.expenses ? Object.values(data.expenses).filter(expense => 
+          categoryFilter === 'all' || expense.category === categoryFilter
+        ) : [];
+        
+        // Calculate totals
+        const dayExpense = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+        const dayExportCost = data.exports ? Object.values(data.exports).reduce((sum, e) => sum + (e.quantity * e.price), 0) : 0;
+        
+        totalRevenue += data.revenue || 0;
+        totalExpense += dayExpense;
+        totalExportCost += dayExportCost;
+        
+        // Group expense details by category
+        filteredExpenses.forEach(expense => {
+          if (!expenseDetails[expense.category]) {
+            expenseDetails[expense.category] = {
+              amount: 0,
+              items: []
+            };
+          }
+          expenseDetails[expense.category].amount += expense.amount;
+          expenseDetails[expense.category].items.push({
+            description: expense.description,
+            amount: expense.amount,
+            user: users[data.userId]?.username || data.userId,
+            date: data.date
+          });
+        });
+        
+        // Group export details by product
+        if (data.exports) {
+          Object.values(data.exports).forEach(exportItem => {
+            if (!exportDetails[exportItem.productName]) {
+              exportDetails[exportItem.productName] = {
+                quantity: 0,
+                cost: 0,
+                unit: exportItem.unit,
+                items: []
+              };
+            }
+            exportDetails[exportItem.productName].quantity += exportItem.quantity;
+            exportDetails[exportItem.productName].cost += exportItem.quantity * exportItem.price;
+            exportDetails[exportItem.productName].items.push({
+              quantity: exportItem.quantity,
+              user: users[data.userId]?.username || data.userId,
+              date: data.date
+            });
+          });
+        }
+        
+        // Collect notes
+        if (data.note) {
+          userNotes.push({
+            user: users[data.userId]?.username || data.userId,
+            note: data.note,
+            date: data.date
+          });
+        }
+        
+        // For monthly report, collect daily summaries
+        if (isMonthly) {
+          dailySummaries.push({
+            date: data.date,
+            revenue: data.revenue || 0,
+            expense: dayExpense,
+            exportCost: dayExportCost,
+            profit: (data.revenue || 0) - dayExpense - dayExportCost
+          });
+        }
+      });
+      
+      const profit = totalRevenue - totalExpense - totalExportCost;
+      
+      // Generate report HTML (same as before)
+      let reportHTML = `
+        <h4>Báo cáo ${isMonthly ? 'tháng' : 'ngày'} ${dateStr}</h4>
+        ${userFilter !== 'all' ? `<p>Người dùng: ${users[userFilter]?.username || userFilter}</p>` : ''}
+        ${categoryFilter !== 'all' ? `<p>Danh mục: ${categoryFilter}</p>` : ''}
+        
+        <div class="summary-section">
+          <h5>Tổng hợp</h5>
+          <table class="table">
+            <tr>
+              <td>Tổng doanh thu:</td>
+              <td class="text-right">${totalRevenue.toLocaleString('vi-VN')}₫</td>
+            </tr>
+            <tr>
+              <td>Tổng chi phí:</td>
+              <td class="text-right">${totalExpense.toLocaleString('vi-VN')}₫</td>
+            </tr>
+            <tr>
+              <td>Tổng giá trị hàng xuất:</td>
+              <td class="text-right">${totalExportCost.toLocaleString('vi-VN')}₫</td>
+            </tr>
+            <tr>
+              <td><strong>Lợi nhuận thực:</strong></td>
+              <td class="text-right"><strong>${profit.toLocaleString('vi-VN')}₫</strong></td>
+            </tr>
+          </table>
+        </div>
+      `;
+      
+      // Add expense details
+      if (Object.keys(expenseDetails).length > 0) {
+        reportHTML += `
+          <div class="expense-section">
+            <h5>Chi tiết chi phí</h5>
+            ${Object.entries(expenseDetails).map(([category, data]) => `
+              <div class="category-section">
+                <h6>${category}: ${data.amount.toLocaleString('vi-VN')}₫</h6>
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Mô tả</th>
+                      <th class="text-right">Số tiền</th>
+                      <th>Người nhập</th>
+                      <th>Ngày</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${data.items.map(item => `
+                      <tr>
+                        <td>${item.description}</td>
+                        <td class="text-right">${item.amount.toLocaleString('vi-VN')}₫</td>
+                        <td>${item.user}</td>
+                        <td>${item.date}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+      
+      // Add export details
+      if (Object.keys(exportDetails).length > 0) {
+        reportHTML += `
+          <div class="export-section">
+            <h5>Chi tiết xuất hàng</h5>
+            ${Object.entries(exportDetails).map(([product, data]) => `
+              <div class="product-section">
+                <h6>${product}: ${data.quantity} ${data.unit} (${data.cost.toLocaleString('vi-VN')}₫)</h6>
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Số lượng</th>
+                      <th>Người nhập</th>
+                      <th>Ngày</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${data.items.map(item => `
+                      <tr>
+                        <td>${item.quantity}</td>
+                        <td>${item.user}</td>
+                        <td>${item.date}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+      
+      // Add daily summaries for monthly report
+      if (isMonthly && dailySummaries.length > 0) {
+        reportHTML += `
+          <div class="daily-summary-section">
+            <h5>Tổng hợp từng ngày</h5>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Ngày</th>
+                  <th class="text-right">Doanh thu</th>
+                  <th class="text-right">Chi phí</th>
+                  <th class="text-right">Xuất hàng</th>
+                  <th class="text-right">Lợi nhuận</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${dailySummaries.map(day => `
+                  <tr>
+                    <td>${day.date}</td>
+                    <td class="text-right">${day.revenue.toLocaleString('vi-VN')}₫</td>
+                    <td class="text-right">${day.expense.toLocaleString('vi-VN')}₫</td>
+                    <td class="text-right">${day.exportCost.toLocaleString('vi-VN')}₫</td>
+                    <td class="text-right">${day.profit.toLocaleString('vi-VN')}₫</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+      
+      // Add user notes
+      if (userNotes.length > 0) {
+        reportHTML += `
+          <div class="notes-section">
+            <h5>Ghi chú từ nhân viên</h5>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Người ghi</th>
+                  <th>Ghi chú</th>
+                  <th>Ngày</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${userNotes.map(note => `
+                  <tr>
+                    <td>${note.user}</td>
+                    <td>${note.note}</td>
+                    <td>${note.date}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+      
+      document.getElementById('reportOutput').innerHTML = reportHTML;
+    }
+
+    function applyReportFilters() {
+      const dateInput = document.getElementById('reportDate').value;
+      if (!dateInput) {
+        alert('Vui lòng chọn ngày');
+        return;
+      }
+      
+      const userFilter = document.getElementById('reportUserFilter').value;
+      const categoryFilter = document.getElementById('reportCategoryFilter').value;
+      
+      generateReport(dateInput, userFilter, categoryFilter);
+    }
+
+    function generateDailyReport() {
+      const dateInput = document.getElementById('reportDate').value;
+      if (!dateInput) {
+        alert('Vui lòng chọn ngày');
+        return;
+      }
+      
+      const userFilter = document.getElementById('reportUserFilter').value;
+      const categoryFilter = document.getElementById('reportCategoryFilter').value;
+      
+      generateReport(dateInput, userFilter, categoryFilter);
+    }
+
+    function generateMonthlyReport() {
+      const dateInput = document.getElementById('reportDate').value;
+      if (!dateInput) {
+        alert('Vui lòng chọn ngày trong tháng cần báo cáo');
+        return;
+      }
+      
+      const date = new Date(dateInput);
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+      
+      const userFilter = document.getElementById('reportUserFilter').value;
+      const categoryFilter = document.getElementById('reportCategoryFilter').value;
+      
+      generateReport(`${year}-${month.toString().padStart(2, '0')}`, userFilter, categoryFilter, true);
+    }
+
+    function printReport() {
+      window.print();
+    }
+
+    // Helper functions
+    function parseNumber(input) {
+      if (!input) return 0;
+      const cleaned = input.toString().replace(/[^\d]/g, '');
+      return parseInt(cleaned) || 0;
+    }
+
     // Initialize the app
     document.addEventListener('DOMContentLoaded', initApp);
+
+    // Create initial admin user (run once)
+    async function createInitialAdmin() {
+      try {
+        const email = "admin@quanly-hkd.com";
+        const password = "123123";
+        
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const userId = userCredential.user.uid;
+        
+        await set(ref(database, `users/${userId}`), {
+          username: "admin",
+          role: "admin",
+          active: true,
+          createdAt: new Date().toISOString()
+        });
+        
+        console.log("Admin user created successfully!");
+      } catch (error) {
+        console.error("Error creating admin user:", error);
+      }
+    }
+
+    // Uncomment and run this once to create initial admin user
+    // createInitialAdmin();
   </script>
 </body>
 </html>
