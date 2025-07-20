@@ -73,17 +73,6 @@ export async function loadData(user) {
   }
 }
 
-export function deleteExpense(index) {
-  if (confirm('Xóa chi phí này?')) {
-    dailyData.expenses.splice(index, 1);
-    renderDailyData();
-  }
-}
-
-
-
-
-
 
 export function renderDailyData() {
   if (!Array.isArray(dailyData.exports)) dailyData.exports = [];
@@ -157,13 +146,7 @@ export function addExpense() {
   renderDailyData();
 }
 
-export function deleteExpense(index) {
-  if (confirm('Xóa chi phí này?')) {
-    dailyData.expenses.splice(index, 1);
-    renderDailyData();
-  }
-}
-// Chỉ export MỘT LẦN ở cuối file
+
 export {
   addExport,
   addRevenue
