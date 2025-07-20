@@ -1,29 +1,3 @@
-function addStock() {
-  const stock = document.getElementById('stock').value;
-  const user = auth.currentUser;
-
-  if (!user) {
-    alert('Vui lòng đăng nhập để nhập kho!');
-    return;
-  }
-
-  if (!stock) {
-    alert('Vui lòng nhập số lượng nhập kho!');
-    return;
-  }
-
-  db.ref('stock').push({
-    quantity: parseFloat(stock),
-    timestamp: new Date().toISOString()
-  }).then(() => {
-    alert('Đã nhập kho!');
-    document.getElementById('stock').value = '';
-  }).catch(error => {
-    console.error('Lỗi nhập kho:', error);
-    alert('Lỗi nhập kho: ' + error.message);
-  });
-}
-
 function addInventory() {
   const name = document.getElementById('product-name').value;
   const quantity = document.getElementById('product-quantity').value;
@@ -96,23 +70,37 @@ function loadSharedReports(divId) {
 
   db.ref('shared_reports').on('value', snapshot => {
     reportsDiv.innerHTML = '';
+    let totalCost = 0;
+    let totalRevenue = 0;
+    let totalExport = 0;
+
     if (!snapshot.exists()) {
       reportsDiv.innerHTML = '<p>Không có báo cáo chung nào.</p>';
-      return;
+    } else {
+      snapshot.forEach(reportSnapshot => {
+        const report = reportSnapshot.val();
+        totalCost += report.cost;
+        totalRevenue += report.revenue;
+        totalExport += report.export;
+        const reportDiv = document.createElement('div');
+        reportDiv.className = 'border p-4 mb-2 rounded';
+        reportDiv.innerHTML = `
+          <p><strong>Nhân viên:</strong> ${report.userId}</p>
+          <p><strong>Chi Phí:</strong> ${report.cost}</p>
+          <p><strong>Doanh Thu:</strong> ${report.revenue}</p>
+          <p><strong>Xuất Kho:</strong> ${report.export}</p>
+          <p><strong>Sản Phẩm:</strong> ${report.productId}</p>
+          <p><strong>Thời Gian:</strong> ${report.timestamp}</p>
+        `;
+        reportsDiv.appendChild(reportDiv);
+      });
     }
-    snapshot.forEach(reportSnapshot => {
-      const report = reportSnapshot.val();
-      const reportDiv = document.createElement('div');
-      reportDiv.className = 'border p-4 mb-2 rounded';
-      reportDiv.innerHTML = `
-        <p><strong>User ID:</strong> ${report.userId}</p>
-        <p><strong>Chi Phí:</strong> ${report.cost}</p>
-        <p><strong>Doanh Thu:</strong> ${report.revenue}</p>
-        <p><strong>Xuất Hàng:</strong> ${report.export}</p>
-        <p><strong>Thời Gian:</strong> ${report.timestamp}</p>
-      `;
-      reportsDiv.appendChild(reportDiv);
-    });
+
+    // Cập nhật tổng
+    document.getElementById('manager-total-cost').textContent = totalCost.toFixed(2);
+    document.getElementById('manager-total-revenue').textContent = totalRevenue.toFixed(2);
+    document.getElementById('manager-net-profit').textContent = (totalRevenue - totalCost).toFixed(2);
+    document.getElementById('manager-total-export').textContent = totalExport.toFixed(2);
   }, error => {
     console.error('Lỗi tải báo cáo chung:', error);
     alert('Lỗi tải báo cáo chung: ' + error.message);
