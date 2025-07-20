@@ -769,8 +769,7 @@ select {
 }
 
     
-    // Data functions
-// Data functions
+  // Data functions
 async function loadData() {
   const today = new Date().toLocaleDateString('vi-VN');
   document.getElementById('summaryDate').textContent = today;
@@ -823,7 +822,6 @@ async function loadData() {
       dailyData = {};
     }
 
-    // ✅ Bổ sung đầy đủ các trường
     dailyData.date = today;
     dailyData.user = currentUser.email;
     dailyData.note = dailyData.note || '';
@@ -837,6 +835,7 @@ async function loadData() {
     showError(`Lỗi khi tải dữ liệu ngày: ${error.message}`);
   }
 }
+
 
 
       
@@ -1573,6 +1572,7 @@ async function loadData() {
     window.applyReportFilters = applyReportFilters;
     window.printReport = printReport;
     window.handleLogin = handleLogin;
+    
 
   </script>
 </body>
