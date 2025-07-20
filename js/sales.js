@@ -131,12 +131,41 @@ export function renderDailyData() {
   document.getElementById('totalRevenue').textContent = `${totalRevenue.toLocaleString('vi-VN')}₫`;
   document.getElementById('dailyBalance').textContent = `${balance.toLocaleString('vi-VN')}₫`;
 }
+export function addExpense() {
+  const input = document.getElementById('expenseInput').value.trim();
+  if (!input) {
+    showError('Vui lòng nhập thông tin chi phí');
+    return;
+  }
+  
+  const { description, amount, category } = parseExpenseInput(input);
+  
+  if (!description || amount <= 0) {
+    showError('Không thể xác định mô tả hoặc số tiền từ thông tin nhập');
+    return;
+  }
+  
+  dailyData.expenses.push({
+    description: `${description}`,
+    amount: amount,
+    category: category,
+    user: currentUser.email,
+    timestamp: new Date().getTime()
+  });
+  
+  document.getElementById('expenseInput').value = '';
+  renderDailyData();
+}
 
+export function deleteExpense(index) {
+  if (confirm('Xóa chi phí này?')) {
+    dailyData.expenses.splice(index, 1);
+    renderDailyData();
+  }
+}
 // Chỉ export MỘT LẦN ở cuối file
 export {
   addExport,
-  addExpense,
-  addExpense,
   addRevenue
 };
 
