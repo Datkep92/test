@@ -78,17 +78,9 @@ export function initExpenses() {
       const row = `<tr>
         <td>${data.description} <span class="category-badge">${data.category}</span></td>
         <td class="text-right">${data.amount.toLocaleString('vi-VN')}₫</td>
-        <td class="actions manager-only"><button class="danger" onclick="deleteDoc('expenses', '${doc.id}')">Xóa</button></td>
+        <td class="actions manager-only"><button class="danger" onclick="window.deleteDoc('expenses', '${doc.id}')">Xóa</button></td>
       </tr>`;
       table.innerHTML += row;
     });
   });
-}
-
-export async function deleteDoc(collectionName, docId) {
-  try {
-    await deleteDoc(doc(db, collectionName, docId));
-  } catch (error) {
-    document.getElementById('errorContainer').innerHTML = `<div class="error-message">Lỗi: ${error.message}</div>`;
-  }
 }
