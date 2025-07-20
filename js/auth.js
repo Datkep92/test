@@ -77,3 +77,4 @@ export async function addUser() {
     showError(`Lỗi khi thêm người dùng: ${error.message}`);
   }
 }
+export { handleLogin, handleLogout, addUser };
