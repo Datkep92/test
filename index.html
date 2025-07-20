@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" href="https://www.google.com/favicon.ico">
   <title>Quản lý Kinh doanh</title>
   <style>
+    /* Reset CSS */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -19,6 +19,7 @@
       line-height: 1.6;
     }
     
+    /* Layout */
     .container {
       padding: 15px;
       max-width: 100%;
@@ -53,6 +54,7 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
     
+    /* Form elements */
     input, button, select {
       width: 100%;
       padding: 12px;
@@ -86,6 +88,7 @@
       background: #f39c12;
     }
     
+    /* Tables */
     .table-responsive {
       overflow-x: auto;
     }
@@ -109,6 +112,7 @@
       font-weight: 600;
     }
     
+    /* Tabs */
     .tab-container {
       display: flex;
       overflow-x: auto;
@@ -131,6 +135,7 @@
       color: white;
     }
     
+    /* Product grid */
     .product-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -138,6 +143,7 @@
       margin-top: 15px;
     }
     
+    /* Utility classes */
     .hidden {
       display: none;
     }
@@ -166,6 +172,7 @@
       margin-left: 5px;
     }
     
+    /* Responsive adjustments */
     @media (min-width: 768px) {
       .container {
         padding: 20px;
@@ -183,6 +190,7 @@
       }
     }
     
+    /* Print styles */
     @media print {
       body * {
         visibility: hidden;
@@ -197,18 +205,18 @@
         width: 100%;
       }
     }
- </style>
+  </style>
 </head>
 <body>
   <header id="appHeader" class="hidden">
     <h1>📊 Quản lý Kinh doanh</h1>
     <div class="user-info">
       <span id="currentUser"></span>
-      <button id="logoutBtn" class="logout-btn danger">Đăng xuất</button>
+      <button onclick="handleLogout()" class="logout-btn danger">Đăng xuất</button>
     </div>
   </header>
   
- <!-- Login Screen -->
+  <!-- Login Screen -->
   <div class="container">
     <div class="login-box" id="loginBox">
       <h3 class="text-center">🔐 Đăng nhập</h3>
@@ -218,17 +226,16 @@
       <label>
         <input type="checkbox" id="rememberMe" checked /> Ghi nhớ đăng nhập
       </label>
-      <button id="loginBtn" class="success">Đăng nhập</button>
+      <button onclick="handleLogin()" class="success">Đăng nhập</button>
     </div>
   </div>
 
   <!-- Sale Screen -->
   <div class="container hidden" id="saleApp">
-    <!-- Giữ nguyên nội dung Sale Screen -->
     <div class="tab-container">
-      <div class="tab active" data-tab="expense">Chi phí</div>
-      <div class="tab" data-tab="export">Xuất hàng</div>
-      <div class="tab" data-tab="revenue">Doanh thu</div>
+      <div class="tab active" onclick="switchTab('expense')">Chi phí</div>
+      <div class="tab" onclick="switchTab('export')">Xuất hàng</div>
+      <div class="tab" onclick="switchTab('revenue')">Doanh thu</div>
     </div>
     
     <!-- Expense Tab -->
@@ -236,7 +243,7 @@
       <h3>💸 Chi phí</h3>
       <div class="flex-md">
         <input type="text" id="expenseInput" placeholder="VD: mua xăng 60000" />
-        <button id="addExpenseBtn">Thêm</button>
+        <button onclick="addExpense()">Thêm</button>
       </div>
       <div class="table-responsive">
         <table class="table" id="expenseTable">
@@ -254,7 +261,7 @@
       <div id="productList" class="product-grid"></div>
       <div class="flex-md" style="margin-top: 15px;">
         <input type="number" id="exportQuantity" placeholder="Số lượng" value="1" min="1" />
-        <button id="addExportBtn" class="success">Thêm xuất hàng</button>
+        <button onclick="addExport()" class="success">Thêm xuất hàng</button>
       </div>
       <div class="table-responsive">
         <table class="table" id="exportTable">
@@ -271,7 +278,7 @@
       <h3>💰 Doanh thu</h3>
       <div class="flex-md">
         <input type="text" id="revenueAmount" placeholder="Số tiền (VD: 500000)" />
-        <button id="addRevenueBtn">Thêm</button>
+        <button onclick="addRevenue()">Thêm</button>
       </div>
     </div>
     
@@ -299,13 +306,12 @@
       
       <h4>Ghi chú cá nhân:</h4>
       <textarea id="dailyNote" class="note-input" placeholder="Nhập ghi chú trong ngày..."></textarea>
-      <button id="saveDailyDataBtn" class="success">Lưu dữ liệu</button>
+      <button onclick="saveDailyData()" class="success">Lưu dữ liệu</button>
     </div>
   </div>
 
- <!-- Admin Screen -->
+  <!-- Admin Screen -->
   <div class="container hidden" id="adminApp">
-    <!-- Giữ nguyên nội dung Admin Screen -->
     <div class="section">
       <h3>📦 Quản lý Kho hàng</h3>
       <div class="flex-md">
@@ -313,7 +319,7 @@
         <input type="number" id="productQuantity" placeholder="Số lượng" min="0" />
         <input type="text" id="productUnit" placeholder="ĐVT (kg, ly, chai...)" />
         <input type="number" id="productPrice" placeholder="Giá đơn vị (VNĐ)" min="0" />
-        <button id="addProductBtn">Thêm sản phẩm</button>
+        <button onclick="addProduct()">Thêm sản phẩm</button>
       </div>
       <div class="table-responsive">
         <table class="table" id="productTable">
@@ -329,9 +335,9 @@
       <h3>📊 Báo cáo</h3>
       <div class="flex-md">
         <input type="date" id="reportDate" />
-        <button id="generateDailyReportBtn">Báo cáo ngày</button>
-        <button id="generateMonthlyReportBtn">Báo cáo tháng</button>
-        <button id="printReportBtn" class="warning">In báo cáo</button>
+        <button onclick="generateDailyReport()">Báo cáo ngày</button>
+        <button onclick="generateMonthlyReport()">Báo cáo tháng</button>
+        <button onclick="printReport()" class="warning">In báo cáo</button>
       </div>
       
       <div id="reportFilters" style="margin-top: 15px;">
@@ -342,7 +348,7 @@
           <select id="reportCategoryFilter">
             <option value="all">Tất cả danh mục</option>
           </select>
-          <button id="applyReportFiltersBtn">Áp dụng</button>
+          <button onclick="applyReportFilters()">Áp dụng</button>
         </div>
       </div>
       
@@ -358,7 +364,7 @@
           <option value="staff">Nhân viên</option>
           <option value="admin">Quản lý</option>
         </select>
-        <button id="addUserBtn" class="success">Thêm người dùng</button>
+        <button onclick="addUser()" class="success">Thêm người dùng</button>
       </div>
       
       <div class="table-responsive">
@@ -372,50 +378,16 @@
     </div>
   </div>
 
-<script type="module">
-    // Import các thành phần từ cùng phiên bản (10.12.2 để đồng nhất)
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { 
-      getAuth, 
-      signInWithEmailAndPassword, 
-      signOut,
-      onAuthStateChanged,
-      createUserWithEmailAndPassword
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { 
-      getDatabase, 
-      ref, 
-      set, 
-      get,
-      push,
-      update,
-      remove,
-      onValue,
-      off
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-    // Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
-      authDomain: "quanly-d7e54.firebaseapp.com",
-      databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com",
-      projectId: "quanly-d7e54",
-      storageBucket: "quanly-d7e54.firebasestorage.app",
-      messagingSenderId: "482686011267",
-      appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
+  <script>
+    // System Data
+    let users = JSON.parse(localStorage.getItem('users')) || {
+      admin: { password: '123123', role: 'admin', active: true },
+      test: { password: '1234', role: 'staff', active: true }
     };
-
-   // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const database = getDatabase(app);
-
-    // Application state
-    let currentUser = null;
-    let currentTab = 'expense';
-    let selectedProduct = null;
-    let products = [];
-    let expenseCategories = [];
+    
+    // Business Data
+    let products = JSON.parse(localStorage.getItem('products')) || [];
+    let expenseCategories = JSON.parse(localStorage.getItem('expenseCategories')) || [];
     let dailyData = {
       date: '',
       expenses: [],
@@ -424,189 +396,104 @@
       note: '',
       user: ''
     };
-    let users = {};
-
-    // DOM Elements
-    const loginBtn = document.getElementById('loginBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const addExpenseBtn = document.getElementById('addExpenseBtn');
-    const addExportBtn = document.getElementById('addExportBtn');
-    const addRevenueBtn = document.getElementById('addRevenueBtn');
-    const saveDailyDataBtn = document.getElementById('saveDailyDataBtn');
-    const addProductBtn = document.getElementById('addProductBtn');
-    const addUserBtn = document.getElementById('addUserBtn');
-    const generateDailyReportBtn = document.getElementById('generateDailyReportBtn');
-    const generateMonthlyReportBtn = document.getElementById('generateMonthlyReportBtn');
-    const printReportBtn = document.getElementById('printReportBtn');
-    const applyReportFiltersBtn = document.getElementById('applyReportFiltersBtn');
-    const tabs = document.querySelectorAll('.tab');
+    
+    let currentUser = null;
+    let currentTab = 'expense';
+    let selectedProduct = null;
 
     // Initialize the app
- function initApp() {
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('reportDate').value = today;
-  
-  const rememberedUser = localStorage.getItem('rememberedUser');
-  if (rememberedUser) {
-    document.getElementById('username').value = rememberedUser;
-    document.getElementById('password').focus();
-  }
-  
-  // Event listeners
-  loginBtn.addEventListener('click', handleLogin);
-  logoutBtn.addEventListener('click', handleLogout);
-  addExpenseBtn.addEventListener('click', addExpense);
-  addExportBtn.addEventListener('click', addExport);
-  addRevenueBtn.addEventListener('click', addRevenue);
-  saveDailyDataBtn.addEventListener('click', saveDailyData);
-  addProductBtn.addEventListener('click', addProduct);
-  addUserBtn.addEventListener('click', addUser);
-  generateDailyReportBtn.addEventListener('click', generateDailyReport);
-  generateMonthlyReportBtn.addEventListener('click', generateMonthlyReport);
-  printReportBtn.addEventListener('click', printReport);
-  applyReportFiltersBtn.addEventListener('click', applyReportFilters);
-  
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
-  });
-
-  // Ngăn chặn lặp từ keypress
-  document.getElementById('password').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter' && !loginBtn.disabled) handleLogin();
-  });
-  
-  document.getElementById('expenseInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') addExpense();
-  });
-  
-  document.getElementById('revenueAmount').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') addRevenue();
-  });
-  
-  // Check auth state
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      currentUser = user.uid;
-      loadUserData();
-    } else {
-      currentUser = null;
-      resetUI();
-    }
-  });
-}
-
-async function handleLogin() {
-  const loginBtn = document.getElementById('loginBtn');
-  if (loginBtn.disabled) return;
-
-  const username = document.getElementById('username').value.trim();
-  const password = document.getElementById('password').value.trim();
-  const rememberMe = document.getElementById('rememberMe').checked;
-
-  document.getElementById('errorContainer').innerHTML = '';
-
-  if (!username || !password) {
-    showError('Vui lòng nhập đầy đủ thông tin đăng nhập');
-    return;
-  }
-
-  if (!/^[a-zA-Z0-9]+$/.test(username)) {
-    showError('Tên đăng nhập chỉ được chứa chữ cái và số');
-    return;
-  }
-
-  loginBtn.disabled = true;
-  try {
-    const email = `${username}@quanly-hkd.com`;
-    console.log("Đang thử đăng nhập với email:", email);
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-
-    if (rememberMe) {
-      localStorage.setItem('rememberedUser', username);
-    } else {
-      localStorage.removeItem('rememberedUser');
-    }
-
-    currentUser = userCredential.user.uid;
-    loadUserData();
-
-  } catch (error) {
-    if (error.code === "auth/user-not-found" || error.code === "auth/invalid-email") {
-      try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const userId = userCredential.user.uid;
-        await set(ref(database, `users/${userId}`), {
-          username: username,
-          role: 'staff',
-          active: true,
-          createdAt: new Date().toISOString()
-        });
-        if (rememberMe) {
-          localStorage.setItem('rememberedUser', username);
-        }
-        currentUser = userId;
-        loadUserData();
-      } catch (createError) {
-        console.error("Lỗi tạo tài khoản:", createError);
-        showError("Lỗi tạo tài khoản: " + createError.message);
-      }
-    } else {
-      console.error("Login error:", error);
-      let errorMessage = "Đăng nhập thất bại";
-      switch (error.code) {
-        case "auth/invalid-credential":
-          errorMessage = "Sai tên đăng nhập hoặc mật khẩu";
-          break;
-        case "auth/too-many-requests":
-          errorMessage = "Quá nhiều lần thử, vui lòng thử lại sau";
-          break;
-      }
-      showError(errorMessage);
-    }
-  } finally {
-    loginBtn.disabled = false;
-  }
-}
-    async function loadUserData() {
-      const userRef = ref(database, `users/${currentUser}`);
-      const snapshot = await get(userRef);
+    function initApp() {
+      // Set current date in report date picker
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('reportDate').value = today;
       
-      if (snapshot.exists()) {
-        const userData = snapshot.val();
-        document.getElementById('currentUser').textContent = userData.username;
-        
-        handleSuccessfulLogin(userData.role);
-        loadData();
-      } else {
-        showError('Không tìm thấy thông tin người dùng');
-        handleLogout();
+      // Load remembered user
+      const rememberedUser = localStorage.getItem('rememberedUser');
+      if (rememberedUser) {
+        document.getElementById('username').value = rememberedUser;
+        document.getElementById('password').focus();
+      }
+      
+      // Event listeners
+      document.getElementById('password').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') handleLogin();
+      });
+      
+      document.getElementById('expenseInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') addExpense();
+      });
+      
+      document.getElementById('revenueAmount').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') addRevenue();
+      });
+      
+      // Load data if already logged in
+      if (localStorage.getItem('currentUser')) {
+        currentUser = localStorage.getItem('currentUser');
+        handleSuccessfulLogin();
       }
     }
-
-    function handleSuccessfulLogin(role) {
+    
+    // Login functions
+    function handleLogin() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const rememberMe = document.getElementById('rememberMe').checked;
+      
+      // Clear previous errors
+      document.getElementById('errorContainer').innerHTML = '';
+      
+      if (!username || !password) {
+        showError('Vui lòng nhập đầy đủ thông tin đăng nhập');
+        return;
+      }
+      
+      if (!users[username]) {
+        showError('Sai tên đăng nhập');
+        return;
+      }
+      
+      if (users[username].password !== password) {
+        showError('Sai mật khẩu');
+        return;
+      }
+      
+      if (!users[username].active) {
+        showError('Tài khoản đã bị khóa');
+        return;
+      }
+      
+      // Successful login
+      if (rememberMe) {
+        localStorage.setItem('rememberedUser', username);
+      } else {
+        localStorage.removeItem('rememberedUser');
+      }
+      
+      currentUser = username;
+      localStorage.setItem('currentUser', username);
+      handleSuccessfulLogin();
+    }
+    
+    function handleSuccessfulLogin() {
       document.getElementById('loginBox').classList.add('hidden');
       document.getElementById('appHeader').classList.remove('hidden');
+      document.getElementById('currentUser').textContent = currentUser;
       
-      if (role === 'admin') {
+      if (users[currentUser].role === 'admin') {
         document.getElementById('adminApp').classList.remove('hidden');
-        loadUsers();
+        renderUserList();
         loadReportFilters();
       } else {
         document.getElementById('saleApp').classList.remove('hidden');
       }
+      
+      loadData();
     }
-
-    async function handleLogout() {
-      try {
-        await signOut(auth);
-        currentUser = null;
-        resetUI();
-      } catch (error) {
-        console.error("Logout error:", error);
-      }
-    }
-
-    function resetUI() {
+    
+    function handleLogout() {
+      currentUser = null;
+      localStorage.removeItem('currentUser');
       document.getElementById('loginBox').classList.remove('hidden');
       document.getElementById('appHeader').classList.add('hidden');
       document.getElementById('adminApp').classList.add('hidden');
@@ -614,37 +501,34 @@ async function handleLogin() {
       document.getElementById('username').value = '';
       document.getElementById('password').value = '';
     }
-
+    
     function showError(message) {
       const errorContainer = document.getElementById('errorContainer');
       errorContainer.innerHTML = `<div class="error-message">${message}</div>`;
     }
-
+    
     // Data functions
     function loadData() {
-      const today = new Date().toLocaleDateString('vi-VN');
-      document.getElementById('summaryDate').textContent = today;
-      
       // Load products
-      const productsRef = ref(database, 'products');
-      onValue(productsRef, (snapshot) => {
-        products = snapshot.val() || [];
+      const savedProducts = localStorage.getItem('products');
+      if (savedProducts) {
+        products = JSON.parse(savedProducts);
         renderProducts();
-        if (currentTab === 'export') {
-          renderProductSelection();
-        }
-      });
+      }
       
       // Load expense categories
-      const categoriesRef = ref(database, 'expenseCategories');
-      onValue(categoriesRef, (snapshot) => {
-        expenseCategories = snapshot.val() || [];
-      });
+      const savedCategories = localStorage.getItem('expenseCategories');
+      if (savedCategories) {
+        expenseCategories = JSON.parse(savedCategories);
+      }
       
       // Load today's data
-      const dailyDataRef = ref(database, `dailyData/${currentUser}/${today}`);
-      onValue(dailyDataRef, (snapshot) => {
-        dailyData = snapshot.val() || {
+      const today = new Date().toLocaleDateString('vi-VN');
+      const savedDailyData = localStorage.getItem(`dailyData_${today}_${currentUser}`);
+      if (savedDailyData) {
+        dailyData = JSON.parse(savedDailyData);
+      } else {
+        dailyData = {
           date: today,
           expenses: [],
           exports: [],
@@ -652,29 +536,31 @@ async function handleLogin() {
           note: '',
           user: currentUser
         };
-        document.getElementById('dailyNote').value = dailyData.note || '';
-        renderDailyData();
-      });
-    }
-
-    async function saveDailyData() {
-      const today = new Date().toLocaleDateString('vi-VN');
-      dailyData.note = document.getElementById('dailyNote').value;
-      
-      try {
-        await set(ref(database, `dailyData/${currentUser}/${today}`), dailyData);
-        alert('Đã lưu dữ liệu ngày ' + today);
-      } catch (error) {
-        console.error("Error saving daily data:", error);
-        alert('Lỗi khi lưu dữ liệu');
       }
+      
+      document.getElementById('summaryDate').textContent = today;
+      document.getElementById('currentDate').textContent = today;
+      document.getElementById('dailyNote').value = dailyData.note || '';
+      
+      renderDailyData();
     }
-
+    
+    function saveData() {
+      localStorage.setItem('products', JSON.stringify(products));
+      localStorage.setItem('expenseCategories', JSON.stringify(expenseCategories));
+    }
+    
+    function saveDailyData() {
+      dailyData.note = document.getElementById('dailyNote').value;
+      localStorage.setItem(`dailyData_${dailyData.date}_${currentUser}`, JSON.stringify(dailyData));
+      alert('Đã lưu dữ liệu ngày ' + dailyData.date);
+    }
+    
     // Sale functions
     function switchTab(tab) {
       currentTab = tab;
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+      document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
       
       document.getElementById('expenseTab').classList.add('hidden');
       document.getElementById('exportTab').classList.add('hidden');
@@ -686,7 +572,7 @@ async function handleLogin() {
         renderProductSelection();
       }
     }
-
+    
     function parseExpenseInput(input) {
       const normalized = input.toLowerCase()
         .normalize("NFD")
@@ -704,9 +590,10 @@ async function handleLogin() {
       const categoryMatch = description.match(/^\s*(\S+)/);
       const category = categoryMatch ? categoryMatch[1] : 'khác';
       
+      // Add new category if not exists
       if (!expenseCategories.includes(category)) {
         expenseCategories.push(category);
-        update(ref(database, 'expenseCategories'), expenseCategories);
+        saveData();
       }
       
       return {
@@ -715,14 +602,14 @@ async function handleLogin() {
         category: capitalizeFirstLetter(category)
       };
     }
-
+    
     function capitalizeFirstLetter(string) {
       return string.split(' ').map(word => 
         word.charAt(0).toUpperCase() + word.slice(1)
       ).join(' ');
     }
-
-    async function addExpense() {
+    
+    function addExpense() {
       const input = document.getElementById('expenseInput').value.trim();
       if (!input) {
         showError('Vui lòng nhập thông tin chi phí');
@@ -736,45 +623,30 @@ async function handleLogin() {
         return;
       }
       
-      const newExpense = {
-        description: description,
+      dailyData.expenses.push({
+        description: `${description}`,
         amount: amount,
         category: category,
         user: currentUser,
         timestamp: new Date().getTime()
-      };
+      });
       
-      const today = new Date().toLocaleDateString('vi-VN');
-      const expensesRef = ref(database, `dailyData/${currentUser}/${today}/expenses`);
-      
-      try {
-        await push(expensesRef, newExpense);
-        document.getElementById('expenseInput').value = '';
-      } catch (error) {
-        console.error("Error adding expense:", error);
-        showError('Lỗi khi thêm chi phí');
+      document.getElementById('expenseInput').value = '';
+      renderDailyData();
+    }
+    
+    function deleteExpense(index) {
+      if (confirm('Xóa chi phí này?')) {
+        dailyData.expenses.splice(index, 1);
+        renderDailyData();
       }
     }
-
-    async function deleteExpense(index) {
-      if (!confirm('Xóa chi phí này?')) return;
-      
-      const today = new Date().toLocaleDateString('vi-VN');
-      const expenseRef = ref(database, `dailyData/${currentUser}/${today}/expenses/${index}`);
-      
-      try {
-        await remove(expenseRef);
-      } catch (error) {
-        console.error("Error deleting expense:", error);
-        showError('Lỗi khi xóa chi phí');
-      }
-    }
-
+    
     function renderProductSelection() {
       const container = document.getElementById('productList');
       container.innerHTML = '';
       
-      products.forEach((product, index) => {
+      products.forEach((product) => {
         const productItem = document.createElement('div');
         productItem.className = 'product-item';
         productItem.innerHTML = `
@@ -793,8 +665,8 @@ async function handleLogin() {
         container.appendChild(productItem);
       });
     }
-
-    async function addExport() {
+    
+    function addExport() {
       if (!selectedProduct) {
         showError('Vui lòng chọn sản phẩm');
         return;
@@ -812,66 +684,55 @@ async function handleLogin() {
         return;
       }
       
-      const today = new Date().toLocaleDateString('vi-VN');
-      const exportRef = ref(database, `dailyData/${currentUser}/${today}/exports`);
+      // Check if product already exported today
+      const existingExport = dailyData.exports.find(e => e.productId === selectedProduct.id);
       
-      const newExport = {
-        productId: selectedProduct.id,
-        productName: selectedProduct.name,
-        quantity: quantity,
-        unit: selectedProduct.unit,
-        price: selectedProduct.price,
-        user: currentUser,
-        timestamp: new Date().getTime()
-      };
-      
-      try {
-        // Add to exports
-        await push(exportRef, newExport);
-        
-        // Update product quantity
-        const productRef = ref(database, `products/${selectedProduct.id}/quantity`);
-        await set(productRef, selectedProduct.quantity - quantity);
-        
-        document.getElementById('exportQuantity').value = '1';
-        selectedProduct = null;
-        document.querySelectorAll('.product-item').forEach(item => {
-          item.classList.remove('selected');
+      if (existingExport) {
+        existingExport.quantity += quantity;
+      } else {
+        dailyData.exports.push({
+          productId: selectedProduct.id,
+          productName: selectedProduct.name,
+          quantity: quantity,
+          unit: selectedProduct.unit,
+          price: selectedProduct.price,
+          user: currentUser,
+          timestamp: new Date().getTime()
         });
-      } catch (error) {
-        console.error("Error adding export:", error);
-        showError('Lỗi khi thêm xuất hàng');
       }
+      
+      // Update product quantity
+      selectedProduct.quantity -= quantity;
+      saveData();
+      
+      document.getElementById('exportQuantity').value = '1';
+      selectedProduct = null;
+      document.querySelectorAll('.product-item').forEach(item => {
+        item.classList.remove('selected');
+      });
+      
+      renderDailyData();
+      renderProductSelection();
     }
-
-    async function deleteExport(index) {
-      if (!confirm('Xóa xuất hàng này?')) return;
-      
-      const today = new Date().toLocaleDateString('vi-VN');
-      const exportRef = ref(database, `dailyData/${currentUser}/${today}/exports/${index}`);
-      
-      try {
-        // Get export item first to return quantity
-        const snapshot = await get(exportRef);
-        const exportItem = snapshot.val();
+    
+    function deleteExport(index) {
+      if (confirm('Xóa xuất hàng này?')) {
+        const exportItem = dailyData.exports[index];
         
-        if (exportItem) {
-          // Return quantity to product
-          const productRef = ref(database, `products/${exportItem.productId}/quantity`);
-          const productSnap = await get(productRef);
-          const currentQty = productSnap.val() || 0;
-          await set(productRef, currentQty + exportItem.quantity);
+        // Return quantity to product
+        const product = products.find(p => p.id === exportItem.productId);
+        if (product) {
+          product.quantity += exportItem.quantity;
+          saveData();
         }
         
-        // Remove the export
-        await remove(exportRef);
-      } catch (error) {
-        console.error("Error deleting export:", error);
-        showError('Lỗi khi xóa xuất hàng');
+        dailyData.exports.splice(index, 1);
+        renderDailyData();
+        renderProductSelection();
       }
     }
-
-    async function addRevenue() {
+    
+    function addRevenue() {
       const amount = parseNumber(document.getElementById('revenueAmount').value);
       
       if (isNaN(amount)) {
@@ -879,68 +740,52 @@ async function handleLogin() {
         return;
       }
       
-      const today = new Date().toLocaleDateString('vi-VN');
-      const revenueRef = ref(database, `dailyData/${currentUser}/${today}/revenue`);
-      
-      try {
-        const snapshot = await get(revenueRef);
-        const currentRevenue = snapshot.val() || 0;
-        await set(revenueRef, currentRevenue + amount);
-        
-        document.getElementById('revenueAmount').value = '';
-      } catch (error) {
-        console.error("Error adding revenue:", error);
-        showError('Lỗi khi thêm doanh thu');
-      }
+      dailyData.revenue += amount;
+      document.getElementById('revenueAmount').value = '';
+      renderDailyData();
     }
-
+    
     function renderDailyData() {
       // Render expenses
       const expenseTable = document.querySelector('#expenseTable tbody');
       expenseTable.innerHTML = '';
       
-      if (dailyData.expenses) {
-        Object.values(dailyData.expenses).forEach((expense, index) => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${expense.description} <span class="category-badge">${expense.category}</span></td>
-            <td class="text-right">${expense.amount.toLocaleString('vi-VN')}₫</td>
-            <td class="actions">
-              <button onclick="deleteExpense('${index}')" class="danger">Xóa</button>
-            </td>
-          `;
-          expenseTable.appendChild(row);
-        });
-      }
+      dailyData.expenses.forEach((expense, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${expense.description} <span class="category-badge">${expense.category}</span></td>
+          <td class="text-right">${expense.amount.toLocaleString('vi-VN')}₫</td>
+          <td class="actions">
+            <button onclick="deleteExpense(${index})" class="danger">Xóa</button>
+          </td>
+        `;
+        expenseTable.appendChild(row);
+      });
       
       // Render exports
       const exportTable = document.querySelector('#exportTable tbody');
       exportTable.innerHTML = '';
       
-      if (dailyData.exports) {
-        Object.values(dailyData.exports).forEach((exportItem, index) => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${exportItem.productName}</td>
-            <td>${exportItem.quantity}</td>
-            <td>${exportItem.unit}</td>
-            <td class="actions">
-              <button onclick="deleteExport('${index}')" class="danger">Xóa</button>
-            </td>
-          `;
-          exportTable.appendChild(row);
-        });
-      }
+      dailyData.exports.forEach((exportItem, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${exportItem.productName}</td>
+          <td>${exportItem.quantity}</td>
+          <td>${exportItem.unit}</td>
+          <td class="actions">
+            <button onclick="deleteExport(${index})" class="danger">Xóa</button>
+          </td>
+        `;
+        exportTable.appendChild(row);
+      });
       
       // Calculate and render summary
-      const totalExpense = dailyData.expenses ? 
-        Object.values(dailyData.expenses).reduce((sum, e) => sum + e.amount, 0) : 0;
-      const totalExportCost = dailyData.exports ? 
-        Object.values(dailyData.exports).reduce((sum, e) => sum + (e.quantity * e.price), 0) : 0;
-      const balance = (dailyData.revenue || 0) - totalExpense;
+      const totalExpense = dailyData.expenses.reduce((sum, e) => sum + e.amount, 0);
+      const totalExportCost = dailyData.exports.reduce((sum, e) => sum + (e.quantity * e.price), 0);
+      const balance = dailyData.revenue - totalExpense;
       
       document.getElementById('totalRevenue').textContent = 
-        (dailyData.revenue || 0).toLocaleString('vi-VN') + '₫';
+        dailyData.revenue.toLocaleString('vi-VN') + '₫';
       document.getElementById('totalExpense').textContent = 
         totalExpense.toLocaleString('vi-VN') + '₫';
       document.getElementById('dailyBalance').innerHTML = 
@@ -950,13 +795,13 @@ async function handleLogin() {
       const exportSummary = document.getElementById('exportSummary');
       exportSummary.innerHTML = '';
       
-      if (dailyData.exports && Object.values(dailyData.exports).length > 0) {
+      if (dailyData.exports.length > 0) {
         const summaryDiv = document.createElement('div');
         summaryDiv.style.marginTop = '15px';
         summaryDiv.innerHTML = `
           <h4>Xuất hàng hôm nay:</h4>
           <ul>
-            ${Object.values(dailyData.exports).map(e => 
+            ${dailyData.exports.map(e => 
               `<li>${e.productName}: ${e.quantity} ${e.unit}</li>`
             ).join('')}
           </ul>
@@ -964,9 +809,9 @@ async function handleLogin() {
         exportSummary.appendChild(summaryDiv);
       }
     }
-
+    
     // Product management
-    async function addProduct() {
+    function addProduct() {
       const name = document.getElementById('productName').value.trim();
       const quantity = parseInt(document.getElementById('productQuantity').value) || 0;
       const unit = document.getElementById('productUnit').value.trim();
@@ -985,24 +830,20 @@ async function handleLogin() {
         price: price
       };
       
-      try {
-        await set(ref(database, `products/${newProduct.id}`), newProduct);
-        
-        // Clear inputs
-        document.getElementById('productName').value = '';
-        document.getElementById('productQuantity').value = '';
-        document.getElementById('productUnit').value = '';
-        document.getElementById('productPrice').value = '';
-      } catch (error) {
-        console.error("Error adding product:", error);
-        showError('Lỗi khi thêm sản phẩm');
-      }
-    }
-
-    async function editProduct(productId) {
-      const product = products.find(p => p.id === productId);
-      if (!product) return;
+      products.push(newProduct);
+      saveData();
       
+      // Clear inputs
+      document.getElementById('productName').value = '';
+      document.getElementById('productQuantity').value = '';
+      document.getElementById('productUnit').value = '';
+      document.getElementById('productPrice').value = '';
+      
+      renderProducts();
+    }
+    
+    function editProduct(index) {
+      const product = products[index];
       const newName = prompt('Tên sản phẩm:', product.name);
       if (!newName) return;
       
@@ -1015,64 +856,45 @@ async function handleLogin() {
       const newPrice = parseInt(prompt('Giá đơn vị:', product.price)) || 0;
       if (isNaN(newPrice)) return alert('Giá không hợp lệ');
       
-      try {
-        const updates = {
-          [`products/${productId}/name`]: newName,
-          [`products/${productId}/quantity`]: newQuantity,
-          [`products/${productId}/unit`]: newUnit,
-          [`products/${productId}/price`]: newPrice
-        };
-        
-        await update(ref(database), updates);
-      } catch (error) {
-        console.error("Error updating product:", error);
-        alert('Lỗi khi cập nhật sản phẩm');
-      }
-    }
-
-    async function deleteProduct(productId) {
-      if (!confirm('Xóa sản phẩm này?')) return;
+      product.name = newName;
+      product.quantity = newQuantity;
+      product.unit = newUnit;
+      product.price = newPrice;
       
-      try {
-        await remove(ref(database, `products/${productId}`));
-      } catch (error) {
-        console.error("Error deleting product:", error);
-        alert('Lỗi khi xóa sản phẩm');
+      saveData();
+      renderProducts();
+    }
+    
+    function deleteProduct(index) {
+      if (confirm('Xóa sản phẩm này?')) {
+        products.splice(index, 1);
+        saveData();
+        renderProducts();
       }
     }
-
+    
     function renderProducts() {
       const table = document.querySelector('#productTable tbody');
       table.innerHTML = '';
       
-      if (products) {
-        Object.values(products).forEach((product) => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${product.name}</td>
-            <td>${product.quantity}</td>
-            <td>${product.unit}</td>
-            <td class="text-right">${product.price.toLocaleString('vi-VN')}₫</td>
-            <td class="actions">
-              <button onclick="editProduct('${product.id}')">Sửa</button>
-              <button onclick="deleteProduct('${product.id}')" class="danger">Xóa</button>
-            </td>
-          `;
-          table.appendChild(row);
-        });
-      }
-    }
-
-    // User management
-    async function loadUsers() {
-      const usersRef = ref(database, 'users');
-      onValue(usersRef, (snapshot) => {
-        users = snapshot.val() || {};
-        renderUserList();
+      products.forEach((product, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${product.name}</td>
+          <td>${product.quantity}</td>
+          <td>${product.unit}</td>
+          <td class="text-right">${product.price.toLocaleString('vi-VN')}₫</td>
+          <td class="actions">
+            <button onclick="editProduct(${index})">Sửa</button>
+            <button onclick="deleteProduct(${index})" class="danger">Xóa</button>
+          </td>
+        `;
+        table.appendChild(row);
       });
     }
-
-    async function addUser() {
+    
+    // User management
+    function addUser() {
       const username = document.getElementById('newUsername').value.trim();
       const password = document.getElementById('newPassword').value.trim();
       const role = document.getElementById('newUserRole').value;
@@ -1082,95 +904,76 @@ async function handleLogin() {
         return;
       }
       
-      if (Object.values(users).some(u => u.username === username)) {
+      if (users[username]) {
         showError('Tên đăng nhập đã tồn tại');
         return;
       }
       
-      try {
-        const email = `${username}@quanly-hkd.com`;
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const userId = userCredential.user.uid;
-        
-        const newUser = {
-          username: username,
-          role: role,
-          active: true,
-          createdAt: new Date().toISOString()
-        };
-        
-        await set(ref(database, `users/${userId}`), newUser);
-        
-        // Clear inputs
-        document.getElementById('newUsername').value = '';
-        document.getElementById('newPassword').value = '';
-      } catch (error) {
-        console.error("Error adding user:", error);
-        showError('Lỗi khi thêm người dùng');
+      users[username] = {
+        password: password,
+        role: role,
+        active: true
+      };
+      
+      saveUsers();
+      renderUserList();
+      loadReportFilters();
+      
+      // Clear inputs
+      document.getElementById('newUsername').value = '';
+      document.getElementById('newPassword').value = '';
+    }
+    
+    function toggleUserStatus(username) {
+      if (confirm(`Bạn có chắc muốn ${users[username].active ? 'khóa' : 'mở khóa'} tài khoản ${username}?`)) {
+        users[username].active = !users[username].active;
+        saveUsers();
+        renderUserList();
       }
     }
-
-    async function toggleUserStatus(userId) {
-      const user = users[userId];
-      if (!user) return;
-      
-      if (!confirm(`Bạn có chắc muốn ${user.active ? 'khóa' : 'mở khóa'} tài khoản ${user.username}?`)) return;
-      
-      try {
-        await update(ref(database, `users/${userId}`), {
-          active: !user.active
-        });
-      } catch (error) {
-        console.error("Error toggling user status:", error);
-        alert('Lỗi khi thay đổi trạng thái người dùng');
-      }
-    }
-
-    async function deleteUser(userId) {
-      const user = users[userId];
-      if (!user) return;
-      
-      if (user.role === 'admin') {
+    
+    function deleteUser(username) {
+      if (username === 'admin') {
         alert('Không thể xóa tài khoản admin');
         return;
       }
       
-      if (!confirm(`Bạn có chắc muốn xóa tài khoản ${user.username}?`)) return;
-      
-      try {
-        await remove(ref(database, `users/${userId}`));
-      } catch (error) {
-        console.error("Error deleting user:", error);
-        alert('Lỗi khi xóa người dùng');
+      if (confirm(`Bạn có chắc muốn xóa tài khoản ${username}?`)) {
+        delete users[username];
+        saveUsers();
+        renderUserList();
+        loadReportFilters();
       }
     }
-
+    
+    function saveUsers() {
+      localStorage.setItem('users', JSON.stringify(users));
+    }
+    
     function renderUserList() {
       const table = document.querySelector('#userTable tbody');
       table.innerHTML = '';
       
-      if (users) {
-        for (const userId in users) {
-          const user = users[userId];
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${user.username}</td>
-            <td>${user.role === 'admin' ? 'Quản lý' : 'Nhân viên'}</td>
-            <td>${user.active ? 'Đang hoạt động' : 'Đã khóa'}</td>
-            <td class="actions">
-              <button onclick="toggleUserStatus('${userId}')" class="${user.active ? 'warning' : 'success'}">
-                ${user.active ? 'Khóa' : 'Mở khóa'}
-              </button>
-              ${user.role !== 'admin' ? `
-                <button onclick="deleteUser('${userId}')" class="danger">Xóa</button>
-              ` : ''}
-            </td>
-          `;
-          table.appendChild(row);
-        }
+      for (const username in users) {
+        const user = users[username];
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${username}</td>
+          <td>${user.role === 'admin' ? 'Quản lý' : 'Nhân viên'}</td>
+          <td>${user.active ? 'Đang hoạt động' : 'Đã khóa'}</td>
+          <td class="actions">
+            <button onclick="toggleUserStatus('${username}')" class="${user.active ? 'warning' : 'success'}">
+              ${user.active ? 'Khóa' : 'Mở khóa'}
+            </button>
+            ${username !== 'admin' ? `
+              <button onclick="deleteUser('${username}')" class="danger">Xóa</button>
+            ` : ''}
+          </td>
+        `;
+        table.appendChild(row);
       }
     }
-
+    
     // Report functions
     function loadReportFilters() {
       const userFilter = document.getElementById('reportUserFilter');
@@ -1181,14 +984,11 @@ async function handleLogin() {
       while (categoryFilter.options.length > 1) categoryFilter.remove(1);
       
       // Add users
-      if (users) {
-        for (const userId in users) {
-          const user = users[userId];
-          const option = document.createElement('option');
-          option.value = userId;
-          option.textContent = user.username;
-          userFilter.appendChild(option);
-        }
+      for (const username in users) {
+        const option = document.createElement('option');
+        option.value = username;
+        option.textContent = username;
+        userFilter.appendChild(option);
       }
       
       // Add categories
@@ -1199,61 +999,84 @@ async function handleLogin() {
         categoryFilter.appendChild(option);
       });
     }
-
-    async function generateReport(dateFilter, userFilter = 'all', categoryFilter = 'all', isMonthly = false) {
-      let reportData = [];
+    
+    function applyReportFilters() {
+      const dateInput = document.getElementById('reportDate').value;
+      if (!dateInput) {
+        alert('Vui lòng chọn ngày');
+        return;
+      }
+      
+      const userFilter = document.getElementById('reportUserFilter').value;
+      const categoryFilter = document.getElementById('reportCategoryFilter').value;
+      
+      generateReport(dateInput, userFilter, categoryFilter);
+    }
+    
+    function generateDailyReport() {
+      const dateInput = document.getElementById('reportDate').value;
+      if (!dateInput) {
+        alert('Vui lòng chọn ngày');
+        return;
+      }
+      
+      const userFilter = document.getElementById('reportUserFilter').value;
+      const categoryFilter = document.getElementById('reportCategoryFilter').value;
+      
+      generateReport(dateInput, userFilter, categoryFilter);
+    }
+    
+    function generateMonthlyReport() {
+      const dateInput = document.getElementById('reportDate').value;
+      if (!dateInput) {
+        alert('Vui lòng chọn ngày trong tháng cần báo cáo');
+        return;
+      }
+      
+      const date = new Date(dateInput);
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+      
+      const userFilter = document.getElementById('reportUserFilter').value;
+      const categoryFilter = document.getElementById('reportCategoryFilter').value;
+      
+      generateReport(`${year}-${month.toString().padStart(2, '0')}`, userFilter, categoryFilter, true);
+    }
+    
+    function generateReport(dateFilter, userFilter = 'all', categoryFilter = 'all', isMonthly = false) {
+      let allDailyData = [];
       const dateStr = isMonthly 
         ? dateFilter // Format: "YYYY-MM"
         : new Date(dateFilter).toLocaleDateString('vi-VN');
       
-      // Get report data from Firebase
-      try {
+      // Get all matching data
+      for (const user in users) {
+        if (userFilter !== 'all' && userFilter !== user) continue;
+        
         if (isMonthly) {
+          // Monthly report - check all days in month
           const [year, month] = dateFilter.split('-');
           const daysInMonth = new Date(year, month, 0).getDate();
           
           for (let day = 1; day <= daysInMonth; day++) {
             const dayStr = `${day}/${month}/${year}`;
-            const snapshot = await get(ref(database, `dailyData`));
-            if (snapshot.exists()) {
-              const allData = snapshot.val();
-              for (const userId in allData) {
-                if (userFilter !== 'all' && userFilter !== userId) continue;
-                if (allData[userId][dayStr]) {
-                  reportData.push({
-                    ...allData[userId][dayStr],
-                    userId: userId
-                  });
-                }
-              }
+            const dailyDataStr = localStorage.getItem(`dailyData_${dayStr}_${user}`);
+            if (dailyDataStr) {
+              const data = JSON.parse(dailyDataStr);
+              allDailyData.push(data);
             }
           }
         } else {
-          const snapshot = await get(ref(database, `dailyData`));
-          if (snapshot.exists()) {
-            const allData = snapshot.val();
-            for (const userId in allData) {
-              if (userFilter !== 'all' && userFilter !== userId) continue;
-              if (allData[userId][dateStr]) {
-                reportData.push({
-                  ...allData[userId][dateStr],
-                  userId: userId
-                });
-              }
-            }
+          // Daily report
+          const dailyDataStr = localStorage.getItem(`dailyData_${dateStr}_${user}`);
+          if (dailyDataStr) {
+            const data = JSON.parse(dailyDataStr);
+            allDailyData.push(data);
           }
         }
-        
-        renderReport(reportData, dateStr, userFilter, categoryFilter, isMonthly);
-      } catch (error) {
-        console.error("Error generating report:", error);
-        document.getElementById('reportOutput').innerHTML = 
-          `<p class="error-message">Lỗi khi tạo báo cáo: ${error.message}</p>`;
       }
-    }
-
-    function renderReport(reportData, dateStr, userFilter, categoryFilter, isMonthly) {
-      if (reportData.length === 0) {
+      
+      if (allDailyData.length === 0) {
         document.getElementById('reportOutput').innerHTML = 
           `<p>Không có dữ liệu ${isMonthly ? 'tháng' : 'ngày'} ${dateStr}</p>`;
         return;
@@ -1268,15 +1091,15 @@ async function handleLogin() {
       let userNotes = [];
       let dailySummaries = [];
       
-      reportData.forEach(data => {
+      allDailyData.forEach(data => {
         // Apply category filter
-        const filteredExpenses = data.expenses ? Object.values(data.expenses).filter(expense => 
+        const filteredExpenses = data.expenses.filter(expense => 
           categoryFilter === 'all' || expense.category === categoryFilter
-        ) : [];
+        );
         
         // Calculate totals
         const dayExpense = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
-        const dayExportCost = data.exports ? Object.values(data.exports).reduce((sum, e) => sum + (e.quantity * e.price), 0) : 0;
+        const dayExportCost = data.exports.reduce((sum, e) => sum + (e.quantity * e.price), 0);
         
         totalRevenue += data.revenue || 0;
         totalExpense += dayExpense;
@@ -1294,36 +1117,34 @@ async function handleLogin() {
           expenseDetails[expense.category].items.push({
             description: expense.description,
             amount: expense.amount,
-            user: users[data.userId]?.username || data.userId,
+            user: data.user,
             date: data.date
           });
         });
         
         // Group export details by product
-        if (data.exports) {
-          Object.values(data.exports).forEach(exportItem => {
-            if (!exportDetails[exportItem.productName]) {
-              exportDetails[exportItem.productName] = {
-                quantity: 0,
-                cost: 0,
-                unit: exportItem.unit,
-                items: []
-              };
-            }
-            exportDetails[exportItem.productName].quantity += exportItem.quantity;
-            exportDetails[exportItem.productName].cost += exportItem.quantity * exportItem.price;
-            exportDetails[exportItem.productName].items.push({
-              quantity: exportItem.quantity,
-              user: users[data.userId]?.username || data.userId,
-              date: data.date
-            });
+        data.exports.forEach(exportItem => {
+          if (!exportDetails[exportItem.productName]) {
+            exportDetails[exportItem.productName] = {
+              quantity: 0,
+              cost: 0,
+              unit: exportItem.unit,
+              items: []
+            };
+          }
+          exportDetails[exportItem.productName].quantity += exportItem.quantity;
+          exportDetails[exportItem.productName].cost += exportItem.quantity * exportItem.price;
+          exportDetails[exportItem.productName].items.push({
+            quantity: exportItem.quantity,
+            user: data.user,
+            date: data.date
           });
-        }
+        });
         
         // Collect notes
-        if (data.note) {
+        if (data.note && data.user) {
           userNotes.push({
-            user: users[data.userId]?.username || data.userId,
+            user: data.user,
             note: data.note,
             date: data.date
           });
@@ -1346,7 +1167,7 @@ async function handleLogin() {
       // Generate report HTML
       let reportHTML = `
         <h4>Báo cáo ${isMonthly ? 'tháng' : 'ngày'} ${dateStr}</h4>
-        ${userFilter !== 'all' ? `<p>Người dùng: ${users[userFilter]?.username || userFilter}</p>` : ''}
+        ${userFilter !== 'all' ? `<p>Người dùng: ${userFilter}</p>` : ''}
         ${categoryFilter !== 'all' ? `<p>Danh mục: ${categoryFilter}</p>` : ''}
         
         <div class="summary-section">
@@ -1373,70 +1194,66 @@ async function handleLogin() {
       `;
       
       // Add expense details
-      if (Object.keys(expenseDetails).length > 0) {
-        reportHTML += `
-          <div class="expense-section">
-            <h5>Chi tiết chi phí</h5>
-            ${Object.entries(expenseDetails).map(([category, data]) => `
-              <div class="category-section">
-                <h6>${category}: ${data.amount.toLocaleString('vi-VN')}₫</h6>
-                <table class="table">
-                  <thead>
+      reportHTML += `
+        <div class="expense-section">
+          <h5>Chi tiết chi phí</h5>
+          ${Object.entries(expenseDetails).map(([category, data]) => `
+            <div class="category-section">
+              <h6>${category}: ${data.amount.toLocaleString('vi-VN')}₫</h6>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Mô tả</th>
+                    <th class="text-right">Số tiền</th>
+                    <th>Người nhập</th>
+                    <th>Ngày</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${data.items.map(item => `
                     <tr>
-                      <th>Mô tả</th>
-                      <th class="text-right">Số tiền</th>
-                      <th>Người nhập</th>
-                      <th>Ngày</th>
+                      <td>${item.description}</td>
+                      <td class="text-right">${item.amount.toLocaleString('vi-VN')}₫</td>
+                      <td>${item.user}</td>
+                      <td>${item.date}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    ${data.items.map(item => `
-                      <tr>
-                        <td>${item.description}</td>
-                        <td class="text-right">${item.amount.toLocaleString('vi-VN')}₫</td>
-                        <td>${item.user}</td>
-                        <td>${item.date}</td>
-                      </tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-              </div>
-            `).join('')}
-          </div>
-        `;
-      }
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `).join('')}
+        </div>
+      `;
       
       // Add export details
-      if (Object.keys(exportDetails).length > 0) {
-        reportHTML += `
-          <div class="export-section">
-            <h5>Chi tiết xuất hàng</h5>
-            ${Object.entries(exportDetails).map(([product, data]) => `
-              <div class="product-section">
-                <h6>${product}: ${data.quantity} ${data.unit} (${data.cost.toLocaleString('vi-VN')}₫)</h6>
-                <table class="table">
-                  <thead>
+      reportHTML += `
+        <div class="export-section">
+          <h5>Chi tiết xuất hàng</h5>
+          ${Object.entries(exportDetails).map(([product, data]) => `
+            <div class="product-section">
+              <h6>${product}: ${data.quantity} ${data.unit} (${data.cost.toLocaleString('vi-VN')}₫)</h6>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Số lượng</th>
+                    <th>Người nhập</th>
+                    <th>Ngày</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${data.items.map(item => `
                     <tr>
-                      <th>Số lượng</th>
-                      <th>Người nhập</th>
-                      <th>Ngày</th>
+                      <td>${item.quantity}</td>
+                      <td>${item.user}</td>
+                      <td>${item.date}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    ${data.items.map(item => `
-                      <tr>
-                        <td>${item.quantity}</td>
-                        <td>${item.user}</td>
-                        <td>${item.date}</td>
-                      </tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-              </div>
-            `).join('')}
-          </div>
-        `;
-      }
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `).join('')}
+        </div>
+      `;
       
       // Add daily summaries for monthly report
       if (isMonthly && dailySummaries.length > 0) {
@@ -1498,69 +1315,18 @@ async function handleLogin() {
       
       document.getElementById('reportOutput').innerHTML = reportHTML;
     }
-
-    function applyReportFilters() {
-      const dateInput = document.getElementById('reportDate').value;
-      if (!dateInput) {
-        alert('Vui lòng chọn ngày');
-        return;
-      }
-      
-      const userFilter = document.getElementById('reportUserFilter').value;
-      const categoryFilter = document.getElementById('reportCategoryFilter').value;
-      
-      generateReport(dateInput, userFilter, categoryFilter);
-    }
-
-    function generateDailyReport() {
-      const dateInput = document.getElementById('reportDate').value;
-      if (!dateInput) {
-        alert('Vui lòng chọn ngày');
-        return;
-      }
-      
-      const userFilter = document.getElementById('reportUserFilter').value;
-      const categoryFilter = document.getElementById('reportCategoryFilter').value;
-      
-      generateReport(dateInput, userFilter, categoryFilter);
-    }
-
-    function generateMonthlyReport() {
-      const dateInput = document.getElementById('reportDate').value;
-      if (!dateInput) {
-        alert('Vui lòng chọn ngày trong tháng cần báo cáo');
-        return;
-      }
-      
-      const date = new Date(dateInput);
-      const month = date.getMonth() + 1;
-      const year = date.getFullYear();
-      
-      const userFilter = document.getElementById('reportUserFilter').value;
-      const categoryFilter = document.getElementById('reportCategoryFilter').value;
-      
-      generateReport(`${year}-${month.toString().padStart(2, '0')}`, userFilter, categoryFilter, true);
-    }
-
+    
     function printReport() {
       window.print();
     }
-
+    
     // Helper functions
     function parseNumber(input) {
       if (!input) return 0;
       const cleaned = input.toString().replace(/[^\d]/g, '');
       return parseInt(cleaned) || 0;
     }
-
-   // Expose functions to global scope for inline event handlers
-    window.deleteExpense = deleteExpense;
-    window.deleteExport = deleteExport;
-    window.editProduct = editProduct;
-    window.deleteProduct = deleteProduct;
-    window.toggleUserStatus = toggleUserStatus;
-    window.deleteUser = deleteUser;
-
+    
     // Initialize the app
     document.addEventListener('DOMContentLoaded', initApp);
   </script>
