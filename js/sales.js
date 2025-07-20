@@ -1,10 +1,18 @@
+// Xóa dòng khai báo dailyData cũ
 import { database } from './firebase-config.js';
 import { ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showError, showSuccess, parseNumber } from './utils.js';
 import { products, renderProductSelection, loadProducts } from './products.js';
-import { dailyData, currentUser, selectedProduct } from './shared-data.js';
+import { dailyData, currentUser, selectedProduct } from './shared-data.js'; // Import từ shared
 
-let dailyData = {
+// Xóa các dòng sau nếu có:
+// let dailyData = {...};
+// let currentUser = null;
+// let selectedProduct = null;
+
+// Các hàm xử lý giữ nguyên...
+
+
   date: '',
   expenses: [],
   exports: [],
@@ -14,8 +22,6 @@ let dailyData = {
 };
 
 let currentTab = 'expense';
-let selectedProduct = null;
-let currentUser = null;
 
 export function switchTab(tab) {
   currentTab = tab;
