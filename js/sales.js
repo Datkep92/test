@@ -1,9 +1,9 @@
 import { database } from './firebase-config.js';
 import { ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showError, showSuccess, parseNumber, capitalizeFirstLetter } from './utils.js';
-import { products, renderProductSelection, loadProducts } from './products.js';
+import productModule from './products.js'; // ✅ Import mặc định
+const { products, renderProductSelection, loadProducts } = productModule;
 
-// Daily Data
 let dailyData = {
   date: '',
   expenses: [],
@@ -15,38 +15,36 @@ let dailyData = {
 
 let currentTab = 'expense';
 let selectedProduct = null;
-let currentUser = null; // Thêm dòng này
+let currentUser = null;
 
 export function switchTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
-  
+
   document.getElementById('expenseTab').classList.add('hidden');
   document.getElementById('exportTab').classList.add('hidden');
   document.getElementById('revenueTab').classList.add('hidden');
-  
+
   document.getElementById(`${tab}Tab`).classList.remove('hidden');
-  
+
   if (tab === 'export') {
     renderProductSelection();
   }
 }
 
 export async function loadData(user) {
-  currentUser = user; // Gán giá trị cho currentUser
+  currentUser = user;
   const today = new Date().toLocaleDateString('vi-VN');
   document.getElementById('summaryDate').textContent = today;
-  
-  // Load products
+
   await loadProducts();
-  
-  // Load today's data
+
   try {
     const dateKey = today.replace(/\//g, '_');
     const dailyRef = ref(database, `dailyData/${dateKey}/${user.uid}`);
     const snapshot = await get(dailyRef);
-    
+
     if (snapshot.exists()) {
       dailyData = snapshot.val();
     } else {
@@ -59,7 +57,7 @@ export async function loadData(user) {
         user: user.email
       };
     }
-    
+
     document.getElementById('dailyNote').value = dailyData.note || '';
     renderDailyData();
   } catch (error) {
@@ -67,7 +65,6 @@ export async function loadData(user) {
   }
 }
 
-// Thêm hàm deleteExpense
 export function deleteExpense(index) {
   if (confirm('Xóa chi phí này?')) {
     dailyData.expenses.splice(index, 1);
@@ -75,13 +72,12 @@ export function deleteExpense(index) {
   }
 }
 
-// Các hàm còn lại giữ nguyên...
 export async function saveDailyData() {
   const today = new Date().toLocaleDateString('vi-VN');
   dailyData.note = document.getElementById('dailyNote').value;
   dailyData.date = today;
   dailyData.user = currentUser.email;
-  
+
   try {
     const dateKey = today.replace(/\//g, '_');
     const dailyRef = ref(database, `dailyData/${dateKey}/${currentUser.uid}`);
@@ -129,15 +125,13 @@ export function addExport() {
 export function deleteExport(index) {
   if (confirm('Xóa xuất hàng này?')) {
     const exportItem = dailyData.exports[index];
-    
-    // Return quantity to product if not approved
     if (!exportItem.approved) {
       const product = products.find(p => p.id === exportItem.productId);
       if (product) {
         product.quantity += exportItem.quantity;
       }
     }
-    
+
     dailyData.exports.splice(index, 1);
     renderDailyData();
     renderProductSelection();
@@ -148,7 +142,6 @@ export function renderDailyData() {
   if (!Array.isArray(dailyData.exports)) dailyData.exports = [];
   if (!Array.isArray(dailyData.expenses)) dailyData.expenses = [];
 
-  // Render exports
   const exportTable = document.querySelector('#exportTable tbody');
   exportTable.innerHTML = '';
 
@@ -169,10 +162,8 @@ export function renderDailyData() {
     exportTable.appendChild(row);
   });
 
-  // Render expenses
   const expenseTable = document.querySelector('#expenseTable tbody');
   expenseTable.innerHTML = '';
-
   dailyData.expenses.forEach((expense, index) => {
     const row = document.createElement('tr');
     row.innerHTML = `
@@ -185,7 +176,6 @@ export function renderDailyData() {
     expenseTable.appendChild(row);
   });
 
-  // Update summary
   const totalExpense = dailyData.expenses.reduce((sum, exp) => sum + exp.amount, 0);
   const totalRevenue = dailyData.revenue || 0;
   const balance = totalRevenue - totalExpense;
@@ -195,9 +185,8 @@ export function renderDailyData() {
   document.getElementById('dailyBalance').textContent = `${balance.toLocaleString('vi-VN')}₫`;
 }
 
-// Expose functions to window
 window.switchTab = switchTab;
 window.addExport = addExport;
 window.deleteExport = deleteExport;
 window.saveDailyData = saveDailyData;
-window.deleteExpense = deleteExpense; // Thêm dòng này
+window.deleteExpense = deleteExpense;
