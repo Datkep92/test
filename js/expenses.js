@@ -1,7 +1,7 @@
 import { database } from './firebase-config.js';
 import { ref, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { showError, capitalizeFirstLetter } from './utils.js';
-import { dailyData, renderDailyData } from './sales.js';
+import { dailyData, currentUser } from './sales.js';
 
 let expenseCategories = [];
 
