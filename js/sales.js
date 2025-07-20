@@ -192,13 +192,16 @@ window.saveDailyData = saveDailyData;
 window.deleteExpense = deleteExpense;
 // Thêm vào cuối file
 export { 
-  dailyData, 
+  dailyData,
   currentUser,
+  selectedProduct,
   renderDailyData,
   switchTab,
   loadData,
   deleteExpense,
   saveDailyData,
   addExport,
-  deleteExport
+  deleteExport,
+  addExpense,
+  addRevenue
 };
