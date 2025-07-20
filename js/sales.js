@@ -134,8 +134,6 @@ export function renderDailyData() {
 
 // Chỉ export MỘT LẦN ở cuối file
 export {
-  switchTab,
-  loadData,
   deleteExpense,
   addExport,
   addExpense,
