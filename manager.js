@@ -57,9 +57,18 @@ function addInventory() {
 }
 
 function loadInventory() {
+  const inventoryDiv = document.getElementById('inventory-list');
+  if (!inventoryDiv) {
+    console.error('Không tìm thấy phần tử inventory-list');
+    return;
+  }
+
   db.ref('inventory').on('value', snapshot => {
-    const inventoryDiv = document.getElementById('inventory-list');
     inventoryDiv.innerHTML = '';
+    if (!snapshot.exists()) {
+      inventoryDiv.innerHTML = '<p>Không có sản phẩm nào trong tồn kho.</p>';
+      return;
+    }
     snapshot.forEach(productSnapshot => {
       const product = productSnapshot.val();
       const productDiv = document.createElement('div');
@@ -79,9 +88,18 @@ function loadInventory() {
 }
 
 function loadSharedReports(divId) {
+  const reportsDiv = document.getElementById(divId);
+  if (!reportsDiv) {
+    console.error(`Không tìm thấy phần tử ${divId}`);
+    return;
+  }
+
   db.ref('shared_reports').on('value', snapshot => {
-    const reportsDiv = document.getElementById(divId);
     reportsDiv.innerHTML = '';
+    if (!snapshot.exists()) {
+      reportsDiv.innerHTML = '<p>Không có báo cáo chung nào.</p>';
+      return;
+    }
     snapshot.forEach(reportSnapshot => {
       const report = reportSnapshot.val();
       const reportDiv = document.createElement('div');
