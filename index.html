@@ -375,6 +375,13 @@
   </div>
 
   <script type="module">
+  import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+
+const auth = getAuth();
+createUserWithEmailAndPassword(auth, "admin@quanly-hkd.com", "Admin@123")
+  .then(() => console.log("User created!"))
+  .catch((error) => console.error("Error:", error));
+  
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { 
       getAuth, 
