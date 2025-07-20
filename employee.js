@@ -35,6 +35,14 @@ function loadProducts() {
   db.ref('inventory').on('value', snapshot => {
     const productSelect = document.getElementById('product-select');
     productSelect.innerHTML = '<option value="">Chọn sản phẩm</option>';
+    if (!snapshot.exists()) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = 'Không có sản phẩm nào';
+      option.disabled = true;
+      productSelect.appendChild(option);
+      return;
+    }
     snapshot.forEach(productSnapshot => {
       const product = productSnapshot.val();
       const option = document.createElement('option');
