@@ -10,48 +10,62 @@ function submitSharedReport() {
     return;
   }
 
-  if (!cost || !revenue || !productId || !exportQty) {
-    alert('Vui lòng nhập đầy đủ thông tin báo cáo!');
+  // Kiểm tra ít nhất một trường có giá trị
+  if (!cost && !revenue && (!productId || !exportQty)) {
+    alert('Vui lòng nhập ít nhất một thông tin (chi phí, doanh thu, hoặc xuất kho)!');
     return;
   }
 
-  // Kiểm tra số lượng tồn kho
-  db.ref('inventory/' + productId).once('value').then(snapshot => {
-    const product = snapshot.val();
-    if (!product || product.quantity < parseFloat(exportQty)) {
-      alert('Số lượng xuất kho vượt quá tồn kho!');
-      return;
-    }
+  // Nếu có xuất kho, kiểm tra số lượng tồn kho
+  if (productId && exportQty) {
+    db.ref('inventory/' + productId).once('value').then(snapshot => {
+      const product = snapshot.val();
+      if (!product || product.quantity < parseFloat(exportQty)) {
+        alert('Số lượng xuất kho vượt quá tồn kho!');
+        return;
+      }
 
-    // Cập nhật số lượng tồn kho
-    db.ref('inventory/' + productId).update({
-      quantity: product.quantity - parseFloat(exportQty)
-    }).then(() => {
-      // Gửi báo cáo chung
-      db.ref('shared_reports').push({
-        cost: parseFloat(cost),
-        revenue: parseFloat(revenue),
-        export: parseFloat(exportQty),
-        productId: productId,
-        userId: user.uid,
-        timestamp: new Date().toISOString()
+      // Cập nhật số lượng tồn kho
+      db.ref('inventory/' + productId).update({
+        quantity: product.quantity - parseFloat(exportQty)
       }).then(() => {
-        alert('Báo cáo đã được gửi và tồn kho đã cập nhật!');
-        document.getElementById('shared-cost').value = '';
-        document.getElementById('shared-revenue').value = '';
-        document.getElementById('product-select').value = '';
-        document.getElementById('export-quantity').value = '';
+        // Gửi báo cáo chung
+        sendReport(cost, revenue, productId, exportQty, user.uid);
       }).catch(error => {
-        console.error('Lỗi gửi báo cáo chung:', error);
-        alert('Lỗi gửi báo cáo chung: ' + error.message);
+        console.error('Lỗi cập nhật tồn kho:', error);
+        alert('Lỗi cập nhật tồn kho: ' + error.message);
       });
     }).catch(error => {
-      console.error('Lỗi cập nhật tồn kho:', error);
-      alert('Lỗi cập nhật tồn kho: ' + error.message);
+      console.error('Lỗi kiểm tra tồn kho:', error);
+      alert('Lỗi kiểm tra tồn kho: ' + error.message);
     });
+  } else {
+    // Gửi báo cáo chung mà không xuất kho
+    sendReport(cost, revenue, null, null, user.uid);
+  }
+}
+
+function sendReport(cost, revenue, productId, exportQty, userId) {
+  const report = {
+    cost: cost ? parseFloat(cost) : 0,
+    revenue: revenue ? parseFloat(revenue) : 0,
+    userId: userId,
+    timestamp: new Date().toISOString()
+  };
+  if (productId && exportQty) {
+    report.productId = productId;
+    report.export = parseFloat(exportQty);
+  }
+
+  db.ref('shared_reports').push(report).then(() => {
+    alert('Báo cáo đã được gửi' + (exportQty ? ' và tồn kho đã cập nhật!' : '!'));
+    document.getElementById('shared-cost').value = '';
+    document.getElementById('shared-revenue').value = '';
+    document.getElementById('product-select').value = '';
+    document.getElementById('export-quantity').value = '';
   }).catch(error => {
-    console.error('Lỗi kiểm tra tồn kho:', error);
-    alert('Lỗi kiểm tra tồn kho: ' + error.message);
+    console.error('Lỗi gửi báo cáo chung:', error);
+    alert('Lỗi gửi báo cáo chung: ' + error.message);
   });
 }
 
@@ -144,17 +158,17 @@ function loadSharedReports(divId) {
     } else {
       snapshot.forEach(reportSnapshot => {
         const report = reportSnapshot.val();
-        totalCost += report.cost;
-        totalRevenue += report.revenue;
-        totalExport += report.export;
+        totalCost += report.cost || 0;
+        totalRevenue += report.revenue || 0;
+        totalExport += report.export || 0;
         const reportDiv = document.createElement('div');
         reportDiv.className = 'border p-4 mb-2 rounded';
         reportDiv.innerHTML = `
           <p><strong>Nhân viên:</strong> ${report.userId}</p>
-          <p><strong>Chi Phí:</strong> ${report.cost}</p>
-          <p><strong>Doanh Thu:</strong> ${report.revenue}</p>
-          <p><strong>Xuất Kho:</strong> ${report.export}</p>
-          <p><strong>Sản Phẩm:</strong> ${report.productId}</p>
+          ${report.cost ? `<p><strong>Chi Phí:</strong> ${report.cost}</p>` : ''}
+          ${report.revenue ? `<p><strong>Doanh Thu:</strong> ${report.revenue}</p>` : ''}
+          ${report.export ? `<p><strong>Xuất Kho:</strong> ${report.export}</p>` : ''}
+          ${report.productId ? `<p><strong>Sản Phẩm:</strong> ${report.productId}</p>` : ''}
           <p><strong>Thời Gian:</strong> ${report.timestamp}</p>
         `;
         reportsDiv.appendChild(reportDiv);
