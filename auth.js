@@ -47,60 +47,40 @@ function login() {
 function checkUserRole(uid) {
   db.ref('users/' + uid).once('value').then(snapshot => {
     const userData = snapshot.val();
-    if (userData && userData.role === 'manager') {
+    if (!userData) {
+      console.error('Không tìm thấy dữ liệu người dùng cho UID:', uid);
+      alert('Lỗi: Không tìm thấy dữ liệu người dùng. Vui lòng kiểm tra cấu hình.');
+      return;
+    }
+
+    document.getElementById('login-page').classList.add('hidden');
+    
+    if (userData.role === 'manager') {
       console.log('Đăng nhập quản lý, hiển thị giao diện quản lý...');
-      document.getElementById('login-page').classList.add('hidden');
-      document.getElementById('manager-page').classList.remove('hidden');
+      const managerPage = document.getElementById('manager-page');
+      if (!managerPage) {
+        console.error('Không tìm thấy phần tử manager-page trong DOM');
+        alert('Lỗi: Không tìm thấy giao diện quản lý. Vui lòng kiểm tra giao diện.');
+        return;
+      }
+      managerPage.classList.remove('hidden');
       loadInventory();
       loadSharedReports('manager-shared-reports');
     } else {
       console.log('Đăng nhập nhân viên, hiển thị giao diện nhân viên...');
-      document.getElementById('login-page').classList.add('hidden');
-      loadEmployeePage();
+      const employeePage = document.getElementById('employee-page');
+      if (!employeePage) {
+        console.error('Không tìm thấy phần tử employee-page trong DOM');
+        alert('Lỗi: Không tìm thấy giao diện nhân viên. Vui lòng kiểm tra giao diện.');
+        return;
+      }
+      employeePage.classList.remove('hidden');
+      loadInventory('employee-inventory-list');
+      loadProducts();
+      loadSharedReports('shared-reports');
     }
   }).catch(error => {
     console.error('Lỗi kiểm tra vai trò:', error);
     alert('Lỗi kiểm tra vai trò: ' + error.message);
   });
-}
-
-function loadEmployeePage() {
-  const employeePage = document.getElementById('employee-page');
-  if (employeePage && !employeePage.classList.contains('hidden')) {
-    console.log('Giao diện nhân viên đã sẵn sàng, tải dữ liệu...');
-    employeePage.classList.remove('hidden');
-    loadInventory('employee-inventory-list');
-    loadProducts();
-    loadSharedReports('shared-reports');
-    return;
-  }
-
-  console.log('Giao diện nhân viên chưa sẵn sàng, thiết lập MutationObserver...');
-  const observer = new MutationObserver((mutations, obs) => {
-    const employeePage = document.getElementById('employee-page');
-    if (employeePage && !employeePage.classList.contains('hidden')) {
-      console.log('MutationObserver: Giao diện nhân viên đã xuất hiện, tải dữ liệu...');
-      employeePage.classList.remove('hidden');
-      loadInventory('employee-inventory-list');
-      loadProducts();
-      loadSharedReports('shared-reports');
-      obs.disconnect(); // Ngừng quan sát sau khi tải thành công
-    }
-  });
-
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ['class']
-  });
-
-  // Timeout sau 5 giây nếu không phát hiện giao diện
-  setTimeout(() => {
-    if (document.getElementById('employee-page').classList.contains('hidden')) {
-      console.error('Timeout: Không thể tải giao diện nhân viên sau 5 giây.');
-      alert('Lỗi: Không thể tải giao diện nhân viên. Vui lòng làm mới trang hoặc kiểm tra giao diện.');
-      observer.disconnect();
-    }
-  }, 5000);
 }
