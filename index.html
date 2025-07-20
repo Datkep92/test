@@ -627,12 +627,7 @@
     }
     
    // Hàm kiểm tra quyền admin
-async function checkAdminStatus() {
-  if (!currentUser) return false;
-  const userRef = ref(database, `users/${currentUser.uid}`);
-  const snapshot = await get(userRef);
-  return snapshot.exists() && snapshot.val().role === 'admin';
-}
+
     
    async function loadData() {
   try {
@@ -755,37 +750,22 @@ async function checkAdminStatus() {
     }
     
     function addExpense() {
-      const input = document.getElementById('expenseInput').value.trim();
-      if (!input) {
-        showError('Vui lòng nhập thông tin chi phí');
-        return;
-      }
-      
-      const { description, amount, category } = parseExpenseInput(input);
-      
-      if (!description || amount <= 0) {
-        showError('Không thể xác định mô tả hoặc số tiền từ thông tin nhập');
-        return;
-      }
-      
-      dailyData.expenses.push({
-        description: `${description}`,
-        amount: amount,
-        category: category,
-        user: currentUser.email,
-        timestamp: new Date().getTime()
-      });
-      
-      document.getElementById('expenseInput').value = '';
-      renderDailyData();
-    }
+  const input = document.getElementById('expenseInput').value.trim();
+  const { description, amount } = parseExpenseInput(input);
+
+  const expenseRef = ref(database, `dailyData/${getDateKey()}/expenses`);
+  const newExpense = {
+    description,
+    amount,
+    user: currentUser.email,
+    userId: currentUser.uid,
+    timestamp: Date.now()
+  };
+
+  push(expenseRef, newExpense);
+}
     
-    function deleteExpense(index) {
-      if (confirm('Xóa chi phí này?')) {
-        dailyData.expenses.splice(index, 1);
-        renderDailyData();
-      }
-    }
+    
     
     function renderProductSelection() {
       const container = document.getElementById('productList');
@@ -888,7 +868,27 @@ async function checkAdminStatus() {
       renderDailyData();
     }
     
-   function renderDailyData() {
+   // Lấy date key định dạng YYYY_MM_DD
+function getDateKey() {
+  const today = new Date().toLocaleDateString('vi-VN');
+  return today.replace(/\//g, '_');
+}
+
+// Hàm kiểm tra admin
+async function checkAdminStatus() {
+  if (!auth.currentUser) return false;
+  const userRef = ref(database, `users/${auth.currentUser.uid}`);
+  const snapshot = await get(userRef);
+  return snapshot.exists() && snapshot.val().role === 'admin';
+}
+
+function canEdit(item) {
+  return currentUser && (
+    item.userId === currentUser.uid || 
+    checkAdminStatus() // Hàm kiểm tra admin
+  );
+}
+    function renderDailyData() {
   if (!dailyData) return;
 
   // Render chi phí
@@ -900,67 +900,74 @@ async function checkAdminStatus() {
       <td>${expense.user || ''}</td>
       <td>
         ${canEdit(expense) ? `
-          <button onclick="editExpense(${index})" class="warning">Sửa</button>
-          <button onclick="deleteExpense(${index})" class="danger">Xóa</button>
+          <button onclick="editExpense('${getDateKey()}', '${expense.id || index}')" class="warning">Sửa</button>
+          <button onclick="deleteExpense('${getDateKey()}', '${expense.id || index}')" class="danger">Xóa</button>
         ` : ''}
       </td>
     </tr>
   `).join('');
 
-  // Render xuất kho
+  // Render xuất kho - Sửa từ 'exports' thành 'dailyData.exports'
   const exportTable = document.querySelector('#exportTable tbody');
-  exportTable.innerHTML = exports.map((item, index) => `
+  exportTable.innerHTML = (dailyData.exports || []).map((item, index) => `
     <tr>
       <td>${item.productName || ''}</td>
       <td>${item.quantity || 0}</td>
       <td>${item.unit || ''}</td>
-      <td>${item.approved ? '✅ Đã duyệt' : '⏳ Chờ duyệt'}</td>
+      <td class="${item.approved ? 'approved' : 'pending'}">
+        ${item.approved ? '✅ Đã duyệt' : '⏳ Chờ duyệt'}
+      </td>
       <td>
-        ${!item.approved ? `<button onclick="deleteExport(${index})" class="danger">Xóa</button>` : ''}
+        ${canEdit(item) && !item.approved ? `
+          <button onclick="deleteExport('${getDateKey()}', '${item.id || index}')" class="danger">Xóa</button>
+        ` : ''}
       </td>
     </tr>
   `).join('');
 
   // Render tổng kết
   const totalExpense = (dailyData.expenses || []).reduce((sum, e) => sum + (e.amount || 0), 0);
+  const totalRevenue = dailyData.revenue || 0;
+  
   document.getElementById('totalExpense').textContent = `${totalExpense.toLocaleString('vi-VN')}₫`;
-  document.getElementById('totalRevenue').textContent = `${(dailyData.revenue || 0).toLocaleString('vi-VN')}₫`;
+  document.getElementById('totalRevenue').textContent = `${totalRevenue.toLocaleString('vi-VN')}₫`;
+  document.getElementById('dailyBalance').innerHTML = `
+    <strong>${(totalRevenue - totalExpense).toLocaleString('vi-VN')}₫</strong>
+  `;
 }
 
-function canEdit(item) {
-  return currentUser && (
-    item.userId === currentUser.uid || 
-    checkAdminStatus() // Hàm kiểm tra admin
-  );
-}
-    async function deleteExpense(index) {
+// Thêm CSS cho trạng thái
+.approved { color: #27ae60; }
+.pending { color: #f39c12; font-weight: bold; }
+    async function deleteExpense(dateKey, expenseId) {
   try {
-    const today = new Date().toLocaleDateString('vi-VN');
-    const dateKey = today.replace(/\//g, '_');
-    const dailyRef = ref(database, `dailyData/${dateKey}/expenses/${index}`);
+    if (!confirm('Bạn chắc chắn muốn xóa chi phí này?')) return;
 
-    // Kiểm tra quyền
-    const snapshot = await get(dailyRef);
-    if (!snapshot.exists()) return;
+    const expenseRef = ref(database, `dailyData/${dateKey}/expenses/${expenseId}`);
+    const snapshot = await get(expenseRef);
 
-    const expense = snapshot.val();
-    if (!canEdit(expense)) {
-      showError('Bạn không có quyền xóa mục này');
+    if (!snapshot.exists()) {
+      showError('Không tìm thấy chi phí cần xóa');
       return;
     }
 
-    await remove(dailyRef);
-    showSuccess('Đã xóa chi phí');
+    const expense = snapshot.val();
+
+    // Kiểm tra quyền: chỉ người tạo hoặc admin được xóa
+    const isAdmin = await checkAdminStatus();
+    if (expense.userId !== auth.currentUser.uid && !isAdmin) {
+      showError('Bạn không có quyền xóa chi phí này');
+      return;
+    }
+
+    await remove(expenseRef);
+    showSuccess('Đã xóa chi phí thành công');
   } catch (error) {
-    showError(`Lỗi khi xóa: ${error.message}`);
+    console.error("Lỗi khi xóa chi phí:", error);
+    showError(`Lỗi: ${error.message}`);
   }
 }
-async function checkAdminStatus() {
-  if (!auth.currentUser) return false;
-  const userRef = ref(database, `users/${auth.currentUser.uid}`);
-  const snapshot = await get(userRef);
-  return snapshot.exists() && snapshot.val().role === 'admin';
-}
+
 // Tương tự cho editExpense và các hàm khác
     // Product management
     async function addProduct() {
@@ -1362,70 +1369,29 @@ async function checkAdminStatus() {
     }
   });
 }
-async function approveExport(dateKey, uid, index) {
-  try {
-    // 1. Kiểm tra quyền admin
-    const isAdmin = await checkAdminStatus();
-    if (!isAdmin) {
-      showError('Chỉ quản lý mới được duyệt xuất kho');
-      return;
+    function setupRealtimeListener() {
+  const dateRef = ref(database, `dailyData/${getDateKey()}`);
+  onValue(dateRef, (snapshot) => {
+    if (snapshot.exists()) {
+      dailyData = snapshot.val();
+      renderDailyData();
     }
-
-    // 2. Lấy dữ liệu xuất kho cần duyệt
-    const exportRef = ref(database, `dailyData/${dateKey}/${uid}/exports/${index}`);
-    const exportSnap = await get(exportRef);
-
-    if (!exportSnap.exists()) {
-      showError('Không tìm thấy phiếu xuất kho này');
-      return;
-    }
-
-    const exportData = exportSnap.val();
-
-    // 3. Kiểm tra nếu đã duyệt rồi
-    if (exportData.approved === true) {
-      showError('Phiếu xuất kho này đã được duyệt trước đó');
-      return;
-    }
-
-    // 4. Kiểm tra tồn kho
-    const productRef = ref(database, `products/${exportData.productId}`);
-    const productSnap = await get(productRef);
-
-    if (!productSnap.exists()) {
-      showError('Sản phẩm không tồn tại trong kho');
-      return;
-    }
-
-    const productData = productSnap.val();
-    const currentQuantity = productData.quantity || 0;
-
-    if (currentQuantity < exportData.quantity) {
-      showError(`Không đủ tồn kho. Hiện có: ${currentQuantity} ${productData.unit}`);
-      return;
-    }
-
-    // 5. Cập nhật dữ liệu - Sử dụng transaction để đảm bảo tính nhất quán
-    const updates = {};
-    updates[`dailyData/${dateKey}/${uid}/exports/${index}/approved`] = true;
-    updates[`dailyData/${dateKey}/${uid}/exports/${index}/approvedBy`] = currentUser.email;
-    updates[`dailyData/${dateKey}/${uid}/exports/${index}/approvedAt`] = Date.now();
-    updates[`products/${exportData.productId}/quantity`] = currentQuantity - exportData.quantity;
-
-    await update(ref(database), updates);
-
-    showSuccess(`Đã duyệt xuất kho ${exportData.productName} (${exportData.quantity} ${exportData.unit})`);
-    
-    // 6. Cập nhật lại giao diện
-    loadAllExportsForApproval();
-    renderProducts(); // Cập nhật lại số lượng tồn kho trên giao diện
-
-  } catch (error) {
-    console.error('Lỗi khi duyệt xuất kho:', error);
-    showError(`Lỗi khi duyệt xuất kho: ${error.message}`);
-  }
+  });
 }
+async function approveExport(dateKey, exportId) {
+  const exportRef = ref(database, `dailyData/${dateKey}/exports/${exportId}`);
+  await update(exportRef, {
+    approved: true,
+    approvedBy: currentUser.email,
+    approvedAt: Date.now()
+  });
 
+  // Trừ kho
+  const snapshot = await get(exportRef);
+  const exportData = snapshot.val();
+  const productRef = ref(database, `products/${exportData.productId}/quantity`);
+  await transaction(productRef, (currentQty) => (currentQty || 0) - exportData.quantity);
+}
     // Initialize the app
     document.addEventListener('DOMContentLoaded', initApp);
     const today = new Date().toLocaleDateString('vi-VN');
