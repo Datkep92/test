@@ -5,7 +5,7 @@ import { showError, showSuccess } from './utils.js';
 // Global products array
 let products = [];
 
-export async function addProduct() {
+async function addProduct() {
   const name = document.getElementById('productName').value.trim();
   const quantity = parseInt(document.getElementById('productQuantity').value) || 0;
   const unit = document.getElementById('productUnit').value.trim();
@@ -18,10 +18,10 @@ export async function addProduct() {
   
   const newProduct = {
     id: Date.now().toString(),
-    name: name,
-    quantity: quantity,
-    unit: unit,
-    price: price
+    name,
+    quantity,
+    unit,
+    price
   };
   
   try {
@@ -42,7 +42,7 @@ export async function addProduct() {
   }
 }
 
-export async function editProduct(index) {
+async function editProduct(index) {
   const product = products[index];
   const newName = prompt('Tên sản phẩm:', product.name);
   if (!newName) return;
@@ -79,7 +79,7 @@ export async function editProduct(index) {
   }
 }
 
-export async function deleteProduct(index) {
+async function deleteProduct(index) {
   if (confirm('Xóa sản phẩm này?')) {
     const product = products[index];
     try {
@@ -95,7 +95,7 @@ export async function deleteProduct(index) {
   }
 }
 
-export function renderProducts() {
+function renderProducts() {
   const table = document.querySelector('#productTable tbody');
   table.innerHTML = '';
   products.forEach((product, index) => {
@@ -114,7 +114,7 @@ export function renderProducts() {
   });
 }
 
-export function renderProductSelection() {
+function renderProductSelection() {
   const container = document.getElementById('productList');
   container.innerHTML = '';
   products.forEach((product) => {
@@ -134,30 +134,32 @@ export function renderProductSelection() {
   });
 }
 
-export async function loadProducts() {
+async function loadProducts() {
   try {
     const productsRef = ref(database, 'products');
     const snapshot = await get(productsRef);
+    products = [];
     if (snapshot.exists()) {
-      products = [];
       snapshot.forEach(childSnapshot => {
         products.push({
           id: childSnapshot.key,
           ...childSnapshot.val()
         });
       });
-    } else {
-      products = [];
     }
   } catch (error) {
     showError(`Lỗi khi tải sản phẩm: ${error.message}`);
   }
 }
 
-// Expose functions to window
+// Expose for inline use
 window.addProduct = addProduct;
 window.editProduct = editProduct;
 window.deleteProduct = deleteProduct;
 
-// ✅ BỔ SUNG EXPORT BIẾN `products`
-export { products };
+// ✅ Export mặc định cho module
+export default {
+  products,
+  loadProducts,
+  renderProductSelection
+};
