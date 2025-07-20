@@ -770,6 +770,7 @@ select {
 
     
   // Data functions
+// Data functions
 async function loadData() {
   const today = new Date().toLocaleDateString('vi-VN');
   document.getElementById('summaryDate').textContent = today;
@@ -818,23 +819,33 @@ async function loadData() {
 
     if (snapshot.exists()) {
       dailyData = snapshot.val();
+
+      // ✅ Bổ sung đảm bảo không bị lỗi undefined
+      if (!Array.isArray(dailyData.expenses)) dailyData.expenses = [];
+      if (!Array.isArray(dailyData.exports)) dailyData.exports = [];
+      if (typeof dailyData.revenue !== 'number') dailyData.revenue = 0;
+      if (typeof dailyData.note !== 'string') dailyData.note = '';
+      if (!dailyData.date) dailyData.date = today;
+      if (!dailyData.user) dailyData.user = currentUser.email;
+
     } else {
-      dailyData = {};
+      dailyData = {
+        date: today,
+        expenses: [],
+        exports: [],
+        revenue: 0,
+        note: '',
+        user: currentUser.email
+      };
     }
 
-    dailyData.date = today;
-    dailyData.user = currentUser.email;
-    dailyData.note = dailyData.note || '';
-    dailyData.expenses = Array.isArray(dailyData.expenses) ? dailyData.expenses : [];
-    dailyData.exports = Array.isArray(dailyData.exports) ? dailyData.exports : [];
-    dailyData.revenue = typeof dailyData.revenue === 'number' ? dailyData.revenue : 0;
-
-    document.getElementById('dailyNote').value = dailyData.note;
+    document.getElementById('dailyNote').value = dailyData.note || '';
     renderDailyData();
   } catch (error) {
     showError(`Lỗi khi tải dữ liệu ngày: ${error.message}`);
   }
 }
+
 
 
 
