@@ -1,9 +1,10 @@
 import { db } from './auth.js';
-import { doc, getDoc, updateDoc, runTransaction, deleteDoc } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
+import { doc, getDoc, updateDoc, runTransaction } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
 
 export async function removeDoc(collectionName, docId, errorContainerId = 'errorContainer') {
   try {
-    await deleteDoc(doc(db, collectionName, docId));
+    const docRef = doc(db, collectionName, docId);
+    await deleteDoc(docRef); // Sử dụng deleteDoc trực tiếp từ phạm vi module
   } catch (error) {
     document.getElementById(errorContainerId).innerHTML = `<div class="error-message">Lỗi: ${error.message}</div>`;
   }
@@ -65,7 +66,8 @@ export async function deleteUser(userId) {
   }
   if (confirm('Bạn có chắc muốn xóa tài khoản này?')) {
     try {
-      await deleteDoc(doc(db, 'users', userId));
+      const userRef = doc(db, 'users', userId);
+      await deleteDoc(userRef);
     } catch (error) {
       document.getElementById('userErrorContainer').innerHTML = `<div class="error-message">${error.message}</div>`;
     }
