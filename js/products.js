@@ -25,14 +25,10 @@ export async function addProduct() {
   };
   
   try {
-    // Save product to Firebase
     const productRef = ref(database, `products/${newProduct.id}`);
     await set(productRef, newProduct);
-    
-    // Add to local products array
     products.push(newProduct);
     
-    // Clear inputs
     document.getElementById('productName').value = '';
     document.getElementById('productQuantity').value = '';
     document.getElementById('productUnit').value = '';
@@ -40,7 +36,6 @@ export async function addProduct() {
     
     renderProducts();
     renderProductSelection();
-    
     showSuccess('Sản phẩm đã được thêm thành công');
   } catch (error) {
     showError(`Lỗi khi thêm sản phẩm: ${error.message}`);
@@ -62,7 +57,6 @@ export async function editProduct(index) {
   if (isNaN(newPrice)) return alert('Giá không hợp lệ');
   
   try {
-    // Update product in Firebase
     const productRef = ref(database, `products/${product.id}`);
     await set(productRef, {
       ...product,
@@ -72,7 +66,6 @@ export async function editProduct(index) {
       price: newPrice
     });
     
-    // Update local product
     product.name = newName;
     product.quantity = newQuantity;
     product.unit = newUnit;
@@ -80,7 +73,6 @@ export async function editProduct(index) {
     
     renderProducts();
     renderProductSelection();
-    
     showSuccess('Sản phẩm đã được cập nhật');
   } catch (error) {
     showError(`Lỗi khi cập nhật sản phẩm: ${error.message}`);
@@ -90,18 +82,12 @@ export async function editProduct(index) {
 export async function deleteProduct(index) {
   if (confirm('Xóa sản phẩm này?')) {
     const product = products[index];
-    
     try {
-      // Remove product from Firebase
       const productRef = ref(database, `products/${product.id}`);
       await remove(productRef);
-      
-      // Remove from local products array
       products.splice(index, 1);
-      
       renderProducts();
       renderProductSelection();
-      
       showSuccess('Sản phẩm đã được xóa');
     } catch (error) {
       showError(`Lỗi khi xóa sản phẩm: ${error.message}`);
@@ -112,7 +98,6 @@ export async function deleteProduct(index) {
 export function renderProducts() {
   const table = document.querySelector('#productTable tbody');
   table.innerHTML = '';
-  
   products.forEach((product, index) => {
     const row = document.createElement('tr');
     row.innerHTML = `
@@ -132,7 +117,6 @@ export function renderProducts() {
 export function renderProductSelection() {
   const container = document.getElementById('productList');
   container.innerHTML = '';
-  
   products.forEach((product) => {
     const productItem = document.createElement('div');
     productItem.className = 'product-item';
@@ -141,25 +125,19 @@ export function renderProductSelection() {
       <div>Tồn kho: ${product.quantity} ${product.unit}</div>
       <div style="margin-top: 8px; color: #27ae60;">${product.price.toLocaleString('vi-VN')}₫/${product.unit}</div>
     `;
-    
     productItem.addEventListener('click', () => {
-      document.querySelectorAll('.product-item').forEach(item => {
-        item.classList.remove('selected');
-      });
+      document.querySelectorAll('.product-item').forEach(item => item.classList.remove('selected'));
       productItem.classList.add('selected');
       selectedProduct = product;
     });
-    
     container.appendChild(productItem);
   });
 }
 
-// Load products from Firebase
 export async function loadProducts() {
   try {
     const productsRef = ref(database, 'products');
     const snapshot = await get(productsRef);
-    
     if (snapshot.exists()) {
       products = [];
       snapshot.forEach(childSnapshot => {
@@ -180,3 +158,6 @@ export async function loadProducts() {
 window.addProduct = addProduct;
 window.editProduct = editProduct;
 window.deleteProduct = deleteProduct;
+
+// ✅ BỔ SUNG EXPORT BIẾN `products`
+export { products };
