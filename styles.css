@@ -1,228 +1,84 @@
-/* styles.css */
-
-/* Vô hiệu hóa thu phóng */
-html, body {
-  touch-action: manipulation;
-  -webkit-text-size-adjust: 100%;
-  -ms-text-size-adjust: 100%;
-  overflow-x: hidden;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-/* Thiết lập viewport cố định */
-@viewport {
-  width: device-width;
-  zoom: 1.0;
-  min-zoom: 1.0;
-  max-zoom: 1.0;
-  user-zoom: fixed;
-}
-
-/* Thiết lập chung cho giao diện di động */
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 1.5;
-  color: #333;
-  background-color: #f5f5f5;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Container chính */
-#login-page, #employee-page, #manager-page {
-  width: 100%;
-  max-width: 100%;
-  padding: 16px;
-  box-sizing: border-box;
-}
-
-/* Form đăng nhập */
+/* ===== Màn hình đăng nhập ===== */
 #login-page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #f8f9fa;
+  z-index: 1000;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
   align-items: center;
-  min-height: 100vh;
+  justify-content: center;
+  padding: 20px;
 }
 
 #login-page > div {
-  width: 90%;
+  width: 100%;
   max-width: 400px;
-  padding: 24px;
+  background: white;
+  padding: 30px;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  animation: fadeIn 0.3s ease;
 }
 
-/* Input fields */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="number"],
-select {
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Style cho các input đăng nhập */
+#login-page input {
   width: 100%;
-  padding: 12px;
-  margin-bottom: 16px;
+  padding: 12px 15px;
+  margin-bottom: 15px;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 16px;
-  box-sizing: border-box;
-  -webkit-appearance: none;
-  appearance: none;
+  transition: border-color 0.3s;
 }
 
-/* Buttons */
-button {
-  width: 100%;
-  padding: 14px;
+#login-page input:focus {
+  border-color: #4a90e2;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(74,144,226,0.1);
+}
+
+/* Style cho nút đăng nhập */
+#login-page button {
+  background-color: #4a90e2;
+  color: white;
   border: none;
+  padding: 14px;
   border-radius: 8px;
   font-size: 16px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
-  margin-bottom: 12px;
+  transition: background-color 0.3s;
+  width: 100%;
 }
 
-/* Header */
-h2 {
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 24px;
-  color: #333;
+#login-page button:hover {
+  background-color: #3a7bc8;
 }
 
-h3 {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 16px;
-  color: #444;
+/* Style cho checkbox */
+#login-page .flex {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
 }
 
-/* Danh sách tồn kho */
-#employee-inventory-list,
-#inventory-list,
-#shared-reports,
-#manager-shared-reports {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
+#login-page #save-password {
+  width: auto;
+  margin-right: 10px;
 }
 
-/* Thẻ sản phẩm */
-.inventory-item,
-.report-item {
-  background: white;
-  padding: 16px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-/* Báo cáo tổng */
-#total-report,
-#manager-total-report {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-/* Responsive adjustments */
-@media (max-width: 480px) {
-  #login-page > div {
-    padding: 20px;
-  }
-  
-  input, select, button {
-    padding: 12px;
-  }
-  
-  h2 {
-    font-size: 22px;
-  }
-  
-  h3 {
-    font-size: 18px;
-  }
-}
-
-/* Disable zooming */
-* {
-  -webkit-tap-highlight-color: transparent;
-  -webkit-touch-callout: none;
-}
-
-/* Prevent text selection */
-body {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-
-/* Scrollbar styling for WebKit browsers */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 2px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-/* Focus states for accessibility */
-input:focus, select:focus, button:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
-  border-color: #3b82f6;
-}
-
-/* Checkbox styling */
-input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
-  accent-color: #3b82f6;
-  margin-right: 8px;
-}
-
-/* Error message */
-#error {
+/* Thông báo lỗi */
+#login-page #error {
+  color: #e74c3c;
   font-size: 14px;
-  margin-top: 12px;
-}
-
-/* Loading state */
-.loading {
-  pointer-events: none;
-  opacity: 0.7;
-  position: relative;
-}
-
-.loading::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 20px;
-  height: 20px;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  border-top-color: transparent;
-  animation: spin 1s linear infinite;
-  margin-left: -10px;
-  margin-top: -10px;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
+  margin-top: 10px;
+  text-align: center;
 }
