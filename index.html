@@ -1,12 +1,14 @@
+```html
 <!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quản Lý Nhân Viên</title>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+  <!-- Sử dụng Firebase compat scripts để tránh lỗi module -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100">
@@ -53,6 +55,7 @@
   </div>
 
   <script>
+    // Cấu hình Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
       authDomain: "quanly-d7e54.firebaseapp.com",
@@ -63,10 +66,12 @@
       appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
     };
 
+    // Khởi tạo Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
 
+    // Hàm đăng nhập
     function login() {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
@@ -81,6 +86,7 @@
         });
     }
 
+    // Kiểm tra vai trò người dùng
     function checkUserRole(uid) {
       db.ref('users/' + uid).once('value').then(snapshot => {
         const userData = snapshot.val();
@@ -92,9 +98,12 @@
           document.getElementById('login-page').classList.add('hidden');
           document.getElementById('employee-page').classList.remove('hidden');
         }
+      }).catch(error => {
+        console.error('Lỗi kiểm tra vai trò:', error);
       });
     }
 
+    // Gửi báo cáo nhân viên
     function submitReport() {
       const cost = document.getElementById('cost').value;
       const revenue = document.getElementById('revenue').value;
@@ -112,10 +121,13 @@
           document.getElementById('cost').value = '';
           document.getElementById('revenue').value = '';
           document.getElementById('export').value = '';
+        }).catch(error => {
+          console.error('Lỗi gửi báo cáo:', error);
         });
       }
     }
 
+    // Nhập kho
     function addStock() {
       const stock = document.getElementById('stock').value;
       db.ref('stock').push({
@@ -124,9 +136,12 @@
       }).then(() => {
         alert('Đã nhập kho!');
         document.getElementById('stock').value = '';
+      }).catch(error => {
+        console.error('Lỗi nhập kho:', error);
       });
     }
 
+    // Tải báo cáo
     function loadReports() {
       db.ref('reports').on('value', snapshot => {
         const reportsDiv = document.getElementById('reports');
@@ -148,8 +163,11 @@
             reportsDiv.appendChild(reportDiv);
           }
         });
+      }, error => {
+        console.error('Lỗi tải báo cáo:', error);
       });
     }
   </script>
 </body>
 </html>
+```
