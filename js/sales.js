@@ -136,6 +136,7 @@ export function renderDailyData() {
 export {
   addExport,
   addExpense,
+  addExpense,
   addRevenue
 };
 
