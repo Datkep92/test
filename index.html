@@ -456,45 +456,37 @@
       });
     }
 
-    // Login functions
     async function handleLogin() {
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value.trim();
-      const rememberMe = document.getElementById('rememberMe').checked;
-      
-      document.getElementById('errorContainer').innerHTML = '';
-      
-      if (!username || !password) {
-        showError('Vui lòng nhập đầy đủ thông tin đăng nhập');
-        return;
-      }
-      
-      try {
-        const email = `${username}@quanly-hkd.com`;
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        
-        if (rememberMe) {
-          localStorage.setItem('rememberedUser', username);
-        } else {
-          localStorage.removeItem('rememberedUser');
-        }
-        
-        currentUser = userCredential.user.uid;
-        loadUserData();
-        
-      } catch (error) {
-        console.error("Login error:", error);
-        let errorMessage = "Đăng nhập thất bại";
-        
-        if (error.code === "auth/invalid-credential") {
-          errorMessage = "Sai tên đăng nhập hoặc mật khẩu";
-        } else if (error.code === "auth/too-many-requests") {
-          errorMessage = "Quá nhiều lần thử, vui lòng thử lại sau";
-        }
-        
-        showError(errorMessage);
-      }
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
+  
+  if (!username || !password) {
+    showError('Vui lòng nhập đầy đủ thông tin');
+    return;
+  }
+
+  try {
+    // Firebase Auth yêu cầu email nên ta tạo email giả từ username
+    const email = `${username}@quanly-hkd.com`; 
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    
+    // Đăng nhập thành công
+    currentUser = userCredential.user.uid;
+    loadUserData(); // Tải thông tin user từ database
+    
+  } catch (error) {
+    console.error("Lỗi đăng nhập:", error);
+    let errorMessage = "Đăng nhập thất bại";
+    
+    if (error.code === "auth/user-not-found") {
+      errorMessage = "Tài khoản không tồn tại";
+    } else if (error.code === "auth/wrong-password") {
+      errorMessage = "Sai mật khẩu";
     }
+    
+    showError(errorMessage);
+  }
+}
 
     async function loadUserData() {
       const userRef = ref(database, `users/${currentUser}`);
