@@ -1,4 +1,3 @@
-// Firebase configuration
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getDatabase } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -13,8 +12,8 @@ const firebaseConfig = {
   appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const database = getDatabase(app);
-export { app, auth, database };
+
+export { app, auth, database }; // Đảm bảo có dòng này
