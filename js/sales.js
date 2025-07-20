@@ -82,39 +82,6 @@ export async function saveDailyData() {
   }
 }
 
-export function addExport() {
-  const qtyInput = document.getElementById('exportQuantity');
-  if (!selectedProduct) {
-    showError('Vui lòng chọn sản phẩm');
-    return;
-  }
-
-  const quantity = parseFloat(qtyInput.value);
-  if (isNaN(quantity) || quantity <= 0) {
-    showError('Vui lòng nhập số lượng hợp lệ');
-    return;
-  }
-
-  if (quantity > selectedProduct.quantity) {
-    showError(`Không đủ tồn kho. Hiện có: ${selectedProduct.quantity} ${selectedProduct.unit}`);
-    return;
-  }
-
-  if (!Array.isArray(dailyData.exports)) dailyData.exports = [];
-
-  dailyData.exports.push({
-    productId: selectedProduct.id,
-    productName: selectedProduct.name,
-    quantity,
-    unit: selectedProduct.unit || '',
-    price: selectedProduct.price || 0,
-    approved: false,
-    timestamp: Date.now()
-  });
-
-  document.getElementById('exportQuantity').value = '1';
-  renderDailyData();
-}
 
 
 
