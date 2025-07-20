@@ -15,10 +15,6 @@
     input[type="text"], input[type="password"], input[type="number"] { padding: 8px; margin: 5px; }
     .manager-only { display: none; }
   </style>
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
 </head>
 <body>
   <!-- Đăng nhập -->
@@ -127,7 +123,13 @@
     </div>
   </div>
 
-  <script>
+  <!-- Firebase SDK with type="module" -->
+  <script type="module">
+    // Import Firebase SDK
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, where, getDoc, doc, updateDoc, deleteDoc, runTransaction, Timestamp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
+
     // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
@@ -140,12 +142,12 @@
     };
 
     // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
     // Xử lý đăng nhập/đăng xuất
-    auth.onAuthStateChanged((user) => {
+    onAuthStateChanged(auth, (user) => {
       if (user) {
         document.getElementById('login-section').classList.add('hidden');
         document.getElementById('main-content').classList.remove('hidden');
@@ -159,43 +161,45 @@
     document.getElementById('login-button').addEventListener('click', () => {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-      auth.signInWithEmailAndPassword(email, password)
+      signInWithEmailAndPassword(auth, email, password)
         .then(() => console.log('Đăng nhập thành công'))
         .catch((error) => alert('Lỗi đăng nhập: ' + error.message));
     });
 
     document.getElementById('logout-button').addEventListener('click', () => {
-      auth.signOut().then(() => console.log('Đăng xuất thành công'));
+      signOut(auth).then(() => console.log('Đăng xuất thành công'));
     });
 
     // Tải dữ liệu người dùng và phân quyền
-    function loadUserData(uid) {
-      db.collection('users').doc(uid).get().then((doc) => {
-        if (doc.exists && doc.data().role === 'manager') {
-          document.querySelectorAll('.manager-only').forEach(el => el.style.display = 'block');
-        }
-        loadUsers(); // Cập nhật danh sách người dùng cho select filter
-      });
+    async function loadUserData(uid) {
+      const userDoc = await getDoc(doc(db, 'users', uid));
+      if (userDoc.exists() && userDoc.data().role === 'manager') {
+        document.querySelectorAll('.manager-only').forEach(el => el.style.display = 'block');
+      }
+      loadUsers(); // Cập nhật danh sách người dùng cho select filter
     }
 
     // Chi phí
-    document.getElementById('add-cost').addEventListener('click', () => {
+    document.getElementById('add-cost').addEventListener('click', async () => {
       const description = document.getElementById('cost-description').value;
       const amount = document.getElementById('cost-amount').value;
       if (description && amount) {
-        db.collection('costs').add({
-          description: description,
-          amount: parseFloat(amount),
-          createdBy: auth.currentUser.uid,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => {
+        try {
+          await addDoc(collection(db, 'costs'), {
+            description: description,
+            amount: parseFloat(amount),
+            createdBy: auth.currentUser.uid,
+            timestamp: Timestamp.now()
+          });
           document.getElementById('cost-description').value = '';
           document.getElementById('cost-amount').value = '';
-        }).catch((error) => alert('Lỗi: ' + error.message));
+        } catch (error) {
+          alert('Lỗi: ' + error.message);
+        }
       }
     });
 
-    db.collection('costs').orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
+    onSnapshot(query(collection(db, 'costs'), orderBy('timestamp', 'desc')), (snapshot) => {
       const table = document.getElementById('cost-table');
       table.innerHTML = '<tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr>';
       snapshot.forEach((doc) => {
@@ -210,34 +214,37 @@
     });
 
     // Xuất hàng
-    document.getElementById('add-export').addEventListener('click', () => {
+    document.getElementById('add-export').addEventListener('click', async () => {
       const product = document.getElementById('export-product').value;
       const quantity = document.getElementById('export-quantity').value;
       const unit = document.getElementById('export-unit').value;
       if (product && quantity && unit) {
-        db.runTransaction(async (transaction) => {
-          const inventoryRef = db.collection('inventory').doc(product);
-          const doc = await transaction.get(inventoryRef);
-          if (!doc.exists) throw 'Sản phẩm không tồn tại!';
-          const newQuantity = doc.data().quantity - parseInt(quantity);
-          if (newQuantity < 0) throw 'Số lượng tồn kho không đủ!';
-          transaction.update(inventoryRef, { quantity: newQuantity });
-          transaction.set(db.collection('exports').doc(), {
-            product: product,
-            quantity: parseInt(quantity),
-            unit: unit,
-            createdBy: auth.currentUser.uid,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        try {
+          await runTransaction(db, async (transaction) => {
+            const inventoryRef = doc(db, 'inventory', product);
+            const docSnap = await transaction.get(inventoryRef);
+            if (!docSnap.exists()) throw new Error('Sản phẩm không tồn tại!');
+            const newQuantity = docSnap.data().quantity - parseInt(quantity);
+            if (newQuantity < 0) throw new Error('Số lượng tồn kho không đủ!');
+            transaction.update(inventoryRef, { quantity: newQuantity });
+            transaction.set(doc(collection(db, 'exports')), {
+              product: product,
+              quantity: parseInt(quantity),
+              unit: unit,
+              createdBy: auth.currentUser.uid,
+              timestamp: Timestamp.now()
+            });
           });
-        }).then(() => {
           document.getElementById('export-product').value = '';
           document.getElementById('export-quantity').value = '';
           document.getElementById('export-unit').value = '';
-        }).catch((error) => alert('Lỗi: ' + error.message));
+        } catch (error) {
+          alert('Lỗi: ' + error.message);
+        }
       }
     });
 
-    db.collection('exports').orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
+    onSnapshot(query(collection(db, 'exports'), orderBy('timestamp', 'desc')), (snapshot) => {
       const table = document.getElementById('export-table');
       table.innerHTML = '<tr><th>Sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Hành động</th></tr>';
       snapshot.forEach((doc) => {
@@ -253,23 +260,26 @@
     });
 
     // Doanh thu
-    document.getElementById('add-revenue').addEventListener('click', () => {
+    document.getElementById('add-revenue').addEventListener('click', async () => {
       const description = document.getElementById('revenue-description').value;
       const amount = document.getElementById('revenue-amount').value;
       if (description && amount) {
-        db.collection('revenues').add({
-          description: description,
-          amount: parseFloat(amount),
-          createdBy: auth.currentUser.uid,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => {
+        try {
+          await addDoc(collection(db, 'revenues'), {
+            description: description,
+            amount: parseFloat(amount),
+            createdBy: auth.currentUser.uid,
+            timestamp: Timestamp.now()
+          });
           document.getElementById('revenue-description').value = '';
           document.getElementById('revenue-amount').value = '';
-        }).catch((error) => alert('Lỗi: ' + error.message));
+        } catch (error) {
+          alert('Lỗi: ' + error.message);
+        }
       }
     });
 
-    db.collection('revenues').orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
+    onSnapshot(query(collection(db, 'revenues'), orderBy('timestamp', 'desc')), (snapshot) => {
       const table = document.getElementById('revenue-table');
       table.innerHTML = '<tr><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr>';
       snapshot.forEach((doc) => {
@@ -284,62 +294,72 @@
     });
 
     // Tổng kết ngày
-    function updateDailySummary() {
-      const startOfDay = new Date(new Date().setHours(0, 0, 0, 0)).getTime();
-      const endOfDay = new Date(new Date().setHours(23, 59, 59, 999)).getTime();
+    async function updateDailySummary() {
+      const startOfDay = new Date(new Date().setHours(0, 0, 0, 0));
+      const endOfDay = new Date(new Date().setHours(23, 59, 59, 999));
       let totalRevenue = 0;
       let totalCost = 0;
 
-      db.collection('revenues').where('timestamp', '>=', firebase.firestore.Timestamp.fromMillis(startOfDay))
-        .where('timestamp', '<=', firebase.firestore.Timestamp.fromMillis(endOfDay))
-        .get().then((snapshot) => {
-          snapshot.forEach((doc) => totalRevenue += doc.data().amount);
-          document.getElementById('total-revenue').textContent = `${totalRevenue}₫`;
-          document.getElementById('balance').textContent = `${totalRevenue - totalCost}₫`;
-        });
+      const revenueSnapshot = await getDocs(query(
+        collection(db, 'revenues'),
+        where('timestamp', '>=', Timestamp.fromDate(startOfDay)),
+        where('timestamp', '<=', Timestamp.fromDate(endOfDay))
+      ));
+      revenueSnapshot.forEach((doc) => totalRevenue += doc.data().amount);
+      document.getElementById('total-revenue').textContent = `${totalRevenue}₫`;
 
-      db.collection('costs').where('timestamp', '>=', firebase.firestore.Timestamp.fromMillis(startOfDay))
-        .where('timestamp', '<=', firebase.firestore.Timestamp.fromMillis(endOfDay))
-        .get().then((snapshot) => {
-          snapshot.forEach((doc) => totalCost += doc.data().amount);
-          document.getElementById('total-cost').textContent = `${totalCost}₫`;
-          document.getElementById('balance').textContent = `${totalRevenue - totalCost}₫`;
-        });
+      const costSnapshot = await getDocs(query(
+        collection(db, 'costs'),
+        where('timestamp', '>=', Timestamp.fromDate(startOfDay)),
+        where('timestamp', '<=', Timestamp.fromDate(endOfDay))
+      ));
+      costSnapshot.forEach((doc) => totalCost += doc.data().amount);
+      document.getElementById('total-cost').textContent = `${totalCost}₫`;
+
+      document.getElementById('balance').textContent = `${totalRevenue - totalCost}₫`;
     }
 
-    document.getElementById('save-note').addEventListener('click', () => {
+    document.getElementById('save-note').addEventListener('click', async () => {
       const note = document.getElementById('personal-note').value;
       if (note) {
-        db.collection('daily_notes').add({
-          note: note,
-          createdBy: auth.currentUser.uid,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => document.getElementById('personal-note').value = '');
+        try {
+          await addDoc(collection(db, 'daily_notes'), {
+            note: note,
+            createdBy: auth.currentUser.uid,
+            timestamp: Timestamp.now()
+          });
+          document.getElementById('personal-note').value = '';
+        } catch (error) {
+          alert('Lỗi: ' + error.message);
+        }
       }
     });
 
     // Quản lý kho hàng
-    document.getElementById('add-product').addEventListener('click', () => {
+    document.getElementById('add-product').addEventListener('click', async () => {
       const product = document.getElementById('product-name').value;
       const quantity = document.getElementById('product-quantity').value;
       const unit = document.getElementById('product-unit').value;
       const unitPrice = document.getElementById('product-unit-price').value;
       if (product && quantity && unit && unitPrice) {
-        db.collection('inventory').doc(product).set({
-          product: product,
-          quantity: parseInt(quantity),
-          unit: unit,
-          unitPrice: parseFloat(unitPrice)
-        }).then(() => {
+        try {
+          await setDoc(doc(db, 'inventory', product), {
+            product: product,
+            quantity: parseInt(quantity),
+            unit: unit,
+            unitPrice: parseFloat(unitPrice)
+          });
           document.getElementById('product-name').value = '';
           document.getElementById('product-quantity').value = '';
           document.getElementById('product-unit').value = '';
           document.getElementById('product-unit-price').value = '';
-        }).catch((error) => alert('Lỗi: ' + error.message));
+        } catch (error) {
+          alert('Lỗi: ' + error.message);
+        }
       }
     });
 
-    db.collection('inventory').onSnapshot((snapshot) => {
+    onSnapshot(collection(db, 'inventory'), (snapshot) => {
       const table = document.getElementById('inventory-table');
       table.innerHTML = '<tr><th>Tên sản phẩm</th><th>Số lượng</th><th>ĐVT</th><th>Giá đơn vị</th><th>Hành động</th></tr>';
       snapshot.forEach((doc) => {
@@ -357,32 +377,33 @@
 
     // Báo cáo
     document.getElementById('daily-report').addEventListener('click', () => {
-      const startOfDay = new Date(new Date().setHours(0, 0, 0, 0)).getTime();
-      const endOfDay = new Date(new Date().setHours(23, 59, 59, 999)).getTime();
+      const startOfDay = new Date(new Date().setHours(0, 0, 0, 0));
+      const endOfDay = new Date(new Date().setHours(23, 59, 59, 999));
       generateReport('daily', startOfDay, endOfDay);
     });
 
     document.getElementById('monthly-report').addEventListener('click', () => {
-      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
-      const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59, 999).getTime();
+      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59, 999);
       generateReport('monthly', startOfMonth, endOfMonth);
     });
 
-    function generateReport(type, start, end) {
+    async function generateReport(type, start, end) {
       const category = document.getElementById('category-filter').value;
       const user = document.getElementById('user-filter').value;
-      let query = db.collection(category)
-        .where('timestamp', '>=', firebase.firestore.Timestamp.fromMillis(start))
-        .where('timestamp', '<=', firebase.firestore.Timestamp.fromMillis(end));
-      if (user !== 'all') query = query.where('createdBy', '==', user);
-      query.get().then((snapshot) => {
-        let report = `Báo cáo ${type === 'daily' ? 'ngày' : 'tháng'} (${category}):\n`;
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          report += `${data.description || data.product}: ${data.amount || data.quantity} ${data.unit || '₫'}\n`;
-        });
-        document.getElementById('report-result').textContent = report;
+      let q = query(
+        collection(db, category),
+        where('timestamp', '>=', Timestamp.fromDate(start)),
+        where('timestamp', '<=', Timestamp.fromDate(end))
+      );
+      if (user !== 'all') q = query(q, where('createdBy', '==', user));
+      const snapshot = await getDocs(q);
+      let report = `Báo cáo ${type === 'daily' ? 'ngày' : 'tháng'} (${category}):\n`;
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        report += `${data.description || data.product}: ${data.amount || data.quantity} ${data.unit || '₫'}\n`;
       });
+      document.getElementById('report-result').textContent = report;
     }
 
     document.getElementById('print-report').addEventListener('click', () => {
@@ -390,8 +411,8 @@
     });
 
     // Quản lý người dùng
-    function loadUsers() {
-      db.collection('users').onSnapshot((snapshot) => {
+    async function loadUsers() {
+      onSnapshot(collection(db, 'users'), (snapshot) => {
         const table = document.getElementById('user-table');
         const userFilter = document.getElementById('user-filter');
         table.innerHTML = '<tr><th>Tên đăng nhập</th><th>Vai trò</th><th>Trạng thái</th><th>Hành động</th></tr>';
@@ -410,32 +431,36 @@
       });
     }
 
-    document.getElementById('add-user').addEventListener('click', () => {
+    document.getElementById('add-user').addEventListener('click', async () => {
       const username = document.getElementById('username').value;
       const role = document.getElementById('role').value;
       const email = document.getElementById('user-email').value;
       const password = document.getElementById('user-password').value;
-      auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-          db.collection('users').doc(userCredential.user.uid).set({
-            username: username,
-            role: role,
-            status: 'active'
-          }).then(() => {
-            document.getElementById('username').value = '';
-            document.getElementById('role').value = 'employee';
-            document.getElementById('user-email').value = '';
-            document.getElementById('user-password').value = '';
-          });
-        }).catch((error) => alert('Lỗi: ' + error.message));
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await setDoc(doc(db, 'users', userCredential.user.uid), {
+          username: username,
+          role: role,
+          status: 'active'
+        });
+        document.getElementById('username').value = '';
+        document.getElementById('role').value = 'employee';
+        document.getElementById('user-email').value = '';
+        document.getElementById('user-password').value = '';
+      } catch (error) {
+        alert('Lỗi: ' + error.message);
+      }
     });
 
     // Hàm xóa tài liệu
-    function deleteDoc(collection, docId) {
-      db.collection(collection).doc(docId).delete()
-        .then(() => console.log('Xóa thành công'))
-        .catch((error) => alert('Lỗi: ' + error.message));
-    }
+    window.deleteDoc = async function(collection, docId) {
+      try {
+        await deleteDoc(doc(db, collection, docId));
+        console.log('Xóa thành công');
+      } catch (error) {
+        alert('Lỗi: ' + error.message);
+      }
+    };
 
     // Cập nhật tổng kết ngày khi tải trang
     updateDailySummary();
