@@ -122,21 +122,7 @@ export function addExport() {
   renderDailyData();
 }
 
-export function deleteExport(index) {
-  if (confirm('Xóa xuất hàng này?')) {
-    const exportItem = dailyData.exports[index];
-    if (!exportItem.approved) {
-      const product = products.find(p => p.id === exportItem.productId);
-      if (product) {
-        product.quantity += exportItem.quantity;
-      }
-    }
 
-    dailyData.exports.splice(index, 1);
-    renderDailyData();
-    renderProductSelection();
-  }
-}
 
 export function renderDailyData() {
   if (!Array.isArray(dailyData.exports)) dailyData.exports = [];
@@ -193,14 +179,14 @@ window.saveDailyData = saveDailyData;
 window.deleteExpense = deleteExpense;
 // Thêm vào cuối file
 // Export các hàm cần thiết
-export { 
+export {
   renderDailyData,
   switchTab,
   loadData,
   deleteExpense,
   saveDailyData,
   addExport,
-  deleteExport,
+  deleteExport,  // <-- Giữ lại chỉ một dòng này
   addExpense,
   addRevenue
 };
