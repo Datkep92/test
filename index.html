@@ -6,407 +6,278 @@
   <title>Quản lý Kinh doanh</title>
   <link rel="icon" href="data:,">
   <style>
-    /* Reset CSS */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    /* Tắt hiệu ứng hover, active, focus cho button */
-button, 
-input[type="button"], 
-input[type="submit"], 
-a.btn {
+  /* Reset + chống zoom iOS */
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  html, body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+    color: #333;
+    line-height: 1.6;
+    min-height: 100vh;
+    touch-action: pan-x pan-y;
+    -webkit-user-scalable: none;
+    user-scalable: no;
+    font-size: 16px;
+  }
+
+  input, textarea, select {
+    font-size: 16px;
+  }
+
+  button, input[type="button"], input[type="submit"], a.btn {
     transition: none !important;
     transform: none !important;
     box-shadow: none !important;
-}
+  }
 
-/* Loại bỏ hiệu ứng khi nhấn */
-button:active, 
-input[type="button"]:active, 
-input[type="submit"]:active, 
-a.btn:active {
+  button:active, input[type="button"]:active, input[type="submit"]:active, a.btn:active {
     transform: none !important;
     filter: none !important;
-}
+  }
 
-/* Ngăn chặn pinch-zoom và double-tap zoom */
-body {
-    touch-action: pan-x pan-y; /* Chỉ cho phép kéo ngang/dọc, không phóng to */
-    -webkit-user-scalable: none; /* Chặn zoom trên iOS Safari */
-    user-scalable: no;
-}
+  /* Layout */
+  .container {
+    padding: 15px;
+    width: 100%;
+    max-width: 100%;
+  }
 
-/* Đảm bảo input không làm thay đổi tỉ lệ */
-input, 
-textarea, 
-select {
-    font-size: 16px; /* Ngăn trình duyệt tự động phóng to khi focus */
-}
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
-    body {
-      background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
-      color: #333;
-      line-height: 1.6;
-      min-height: 100vh;
-    }
-    
-    /* Layout */
-    .container {
-      padding: 15px;
-      max-width: 100%;
-    }
-    
+  header {
+    background: linear-gradient(90deg, #2c3e50 0%, #1a2530 100%);
+    color: white;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  .login-box {
+    max-width: 400px;
+    margin: 30px auto;
+    padding: 24px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  }
+
+  .section {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  }
+
+  input, button, select, textarea {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52,152,219,0.2);
+    outline: none;
+  }
+
+  button {
+    background: linear-gradient(90deg, #3498db 0%, #2c80c0 100%);
+    color: white;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  button:hover:after {
+    left: 120%;
+  }
+
+  button:after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 20%;
+    height: 200%;
+    background: rgba(255,255,255,0.2);
+    transform: rotate(30deg);
+    transition: all 0.8s;
+  }
+
+  button:hover {
+    background: linear-gradient(90deg, #2c80c0 0%, #3498db 100%);
+  }
+
+  button.danger {
+    background: linear-gradient(90deg, #e74c3c 0%, #c0392b 100%);
+  }
+
+  button.success {
+    background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%);
+  }
+
+  button.warning {
+    background: linear-gradient(90deg, #f39c12 0%, #d35400 100%);
+  }
+
+  /* Tables */
+  .table-responsive {
+    overflow-x: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin: 15px 0;
+  }
+
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    min-width: 600px;
+  }
+
+  .table th, .table td {
+    padding: 12px;
+    border: 1px solid #eee;
+    text-align: left;
+  }
+
+  .table th {
+    background: #f8f9fa;
+    color: #2c3e50;
+  }
+
+  /* Tabs */
+  .tab-container {
+    display: flex;
+    overflow-x: auto;
+    border-bottom: 2px solid #3498db;
+    gap: 8px;
+    margin-bottom: 15px;
+  }
+
+  .tab {
+    padding: 10px 16px;
+    background: #f1f1f1;
+    border-radius: 8px 8px 0 0;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  .tab.active {
+    background: #3498db;
+    color: white;
+  }
+
+  /* Grid products */
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+
+  .product-item {
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 12px;
+    background: white;
+    text-align: center;
+    transition: all 0.3s;
+  }
+
+  .product-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.05);
+  }
+
+  .product-item.selected {
+    background: #e1f0ff;
+    border-color: #3498db;
+  }
+
+  /* Utility */
+  .hidden { display: none; }
+  .text-right { text-align: right; }
+  .text-center { text-align: center; }
+
+  .error-message, .success-message {
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 8px;
+    font-weight: bold;
+  }
+
+  .error-message {
+    background: #ffebee;
+    color: #e74c3c;
+    border-left: 4px solid #e74c3c;
+  }
+
+  .success-message {
+    background: #eafaf1;
+    color: #27ae60;
+    border-left: 4px solid #27ae60;
+  }
+
+  /* Responsive (Mobile First) */
+  @media (min-width: 768px) {
     header {
-      background: linear-gradient(90deg, #2c3e50 0%, #1a2530 100%);
-      color: #fff;
-      padding: 15px;
-      display: flex;
+      flex-direction: row;
       justify-content: space-between;
-      align-items: center;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 20px;
     }
-    
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 25px;
+    }
+
     .login-box {
-      max-width: 400px;
       margin: 50px auto;
-      padding: 30px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-      transition: transform 0.3s ease;
     }
-    
-    .login-box:hover {
-      transform: translateY(-5px);
+
+    .flex-md {
+      display: flex;
+      gap: 20px;
     }
-    
-    .section {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+
+    .flex-md > * {
+      flex: 1;
     }
-    
-    /* Form elements */
-    input, button, select {
-      width: 100%;
-      padding: 14px;
-      margin: 10px 0;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 16px;
-      transition: all 0.3s;
+  }
+
+  /* Print styles */
+  @media print {
+    body * { visibility: hidden; }
+    #reportOutput, #reportOutput * {
+      visibility: visible;
     }
-    
-    input:focus, select:focus {
-      border-color: #3498db;
-      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-      outline: none;
-    }
-    
-    button {
-      background: linear-gradient(90deg, #3498db 0%, #2c80c0 100%);
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-      letter-spacing: 0.5px;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    button:after {
-      content: '';
+    #reportOutput {
       position: absolute;
-      top: -50%;
-      left: -60%;
-      width: 20%;
-      height: 200%;
-      background: rgba(255,255,255,0.2);
-      transform: rotate(30deg);
-      transition: all 0.8s;
-    }
-    
-    button:hover:after {
-      left: 140%;
-    }
-    
-    button:hover {
-      background: linear-gradient(90deg, #2c80c0 0%, #3498db 100%);
-    }
-    
-    button.danger {
-      background: linear-gradient(90deg, #e74c3c 0%, #c0392b 100%);
-    }
-    
-    button.danger:hover {
-      background: linear-gradient(90deg, #c0392b 0%, #e74c3c 100%);
-    }
-    
-    button.success {
-      background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%);
-    }
-    
-    button.success:hover {
-      background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%);
-    }
-    
-    button.warning {
-      background: linear-gradient(90deg, #f39c12 0%, #d35400 100%);
-    }
-    
-    button.warning:hover {
-      background: linear-gradient(90deg, #d35400 0%, #f39c12 100%);
-    }
-    
-    /* Tables */
-    .table-responsive {
-      overflow-x: auto;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      margin: 15px 0;
-    }
-    
-    .table {
+      left: 0;
+      top: 0;
       width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-      min-width: 600px;
-    }
-    
-    .table th, .table td {
-      padding: 14px;
-      border: 1px solid #eee;
-      text-align: left;
-    }
-    
-    .table th {
-      background: #f8f9fa;
-      font-weight: 600;
-      color: #2c3e50;
-    }
-    
-    .table tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
-    
-    .table tr:hover {
-      background-color: #f1f9ff;
-    }
-    
-    /* Tabs */
-    .tab-container {
-      display: flex;
-      overflow-x: auto;
-      margin-bottom: 20px;
-      border-bottom: 2px solid #3498db;
-      -webkit-overflow-scrolling: touch;
-    }
-    
-    .tab {
-      padding: 12px 20px;
-      cursor: pointer;
-      background: #f1f1f1;
-      border-radius: 8px 8px 0 0;
-      margin-right: 5px;
-      white-space: nowrap;
-      transition: all 0.3s;
-      font-weight: 500;
-    }
-    
-    .tab:hover {
-      background: #e1e1e1;
-    }
-    
-    .tab.active {
-      background: #3498db;
-      color: white;
-    }
-    
-    /* Product grid */
-    .product-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 15px;
-      margin-top: 15px;
-    }
-    
-    .product-item {
-      border: 1px solid #ddd;
-      border-radius: 12px;
-      padding: 15px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s;
-      background: white;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-    }
-    
-    .product-item:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-      border-color: #3498db;
-    }
-    
-    .product-item.selected {
-      background-color: #e1f0ff;
-      border-color: #3498db;
-      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-    }
-    
-    /* Utility classes */
-    .hidden {
-      display: none;
-    }
-    
-    .text-right {
-      text-align: right;
-    }
-    
-    .text-center {
-      text-align: center;
-    }
-    
-    .error-message {
-      color: #e74c3c;
-      margin: 15px 0;
-      text-align: center;
-      font-weight: bold;
-      background: #ffebee;
-      padding: 12px;
-      border-radius: 8px;
-      border-left: 4px solid #e74c3c;
-    }
-    
-    .success-message {
-      color: #27ae60;
-      margin: 15px 0;
-      text-align: center;
-      font-weight: bold;
-      background: #eafaf1;
-      padding: 12px;
-      border-radius: 8px;
-      border-left: 4px solid #27ae60;
-    }
-    
-    .category-badge {
-      display: inline-block;
-      padding: 4px 10px;
-      background: #e1f0ff;
-      border-radius: 20px;
-      font-size: 12px;
-      margin-left: 5px;
-      color: #2c80c0;
-      font-weight: 500;
-    }
-    
-    .spinner {
-      border: 3px solid rgba(243, 243, 243, 0.8);
-      border-top: 3px solid #3498db;
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      animation: spin 1s linear infinite;
-      display: inline-block;
-      margin-right: 10px;
-    }
-    
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    
-    .loading-container {
-      text-align: center;
-      padding: 30px;
-    }
-    
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-    
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 1.8rem;
-    }
-    
-    .logo-icon {
-      font-size: 2rem;
-    }
-    
-    .summary-card {
-      background: linear-gradient(135deg, #f8fafc 0%, #e6f0f7 100%);
-      border-radius: 12px;
       padding: 20px;
-      margin: 15px 0;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      border: 1px solid #e1e8ed;
     }
-    
-    /* Responsive adjustments */
-    @media (min-width: 768px) {
-      .container {
-        padding: 25px;
-        max-width: 1200px;
-        margin: 0 auto;
-      }
-      
-      .flex-md {
-        display: flex;
-        gap: 20px;
-      }
-      
-      .flex-md > * {
-        flex: 1;
-      }
-    }
-    
-    @media (max-width: 768px) {
-      .login-box {
-        margin: 20px auto;
-        padding: 20px;
-      }
-      
-      header {
-        flex-direction: column;
-        gap: 15px;
-        text-align: center;
-      }
-      
-      .user-info {
-        width: 100%;
-        justify-content: center;
-      }
-    }
-    
-    /* Print styles */
-    @media print {
-      body * {
-        visibility: hidden;
-      }
-      #reportOutput, #reportOutput * {
-        visibility: visible;
-      }
-      #reportOutput {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        padding: 20px;
-      }
-    }
-  </style>
+  }
+</style>
+
 </head>
 <body>
   <header id="appHeader" class="hidden">
@@ -769,87 +640,72 @@ select {
 }
 
     
-  // Data functions
-// Data functions
-async function loadData() {
-  const today = new Date().toLocaleDateString('vi-VN');
-  document.getElementById('summaryDate').textContent = today;
-
-  // Load products
-  try {
-    const productsRef = ref(database, 'products');
-    const snapshot = await get(productsRef);
-
-    if (snapshot.exists()) {
-      products = [];
-      snapshot.forEach(childSnapshot => {
-        products.push({
-          id: childSnapshot.key,
-          ...childSnapshot.val()
-        });
-      });
-      renderProducts();
-      renderProductSelection();
-    } else {
-      products = [];
-    }
-  } catch (error) {
-    showError(`Lỗi khi tải sản phẩm: ${error.message}`);
-  }
-
-  // Load expense categories
-  try {
-    const categoriesRef = ref(database, 'expenseCategories');
-    const snapshot = await get(categoriesRef);
-
-    if (snapshot.exists()) {
-      expenseCategories = snapshot.val();
-    } else {
-      expenseCategories = [];
-    }
-  } catch (error) {
-    showError(`Lỗi khi tải danh mục chi phí: ${error.message}`);
-  }
-
-  // Load today's data
-  try {
-    const dateKey = today.replace(/\//g, '_');
-    const dailyRef = ref(database, `dailyData/${dateKey}/${currentUser.uid}`);
-    const snapshot = await get(dailyRef);
-
-    if (snapshot.exists()) {
-      dailyData = snapshot.val();
-
-      // ✅ Bổ sung đảm bảo không bị lỗi undefined
-      if (!Array.isArray(dailyData.expenses)) dailyData.expenses = [];
-      if (!Array.isArray(dailyData.exports)) dailyData.exports = [];
-      if (typeof dailyData.revenue !== 'number') dailyData.revenue = 0;
-      if (typeof dailyData.note !== 'string') dailyData.note = '';
-      if (!dailyData.date) dailyData.date = today;
-      if (!dailyData.user) dailyData.user = currentUser.email;
-
-    } else {
-      dailyData = {
-        date: today,
-        expenses: [],
-        exports: [],
-        revenue: 0,
-        note: '',
-        user: currentUser.email
-      };
-    }
-
-    document.getElementById('dailyNote').value = dailyData.note || '';
-    renderDailyData();
-  } catch (error) {
-    showError(`Lỗi khi tải dữ liệu ngày: ${error.message}`);
-  }
-}
-
-
-
-
+ async function loadData() {
+      const today = new Date().toLocaleDateString('vi-VN');
+      document.getElementById('summaryDate').textContent = today;
       
+      // Load products
+      try {
+        const productsRef = ref(database, 'products');
+        const snapshot = await get(productsRef);
+        
+        if (snapshot.exists()) {
+          products = [];
+          snapshot.forEach(childSnapshot => {
+            products.push({
+              id: childSnapshot.key,
+              ...childSnapshot.val()
+            });
+          });
+          renderProducts();
+          renderProductSelection();
+        } else {
+          products = [];
+        }
+      } catch (error) {
+        showError(`Lỗi khi tải sản phẩm: ${error.message}`);
+      }
+      
+      // Load expense categories
+      try {
+        const categoriesRef = ref(database, 'expenseCategories');
+        const snapshot = await get(categoriesRef);
+        
+        if (snapshot.exists()) {
+          expenseCategories = snapshot.val();
+        } else {
+          expenseCategories = [];
+        }
+      } catch (error) {
+        showError(`Lỗi khi tải danh mục chi phí: ${error.message}`);
+      }
+      
+      // Load today's data
+      try {
+        const dateKey = today.replace(/\//g, '_');
+        const dailyRef = ref(database, `dailyData/${dateKey}/${currentUser.uid}`);
+        const snapshot = await get(dailyRef);
+        
+        if (snapshot.exists()) {
+          dailyData = snapshot.val();
+        } else {
+          dailyData = {
+            date: today,
+            expenses: [],
+            exports: [],
+            revenue: 0,
+            note: '',
+            user: currentUser.email
+          };
+        }
+        
+        document.getElementById('dailyNote').value = dailyData.note || '';
+        renderDailyData();
+      } catch (error) {
+        showError(`Lỗi khi tải dữ liệu ngày: ${error.message}`);
+      }
+    }
+
       // Load expense categories
       try {
         const categoriesRef = ref(database, 'expenseCategories');
