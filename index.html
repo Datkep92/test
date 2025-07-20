@@ -837,37 +837,57 @@
     }
     
    function addExport() {
-  const productId = document.getElementById('exportProductSelect').value;
-  const quantity = parseFloat(document.getElementById('exportQuantity').value);
+      if (!selectedProduct) {
+        showError('Vui lòng chọn sản phẩm');
+        return;
+      }
+      
+      const quantity = parseInt(document.getElementById('exportQuantity').value) || 1;
+      
+      if (quantity <= 0) {
+        showError('Số lượng phải lớn hơn 0');
+        return;
+      }
+      
+      if (quantity > selectedProduct.quantity) {
+        showError(`Số lượng xuất vượt quá tồn kho (${selectedProduct.quantity} ${selectedProduct.unit})`);
+        return;
+      }
+      
+      // Check if product already exported today
+      const existingExport = dailyData.exports.find(e => e.productId === selectedProduct.id);
+      
+      if (existingExport) {
+        existingExport.quantity += quantity;
+      } else {
+        dailyData.exports.push({
+          productId: selectedProduct.id,
+          productName: selectedProduct.name,
+          quantity: quantity,
+          unit: selectedProduct.unit,
+          price: selectedProduct.price,
+          user: currentUser.email,
+          timestamp: new Date().getTime()
+        });
+      }
+      
+      // Update product quantity
+      selectedProduct.quantity -= quantity;
+      
+      // Update product in Firebase
+      const productRef = ref(database, `products/${selectedProduct.id}`);
+      set(productRef, selectedProduct);
+      
+      document.getElementById('exportQuantity').value = '1';
+      selectedProduct = null;
+      document.querySelectorAll('.product-item').forEach(item => {
+        item.classList.remove('selected');
+      });
+      
+      renderDailyData();
+      renderProductSelection();
+    }
 
-  if (!productId || isNaN(quantity) || quantity <= 0) {
-    showError('Vui lòng chọn sản phẩm và số lượng hợp lệ');
-    return;
-  }
-
-  if (!Array.isArray(products)) {
-    showError("Danh sách sản phẩm chưa được tải.");
-    return;
-  }
-
-  const selectedProduct = products.find(p => p.id === productId);
-  if (!selectedProduct) {
-    showError('Không tìm thấy sản phẩm');
-    return;
-  }
-
-  dailyData.exports.push({
-    id: productId,
-    name: selectedProduct.name,
-    quantity: quantity,
-    unit: selectedProduct.unit || '',
-    user: currentUser.email,
-    timestamp: new Date().getTime()
-  });
-
-  renderDailyData();
-  document.getElementById('exportQuantity').value = '';
-}
 
     
     function deleteExport(index) {
@@ -904,79 +924,74 @@
     }
     
     function renderDailyData() {
-      // Render expenses
-      const expenseTable = document.querySelector('#expenseTable tbody');
-      expenseTable.innerHTML = '';
-      
-      dailyData.expenses.forEach((expense, index) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${expense.description} <span class="category-badge">${expense.category}</span></td>
-          <td class="text-right">${expense.amount.toLocaleString('vi-VN')}₫</td>
-          <td class="actions">
-            <button onclick="deleteExpense(${index})" class="danger">Xóa</button>
-          </td>
-        `;
-        expenseTable.appendChild(row);
-      });
-      
-      // Render exports
-      const exportTable = document.querySelector('#exportTable tbody');
-      exportTable.innerHTML = '';
-      
-      dailyData.exports.forEach((exportItem, index) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${exportItem.productName}</td>
-          <td>${exportItem.quantity}</td>
-          <td>${exportItem.unit}</td>
-          <td class="actions">
-            <button onclick="deleteExport(${index})" class="danger">Xóa</button>
-          </td>
-        `;
-        exportTable.appendChild(row);
-      });
-      
-      // Calculate and render summary
-      const totalExpense = dailyData.expenses.reduce((sum, e) => sum + e.amount, 0);
-      const totalExportCost = dailyData.exports.reduce((sum, e) => sum + (e.quantity * e.price), 0);
-      const balance = dailyData.revenue - totalExpense;
-      
-      document.getElementById('totalRevenue').textContent = 
-        dailyData.revenue.toLocaleString('vi-VN') + '₫';
-      document.getElementById('totalExpense').textContent = 
-        totalExpense.toLocaleString('vi-VN') + '₫';
-      document.getElementById('dailyBalance').innerHTML = 
-        `<strong>${balance.toLocaleString('vi-VN')}₫</strong>`;
-      
-      // Render export summary
-      const exportSummary = document.getElementById('exportSummary');
-      exportSummary.innerHTML = '';
-      
-      if (dailyData.exports.length > 0) {
-        const summaryDiv = document.createElement('div');
-        summaryDiv.style.marginTop = '15px';
-        summaryDiv.innerHTML = `
-          <h4>📦 Xuất hàng hôm nay:</h4>
-          <ul>
-            ${dailyData.exports.map(e => 
-              `<li>${e.productName}: ${e.quantity} ${e.unit} (${(e.quantity * e.price).toLocaleString('vi-VN')}₫)</li>`
-            ).join('')}
-          </ul>
-        `;
-        exportSummary.appendChild(summaryDiv);
-      }
-    }
+  // ✅ Đảm bảo dữ liệu là mảng trước khi dùng
+  if (!Array.isArray(dailyData.expenses)) dailyData.expenses = [];
+  if (!Array.isArray(dailyData.exports)) dailyData.exports = [];
 
+  // Render expenses
+  const expenseTable = document.querySelector('#expenseTable tbody');
+  expenseTable.innerHTML = '';
 
-            ${dailyData.exports.map(e => 
-              `<li>${e.productName}: ${e.quantity} ${e.unit} (${(e.quantity * e.price).toLocaleString('vi-VN')}₫)</li>`
-            ).join('')}
-          </ul>
-        `;
-        exportSummary.appendChild(summaryDiv);
-      }
-    }
+  dailyData.expenses.forEach((expense, index) => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${expense.description} <span class="category-badge">${expense.category}</span></td>
+      <td class="text-right">${expense.amount.toLocaleString('vi-VN')}₫</td>
+      <td class="actions">
+        <button onclick="deleteExpense(${index})" class="danger">Xóa</button>
+      </td>
+    `;
+    expenseTable.appendChild(row);
+  });
+
+  // Render exports
+  const exportTable = document.querySelector('#exportTable tbody');
+  exportTable.innerHTML = '';
+
+  dailyData.exports.forEach((exportItem, index) => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${exportItem.productName}</td>
+      <td>${exportItem.quantity}</td>
+      <td>${exportItem.unit}</td>
+      <td class="actions">
+        <button onclick="deleteExport(${index})" class="danger">Xóa</button>
+      </td>
+    `;
+    exportTable.appendChild(row);
+  });
+
+  // Calculate and render summary
+  const totalExpense = dailyData.expenses.reduce((sum, e) => sum + e.amount, 0);
+  const totalExportCost = dailyData.exports.reduce((sum, e) => sum + (e.quantity * (e.price || 0)), 0);
+  const balance = (dailyData.revenue || 0) - totalExpense;
+
+  document.getElementById('totalRevenue').textContent =
+    (dailyData.revenue || 0).toLocaleString('vi-VN') + '₫';
+  document.getElementById('totalExpense').textContent =
+    totalExpense.toLocaleString('vi-VN') + '₫';
+  document.getElementById('dailyBalance').innerHTML =
+    `<strong>${balance.toLocaleString('vi-VN')}₫</strong>`;
+
+  // Render export summary
+  const exportSummary = document.getElementById('exportSummary');
+  exportSummary.innerHTML = '';
+
+  if (dailyData.exports.length > 0) {
+    const summaryDiv = document.createElement('div');
+    summaryDiv.style.marginTop = '15px';
+    summaryDiv.innerHTML = `
+      <h4>📦 Xuất hàng hôm nay:</h4>
+      <ul>
+        ${dailyData.exports.map(e =>
+          `<li>${e.productName}: ${e.quantity} ${e.unit} (${(e.quantity * (e.price || 0)).toLocaleString('vi-VN')}₫)</li>`
+        ).join('')}
+      </ul>
+    `;
+    exportSummary.appendChild(summaryDiv);
+  }
+}
+
     
     // Product management
     async function addProduct() {
