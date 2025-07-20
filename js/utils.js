@@ -1,7 +1,7 @@
 import { db } from './auth.js';
-import { doc, getDoc, updateDoc, runTransaction } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
+import { doc, getDoc, updateDoc, runTransaction, deleteDoc } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
 
-export async function deleteDoc(collectionName, docId, errorContainerId = 'errorContainer') {
+export async function removeDoc(collectionName, docId, errorContainerId = 'errorContainer') {
   try {
     await deleteDoc(doc(db, collectionName, docId));
   } catch (error) {
