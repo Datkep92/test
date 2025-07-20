@@ -19,7 +19,7 @@ let selectedProduct = null;
 export function switchTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active'));
+document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
   
   document.getElementById('expenseTab').classList.add('hidden');
   document.getElementById('exportTab').classList.add('hidden');
