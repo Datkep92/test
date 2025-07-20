@@ -637,69 +637,63 @@ async function checkAdminStatus() {
    async function loadData() {
   try {
     const today = new Date().toLocaleDateString('vi-VN');
-    document.getElementById('summaryDate').textContent = today;
     const dateKey = today.replace(/\//g, '_');
+    const dailyRef = ref(database, `dailyData/${dateKey}`);
 
-    const [productsSnap, dailySnap] = await Promise.all([
-      get(ref(database, 'products')),
-      get(ref(database, `dailyData/${dateKey}/${currentUser.uid}`))
-    ]);
+    const snapshot = await get(dailyRef);
+    dailyData = snapshot.exists() ? snapshot.val() : { expenses: [], exports: [], revenue: 0 };
 
-    // Xử lý products
-    products = productsSnap.exists() 
-      ? Object.entries(productsSnap.val()).map(([id, data]) => ({ id, ...data }))
-      : [];
+    // Lắng nghe thay đổi realtime
+    onValue(dailyRef, (snap) => {
+      if (snap.exists()) {
+        dailyData = snap.val();
+        renderDailyData();
+      }
+    });
 
-    // Xử lý dailyData - QUAN TRỌNG: Khởi tạo mảng nếu không tồn tại
-    dailyData = dailySnap.exists() 
-      ? { 
-          ...dailySnap.val(),
-          expenses: dailySnap.val().expenses || [],
-          exports: dailySnap.val().exports || [] 
-        }
-      : { 
-          date: today, 
-          expenses: [], 
-          exports: [], 
-          revenue: 0, 
-          note: '', 
-          user: currentUser.email 
-        };
-
-    renderProducts();
     renderDailyData();
-
   } catch (error) {
-    console.error("Lỗi khi tải dữ liệu:", error);
     showError(`Lỗi khi tải: ${error.message}`);
   }
 }
     
-   async function saveDailyData() {
+  async function saveDailyData() {
   try {
     const today = new Date().toLocaleDateString('vi-VN');
     const dateKey = today.replace(/\//g, '_');
-    
-    // Cập nhật dữ liệu mới nhất từ form
-    dailyData = {
-      date: today,
-      expenses: dailyData.expenses || [],
-      exports: dailyData.exports || [],
-      revenue: parseNumber(document.getElementById('revenueAmount').value) || dailyData.revenue || 0,
-      note: document.getElementById('dailyNote').value || '',
+    const dailyRef = ref(database, `dailyData/${dateKey}`);
+
+    // Lấy dữ liệu hiện tại
+    const snapshot = await get(dailyRef);
+    const currentData = snapshot.exists() ? snapshot.val() : { expenses: [], exports: [], revenue: 0 };
+
+    // Chuẩn bị dữ liệu mới với thông tin người nhập
+    const newExpenses = (dailyData.expenses || []).map(expense => ({
+      ...expense,
       user: currentUser.email,
+      userId: currentUser.uid,
+      timestamp: Date.now()
+    }));
+
+    const newExports = (dailyData.exports || []).map(exp => ({
+      ...exp,
+      user: currentUser.email,
+      userId: currentUser.uid,
+      timestamp: Date.now()
+    }));
+
+    // Merge dữ liệu
+    const updatedData = {
+      expenses: [...(currentData.expenses || []), ...newExpenses],
+      exports: [...(currentData.exports || []), ...newExports],
+      revenue: (currentData.revenue || 0) + (dailyData.revenue || 0),
       lastUpdated: Date.now()
     };
 
-    // Lưu lên Firebase
-    const dailyRef = ref(database, `dailyData/${dateKey}/${currentUser.uid}`);
-    await set(dailyRef, dailyData);
-    
-    showSuccess(`Đã lưu dữ liệu ngày ${today}`);
-    renderDailyData(); // Cập nhật lại giao diện
-
+    await set(dailyRef, updatedData);
+    showSuccess('Đã cập nhật dữ liệu chung');
+    loadData(); // Tải lại dữ liệu
   } catch (error) {
-    console.error("Lỗi khi lưu dữ liệu:", error);
     showError(`Lỗi khi lưu: ${error.message}`);
   }
 }
@@ -897,18 +891,18 @@ async function checkAdminStatus() {
    function renderDailyData() {
   if (!dailyData) return;
 
-  // Đảm bảo expenses và exports luôn là mảng
-  const expenses = dailyData.expenses || [];
-  const exports = dailyData.exports || [];
-
   // Render chi phí
   const expenseTable = document.querySelector('#expenseTable tbody');
-  expenseTable.innerHTML = expenses.map((expense, index) => `
+  expenseTable.innerHTML = (dailyData.expenses || []).map((expense, index) => `
     <tr>
       <td>${expense.description || ''}</td>
       <td class="text-right">${(expense.amount || 0).toLocaleString('vi-VN')}₫</td>
+      <td>${expense.user || ''}</td>
       <td>
-        <button onclick="deleteExpense(${index})" class="danger">Xóa</button>
+        ${canEdit(expense) ? `
+          <button onclick="editExpense(${index})" class="warning">Sửa</button>
+          <button onclick="deleteExpense(${index})" class="danger">Xóa</button>
+        ` : ''}
       </td>
     </tr>
   `).join('');
@@ -928,13 +922,46 @@ async function checkAdminStatus() {
   `).join('');
 
   // Render tổng kết
-  const totalExpense = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-  const totalRevenue = dailyData.revenue || 0;
-  
+  const totalExpense = (dailyData.expenses || []).reduce((sum, e) => sum + (e.amount || 0), 0);
   document.getElementById('totalExpense').textContent = `${totalExpense.toLocaleString('vi-VN')}₫`;
-  document.getElementById('totalRevenue').textContent = `${totalRevenue.toLocaleString('vi-VN')}₫`;
-  document.getElementById('dailyBalance').innerHTML = `<strong>${(totalRevenue - totalExpense).toLocaleString('vi-VN')}₫</strong>`;
+  document.getElementById('totalRevenue').textContent = `${(dailyData.revenue || 0).toLocaleString('vi-VN')}₫`;
 }
+
+function canEdit(item) {
+  return currentUser && (
+    item.userId === currentUser.uid || 
+    checkAdminStatus() // Hàm kiểm tra admin
+  );
+}
+    async function deleteExpense(index) {
+  try {
+    const today = new Date().toLocaleDateString('vi-VN');
+    const dateKey = today.replace(/\//g, '_');
+    const dailyRef = ref(database, `dailyData/${dateKey}/expenses/${index}`);
+
+    // Kiểm tra quyền
+    const snapshot = await get(dailyRef);
+    if (!snapshot.exists()) return;
+
+    const expense = snapshot.val();
+    if (!canEdit(expense)) {
+      showError('Bạn không có quyền xóa mục này');
+      return;
+    }
+
+    await remove(dailyRef);
+    showSuccess('Đã xóa chi phí');
+  } catch (error) {
+    showError(`Lỗi khi xóa: ${error.message}`);
+  }
+}
+async function checkAdminStatus() {
+  if (!auth.currentUser) return false;
+  const userRef = ref(database, `users/${auth.currentUser.uid}`);
+  const snapshot = await get(userRef);
+  return snapshot.exists() && snapshot.val().role === 'admin';
+}
+// Tương tự cho editExpense và các hàm khác
     // Product management
     async function addProduct() {
       const name = document.getElementById('productName').value.trim();
@@ -1401,7 +1428,16 @@ async function approveExport(dateKey, uid, index) {
 
     // Initialize the app
     document.addEventListener('DOMContentLoaded', initApp);
-    
+    const today = new Date().toLocaleDateString('vi-VN');
+const dateKey = today.replace(/\//g, '_');
+const dailyRef = ref(database, `dailyData/${dateKey}`);
+
+onValue(dailyRef, (snapshot) => {
+  if (snapshot.exists()) {
+    dailyData = snapshot.val();
+    renderDailyData();
+  }
+});
     // Expose functions to global scope for HTML onclick handlers
     window.handleLogin = handleLogin;
     window.handleLogout = handleLogout;
