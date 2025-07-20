@@ -1,3 +1,15 @@
-firebase-config.js
+# Firebase config
+firebase-config.json
+
+# Firebase cache
+.firebase/
+
+# Node modules
 node_modules/
-dist/
+
+# Environment variables
+.env
+
+# IDE files
+.vscode/
+.idea/
