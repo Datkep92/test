@@ -157,10 +157,17 @@ window.addProduct = addProduct;
 window.editProduct = editProduct;
 window.deleteProduct = deleteProduct;
 
-// ✅ Export mặc định cho module
-export let products = [];
+// products.js (phần cuối file)
+export {
+  products,
+  renderProductSelection,
+  loadProducts,
+  addProduct,
+  editProduct,
+  deleteProduct
+};
 
-export function renderProductSelection() { ... }
-export async function loadProducts() { ... }
-// các hàm khác cũng export theo cách này
-
+// Hoặc có thể export ngay khi khai báo
+// export let products = [];
+// export function renderProductSelection() { ... }
+// ...
