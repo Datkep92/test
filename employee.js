@@ -59,7 +59,7 @@ function loadInventory(divId) {
   const inventoryDiv = document.getElementById(divId);
   if (!inventoryDiv) {
     console.error(`Không tìm thấy phần tử ${divId} trong DOM`);
-    alert(`Lỗi: Không tìm thấy phần tử ${divId}. Vui lòng kiểm tra giao diện.`);
+    alert(`Lỗi: Không tìm thấy phần tử hiển thị tồn kho. Vui lòng kiểm tra giao diện.`);
     return;
   }
 
@@ -82,9 +82,10 @@ function loadInventory(divId) {
       `;
       inventoryDiv.appendChild(productDiv);
     });
-    console.log('Đã tải danh sách tồn kho thành công.');
+    console.log('Đã tải danh sách tồn kho thành công cho', divId);
   }, error => {
     console.error('Lỗi tải danh sách tồn kho:', error);
+    inventoryDiv.innerHTML = '<p class="text-red-500">Lỗi tải danh sách tồn kho: ' + error.message + '</p>';
     alert('Lỗi tải danh sách tồn kho: ' + error.message);
   });
 }
@@ -119,6 +120,7 @@ function loadProducts() {
     console.log('Đã tải danh sách sản phẩm vào dropdown thành công.');
   }, error => {
     console.error('Lỗi tải danh sách sản phẩm:', error);
+    productSelect.innerHTML = '<option value="">Lỗi tải sản phẩm: ' + error.message + '</option>';
     alert('Lỗi tải danh sách sản phẩm: ' + error.message);
   });
 }
@@ -127,7 +129,7 @@ function loadSharedReports(divId) {
   const reportsDiv = document.getElementById(divId);
   if (!reportsDiv) {
     console.error(`Không tìm thấy phần tử ${divId}`);
-    alert(`Lỗi: Không tìm thấy phần tử ${divId}. Vui lòng kiểm tra giao diện.`);
+    alert(`Lỗi: Không tìm thấy phần tử báo cáo chung. Vui lòng kiểm tra giao diện.`);
     return;
   }
 
@@ -164,9 +166,10 @@ function loadSharedReports(divId) {
     document.getElementById('total-revenue').textContent = totalRevenue.toFixed(2);
     document.getElementById('net-profit').textContent = (totalRevenue - totalCost).toFixed(2);
     document.getElementById('total-export').textContent = totalExport.toFixed(2);
-    console.log('Đã tải báo cáo chung thành công.');
+    console.log('Đã tải báo cáo chung thành công cho', divId);
   }, error => {
     console.error('Lỗi tải báo cáo chung:', error);
+    reportsDiv.innerHTML = '<p class="text-red-500">Lỗi tải báo cáo chung: ' + error.message + '</p>';
     alert('Lỗi tải báo cáo chung: ' + error.message);
   });
 }
