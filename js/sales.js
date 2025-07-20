@@ -190,4 +190,15 @@ window.addExport = addExport;
 window.deleteExport = deleteExport;
 window.saveDailyData = saveDailyData;
 window.deleteExpense = deleteExpense;
-export { dailyData, currentUser };
+// Thêm vào cuối file
+export { 
+  dailyData, 
+  currentUser,
+  renderDailyData,
+  switchTab,
+  loadData,
+  deleteExpense,
+  saveDailyData,
+  addExport,
+  deleteExport
+};
