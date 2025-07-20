@@ -1,7 +1,8 @@
 import { database } from './firebase-config.js';
 import { ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { showError, showSuccess, parseNumber, capitalizeFirstLetter } from './utils.js';
+import { showError, showSuccess, parseNumber } from './utils.js';
 import { products, renderProductSelection, loadProducts } from './products.js';
+import { dailyData, currentUser, selectedProduct } from './shared-data.js';
 
 let dailyData = {
   date: '',
@@ -191,10 +192,8 @@ window.deleteExport = deleteExport;
 window.saveDailyData = saveDailyData;
 window.deleteExpense = deleteExpense;
 // Thêm vào cuối file
+// Export các hàm cần thiết
 export { 
-  dailyData,
-  currentUser,
-  selectedProduct,
   renderDailyData,
   switchTab,
   loadData,
