@@ -27,7 +27,10 @@ function addInventory() {
 
 function loadInventory(elementId) {
   const inventoryList = document.getElementById(elementId);
-  if (!inventoryList) return;
+  if (!inventoryList) {
+    console.error('Không tìm thấy phần tử inventory-list trong DOM');
+    return;
+  }
 
   db.ref('inventory').on('value', snapshot => {
     inventoryList.innerHTML = '';
@@ -54,10 +57,16 @@ function loadInventory(elementId) {
 
 function loadSharedReports(elementId) {
   const reportsList = document.getElementById(elementId);
-  if (!reportsList) return;
+  if (!reportsList) {
+    console.error('Không tìm thấy phần tử report-table trong DOM');
+    return;
+  }
 
   const filter = document.getElementById('report-filter');
-  if (!filter) return;
+  if (!filter) {
+    console.error('Không tìm thấy phần tử report-filter trong DOM');
+    return;
+  }
 
   db.ref('shared_reports').on('value', snapshot => {
     reportsList.innerHTML = '';
@@ -69,76 +78,88 @@ function loadSharedReports(elementId) {
 
     const filterType = filter.value; // 'day' or 'month'
     let groupedReports = {};
-    
+
     Object.entries(data).forEach(([reportId, report]) => {
       const key = filterType === 'day' ? report.date : report.date.substring(0, 7); // YYYY-MM-DD or YYYY-MM
       if (!groupedReports[key]) groupedReports[key] = [];
       groupedReports[key].push({ reportId, ...report });
     });
 
-    let totalOpeningBalance = 0, totalCost = 0, totalRevenue = 0, totalClosingBalance = 0, totalExport = 0;
+    let html = '';
     Object.entries(groupedReports).forEach(([key, reports]) => {
-      const div = document.createElement('div');
-      div.className = 'mb-4';
-      div.innerHTML = `<h4 class="text-lg font-semibold">${key}</h4>`;
-      const reportList = document.createElement('div');
-      reportList.className = 'pl-4';
+      let totalOpeningBalance = 0, totalCost = 0, totalRevenue = 0, totalClosingBalance = 0, totalExport = 0;
+      let openingBalanceHtml = '', costHtml = '', revenueHtml = '', closingBalanceHtml = '', exportHtml = '';
 
       reports.forEach(report => {
-        const reportDiv = document.createElement('div');
-        reportDiv.className = 'p-2 border-b';
-        let exportText = '';
-        if (report.exports) {
-          exportText = Object.entries(report.exports).map(([productId, qty]) => {
-            return db.ref('inventory/' + productId).once('value').then(s => {
-              const product = s.val();
-              return product ? `${product.name}: ${qty}` : `Sản phẩm ${productId}: ${qty}`;
+        const timestamp = new Date(report.timestamp).toLocaleString('vi-VN');
+        return db.ref('users/' + report.uid).once('value').then(userSnapshot => {
+          const user = userSnapshot.val();
+          const employeeName = user && user.name ? user.name : report.uid;
+
+          if (report.openingBalance) {
+            openingBalanceHtml += `<p>${report.openingBalance} - ${employeeName} ${timestamp}</p>`;
+            totalOpeningBalance += report.openingBalance;
+          }
+          if (report.cost) {
+            costHtml += `<p>${report.costDescription} ${report.cost} - ${employeeName} ${timestamp}</p>`;
+            totalCost += report.cost;
+          }
+          if (report.revenue) {
+            revenueHtml += `<p>${report.revenue} - ${employeeName} ${timestamp}</p>`;
+            totalRevenue += report.revenue;
+          }
+          if (report.closingBalance) {
+            closingBalanceHtml += `<p>${report.closingBalance} - ${employeeName} ${timestamp}</p>`;
+            totalClosingBalance += report.closingBalance;
+          }
+          if (report.exports) {
+            return Promise.all(Object.entries(report.exports).map(([productId, qty]) => {
+              return db.ref('inventory/' + productId).once('value').then(s => {
+                const product = s.val();
+                return product ? `${qty} ${product.name} - ${employeeName} ${timestamp}` : `${qty} Sản phẩm ${productId} - ${employeeName} ${timestamp}`;
+              });
+            })).then(texts => {
+              exportHtml += texts.map(text => `<p>${text}</p>`).join('');
+              totalExport += Object.values(report.exports).reduce((sum, qty) => sum + qty, 0);
             });
-          });
-          Promise.all(exportText).then(texts => {
-            reportDiv.innerHTML = `
-              <p><strong>Nhân viên:</strong> ${report.uid}</p>
-              ${report.openingBalance ? `<p><strong>Số Dư Đầu Kỳ:</strong> ${report.openingBalance}</p>` : ''}
-              ${report.cost ? `<p><strong>Chi Phí:</strong> ${report.costDescription} (${report.cost} - ${report.costCategory})</p>` : ''}
-              ${report.revenue ? `<p><strong>Doanh Thu:</strong> ${report.revenue}</p>` : ''}
-              ${report.closingBalance ? `<p><strong>Số Dư Cuối Kỳ:</strong> ${report.closingBalance}</p>` : ''}
-              ${texts.length ? `<p><strong>Xuất Kho:</strong> ${texts.join(', ')}</p>` : ''}
-              <button onclick="editReport('${report.reportId}')" class="text-blue-500">Sửa</button>
-              <button onclick="deleteReport('${report.reportId}')" class="text-red-500 ml-2">Xóa</button>
-            `;
-          });
-        } else {
-          reportDiv.innerHTML = `
-            <p><strong>Nhân viên:</strong> ${report.uid}</p>
-            ${report.openingBalance ? `<p><strong>Số Dư Đầu Kỳ:</strong> ${report.openingBalance}</p>` : ''}
-            ${report.cost ? `<p><strong>Chi Phí:</strong> ${report.costDescription} (${report.cost} - ${report.costCategory})</p>` : ''}
-            ${report.revenue ? `<p><strong>Doanh Thu:</strong> ${report.revenue}</p>` : ''}
-            ${report.closingBalance ? `<p><strong>Số Dư Cuối Kỳ:</strong> ${report.closingBalance}</p>` : ''}
-            <button onclick="editReport('${report.reportId}')" class="text-blue-500">Sửa</button>
-            <button onclick="deleteReport('${report.reportId}')" class="text-red-500 ml-2">Xóa</button>
-          `;
-        }
-        reportList.appendChild(reportDiv);
-
-        totalOpeningBalance += report.openingBalance || 0;
-        totalCost += report.cost || 0;
-        totalRevenue += report.revenue || 0;
-        totalClosingBalance += report.closingBalance || 0;
-        totalExport += report.exports ? Object.values(report.exports).reduce((sum, qty) => sum + qty, 0) : 0;
+          }
+        });
       });
-      div.appendChild(reportList);
-      reportsList.appendChild(div);
+
+      Promise.all(reports.map(report => db.ref('users/' + report.uid).once('value'))).then(() => {
+        const netProfit = totalOpeningBalance + totalRevenue - totalCost - totalClosingBalance;
+        html += `
+          <div class="mb-4">
+            <h4 class="text-lg font-semibold">${key}</h4>
+            <div class="pl-4">
+              <h5>Số Dư Đầu Kỳ:</h5>
+              ${openingBalanceHtml || '<p>Không có dữ liệu.</p>'}
+              <p><strong>Tổng Số Dư Đầu Kỳ:</strong> ${totalOpeningBalance} ${timestamp}</p>
+              <hr class="my-2">
+              <h5>Số Dư Cuối Kỳ:</h5>
+              ${closingBalanceHtml || '<p>Không có dữ liệu.</p>'}
+              <p><strong>Tổng Số Dư Cuối Kỳ:</strong> ${totalClosingBalance} ${timestamp}</p>
+              <hr class="my-2">
+              <h5>Chi Phí:</h5>
+              ${costHtml || '<p>Không có dữ liệu.</p>'}
+              <p><strong>Tổng Chi Phí:</strong> ${totalCost} ${timestamp}</p>
+              <hr class="my-2">
+              <h5>Doanh Thu:</h5>
+              ${revenueHtml || '<p>Không có dữ liệu.</p>'}
+              <p><strong>Tổng Doanh Thu:</strong> ${totalRevenue} ${timestamp}</p>
+              <hr class="my-2">
+              <h5>Số Tiền Thực Tế:</h5>
+              <p>= Dư Đầu Kỳ: ${totalOpeningBalance} + Tổng Doanh Thu: ${totalRevenue} - Tổng Chi Phí: ${totalCost} - Tổng Số Dư Cuối Kỳ: ${totalClosingBalance} = ${netProfit} ${timestamp}</p>
+              <hr class="my-2">
+              <h5>Xuất Kho:</h5>
+              ${exportHtml || '<p>Không có dữ liệu.</p>'}
+              <p><strong>Tổng Xuất Kho:</strong> ${totalExport} ${timestamp}</p>
+            </div>
+          </div>
+        `;
+        reportsList.innerHTML = html;
+      });
     });
-
-    const netProfit = totalOpeningBalance - totalCost + totalRevenue - totalClosingBalance;
-    document.getElementById('manager-total-opening-balance').textContent = totalOpeningBalance;
-    document.getElementById('manager-total-cost').textContent = totalCost;
-    document.getElementById('manager-total-revenue').textContent = totalRevenue;
-    document.getElementById('manager-total-closing-balance').textContent = totalClosingBalance;
-    document.getElementById('manager-net-profit').textContent = netProfit;
-    document.getElementById('manager-total-export').textContent = totalExport;
-
-    console.log('Đã tải báo cáo chung thành công cho', elementId);
   }, error => {
     console.error('Lỗi tải báo cáo:', error);
     reportsList.innerHTML = '<p>Lỗi tải báo cáo.</p>';
@@ -150,10 +171,21 @@ function editReport(reportId) {
     const report = snapshot.val();
     if (!report) return;
 
-    document.getElementById('opening-balance').value = report.openingBalance || '';
-    document.getElementById('shared-cost').value = report.cost ? `${report.costDescription} ${report.cost}` : '';
-    document.getElementById('shared-revenue').value = report.revenue || '';
-    document.getElementById('closing-balance').value = report.closingBalance || '';
+    const openingBalanceInput = document.getElementById('opening-balance');
+    const costInput = document.getElementById('shared-cost');
+    const revenueInput = document.getElementById('shared-revenue');
+    const closingBalanceInput = document.getElementById('closing-balance');
+
+    if (!openingBalanceInput || !costInput || !revenueInput || !closingBalanceInput) {
+      console.error('Không tìm thấy một hoặc nhiều phần tử input trong DOM');
+      alert('Lỗi: Giao diện chưa tải đúng. Vui lòng kiểm tra lại.');
+      return;
+    }
+
+    openingBalanceInput.value = report.openingBalance || '';
+    costInput.value = report.cost ? `${report.costDescription} ${report.cost}` : '';
+    revenueInput.value = report.revenue || '';
+    closingBalanceInput.value = report.closingBalance || '';
     
     if (report.exports) {
       Object.entries(report.exports).forEach(([productId, qty]) => {
@@ -165,12 +197,12 @@ function editReport(reportId) {
     const reportRef = db.ref('shared_reports/' + reportId);
     reportRef.set({
       ...report,
-      openingBalance: parseFloat(document.getElementById('opening-balance').value) || 0,
-      cost: parseExpenseInput(document.getElementById('shared-cost').value).amount || undefined,
-      costDescription: parseExpenseInput(document.getElementById('shared-cost').value).description || undefined,
-      costCategory: parseExpenseInput(document.getElementById('shared-cost').value).category || undefined,
-      revenue: parseFloat(document.getElementById('shared-revenue').value) || undefined,
-      closingBalance: parseFloat(document.getElementById('closing-balance').value) || undefined,
+      openingBalance: parseFloat(openingBalanceInput.value) || 0,
+      cost: parseExpenseInput(costInput.value).amount || undefined,
+      costDescription: parseExpenseInput(costInput.value).description || undefined,
+      costCategory: parseExpenseInput(costInput.value).category || undefined,
+      revenue: parseFloat(revenueInput.value) || undefined,
+      closingBalance: parseFloat(closingBalanceInput.value) || undefined,
       exports: Array.from(document.getElementsByClassName('export-quantity')).reduce((acc, input) => {
         const productId = input.dataset.productId;
         const qty = parseFloat(input.value) || 0;
@@ -182,10 +214,10 @@ function editReport(reportId) {
       timestamp: new Date().toISOString()
     }).then(() => {
       alert('Cập nhật báo cáo thành công!');
-      document.getElementById('opening-balance').value = '';
-      document.getElementById('shared-cost').value = '';
-      document.getElementById('shared-revenue').value = '';
-      document.getElementById('closing-balance').value = '';
+      openingBalanceInput.value = '';
+      costInput.value = '';
+      revenueInput.value = '';
+      closingBalanceInput.value = '';
       document.querySelectorAll('.export-quantity').forEach(input => input.value = '');
     }).catch(error => {
       console.error('Lỗi cập nhật báo cáo:', error);
