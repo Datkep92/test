@@ -92,6 +92,11 @@ function loadSharedReports(elementId) {
       const formattedDate = date.replace(/_/g, '/');
       const key = filterType === 'day' ? formattedDate : formattedDate.substring(3); // DD/MM/YYYY or MM/YYYY
       Object.entries(users).forEach(([uid, report]) => {
+        // Bỏ qua key không phải UID
+        if (uid === 'expenses' || !/^[a-zA-Z0-9]+$/.test(uid)) {
+          console.warn('Bỏ qua key không hợp lệ:', uid);
+          return;
+        }
         if (!groupedReports[key]) groupedReports[key] = [];
         groupedReports[key].push({ date, uid, ...report });
       });
