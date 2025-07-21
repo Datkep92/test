@@ -65,12 +65,19 @@ function submitSharedReport() {
     closingBalance,
     revenue,
     cost,
-    exports
+    exports,
+    userName: firebase.auth().currentUser?.displayName || 'Nhân viên'
   };
 
   firebase.database().ref('shared_reports').push(report)
     .then(() => {
       alert('Đã gửi báo cáo thành công');
+      // Reset form sau khi gửi
+      document.getElementById('opening-balance').value = '';
+      document.getElementById('closing-balance').value = '';
+      document.getElementById('shared-revenue').value = '';
+      document.getElementById('shared-cost').value = '';
+      // Load lại báo cáo
       displaySharedReportSummary(today);
     })
     .catch(err => {
@@ -102,86 +109,74 @@ function displaySharedReportSummary(date) {
     const reports = [];
     snapshot.forEach(child => reports.push({ id: child.key, ...child.val() }));
 
-    const grouped = {
-      opening: [],
-      closing: [],
-      revenue: [],
-      cost: [],
-      exports: []
-    };
+    // Sắp xếp báo cáo theo thời gian (mới nhất lên đầu)
+    reports.sort((a, b) => b.timestamp - a.timestamp);
 
-    const userPromises = reports.map(r =>
-      firebase.database().ref('users/' + r.uid).once('value').then(snap => {
-        const name = snap.val()?.name || r.uid;
-        const time = formatTimestamp(r.timestamp);
-        if (r.openingBalance > 0) grouped.opening.push(`${r.openingBalance} - ${name} ${time}`);
-        if (r.closingBalance > 0) grouped.closing.push(`${r.closingBalance} - ${name} ${time}`);
-        if (r.revenue > 0) grouped.revenue.push(`${r.revenue} - ${name} ${time}`);
-        if (r.cost) grouped.cost.push(`${r.cost} - ${name} ${time}`);
-        if (r.exports?.length) {
-          r.exports.forEach(e => {
-            grouped.exports.push(`${e.productName}: ${e.quantity} - ${name} ${time}`);
-            totalExport += e.quantity;
-          });
-        }
+    // Tạo bảng tổng hợp
+    const summaryTable = document.createElement('div');
+    summaryTable.className = 'mb-6 overflow-x-auto';
+    summaryTable.innerHTML = `
+      <table class="min-w-full bg-white border">
+        <thead>
+          <tr class="bg-gray-100">
+            <th class="py-2 px-4 border">Nhân viên</th>
+            <th class="py-2 px-4 border">Đầu kỳ</th>
+            <th class="py-2 px-4 border">Doanh thu</th>
+            <th class="py-2 px-4 border">Chi phí</th>
+            <th class="py-2 px-4 border">Cuối kỳ</th>
+            <th class="py-2 px-4 border">Xuất kho</th>
+            <th class="py-2 px-4 border">Thời gian</th>
+          </tr>
+        </thead>
+        <tbody id="report-rows">
+        </tbody>
+      </table>
+    `;
+    container.appendChild(summaryTable);
 
-        totalOpening += r.openingBalance || 0;
-        totalClosing += r.closingBalance || 0;
-        totalRevenue += r.revenue || 0;
-        totalCost += parseCostString(r.cost);
-      })
-    );
+    const tbody = document.getElementById('report-rows');
 
-    Promise.all(userPromises).then(() => {
-      const sections = [
-        { title: 'Số Dư Đầu Kỳ', list: grouped.opening, total: totalOpening },
-        { title: 'Số Dư Cuối Kỳ', list: grouped.closing, total: totalClosing },
-        { title: 'Chi Phí', list: grouped.cost, total: totalCost },
-        { title: 'Doanh Thu', list: grouped.revenue, total: totalRevenue },
-        { title: 'Xuất Kho', list: grouped.exports, total: totalExport }
-      ];
+    reports.forEach(report => {
+      const row = document.createElement('tr');
+      row.className = 'hover:bg-gray-50';
 
-      const summary = document.createElement('div');
-      summary.className = 'mb-3 p-3 bg-yellow-50 border rounded';
-      summary.innerHTML = `<h4 class="font-semibold">Tổng Hợp:</h4>
-        <p><strong>Tổng Đầu Kỳ:</strong> ${totalOpening}</p>
-        <p><strong>Tổng Doanh Thu:</strong> ${totalRevenue}</p>
-        <p><strong>Tổng Chi Phí:</strong> ${totalCost}</p>
-        <p><strong>Tổng Cuối Kỳ:</strong> ${totalClosing}</p>
-        <p><strong>Tổng Xuất Kho:</strong> ${totalExport}</p>
-        <p><strong>Số Tiền Còn Lại:</strong> ${totalOpening} + ${totalRevenue} - ${totalCost} - ${totalClosing} = ${totalOpening + totalRevenue - totalCost - totalClosing}</p>`;
+      // Tính tổng xuất kho
+      const exportTotal = report.exports?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+      
+      // Format thời gian
+      const timeStr = formatTimestamp(report.timestamp);
 
-      container.appendChild(summary);
+      row.innerHTML = `
+        <td class="py-2 px-4 border">${report.userName || report.uid.substring(0, 6)}</td>
+        <td class="py-2 px-4 border text-right">${report.openingBalance || 0}</td>
+        <td class="py-2 px-4 border text-right">${report.revenue || 0}</td>
+        <td class="py-2 px-4 border">${report.cost || '0'}</td>
+        <td class="py-2 px-4 border text-right">${report.closingBalance || 0}</td>
+        <td class="py-2 px-4 border">
+          ${report.exports?.map(e => `${e.productName}: ${e.quantity}`).join('<br>') || '0'}
+        </td>
+        <td class="py-2 px-4 border">${timeStr}</td>
+      `;
+      tbody.appendChild(row);
 
-      sections.forEach(sec => {
-        const box = document.createElement('div');
-        box.className = 'mb-3 p-2 border rounded bg-white';
-        const title = document.createElement('h4');
-        title.className = 'font-semibold';
-        title.textContent = sec.title;
-        box.appendChild(title);
-
-        sec.list.forEach(line => {
-          const p = document.createElement('p');
-          p.textContent = line;
-          box.appendChild(p);
-        });
-
-        const total = document.createElement('p');
-        total.className = 'font-bold mt-2';
-        total.textContent = `Tổng ${sec.title}: ${sec.total}`;
-        box.appendChild(total);
-
-        container.appendChild(box);
-      });
-
-      // Cập nhật bảng tổng cuối
-      document.getElementById('total-opening-balance').textContent = totalOpening;
-      document.getElementById('total-cost').textContent = totalCost;
-      document.getElementById('total-revenue').textContent = totalRevenue;
-      document.getElementById('total-closing-balance').textContent = totalClosing;
-      document.getElementById('net-profit').textContent = totalOpening + totalRevenue - totalCost - totalClosing;
-      document.getElementById('total-export').textContent = totalExport;
+      // Cộng vào tổng
+      totalOpening += report.openingBalance || 0;
+      totalRevenue += report.revenue || 0;
+      totalCost += parseCostString(report.cost);
+      totalClosing += report.closingBalance || 0;
+      totalExport += exportTotal;
     });
+
+    // Cập nhật bảng tổng cuối
+    document.getElementById('total-opening-balance').textContent = totalOpening;
+    document.getElementById('total-cost').textContent = totalCost;
+    document.getElementById('total-revenue').textContent = totalRevenue;
+    document.getElementById('total-closing-balance').textContent = totalClosing;
+    document.getElementById('net-profit').textContent = totalOpening + totalRevenue - totalCost - totalClosing;
+    document.getElementById('total-export').textContent = totalExport;
+
+  }).catch(error => {
+    console.error('Lỗi khi tải báo cáo:', error);
+    container.innerHTML = '<p class="text-red-500">Lỗi khi tải báo cáo. Vui lòng thử lại.</p>';
   });
 }
