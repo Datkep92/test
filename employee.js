@@ -1,4 +1,3 @@
-
 function submitEmployeeReport() {
   const initialInventory = parseFloat(document.getElementById('employee-initial-inventory').value) || 0;
   const finalInventory = parseFloat(document.getElementById('employee-final-inventory').value) || 0;
