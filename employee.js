@@ -1,35 +1,15 @@
-// employee.js
-
 function loadEmployeeInventory(containerId) {
-  const inventoryRef = firebase.database().ref('inventory');
-  inventoryRef.once('value').then(snapshot => {
-    const container = document.getElementById(containerId);
-    container.innerHTML = '';
-    snapshot.forEach(child => {
-      const item = child.val();
-      const row = document.createElement('div');
-      row.className = 'flex justify-between items-center border p-2 my-1 hover:bg-gray-50';
-
-      const name = document.createElement('span');
-      name.textContent = `${item.name} - Tồn: ${item.quantity}`;
-
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.min = '0';
-      input.placeholder = 'Số lượng';
-      input.className = 'border p-1 w-20';
-      input.dataset.productId = child.key;
-      input.dataset.productName = item.name;
-
-      row.appendChild(name);
-      row.appendChild(input);
-      container.appendChild(row);
-    });
+  loadInventoryData(containerId, (div, productId, product) => {
+    div.className = 'flex justify-between items-center border p-2 my-1 hover:bg-gray-50';
+    div.innerHTML = `
+      <span>${product.name} - Tồn: ${product.quantity}</span>
+      <input type="number" min="0" placeholder="Số lượng" class="border p-1 w-20 export-quantity" data-product-id="${productId}" data-product-name="${product.name}">
+    `;
   });
 }
 
 function getInventoryExported() {
-  const inputs = document.querySelectorAll('#employee-inventory input');
+  const inputs = document.querySelectorAll('#employee-inventory .export-quantity');
   const exports = [];
   inputs.forEach(input => {
     const qty = parseInt(input.value);
@@ -45,12 +25,15 @@ function getInventoryExported() {
 }
 
 function submitSharedReport() {
-  const uid = firebase.auth().currentUser?.uid;
-  if (!uid) return alert("Không xác định được người dùng");
+  const uid = auth.currentUser?.uid;
+  if (!uid) {
+    alert('Không xác định được người dùng.');
+    return;
+  }
 
-  const openingBalance = parseInt(document.getElementById('opening-balance').value) || 0;
-  const closingBalance = parseInt(document.getElementById('closing-balance').value) || 0;
-  const revenue = parseInt(document.getElementById('shared-revenue').value) || 0;
+  const openingBalance = parseFloat(document.getElementById('opening-balance').value) || 0;
+  const closingBalance = parseFloat(document.getElementById('closing-balance').value) || 0;
+  const revenue = parseFloat(document.getElementById('shared-revenue').value) || 0;
   const cost = document.getElementById('shared-cost').value || '';
   const exports = getInventoryExported();
 
@@ -66,47 +49,39 @@ function submitSharedReport() {
     revenue,
     cost,
     exports,
-    userName: firebase.auth().currentUser?.displayName || 'Nhân viên'
+    userName: auth.currentUser.displayName || 'Nhân viên'
   };
 
-  firebase.database().ref('shared_reports').push(report)
+  db.ref('shared_reports').push(report)
     .then(() => {
-      alert('Đã gửi báo cáo thành công');
-      // Reset form sau khi gửi
+      alert('Đã gửi báo cáo thành công!');
       document.getElementById('opening-balance').value = '';
       document.getElementById('closing-balance').value = '';
       document.getElementById('shared-revenue').value = '';
       document.getElementById('shared-cost').value = '';
-      // Load lại báo cáo
+      document.querySelectorAll('.export-quantity').forEach(input => input.value = '');
       displaySharedReportSummary(today);
     })
-    .catch(err => {
-      console.error("Lỗi gửi báo cáo:", err);
-      alert("Không thể gửi báo cáo");
+    .catch(error => {
+      console.error('Lỗi gửi báo cáo:', error);
+      alert('Lỗi gửi báo cáo: ' + error.message);
     });
-}
-
-function parseCostString(costStr) {
-  if (!costStr) return 0;
-  const match = costStr.match(/\d+/g);
-  return match ? match.map(Number).reduce((a, b) => a + b, 0) : 0;
-}
-
-function formatTimestamp(ts) {
-  const date = new Date(ts);
-  return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')} ${date.toLocaleDateString('vi-VN')}`;
 }
 
 function displaySharedReportSummary(date) {
   const container = document.getElementById('shared-reports');
-  if (!container) {
-    console.error('Không tìm thấy container shared-reports');
+  const filter = document.getElementById('report-filter');
+  if (!container || !filter) {
+    console.error('Không tìm thấy container hoặc filter');
     return;
   }
 
-  fetchReportSummary(date, (group, sum, reports, error) => {
+  const filterType = filter.value;
+  const dateKey = filterType === 'day' ? date : date.substring(0, 7);
+
+  fetchReportSummary(dateKey, filterType, (group, sum, reports, error) => {
     if (error) {
-      container.innerHTML = '<p class="text-red-500">Lỗi khi tải báo cáo. Vui lòng thử lại.</p>';
+      container.innerHTML = '<p class="text-red-500">Lỗi khi tải báo cáo.</p>';
       return;
     }
 
@@ -137,9 +112,7 @@ function displaySharedReportSummary(date) {
     reports.forEach(report => {
       const row = document.createElement('tr');
       row.className = 'hover:bg-gray-50';
-      const timeStr = formatTimestamp(report.timestamp);
-      const exportText = report.exports?.map(e => `${e.productName}: ${e.quantity}`).join('<br>') || '0';
-
+      const exportText = report.exports?.map(e => `${e.productName || e.productId}: ${e.quantity}`).join('<br>') || '0';
       row.innerHTML = `
         <td class="py-2 px-4 border">${report.userName || report.uid.substring(0, 6)}</td>
         <td class="py-2 px-4 border text-right">${report.openingBalance || 0}</td>
@@ -147,7 +120,7 @@ function displaySharedReportSummary(date) {
         <td class="py-2 px-4 border">${report.cost || '0'}</td>
         <td class="py-2 px-4 border text-right">${report.closingBalance || 0}</td>
         <td class="py-2 px-4 border">${exportText}</td>
-        <td class="py-2 px-4 border">${timeStr}</td>
+        <td class="py-2 px-4 border">${formatTimestamp(report.timestamp)}</td>
       `;
       tbody.appendChild(row);
     });
