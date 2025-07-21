@@ -1,4 +1,4 @@
-const firebaseConfig = {
+var firebaseConfig = {
   apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
   authDomain: "quanly-d7e54.firebaseapp.com",
   databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com",
@@ -9,5 +9,5 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.database();
+var auth = firebase.auth();
+var db = firebase.database();
