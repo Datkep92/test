@@ -127,10 +127,6 @@ function loadInventory(elementId) {
   });
 }
 
-function loadProducts() {
-  // Không cần nữa vì đã chuyển sang hiển thị danh sách hàng hóa
-}
-
 function loadSharedReports(elementId) {
   const reportsList = document.getElementById(elementId);
   if (!reportsList) return;
@@ -146,7 +142,6 @@ function loadSharedReports(elementId) {
     let totalOpeningBalance = 0, totalCost = 0, totalRevenue = 0, totalClosingBalance = 0, totalExport = 0;
     Object.entries(data).forEach(([reportId, report]) => {
       const isOwnReport = auth.currentUser && report.uid === auth.currentUser.uid;
-      const isManager = auth.currentUser && db.ref('users/' + auth.currentUser.uid).once('value').then(s => s.val().role === 'manager');
       const div = document.createElement('div');
       div.className = 'p-2 border-b';
       let exportText = '';
@@ -165,8 +160,7 @@ function loadSharedReports(elementId) {
             ${report.revenue ? `<p><strong>Doanh Thu:</strong> ${report.revenue}</p>` : ''}
             ${report.closingBalance ? `<p><strong>Số Dư Cuối Kỳ:</strong> ${report.closingBalance}</p>` : ''}
             ${texts.length ? `<p><strong>Xuất Kho:</strong> ${texts.join(', ')}</p>` : ''}
-            ${isOwnReport || isManager ? `<button onclick="editReport('${reportId}')" class="text-blue-500">Sửa</button>` : ''}
-            ${isManager ? `<button onclick="deleteReport('${reportId}')" class="text-red-500 ml-2">Xóa</button>` : ''}
+            ${isOwnReport ? `<button onclick="editReport('${reportId}')" class="text-blue-500">Sửa</button>` : ''}
           `;
         });
       } else {
@@ -176,8 +170,7 @@ function loadSharedReports(elementId) {
           ${report.cost ? `<p><strong>Chi Phí:</strong> ${report.costDescription} (${report.cost} - ${report.costCategory})</p>` : ''}
           ${report.revenue ? `<p><strong>Doanh Thu:</strong> ${report.revenue}</p>` : ''}
           ${report.closingBalance ? `<p><strong>Số Dư Cuối Kỳ:</strong> ${report.closingBalance}</p>` : ''}
-          ${isOwnReport || isManager ? `<button onclick="editReport('${reportId}')" class="text-blue-500">Sửa</button>` : ''}
-          ${isManager ? `<button onclick="deleteReport('${reportId}')" class="text-red-500 ml-2">Xóa</button>` : ''}
+          ${isOwnReport ? `<button onclick="editReport('${reportId}')" class="text-blue-500">Sửa</button>` : ''}
         `;
       }
       reportsList.appendChild(div);
