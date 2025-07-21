@@ -1,1 +1,56 @@
-/*
+/* Đảm bảo các phần tử hiển thị đúng */
+#employee-page, #manager-page, #login-page {
+  display: block;
+}
+
+.hidden {
+  display: none;
+}
+
+#inventory-list, #report-table {
+  width: 100%;
+  max-width: 800px;
+  margin-top: 16px;
+}
+
+#inventory-list div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid #ccc;
+}
+
+.export-quantity {
+  display: inline-block;
+  width: 100px;
+  border: 1px solid #ccc;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+#report-filter {
+  width: 150px;
+  margin-bottom: 16px;
+}
+
+/* Định dạng bảng báo cáo */
+#report-table h4 {
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+#report-table h5 {
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+#report-table p {
+  margin: 4px 0;
+}
+
+#report-table hr {
+  border: 0;
+  border-top: 1px solid #ccc;
+  margin: 8px 0;
+}
