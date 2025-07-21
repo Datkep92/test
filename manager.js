@@ -39,24 +39,24 @@ function loadInventory(elementId) {
     inventoryList.innerHTML = '';
     const data = snapshot.val();
     if (!data) {
-      inventoryList.innerHTML = '<p>Không có dữ liệu tồn kho.</p>';
+      inventoryList.innerHTML = '<p style="margin: 0;">Không có dữ liệu tồn kho.</p>';
       console.log('Không có dữ liệu tồn kho trong Firebase.');
       return;
     }
 
     Object.entries(data).forEach(([productId, product]) => {
       const div = document.createElement('div');
-      div.className = 'flex items-center justify-between p-2 border-b';
+      div.style.cssText = 'display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #ccc;';
       div.innerHTML = `
         <span>${product.name} (Số lượng: ${product.quantity})</span>
-        <input type="number" min="0" max="${product.quantity}" class="export-quantity w-24 p-1 border rounded" data-product-id="${productId}" data-product-name="${product.name}" data-product-price="${product.price}" data-product-unit="${product.unit || 'cái'}" placeholder="Số lượng xuất">
+        <input type="number" min="0" max="${product.quantity}" class="export-quantity" style="width: 100px; padding: 4px; border: 1px solid #ccc; border-radius: 4px;" data-product-id="${productId}" data-product-name="${product.name}" data-product-price="${product.price}" data-product-unit="${product.unit || 'cái'}" placeholder="Số lượng xuất">
       `;
       inventoryList.appendChild(div);
     });
     console.log('Đã tải danh sách tồn kho thành công cho', elementId, Object.keys(data));
   }, error => {
     console.error('Lỗi tải tồn kho:', error);
-    inventoryList.innerHTML = '<p>Lỗi tải tồn kho: ' + error.message + '</p>';
+    inventoryList.innerHTML = '<p style="margin: 0;">Lỗi tải tồn kho: ' + error.message + '</p>';
     alert('Lỗi tải tồn kho: ' + error.message);
   });
 }
@@ -80,7 +80,7 @@ function loadSharedReports(elementId) {
     reportsList.innerHTML = '';
     const data = snapshot.val();
     if (!data) {
-      reportsList.innerHTML = '<p>Không có báo cáo.</p>';
+      reportsList.innerHTML = '<p style="margin: 0;">Không có báo cáo.</p>';
       console.log('Không có dữ liệu báo cáo trong dailyData.');
       return;
     }
@@ -119,26 +119,26 @@ function loadSharedReports(elementId) {
     const remainingBalance = totalRevenue - totalExpense;
 
     let html = `
-      <div class="report-row">
+      <div style="margin-bottom: 16px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
         <p><strong>Tổng Tồn kho đầu kỳ:</strong> ${totalInitial}</p>
         <p><strong>Tổng Tồn kho cuối kỳ:</strong> ${totalFinal}</p>
         <p><strong>Tổng Doanh Thu:</strong> ${totalRevenue}</p>
         <p><strong>Tổng Chi Phí:</strong> ${totalExpense}</p>
         <p><strong>Số dư còn lại:</strong> ${remainingBalance >= 0 ? remainingBalance : 0}</p>
         <p><strong>Chi tiết Chi Phí:</strong></p>
-        ${expenseDetails.map(detail => `<p>${detail}</p>`).join('')}
+        ${expenseDetails.map(detail => `<p style="margin: 0;">${detail}</p>`).join('')}
         <p><strong>Chi tiết Doanh Thu:</strong></p>
-        ${revenueDetails.map(detail => `<p>${detail}</p>`).join('')}
+        ${revenueDetails.map(detail => `<p style="margin: 0;">${detail}</p>`).join('')}
         <p><strong>Tổng Xuất kho:</strong> ${totalExport}</p>
         <p><strong>Chi tiết Xuất kho:</strong></p>
-        ${exportDetails.map(detail => `<p>${detail}</p>`).join('')}
+        ${exportDetails.map(detail => `<p style="margin: 0;">${detail}</p>`).join('')}
       </div>
     `;
     reportsList.innerHTML = html;
     console.log('Đã tải báo cáo tổng thành công cho', elementId);
   }, error => {
     console.error('Lỗi tải báo cáo:', error);
-    reportsList.innerHTML = '<p>Lỗi tải báo cáo: ' + error.message + '</p>';
+    reportsList.innerHTML = '<p style="margin: 0;">Lỗi tải báo cáo: ' + error.message + '</p>';
     alert('Lỗi tải báo cáo: ' + error.message);
   });
 }
@@ -155,7 +155,7 @@ function loadExpenseSummary(elementId) {
     summaryTable.innerHTML = '';
     const data = snapshot.val();
     if (!data) {
-      summaryTable.innerHTML = '<p>Không có dữ liệu chi phí.</p>';
+      summaryTable.innerHTML = '<p style="margin: 0;">Không có dữ liệu chi phí.</p>';
       console.log('Không có dữ liệu chi phí trong dailyData.');
       return;
     }
@@ -174,20 +174,20 @@ function loadExpenseSummary(elementId) {
       });
     });
 
-    let html = '<table class="summary-table"><tr><th>Loại chi phí</th><th>Tổng chi phí</th><th>Số lượng giao dịch</th></tr>';
+    let html = '<table style="border-collapse: collapse; width: 100%; margin-top: 16px;"><tr><th style="border: 1px solid #ccc; padding: 8px; background: #f3f4f6;">Loại chi phí</th><th style="border: 1px solid #ccc; padding: 8px; background: #f3f4f6;">Tổng chi phí</th><th style="border: 1px solid #ccc; padding: 8px; background: #f3f4f6;">Số lượng giao dịch</th></tr>';
     let grandTotal = 0;
     let grandCount = 0;
     Object.entries(expenseSummary).forEach(([type, summary]) => {
-      html += `<tr><td>${type}</td><td>${summary.total}</td><td>${summary.count}</td></tr>`;
+      html += `<tr><td style="border: 1px solid #ccc; padding: 8px;">${type}</td><td style="border: 1px solid #ccc; padding: 8px;">${summary.total}</td><td style="border: 1px solid #ccc; padding: 8px;">${summary.count}</td></tr>`;
       grandTotal += summary.total;
       grandCount += summary.count;
     });
-    html += `<tr><td><strong>Tổng cộng</strong></td><td><strong>${grandTotal}</strong></td><td><strong>${grandCount}</strong></td></tr></table>`;
+    html += `<tr><td style="border: 1px solid #ccc; padding: 8px;"><strong>Tổng cộng</strong></td><td style="border: 1px solid #ccc; padding: 8px;"><strong>${grandTotal}</strong></td><td style="border: 1px solid #ccc; padding: 8px;"><strong>${grandCount}</strong></td></tr></table>`;
     summaryTable.innerHTML = html;
     console.log('Đã tải tổng hợp chi phí thành công cho', elementId);
   }, error => {
     console.error('Lỗi tải tổng hợp chi phí:', error);
-    summaryTable.innerHTML = '<p>Lỗi tải tổng hợp chi phí: ' + error.message + '</p>';
+    summaryTable.innerHTML = '<p style="margin: 0;">Lỗi tải tổng hợp chi phí: ' + error.message + '</p>';
     alert('Lỗi tải tổng hợp chi phí: ' + error.message);
   });
 }
