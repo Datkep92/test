@@ -1,4 +1,4 @@
-```javascript
+
 function loadSharedReports(elementId, userRole, userId) {
   const reportsList = document.getElementById(elementId);
   const filter = document.getElementById(`${userRole}-report-filter`);
@@ -194,4 +194,4 @@ function deleteReport(date, uid) {
     alert('Lỗi xóa báo cáo: ' + error.message);
   });
 }
-```
+
