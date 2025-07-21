@@ -16,11 +16,14 @@ window.onload = function() {
     document.getElementById('save-password').checked = true;
   }
 
-  // Check if user is already logged in
   auth.onAuthStateChanged(user => {
     if (user) {
       console.log('User UID:', user.uid);
       checkUserRole(user.uid);
+    } else {
+      document.getElementById('login-page').classList.remove('hidden');
+      document.getElementById('employee-page').classList.add('hidden');
+      document.getElementById('manager-page').classList.add('hidden');
     }
   });
 };
@@ -54,7 +57,15 @@ function login() {
       checkUserRole(user.uid);
     })
     .catch(error => {
-      document.getElementById('error').textContent = 'Lỗi đăng nhập: ' + error.message;
+      let errorMessage = 'Lỗi đăng nhập: ' + error.message;
+      if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Email không hợp lệ.';
+      } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        errorMessage = 'Email hoặc mật khẩu không đúng.';
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'Quá nhiều lần thử đăng nhập. Vui lòng thử lại sau.';
+      }
+      document.getElementById('error').textContent = errorMessage;
       document.getElementById('error').classList.remove('hidden');
       document.getElementById('login-page').innerHTML = document.getElementById('login-page').innerHTML.replace('<p class="text-gray-500 text-center">Đang đăng nhập...</p>', '');
     });
@@ -83,6 +94,7 @@ function checkUserRole(uid) {
         return;
       }
       managerPage.classList.remove('hidden');
+      document.getElementById('employee-page').classList.add('hidden');
       loadInventory('inventory-list');
       loadSharedReports('manager-shared-reports');
     } else if (role === 'employee' || role === 'staff') {
@@ -94,6 +106,7 @@ function checkUserRole(uid) {
         return;
       }
       employeePage.classList.remove('hidden');
+      document.getElementById('manager-page').classList.add('hidden');
       loadEmployeeInventory('employee-inventory');
       displaySharedReportSummary(new Date().toISOString().split('T')[0]);
     } else {
@@ -104,7 +117,7 @@ function checkUserRole(uid) {
     }
   }).catch(error => {
     console.error('Lỗi kiểm tra vai trò:', error);
-    alert('Lỗi kiểm tra vai trò: ' + (error.code === 'PERMISSION_DENIED' ? 'Bạn không có quyền truy cập dữ liệu người dùng.' : error.message));
+    alert(error.code === 'PERMISSION_DENIED' ? 'Bạn không có quyền truy cập dữ liệu người dùng.' : 'Lỗi kiểm tra vai trò: ' + error.message);
     auth.signOut();
     document.getElementById('login-page').classList.remove('hidden');
   });
