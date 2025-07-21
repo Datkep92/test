@@ -64,7 +64,7 @@ function checkUserRole(uid) {
       }
       managerPage.classList.remove('hidden');
       loadInventory('inventory-list');
-      loadSharedReports('manager-shared-reports');
+      loadSharedReports('report-table');
     } else {
       console.log('Đăng nhập nhân viên, hiển thị giao diện nhân viên...');
       const employeePage = document.getElementById('employee-page');
@@ -75,7 +75,7 @@ function checkUserRole(uid) {
       }
       employeePage.classList.remove('hidden');
       loadInventory('inventory-list');
-      loadSharedReports('shared-reports');
+      loadSharedReports('report-table');
     }
   }).catch(error => {
     console.error('Lỗi kiểm tra vai trò:', error);
