@@ -1,9 +1,9 @@
 function submitEmployeeReport() {
-  const initialInventory = parseFloat(document.getElementById('initial-inventory').value) || 0;
-  const finalInventory = parseFloat(document.getElementById('final-inventory').value) || 0;
-  const revenue = parseFloat(document.getElementById('revenue').value) || 0;
-  const expenseAmount = parseFloat(document.getElementById('expense-amount').value) || 0;
-  const expenseInfo = document.getElementById('expense-info').value.trim() || '';
+  const initialInventory = parseFloat(document.getElementById('employee-initial-inventory').value) || 0;
+  const finalInventory = parseFloat(document.getElementById('employee-final-inventory').value) || 0;
+  const revenue = parseFloat(document.getElementById('employee-revenue').value) || 0;
+  const expenseAmount = parseFloat(document.getElementById('employee-expense-amount').value) || 0;
+  const expenseInfo = document.getElementById('employee-expense-info').value.trim() || '';
 
   if (initialInventory < 0 || finalInventory < 0 || revenue < 0 || expenseAmount < 0) {
     alert('Vui lòng nhập giá trị không âm.');
@@ -56,13 +56,13 @@ function submitEmployeeReport() {
     }
   }).then(() => {
     alert('Gửi báo cáo thành công!');
-    document.getElementById('initial-inventory').value = '';
-    document.getElementById('final-inventory').value = '';
-    document.getElementById('revenue').value = '';
-    document.getElementById('expense-amount').value = '';
-    document.getElementById('expense-info').value = '';
+    document.getElementById('employee-initial-inventory').value = '';
+    document.getElementById('employee-final-inventory').value = '';
+    document.getElementById('employee-revenue').value = '';
+    document.getElementById('employee-expense-amount').value = '';
+    document.getElementById('employee-expense-info').value = '';
     Array.from(exportInputs).forEach(input => input.value = '');
-    loadInventory('inventory-list'); // Cập nhật lại danh sách tồn kho
+    loadInventory('employee-inventory-list');
   }).catch(error => {
     console.error('Lỗi gửi báo cáo:', error);
     alert('Lỗi: ' + error.message);
@@ -111,7 +111,7 @@ function loadSharedReports(elementId) {
     return;
   }
 
-  const filter = document.getElementById('report-filter');
+  const filter = document.getElementById('employee-report-filter');
   if (!filter) {
     console.error('Không tìm thấy phần tử report-filter trong DOM');
     alert('Lỗi: Không tìm thấy bộ lọc báo cáo.');
