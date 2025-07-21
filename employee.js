@@ -1,4 +1,5 @@
 function loadEmployeeInventory(containerId) {
+  console.log('loadEmployeeInventory: Loading inventory for container:', containerId);
   loadInventoryData(containerId, (div, productId, product) => {
     div.className = 'flex justify-between items-center border p-2 my-1 hover:bg-gray-50';
     div.innerHTML = `
@@ -9,6 +10,7 @@ function loadEmployeeInventory(containerId) {
 }
 
 function getInventoryExported() {
+  console.log('getInventoryExported: Collecting exported inventory');
   const inputs = document.querySelectorAll('#employee-inventory .export-quantity');
   const exports = [];
   inputs.forEach(input => {
@@ -21,12 +23,15 @@ function getInventoryExported() {
       });
     }
   });
+  console.log('getInventoryExported: Exported items:', exports);
   return exports;
 }
 
 function submitSharedReport() {
+  console.log('submitSharedReport: Starting report submission');
   const uid = auth.currentUser?.uid;
   if (!uid) {
+    console.error('submitSharedReport: No authenticated user');
     alert('Không xác định được người dùng. Vui lòng đăng nhập lại.');
     document.getElementById('login-page').classList.remove('hidden');
     document.getElementById('employee-page').classList.add('hidden');
@@ -53,9 +58,11 @@ function submitSharedReport() {
     exports,
     userName: auth.currentUser.displayName || 'Nhân viên'
   };
+  console.log('submitSharedReport: Submitting report:', report);
 
   db.ref('shared_reports').push(report)
     .then(() => {
+      console.log('submitSharedReport: Report submitted successfully');
       alert('Đã gửi báo cáo thành công!');
       document.getElementById('opening-balance').value = '';
       document.getElementById('closing-balance').value = '';
@@ -65,40 +72,40 @@ function submitSharedReport() {
       displaySharedReportSummary(today);
     })
     .catch(error => {
-      console.error('Lỗi gửi báo cáo:', error);
+      console.error('submitSharedReport: Error submitting report:', error);
       alert(error.code === 'PERMISSION_DENIED' ? 'Bạn không có quyền gửi báo cáo.' : 'Lỗi gửi báo cáo: ' + error.message);
     });
 }
 
 function displaySharedReportSummary(date) {
+  console.log('displaySharedReportSummary: Displaying reports for date:', date);
   const container = document.getElementById('shared-reports');
   const filter = document.getElementById('report-filter');
   if (!container || !filter) {
-    console.error('Không tìm thấy container hoặc filter');
+    console.error('displaySharedReportSummary: Missing container or filter element');
     container.innerHTML = '<p class="text-red-500">Lỗi giao diện: Không tìm thấy container báo cáo.</p>';
     return;
   }
 
-  // Ensure employee page is visible
-  if (document.getElementById('employee-page').classList.contains('hidden')) {
-    console.warn('Employee page is hidden. Showing employee page...');
-    document.getElementById('employee-page').classList.remove('hidden');
-    document.getElementById('manager-page').classList.add('hidden');
-    document.getElementById('login-page').classList.add('hidden');
-  }
+  // Ensure container is visible
+  container.classList.remove('hidden');
+  container.style.display = 'block';
+  console.log('displaySharedReportSummary: Container classes:', container.className);
 
   container.innerHTML = '<p class="text-gray-500">Đang tải báo cáo...</p>';
   const filterType = filter.value;
   const dateKey = filterType === 'day' ? date : date.substring(0, 7);
+  console.log('displaySharedReportSummary: Filter type:', filterType, 'Date key:', dateKey);
 
   fetchReportSummary(dateKey, filterType, (group, sum, reports, error) => {
     if (error) {
-      console.error('Lỗi hiển thị báo cáo:', error);
+      console.error('displaySharedReportSummary: Error fetching reports:', error);
       container.innerHTML = `<p class="text-red-500">${error}</p>`;
       return;
     }
 
     if (!reports || reports.length === 0) {
+      console.log('displaySharedReportSummary: No reports to display');
       container.innerHTML = '<p class="text-gray-500">Không có báo cáo nào cho ngày/tháng này.</p>';
       document.getElementById('total-opening-balance').textContent = '0';
       document.getElementById('total-cost').textContent = '0';
@@ -109,6 +116,7 @@ function displaySharedReportSummary(date) {
       return;
     }
 
+    console.log('displaySharedReportSummary: Rendering reports:', reports);
     container.innerHTML = '';
     const summaryTable = document.createElement('div');
     summaryTable.className = 'mb-6 overflow-x-auto';
@@ -149,11 +157,13 @@ function displaySharedReportSummary(date) {
       tbody.appendChild(row);
     });
 
+    console.log('displaySharedReportSummary: Updating totals');
     document.getElementById('total-opening-balance').textContent = sum.opening;
     document.getElementById('total-cost').textContent = sum.cost;
     document.getElementById('total-revenue').textContent = sum.revenue;
     document.getElementById('total-closing-balance').textContent = sum.closing;
     document.getElementById('net-profit').textContent = sum.real;
     document.getElementById('total-export').textContent = sum.export;
+    console.log('displaySharedReportSummary: Table rendered successfully');
   });
 }
