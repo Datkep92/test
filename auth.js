@@ -54,8 +54,9 @@ function checkUserRole(uid) {
     }
 
     document.getElementById('login-page').classList.add('hidden');
-    
-    if (userData.role === 'manager') {
+
+    const role = userData.role;
+    if (role === 'manager') {
       console.log('Đăng nhập quản lý, hiển thị giao diện quản lý...');
       const managerPage = document.getElementById('manager-page');
       if (!managerPage) {
@@ -64,9 +65,17 @@ function checkUserRole(uid) {
         return;
       }
       managerPage.classList.remove('hidden');
-      loadInventory('inventory-list');
+
+      // Dùng loadInventory từ manager.js
+      if (typeof loadInventory === 'function') {
+        loadInventory('inventory-list');
+      } else {
+        console.warn('Không tìm thấy hàm loadInventory trong manager.js');
+      }
+
       loadSharedReports('manager-shared-reports');
-    } else {
+
+    } else if (role === 'employee') {
       console.log('Đăng nhập nhân viên, hiển thị giao diện nhân viên...');
       const employeePage = document.getElementById('employee-page');
       if (!employeePage) {
@@ -75,14 +84,31 @@ function checkUserRole(uid) {
         return;
       }
       employeePage.classList.remove('hidden');
-      loadInventory('inventory-list');
+
+      // Dùng loadEmployeeInventory từ employee.js
+      if (typeof loadEmployeeInventory === 'function') {
+        loadEmployeeInventory('inventory-list');
+      } else {
+        console.warn('Không tìm thấy hàm loadEmployeeInventory, thử fallback...');
+        if (typeof loadInventory === 'function') {
+          loadInventory('inventory-list');
+        } else {
+          console.error('Không tìm thấy hàm loadInventory nào!');
+        }
+      }
+
       loadSharedReports('shared-reports');
+
+    } else {
+      console.error('Vai trò người dùng không hợp lệ:', role);
+      alert('Lỗi: Vai trò người dùng không hợp lệ.');
     }
   }).catch(error => {
     console.error('Lỗi kiểm tra vai trò:', error);
     alert('Lỗi kiểm tra vai trò: ' + error.message);
   });
 }
+
 function clearBrowserCache() {
   if (confirm("Bạn có chắc muốn xóa cache trình duyệt? Trang sẽ được tải lại.")) {
     localStorage.clear();
