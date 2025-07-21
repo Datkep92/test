@@ -74,7 +74,7 @@ function submitEmployeeReport() {
     document.getElementById('employee-expense-info').value = '';
     Array.from(exportInputs).forEach(input => input.value = '');
     loadInventory('employee-inventory-list');
-    loadSharedReports('shared-report-table'); // Tải lại báo cáo sau khi gửi
+    loadSharedReports('shared-report-table');
   }).catch(error => {
     console.error('Lỗi gửi báo cáo:', error);
     alert('Lỗi: ' + error.message);
