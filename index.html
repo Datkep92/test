@@ -109,7 +109,31 @@
   <script src="manager.js"></script>
 
   <!-- Hàm clear cache -->
-  <script>
+<!-- Form báo cáo -->
+<div>
+  <input id="opening-balance" type="number" placeholder="Đầu kỳ" class="border p-1 my-1 w-full">
+  <input id="shared-revenue" type="number" placeholder="Doanh thu" class="border p-1 my-1 w-full">
+  <input id="closing-balance" type="number" placeholder="Cuối kỳ" class="border p-1 my-1 w-full">
+  <input id="shared-cost" type="text" placeholder="Chi phí (VD: Mua đường 20000 - Nguyên liệu)" class="border p-1 my-1 w-full">
+
+  <div id="employee-inventory" class="border mt-2 p-2 bg-white"></div>
+
+  <button onclick="submitSharedReport()" class="bg-blue-500 text-white px-4 py-2 mt-2 rounded hover:bg-blue-600">
+    Gửi báo cáo
+  </button>
+</div>
+
+<!-- Kết quả tổng hợp -->
+<div id="shared-report-summary" class="mt-6 bg-gray-100 p-3 rounded shadow"></div>
+
+<!-- Gọi hiển thị dữ liệu ngày hiện tại -->
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    loadEmployeeInventory('employee-inventory');
+    const today = new Date().toISOString().split('T')[0];
+    displaySharedReportSummary(today);
+  });
+</script>
     function clearAppCache() {
       const confirmClear = confirm("Bạn có chắc muốn xoá cache và tải lại trang?");
       if (!confirmClear) return;
