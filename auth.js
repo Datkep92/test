@@ -1,3 +1,4 @@
+// Khởi tạo auth sau khi DOM loaded
 document.addEventListener('DOMContentLoaded', () => {
   auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
     .then(() => {
@@ -52,14 +53,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const userData = snapshot.val();
         console.log('Dữ liệu người dùng:', userData);
         if (userData) {
-          loginPage.style.display = 'none';
+          loginPage.style.display = 'none'; // Ẩn trang đăng nhập trước
           if (userData.role === 'manager') {
             console.log('Đăng nhập quản lý, hiển thị giao diện quản lý...');
             managerPage.style.display = 'block';
             employeePage.style.display = 'none';
             if (document.getElementById('manager-inventory-list') && document.getElementById('shared-report-table')) {
               loadInventory('manager-inventory-list');
-              loadSharedReports('shared-report-table', 'manager');
+              loadSharedReports('shared-report-table');
               loadExpenseSummary('expense-summary-table');
             } else {
               console.error('Không tìm thấy các phần tử trong manager-page.');
@@ -70,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
             managerPage.style.display = 'none';
             if (document.getElementById('employee-inventory-list') && document.getElementById('shared-report-table')) {
               loadInventory('employee-inventory-list');
-              loadSharedReports('shared-report-table', 'employee');
+              loadSharedReports('shared-report-table');
               loadExpenseSummary('expense-summary-table');
             } else {
               console.error('Không tìm thấy các phần tử trong employee-page.');
@@ -78,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
           } else {
             console.error('Vai trò không xác định:', userData.role);
             alert('Lỗi: Vai trò không được xác định.');
-            loginPage.style.display = 'block';
+            loginPage.style.display = 'block'; // Quay lại trang đăng nhập nếu lỗi
           }
         } else {
           console.error('Không tìm thấy dữ liệu vai trò cho UID:', user.uid);

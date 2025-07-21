@@ -39,22 +39,18 @@ function submitEmployeeReport() {
   if (Object.keys(exportQuantities).length > 0) reportData.exports = exportQuantities;
 
   const dateKey = reportData.date.replace(/\//g, '_');
-  const reportId = Date.now().toString(); // ID duy nhất cho mỗi báo cáo
-  const reportRef = db.ref(`dailyData/${dateKey}/${auth.currentUser.uid}/reports/${reportId}`);
-
-  // Thêm vào expenseHistory
+  const reportRef = db.ref(`dailyData/${dateKey}/${auth.currentUser.uid}`);
   reportRef.once('value').then(snapshot => {
     const existingData = snapshot.val() || {};
     const newExpenseHistory = existingData.expenseHistory ? [...existingData.expenseHistory] : [];
     newExpenseHistory.push({ amount: expenseAmount, info: expenseInfo, timestamp: Date.now() });
 
     const newReport = {
+      ...existingData,
       ...reportData,
       expenseHistory: newExpenseHistory
     };
-
-    // Lưu báo cáo mới
-    return reportRef.set(newReport);
+    return reportRef.update(newReport);
   }).then(() => {
     if (Object.keys(exportQuantities).length > 0) {
       return Promise.all(Object.entries(exportQuantities).map(([productId, exportItem]) => {
@@ -84,9 +80,6 @@ function submitEmployeeReport() {
     alert('Lỗi: ' + error.message);
   });
 }
-
-// Giữ nguyên các hàm khác như loadInventory, loadSharedReports, loadExpenseSummary
-// (loadSharedReports sẽ được cập nhật ở phần sau)
 
 function loadInventory(elementId) {
   const inventoryList = document.getElementById(elementId);
@@ -122,6 +115,87 @@ function loadInventory(elementId) {
   });
 }
 
+function loadSharedReports(elementId) {
+  const reportsList = document.getElementById(elementId);
+  if (!reportsList) {
+    console.error('Không tìm thấy phần tử shared-report-table trong DOM');
+    alert('Lỗi: Không tìm thấy bảng báo cáo.');
+    return;
+  }
+
+  const filter = document.getElementById('employee-report-filter');
+  if (!filter) {
+    console.error('Không tìm thấy phần tử report-filter trong DOM');
+    alert('Lỗi: Không tìm thấy bộ lọc báo cáo.');
+    return;
+  }
+
+  db.ref('dailyData').on('value', snapshot => {
+    reportsList.innerHTML = '';
+    const data = snapshot.val();
+    if (!data) {
+      reportsList.innerHTML = '<p style="margin: 0;">Không có báo cáo.</p>';
+      console.log('Không có dữ liệu báo cáo trong dailyData.');
+      return;
+    }
+
+    const filterType = filter.value;
+    let totalInitial = 0, totalFinal = 0, totalRevenue = 0, totalExpense = 0, totalExport = 0;
+    let expenseDetails = [], revenueDetails = [], exportDetails = [];
+
+    Object.entries(data).forEach(([date, users]) => {
+      const formattedDate = date.replace(/_/g, '/');
+      const key = filterType === 'day' ? formattedDate : formattedDate.substring(3);
+      Object.entries(users).forEach(([uid, report]) => {
+        if (!/^[a-zA-Z0-9]+$/.test(uid)) {
+          console.warn('Bỏ qua key không hợp lệ:', uid);
+          return;
+        }
+        totalInitial += report.initialInventory || 0;
+        totalFinal += report.finalInventory || 0;
+        totalRevenue += report.revenue || 0;
+        if (report.expense && report.expense.amount) {
+          totalExpense += report.expense.amount;
+          expenseDetails.push(`${report.expense.amount} (Thông tin: ${report.expense.info || 'Không có'}, Nhân viên: ${report.user}, Thời gian: ${new Date(report.expense.timestamp).toLocaleString()})`);
+        }
+        if (report.revenue) {
+          revenueDetails.push(`${report.revenue} (Nhân viên: ${report.user})`);
+        }
+        if (report.exports) {
+          Object.values(report.exports).forEach(exportItem => {
+            totalExport += exportItem.quantity || 0;
+            exportDetails.push(`${exportItem.quantity} ${exportItem.productName} (Nhân viên: ${report.user})`);
+          });
+        }
+      });
+    });
+
+    const remainingBalance = totalRevenue - totalExpense;
+
+    let html = `
+      <div style="margin-bottom: 16px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        <p><strong>Tổng Tồn kho đầu kỳ:</strong> ${totalInitial}</p>
+        <p><strong>Tổng Tồn kho cuối kỳ:</strong> ${totalFinal}</p>
+        <p><strong>Tổng Doanh Thu:</strong> ${totalRevenue}</p>
+        <p><strong>Tổng Chi Phí:</strong> ${totalExpense}</p>
+        <p><strong>Số dư còn lại:</strong> ${remainingBalance >= 0 ? remainingBalance : 0}</p>
+        <p><strong>Chi tiết Chi Phí:</strong></p>
+        ${expenseDetails.map(detail => `<p style="margin: 0;">${detail}</p>`).join('')}
+        <p><strong>Chi tiết Doanh Thu:</strong></p>
+        ${revenueDetails.map(detail => `<p style="margin: 0;">${detail}</p>`).join('')}
+        <p><strong>Tổng Xuất kho:</strong> ${totalExport}</p>
+        <p><strong>Chi tiết Xuất kho:</strong></p>
+        ${exportDetails.map(detail => `<p style="margin: 0;">${detail}</p>`).join('')}
+      </div>
+    `;
+    reportsList.innerHTML = html;
+    console.log('Đã tải báo cáo tổng thành công cho', elementId);
+  }, error => {
+    console.error('Lỗi tải báo cáo:', error);
+    reportsList.innerHTML = '<p style="margin: 0;">Lỗi tải báo cáo: ' + error.message + '</p>';
+    alert('Lỗi tải báo cáo: ' + error.message);
+  });
+}
 
 function loadExpenseSummary(elementId) {
   const summaryTable = document.getElementById(elementId);
