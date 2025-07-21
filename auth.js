@@ -72,13 +72,15 @@ function login() {
 }
 
 function checkUserRole(uid) {
-  db.ref('users/' + uid).once('value').then(snapshot => {
+  db.ref(`users/${uid}`).once('value').then(snapshot => {
     const userData = snapshot.val();
     if (!userData) {
       console.error('Không tìm thấy dữ liệu người dùng cho UID:', uid);
       alert('Lỗi: Không tìm thấy dữ liệu người dùng.');
       auth.signOut();
       document.getElementById('login-page').classList.remove('hidden');
+      document.getElementById('employee-page').classList.add('hidden');
+      document.getElementById('manager-page').classList.add('hidden');
       return;
     }
 
@@ -114,12 +116,16 @@ function checkUserRole(uid) {
       alert('Lỗi: Vai trò người dùng không hợp lệ.');
       auth.signOut();
       document.getElementById('login-page').classList.remove('hidden');
+      document.getElementById('employee-page').classList.add('hidden');
+      document.getElementById('manager-page').classList.add('hidden');
     }
   }).catch(error => {
     console.error('Lỗi kiểm tra vai trò:', error);
     alert(error.code === 'PERMISSION_DENIED' ? 'Bạn không có quyền truy cập dữ liệu người dùng.' : 'Lỗi kiểm tra vai trò: ' + error.message);
     auth.signOut();
     document.getElementById('login-page').classList.remove('hidden');
+    document.getElementById('employee-page').classList.add('hidden');
+    document.getElementById('manager-page').classList.add('hidden');
   });
 }
 
