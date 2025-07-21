@@ -21,7 +21,7 @@ function addInventory() {
     document.getElementById('product-price').value = '';
   }).catch(error => {
     console.error('Lỗi thêm sản phẩm:', error);
-    alert('Lỗi thêm sản phẩm: ' + error.message);
+    alert(error.code === 'PERMISSION_DENIED' ? 'Bạn không có quyền thêm sản phẩm.' : 'Lỗi thêm sản phẩm: ' + error.message);
   });
 }
 
@@ -38,16 +38,18 @@ function loadSharedReports(containerId) {
   const filter = document.getElementById('report-filter');
   if (!reportsList || !filter) {
     console.error('Không tìm thấy reportsList hoặc filter');
+    reportsList.innerHTML = '<p class="text-red-500">Lỗi giao diện: Không tìm thấy container báo cáo.</p>';
     return;
   }
 
+  reportsList.innerHTML = '<p class="text-gray-500">Đang tải báo cáo...</p>';
   const filterType = filter.value;
   const today = new Date().toISOString().split('T')[0];
   const dateKey = filterType === 'day' ? today : today.substring(0, 7);
 
   fetchReportSummary(dateKey, filterType, (group, sum, reports, error) => {
     if (error) {
-      reportsList.innerHTML = '<p class="text-red-500">Lỗi khi tải báo cáo.</p>';
+      reportsList.innerHTML = `<p class="text-red-500">${error}</p>`;
       return;
     }
 
@@ -88,6 +90,13 @@ function loadSharedReports(containerId) {
 }
 
 function editReport(reportId) {
+  if (!auth.currentUser) {
+    alert('Vui lòng đăng nhập lại.');
+    document.getElementById('login-page').classList.remove('hidden');
+    document.getElementById('manager-page').classList.add('hidden');
+    return;
+  }
+
   db.ref('shared_reports/' + reportId).once('value').then(snapshot => {
     const report = snapshot.val();
     if (!report) {
@@ -133,23 +142,32 @@ function editReport(reportId) {
       document.getElementById('shared-revenue').value = '';
       document.getElementById('closing-balance').value = '';
       document.querySelectorAll('.export-quantity').forEach(input => input.value = '');
+      loadSharedReports('manager-shared-reports');
     }).catch(error => {
       console.error('Lỗi cập nhật báo cáo:', error);
-      alert('Lỗi cập nhật báo cáo: ' + error.message);
+      alert(error.code === 'PERMISSION_DENIED' ? 'Bạn không có quyền chỉnh sửa báo cáo này.' : 'Lỗi cập nhật báo cáo: ' + error.message);
     });
   }).catch(error => {
     console.error('Lỗi tải báo cáo:', error);
-    alert('Lỗi tải báo cáo: ' + error.message);
+    alert(error.code === 'PERMISSION_DENIED' ? 'Bạn không có quyền truy cập báo cáo này.' : 'Lỗi tải báo cáo: ' + error.message);
   });
 }
 
 function deleteReport(reportId) {
+  if (!auth.currentUser) {
+    alert('Vui lòng đăng nhập lại.');
+    document.getElementById('login-page').classList.remove('hidden');
+    document.getElementById('manager-page').classList.add('hidden');
+    return;
+  }
+
   if (confirm('Bạn có chắc muốn xóa báo cáo này?')) {
     db.ref('shared_reports/' + reportId).remove().then(() => {
       alert('Xóa báo cáo thành công!');
+      loadSharedReports('manager-shared-reports');
     }).catch(error => {
       console.error('Lỗi xóa báo cáo:', error);
-      alert('Lỗi xóa báo cáo: ' + error.message);
+      alert(error.code === 'PERMISSION_DENIED' ? 'Bạn không có quyền xóa báo cáo này.' : 'Lỗi xóa báo cáo: ' + error.message);
     });
   }
 }
