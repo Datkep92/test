@@ -1,178 +1,269 @@
-function loadEmployeeInventory(containerId) {
-  console.log('loadEmployeeInventory: Loading inventory for container:', containerId);
-  loadInventoryData(containerId, (div, productId, product) => {
-    div.className = 'flex justify-between items-center border p-2 my-1 hover:bg-gray-50';
-    div.innerHTML = `
-      <span>${product.name} - Tồn: ${product.quantity}</span>
-      <input type="number" min="0" placeholder="Số lượng" class="border p-1 w-20 export-quantity" data-product-id="${productId}" data-product-name="${product.name}">
-    `;
-  });
+let expenseCategories = [];
+
+function capitalizeFirstLetter(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-function getInventoryExported() {
-  console.log('getInventoryExported: Collecting exported inventory');
-  const inputs = document.querySelectorAll('#employee-inventory .export-quantity');
-  const exports = [];
-  inputs.forEach(input => {
-    const qty = parseInt(input.value);
-    if (!isNaN(qty) && qty > 0) {
-      exports.push({
-        productId: input.dataset.productId,
-        productName: input.dataset.productName,
-        quantity: qty
-      });
-    }
-  });
-  console.log('getInventoryExported: Exported items:', exports);
-  return exports;
+function parseExpenseInput(input) {
+  const normalized = input.toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, "");
+  
+  const amountMatch = normalized.match(/(\d+)\s*$/);
+  const amount = amountMatch ? parseInt(amountMatch[1]) : 0;
+  
+  let description = normalized;
+  if (amountMatch) {
+    description = normalized.substring(0, amountMatch.index).trim();
+  }
+  
+  const categoryMatch = description.match(/^\s*(\S+)/);
+  const category = categoryMatch ? categoryMatch[1] : 'khac';
+  
+  if (!expenseCategories.includes(category)) {
+    expenseCategories.push(category);
+    const categoriesRef = db.ref('expenseCategories');
+    categoriesRef.set(expenseCategories);
+  }
+  
+  return {
+    description: capitalizeFirstLetter(description),
+    amount: amount,
+    category: capitalizeFirstLetter(category)
+  };
 }
 
 function submitSharedReport() {
-  console.log('submitSharedReport: Starting report submission');
-  const uid = auth.currentUser?.uid;
-  if (!uid) {
-    console.error('submitSharedReport: No authenticated user');
-    alert('Không xác định được người dùng. Vui lòng đăng nhập lại.');
-    document.getElementById('login-page').classList.remove('hidden');
-    document.getElementById('employee-page').classList.add('hidden');
+  const openingBalanceInput = document.getElementById('opening-balance');
+  const costInput = document.getElementById('shared-cost');
+  const revenueInput = document.getElementById('shared-revenue');
+  const closingBalanceInput = document.getElementById('closing-balance');
+
+  if (!openingBalanceInput || !costInput || !revenueInput || !closingBalanceInput) {
+    console.error('Không tìm thấy một hoặc nhiều phần tử input trong DOM');
+    alert('Lỗi: Giao diện chưa tải đúng. Vui lòng kiểm tra lại.');
     return;
   }
 
-  const openingBalance = parseFloat(document.getElementById('opening-balance').value) || 0;
-  const closingBalance = parseFloat(document.getElementById('closing-balance').value) || 0;
-  const revenue = parseFloat(document.getElementById('shared-revenue').value) || 0;
-  const cost = document.getElementById('shared-cost').value || '';
-  const exports = getInventoryExported();
+  const openingBalance = parseFloat(openingBalanceInput.value) || 0;
+  const costInputValue = costInput.value;
+  const revenue = parseFloat(revenueInput.value) || 0;
+  const closingBalance = parseFloat(closingBalanceInput.value) || 0;
+  const exportQuantities = Array.from(document.getElementsByClassName('export-quantity')).reduce((acc, input) => {
+    const productId = input.dataset.productId;
+    const qty = parseFloat(input.value) || 0;
+    if (qty > 0) acc[productId] = qty;
+    return acc;
+  }, {});
 
-  const today = new Date().toISOString().split('T')[0];
-  const timestamp = Date.now();
+  if (openingBalance === 0 && !costInputValue && revenue === 0 && closingBalance === 0 && Object.keys(exportQuantities).length === 0) {
+    alert('Vui lòng nhập ít nhất một trường thông tin.');
+    return;
+  }
 
-  const report = {
-    uid,
-    date: today,
-    timestamp,
-    openingBalance,
-    closingBalance,
-    revenue,
-    cost,
-    exports,
-    userName: auth.currentUser.displayName || 'Nhân viên'
+  const reportData = {
+    uid: auth.currentUser.uid,
+    date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+    timestamp: new Date().toISOString(),
   };
-  console.log('submitSharedReport: Submitting report:', report);
 
-  db.ref('shared_reports').push(report)
-    .then(() => {
-      console.log('submitSharedReport: Report submitted successfully');
-      alert('Đã gửi báo cáo thành công!');
-      document.getElementById('opening-balance').value = '';
-      document.getElementById('closing-balance').value = '';
-      document.getElementById('shared-revenue').value = '';
-      document.getElementById('shared-cost').value = '';
+  if (openingBalance > 0) reportData.openingBalance = openingBalance;
+  if (costInputValue) {
+    const expense = parseExpenseInput(costInputValue);
+    reportData.cost = expense.amount;
+    reportData.costDescription = expense.description;
+    reportData.costCategory = expense.category;
+  }
+  if (revenue > 0) reportData.revenue = revenue;
+  if (closingBalance > 0) reportData.closingBalance = closingBalance;
+  if (Object.keys(exportQuantities).length > 0) reportData.exports = exportQuantities;
+
+  const reportRef = db.ref('shared_reports').push();
+  reportRef.set(reportData).then(() => {
+    // Update inventory for exports
+    Promise.all(Object.entries(exportQuantities).map(([productId, qty]) => {
+      return db.ref('inventory/' + productId).once('value').then(snapshot => {
+        const product = snapshot.val();
+        if (product && product.quantity >= qty) {
+          return db.ref('inventory/' + productId).update({
+            quantity: product.quantity - qty
+          });
+        } else {
+          throw new Error('Số lượng xuất kho vượt quá tồn kho.');
+        }
+      });
+    })).then(() => {
+      alert('Gửi báo cáo thành công!');
+      openingBalanceInput.value = '';
+      costInput.value = '';
+      revenueInput.value = '';
+      closingBalanceInput.value = '';
       document.querySelectorAll('.export-quantity').forEach(input => input.value = '');
-      displaySharedReportSummary(today);
-    })
-    .catch(error => {
-      console.error('submitSharedReport: Error submitting report:', error);
-      alert(error.code === 'PERMISSION_DENIED' ? 'Bạn không có quyền gửi báo cáo.' : 'Lỗi gửi báo cáo: ' + error.message);
+    }).catch(error => {
+      console.error('Lỗi cập nhật tồn kho:', error);
+      alert('Lỗi cập nhật tồn kho: ' + error.message);
     });
+  }).catch(error => {
+    console.error('Lỗi gửi báo cáo:', error);
+    alert('Lỗi gửi báo cáo: ' + error.message);
+  });
 }
 
-function displaySharedReportSummary(date) {
-  console.log('displaySharedReportSummary: Displaying reports for date:', date);
-  const container = document.getElementById('shared-reports');
-  const filter = document.getElementById('report-filter');
-  const datePicker = document.getElementById('report-date-picker');
-  if (!container || !filter) {
-    console.error('displaySharedReportSummary: Missing container or filter element');
-    container.innerHTML = '<p class="text-red-500">Lỗi giao diện: Không tìm thấy container báo cáo.</p>';
-    return;
-  }
+function loadInventory(elementId) {
+  const inventoryList = document.getElementById(elementId);
+  if (!inventoryList) return;
 
-  // Ensure container is visible
-  container.classList.remove('hidden');
-  container.style.display = 'block';
-  console.log('displaySharedReportSummary: Container classes:', container.className, 'Style:', container.style.cssText);
-
-  container.innerHTML = '<p class="text-gray-500">Đang tải báo cáo...</p>';
-  const filterType = filter.value;
-  const dateKey = filterType === 'day' ? date : date.substring(0, 7);
-  console.log('displaySharedReportSummary: Filter type:', filterType, 'Date key:', dateKey);
-
-  fetchReportSummary(dateKey, filterType, (group, sum, reports, error) => {
-    if (error) {
-      console.error('displaySharedReportSummary: Error fetching reports:', error);
-      container.innerHTML = `<p class="text-red-500">${error}</p>`;
+  db.ref('inventory').on('value', snapshot => {
+    inventoryList.innerHTML = '';
+    const data = snapshot.val();
+    if (!data) {
+      inventoryList.innerHTML = '<p>Không có dữ liệu tồn kho.</p>';
       return;
     }
 
-    if (!reports || reports.length === 0) {
-      console.log('displaySharedReportSummary: No reports to display for date:', dateKey);
-      container.innerHTML = '<p class="text-gray-500">Không có báo cáo nào cho ngày/tháng này.</p>';
-      document.getElementById('total-opening-balance').textContent = '0';
-      document.getElementById('total-cost').textContent = '0';
-      document.getElementById('total-revenue').textContent = '0';
-      document.getElementById('total-closing-balance').textContent = '0';
-      document.getElementById('net-profit').textContent = '0';
-      document.getElementById('total-export').textContent = '0';
-      return;
-    }
-
-    console.log('displaySharedReportSummary: Rendering reports:', reports);
-    container.innerHTML = '';
-    const summaryTable = document.createElement('div');
-    summaryTable.className = 'mb-6 overflow-x-auto';
-    summaryTable.innerHTML = `
-      <table class="min-w-full bg-white border">
-        <thead>
-          <tr class="bg-gray-100">
-            <th class="py-2 px-4 border">Nhân viên</th>
-            <th class="py-2 px-4 border">Đầu kỳ</th>
-            <th class="py-2 px-4 border">Doanh thu</th>
-            <th class="py-2 px-4 border">Chi phí</th>
-            <th class="py-2 px-4 border">Cuối kỳ</th>
-            <th class="py-2 px-4 border">Xuất kho</th>
-            <th class="py-2 px-4 border">Thời gian</th>
-          </tr>
-        </thead>
-        <tbody id="report-rows"></tbody>
-      </table>
-    `;
-    container.appendChild(summaryTable);
-
-    const tbody = document.getElementById('report-rows');
-    reports.sort((a, b) => b.timestamp - a.timestamp);
-
-    reports.forEach(report => {
-      const row = document.createElement('tr');
-      row.className = 'hover:bg-gray-50';
-      const exportText = report.exports?.map(e => `${e.productName || e.productId}: ${e.quantity}`).join('<br>') || '0';
-      row.innerHTML = `
-        <td class="py-2 px-4 border">${report.userName || report.uid.substring(0, 6)}</td>
-        <td class="py-2 px-4 border text-right">${report.openingBalance || 0}</td>
-        <td class="py-2 px-4 border text-right">${report.revenue || 0}</td>
-        <td class="py-2 px-4 border">${report.cost || '0'}</td>
-        <td class="py-2 px-4 border text-right">${report.closingBalance || 0}</td>
-        <td class="py-2 px-4 border">${exportText}</td>
-        <td class="py-2 px-4 border">${formatTimestamp(report.timestamp)}</td>
+    Object.entries(data).forEach(([productId, product]) => {
+      const div = document.createElement('div');
+      div.className = 'flex items-center justify-between p-2 border-b';
+      div.innerHTML = `
+        <span>${product.name} (Số lượng: ${product.quantity})</span>
+        <input type="number" min="0" class="export-quantity w-24 p-1 border rounded" data-product-id="${productId}" placeholder="Số lượng xuất">
       `;
-      tbody.appendChild(row);
+      inventoryList.appendChild(div);
     });
-
-    console.log('displaySharedReportSummary: Updating totals');
-    document.getElementById('total-opening-balance').textContent = sum.opening;
-    document.getElementById('total-cost').textContent = sum.cost;
-    document.getElementById('total-revenue').textContent = sum.revenue;
-    document.getElementById('total-closing-balance').textContent = sum.closing;
-    document.getElementById('net-profit').textContent = sum.real;
-    document.getElementById('total-export').textContent = sum.export;
-    console.log('displaySharedReportSummary: Table rendered successfully for date:', dateKey);
+    console.log('Đã tải danh sách tồn kho thành công cho', elementId);
+  }, error => {
+    console.error('Lỗi tải tồn kho:', error);
+    inventoryList.innerHTML = '<p>Lỗi tải tồn kho.</p>';
   });
+}
 
-  // Update date picker event listener
-  if (datePicker) {
-    datePicker.addEventListener('change', (e) => {
-      console.log('displaySharedReportSummary: Date picker changed to:', e.target.value);
-      displaySharedReportSummary(e.target.value);
+function loadSharedReports(elementId) {
+  const reportsList = document.getElementById(elementId);
+  if (!reportsList) return;
+
+  db.ref('shared_reports').on('value', snapshot => {
+    reportsList.innerHTML = '';
+    const data = snapshot.val();
+    if (!data) {
+      reportsList.innerHTML = '<p>Không có báo cáo.</p>';
+      return;
+    }
+
+    let totalOpeningBalance = 0, totalCost = 0, totalRevenue = 0, totalClosingBalance = 0, totalExport = 0;
+    Object.entries(data).forEach(([reportId, report]) => {
+      const isOwnReport = auth.currentUser && report.uid === auth.currentUser.uid;
+      const div = document.createElement('div');
+      div.className = 'p-2 border-b';
+      let exportText = '';
+      if (report.exports) {
+        exportText = Object.entries(report.exports).map(([productId, qty]) => {
+          return db.ref('inventory/' + productId).once('value').then(s => {
+            const product = s.val();
+            return product ? `${product.name}: ${qty}` : `Sản phẩm ${productId}: ${qty}`;
+          });
+        });
+        Promise.all(exportText).then(texts => {
+          div.innerHTML = `
+            <p><strong>Ngày:</strong> ${report.date}</p>
+            ${report.openingBalance ? `<p><strong>Số Dư Đầu Kỳ:</strong> ${report.openingBalance}</p>` : ''}
+            ${report.cost ? `<p><strong>Chi Phí:</strong> ${report.costDescription} (${report.cost} - ${report.costCategory})</p>` : ''}
+            ${report.revenue ? `<p><strong>Doanh Thu:</strong> ${report.revenue}</p>` : ''}
+            ${report.closingBalance ? `<p><strong>Số Dư Cuối Kỳ:</strong> ${report.closingBalance}</p>` : ''}
+            ${texts.length ? `<p><strong>Xuất Kho:</strong> ${texts.join(', ')}</p>` : ''}
+            ${isOwnReport ? `<button onclick="editReport('${reportId}')" class="text-blue-500">Sửa</button>` : ''}
+          `;
+        });
+      } else {
+        div.innerHTML = `
+          <p><strong>Ngày:</strong> ${report.date}</p>
+          ${report.openingBalance ? `<p><strong>Số Dư Đầu Kỳ:</strong> ${report.openingBalance}</p>` : ''}
+          ${report.cost ? `<p><strong>Chi Phí:</strong> ${report.costDescription} (${report.cost} - ${report.costCategory})</p>` : ''}
+          ${report.revenue ? `<p><strong>Doanh Thu:</strong> ${report.revenue}</p>` : ''}
+          ${report.closingBalance ? `<p><strong>Số Dư Cuối Kỳ:</strong> ${report.closingBalance}</p>` : ''}
+          ${isOwnReport ? `<button onclick="editReport('${reportId}')" class="text-blue-500">Sửa</button>` : ''}
+        `;
+      }
+      reportsList.appendChild(div);
+
+      totalOpeningBalance += report.openingBalance || 0;
+      totalCost += report.cost || 0;
+      totalRevenue += report.revenue || 0;
+      totalClosingBalance += report.closingBalance || 0;
+      totalExport += report.exports ? Object.values(report.exports).reduce((sum, qty) => sum + qty, 0) : 0;
     });
-  }
+
+    const netProfit = totalOpeningBalance - totalCost + totalRevenue - totalClosingBalance;
+    document.getElementById('total-opening-balance').textContent = totalOpeningBalance;
+    document.getElementById('total-cost').textContent = totalCost;
+    document.getElementById('total-revenue').textContent = totalRevenue;
+    document.getElementById('total-closing-balance').textContent = totalClosingBalance;
+    document.getElementById('net-profit').textContent = netProfit;
+    document.getElementById('total-export').textContent = totalExport;
+
+    console.log('Đã tải báo cáo chung thành công cho', elementId);
+  }, error => {
+    console.error('Lỗi tải báo cáo:', error);
+    reportsList.innerHTML = '<p>Lỗi tải báo cáo.</p>';
+  });
+}
+
+function editReport(reportId) {
+  db.ref('shared_reports/' + reportId).once('value').then(snapshot => {
+    const report = snapshot.val();
+    if (!report) return;
+
+    const openingBalanceInput = document.getElementById('opening-balance');
+    const costInput = document.getElementById('shared-cost');
+    const revenueInput = document.getElementById('shared-revenue');
+    const closingBalanceInput = document.getElementById('closing-balance');
+
+    if (!openingBalanceInput || !costInput || !revenueInput || !closingBalanceInput) {
+      console.error('Không tìm thấy một hoặc nhiều phần tử input trong DOM');
+      alert('Lỗi: Giao diện chưa tải đúng. Vui lòng kiểm tra lại.');
+      return;
+    }
+
+    openingBalanceInput.value = report.openingBalance || '';
+    costInput.value = report.cost ? `${report.costDescription} ${report.cost}` : '';
+    revenueInput.value = report.revenue || '';
+    closingBalanceInput.value = report.closingBalance || '';
+    
+    if (report.exports) {
+      Object.entries(report.exports).forEach(([productId, qty]) => {
+        const input = document.querySelector(`.export-quantity[data-product-id="${productId}"]`);
+        if (input) input.value = qty;
+      });
+    }
+
+    const reportRef = db.ref('shared_reports/' + reportId);
+    reportRef.set({
+      ...report,
+      openingBalance: parseFloat(openingBalanceInput.value) || 0,
+      cost: parseExpenseInput(costInput.value).amount || undefined,
+      costDescription: parseExpenseInput(costInput.value).description || undefined,
+      costCategory: parseExpenseInput(costInput.value).category || undefined,
+      revenue: parseFloat(revenueInput.value) || undefined,
+      closingBalance: parseFloat(closingBalanceInput.value) || undefined,
+      exports: Array.from(document.getElementsByClassName('export-quantity')).reduce((acc, input) => {
+        const productId = input.dataset.productId;
+        const qty = parseFloat(input.value) || 0;
+        if (qty > 0) acc[productId] = qty;
+        return acc;
+      }, {}),
+      uid: auth.currentUser.uid,
+      date: new Date().toISOString().split('T')[0],
+      timestamp: new Date().toISOString()
+    }).then(() => {
+      alert('Cập nhật báo cáo thành công!');
+      openingBalanceInput.value = '';
+      costInput.value = '';
+      revenueInput.value = '';
+      closingBalanceInput.value = '';
+      document.querySelectorAll('.export-quantity').forEach(input => input.value = '');
+    }).catch(error => {
+      console.error('Lỗi cập nhật báo cáo:', error);
+      alert('Lỗi cập nhật báo cáo: ' + error.message);
+    });
+  });
 }
