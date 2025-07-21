@@ -41,10 +41,13 @@ function submitEmployeeReport() {
   const reportRef = db.ref(`dailyData/${dateKey}/${auth.currentUser.uid}`);
   reportRef.once('value').then(snapshot => {
     const existingData = snapshot.val() || {};
+    const newExpenseHistory = existingData.expenseHistory ? [...existingData.expenseHistory] : [];
+    newExpenseHistory.push({ amount: expenseAmount, info: expenseInfo, timestamp: Date.now() });
+
     const newReport = {
       ...existingData,
       ...reportData,
-      expenseHistory: existingData.expenseHistory ? [...existingData.expenseHistory, { amount: expenseAmount, info: expenseInfo, timestamp: Date.now() }] : [{ amount: expenseAmount, info: expenseInfo, timestamp: Date.now() }]
+      expenseHistory: newExpenseHistory
     };
     return reportRef.update(newReport);
   }).then(() => {
@@ -215,26 +218,30 @@ function loadExpenseSummary(elementId) {
       Object.entries(users).forEach(([uid, report]) => {
         if (report.expenseHistory) {
           report.expenseHistory.forEach(expense => {
-            const expenseType = expense.info.trim().toLowerCase();
+            const expenseType = expense.info.trim().toLowerCase() || 'Không có thông tin';
             if (!expenseSummary[expenseType]) {
-              expenseSummary[expenseType] = { total: 0, count: 0 };
+              expenseSummary[expenseType] = { total: 0, count: 0, details: [] };
             }
             expenseSummary[expenseType].total += expense.amount;
             expenseSummary[expenseType].count += 1;
+            expenseSummary[expenseType].details.push({
+              amount: expense.amount,
+              timestamp: new Date(expense.timestamp).toLocaleString()
+            });
           });
         }
       });
     });
 
-    let html = '<table style="border-collapse: collapse; width: 100%; margin-top: 16px;"><tr><th style="border: 1px solid #ccc; padding: 8px; background: #f3f4f6;">Loại chi phí</th><th style="border: 1px solid #ccc; padding: 8px; background: #f3f4f6;">Tổng chi phí</th><th style="border: 1px solid #ccc; padding: 8px; background: #f3f4f6;">Số lượng giao dịch</th></tr>';
+    let html = '<table style="border-collapse: collapse; width: 100%; margin-top: 16px;"><tr><th style="border: 1px solid #ccc; padding: 8px; background: #f3f4f6;">Loại chi phí</th><th style="border: 1px solid #ccc; padding: 8px; background: #f3f4f6;">Tổng chi phí</th><th style="border: 1px solid #ccc; padding: 8px; background: #f3f4f6;">Số lượng giao dịch</th><th style="border: 1px solid #ccc; padding: 8px; background: #f3f4f6;">Chi tiết</th></tr>';
     let grandTotal = 0;
     let grandCount = 0;
     Object.entries(expenseSummary).forEach(([type, summary]) => {
-      html += `<tr><td style="border: 1px solid #ccc; padding: 8px;">${type}</td><td style="border: 1px solid #ccc; padding: 8px;">${summary.total}</td><td style="border: 1px solid #ccc; padding: 8px;">${summary.count}</td></tr>`;
+      html += `<tr><td style="border: 1px solid #ccc; padding: 8px;">${type}</td><td style="border: 1px solid #ccc; padding: 8px;">${summary.total}</td><td style="border: 1px solid #ccc; padding: 8px;">${summary.count}</td><td style="border: 1px solid #ccc; padding: 8px;">${summary.details.map(d => `${d.amount} (${d.timestamp})`).join('<br>')}</td></tr>`;
       grandTotal += summary.total;
       grandCount += summary.count;
     });
-    html += `<tr><td style="border: 1px solid #ccc; padding: 8px;"><strong>Tổng cộng</strong></td><td style="border: 1px solid #ccc; padding: 8px;"><strong>${grandTotal}</strong></td><td style="border: 1px solid #ccc; padding: 8px;"><strong>${grandCount}</strong></td></tr></table>`;
+    html += `<tr><td style="border: 1px solid #ccc; padding: 8px;"><strong>Tổng cộng</strong></td><td style="border: 1px solid #ccc; padding: 8px;"><strong>${grandTotal}</strong></td><td style="border: 1px solid #ccc; padding: 8px;"><strong>${grandCount}</strong></td><td style="border: 1px solid #ccc; padding: 8px;"></td></tr></table>`;
     summaryTable.innerHTML = html;
     console.log('Đã tải tổng hợp chi phí thành công cho', elementId);
   }, error => {
