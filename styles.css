@@ -1,54 +1,43 @@
-/* styles.css - Tối ưu hóa */
+```css
 body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #f9fafb;
+  background-color: #f3f4f6;
   margin: 0;
-  padding: 20px;
-  color: #111827;
+  padding: 0;
+  font-family: Arial, sans-serif;
 }
 
-h1, h2, h3 {
-  color: #1f2937;
-}
-
-input, select, button {
-  padding: 8px;
-  margin-bottom: 8px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-button {
-  background-color: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #1d4ed8;
-}
-
-.hidden {
+#login-page, #manager-page, #employee-page {
   display: none;
 }
 
-.section {
-  margin-bottom: 24px;
+#login-page {
+  display: block;
+}
+
+input {
+  box-sizing: border-box;
+}
+
+.report-row {
+  margin-bottom: 16px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.action-btn {
+  margin-left: 8px;
 }
 
 .summary-table {
-  width: 100%;
   border-collapse: collapse;
-  margin-top: 8px;
+  width: 100%;
+  margin-top: 16px;
 }
 
 .summary-table th,
 .summary-table td {
-  border: 1px solid #e5e7eb;
+  border: 1px solid #ccc;
   padding: 8px;
   text-align: left;
 }
@@ -58,10 +47,11 @@ button:hover {
 }
 
 @media (max-width: 600px) {
-  .section {
-    margin-bottom: 16px;
+  div[style*="max-width: 800px"] {
+    max-width: 100%;
   }
-  input, select, button {
-    font-size: 14px;
+  div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr;
   }
 }
+```
