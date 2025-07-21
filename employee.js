@@ -1,4 +1,4 @@
-// employee.js (viết lại hoàn toàn theo cơ chế báo cáo chung)
+// employee.js (gộp hoàn chỉnh: gửi/sửa báo cáo trong ngày, xem nhiều ngày trước, không sửa báo cáo cũ)
 
 function loadEmployeeInventory(elementId) {
   const inventoryList = document.getElementById(elementId);
@@ -92,6 +92,88 @@ function submitSharedReport() {
   }).catch(error => {
     console.error('Lỗi gửi báo cáo:', error);
     alert('Lỗi gửi báo cáo: ' + error.message);
+  });
+}
+
+function loadSharedReports(elementId) {
+  const reportsList = document.getElementById(elementId);
+  const datePicker = document.getElementById('report-date');
+  const date = datePicker ? datePicker.value : new Date().toISOString().split('T')[0];
+  const currentUserId = auth.currentUser.uid;
+  const currentDate = new Date().toISOString().split('T')[0];
+
+  if (!reportsList) return;
+
+  db.ref('shared_reports/' + date).on('value', snapshot => {
+    reportsList.innerHTML = '';
+    const data = snapshot.val();
+    if (!data) {
+      reportsList.innerHTML = '<p>Không có báo cáo cho ngày này.</p>';
+      return;
+    }
+
+    Object.entries(data).forEach(([uid, report]) => {
+      const div = document.createElement('div');
+      div.className = 'p-2 border-b';
+
+      let exportDetails = '';
+      const exportPromises = [];
+
+      if (report.exports) {
+        Object.entries(report.exports).forEach(([productId, qty]) => {
+          exportPromises.push(
+            db.ref('inventory/' + productId).once('value').then(snap => {
+              const product = snap.val();
+              return product ? `${product.name}: ${qty}` : `SP ${productId}: ${qty}`;
+            })
+          );
+        });
+      }
+
+      Promise.all(exportPromises).then(exportTexts => {
+        div.innerHTML = `
+          <p><strong>Nhân viên:</strong> ${report.name || uid}</p>
+          <p><strong>Giờ:</strong> ${new Date(report.timestamp).toLocaleTimeString()}</p>
+          ${report.openingBalance ? `<p><strong>Số Dư Đầu Kỳ:</strong> ${report.openingBalance}</p>` : ''}
+          ${report.cost ? `<p><strong>Chi Phí:</strong> ${report.costDescription} (${report.cost} - ${report.costCategory})</p>` : ''}
+          ${report.revenue ? `<p><strong>Doanh Thu:</strong> ${report.revenue}</p>` : ''}
+          ${report.closingBalance ? `<p><strong>Số Dư Cuối Kỳ:</strong> ${report.closingBalance}</p>` : ''}
+          ${exportTexts.length ? `<p><strong>Xuất Kho:</strong> ${exportTexts.join(', ')}</p>` : ''}
+        `;
+
+        // Nếu là ngày hôm nay và của chính user => cho phép sửa
+        if (uid === currentUserId && report.date === currentDate) {
+          div.innerHTML += `<button onclick="editMyTodayReport()" class="text-blue-500 ml-2">Sửa</button>`;
+        }
+      });
+
+      reportsList.appendChild(div);
+    });
+  });
+}
+
+function editMyTodayReport() {
+  const uid = auth.currentUser.uid;
+  const date = new Date().toISOString().split('T')[0];
+
+  db.ref('shared_reports/' + date + '/' + uid).once('value').then(snapshot => {
+    const report = snapshot.val();
+    if (!report) {
+      alert('Không tìm thấy báo cáo để sửa.');
+      return;
+    }
+
+    document.getElementById('opening-balance').value = report.openingBalance || '';
+    document.getElementById('shared-cost').value = report.cost ? `${report.costDescription} ${report.cost} - ${report.costCategory}` : '';
+    document.getElementById('shared-revenue').value = report.revenue || '';
+    document.getElementById('closing-balance').value = report.closingBalance || '';
+
+    if (report.exports) {
+      Object.entries(report.exports).forEach(([productId, qty]) => {
+        const input = document.querySelector(`.export-quantity[data-product-id="${productId}"]`);
+        if (input) input.value = qty;
+      });
+    }
   });
 }
 
