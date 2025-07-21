@@ -1,4 +1,3 @@
-import { ref, push, set, onValue, remove } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js';
 
 function addInventory() {
   const name = document.getElementById('product-name').value;
@@ -10,8 +9,8 @@ function addInventory() {
     return;
   }
 
-  const inventoryRef = push(ref(db, 'inventory'));
-  set(inventoryRef, {
+  const inventoryRef = db.ref('inventory').push();
+  inventoryRef.set({
     name,
     quantity,
     price,
@@ -36,7 +35,7 @@ function loadInventory(elementId) {
     return;
   }
 
-  onValue(ref(db, 'inventory'), snapshot => {
+  db.ref('inventory').on('value', snapshot => {
     inventoryList.innerHTML = '';
     const data = snapshot.val();
     if (!data) {
@@ -76,7 +75,7 @@ function loadSharedReports(elementId) {
     return;
   }
 
-  onValue(ref(db, 'dailyData'), snapshot => {
+  db.ref('dailyData').on('value', snapshot => {
     reportsList.innerHTML = '';
     const data = snapshot.val();
     if (!data) {
@@ -113,7 +112,7 @@ function loadSharedReports(elementId) {
           reports.map(report => {
             const timestamp = new Date(report.lastUpdated).toLocaleString('vi-VN');
             console.log('Xử lý báo cáo:', report.date, 'UID:', report.uid);
-            return onValue(ref(db, 'users/' + report.uid), snapshot => {
+            return db.ref('users/' + report.uid).once('value').then(snapshot => {
               const user = snapshot.val();
               const employeeName = user && user.name ? user.name : report.user || report.uid;
 
@@ -123,10 +122,10 @@ function loadSharedReports(elementId) {
               }
               if (report.exports) {
                 return Promise.all(Object.entries(report.exports).map(([index, exportItem]) => {
-                  return onValue(ref(db, 'inventory/' + exportItem.productId), s => {
+                  return db.ref('inventory/' + exportItem.productId).once('value').then(s => {
                     const product = s.val();
                     return product ? `<p>${exportItem.quantity} ${exportItem.productName} - ${employeeName} ${timestamp} <button onclick="deleteReport('${report.date}', '${report.uid}')" class="text-red-500 hover:underline">Xóa</button></p>` : `<p>${exportItem.quantity} Sản phẩm ${exportItem.productId} - ${employeeName} ${timestamp} <button onclick="deleteReport('${report.date}', '${report.uid}')" class="text-red-500 hover:underline">Xóa</button></p>`;
-                  }, { onlyOnce: true });
+                  });
                 })).then(texts => {
                   exportHtml += texts.join('');
                   totalExport += Object.values(report.exports).reduce((sum, item) => sum + item.quantity, 0);
@@ -134,7 +133,27 @@ function loadSharedReports(elementId) {
               } else {
                 exportHtml += `<p>Không có xuất kho - ${employeeName} ${timestamp} <button onclick="deleteReport('${report.date}', '${report.uid}')" class="text-red-500 hover:underline">Xóa</button></p>`;
               }
-            }, { onlyOnce: true });
+            }).catch(error => {
+              console.error(`Lỗi tải tên người dùng cho UID ${report.uid}:`, error);
+              const employeeName = report.user || report.uid;
+              if (report.revenue) {
+                revenueHtml += `<p>${report.revenue} - ${employeeName} ${timestamp}</p>`;
+                totalRevenue += report.revenue;
+              }
+              if (report.exports) {
+                return Promise.all(Object.entries(report.exports).map(([index, exportItem]) => {
+                  return db.ref('inventory/' + exportItem.productId).once('value').then(s => {
+                    const product = s.val();
+                    return product ? `<p>${exportItem.quantity} ${exportItem.productName} - ${employeeName} ${timestamp} <button onclick="deleteReport('${report.date}', '${report.uid}')" class="text-red-500 hover:underline">Xóa</button></p>` : `<p>${exportItem.quantity} Sản phẩm ${exportItem.productId} - ${employeeName} ${timestamp} <button onclick="deleteReport('${report.date}', '${report.uid}')" class="text-red-500 hover:underline">Xóa</button></p>`;
+                  });
+                })).then(texts => {
+                  exportHtml += texts.join('');
+                  totalExport += Object.values(report.exports).reduce((sum, item) => sum + item.quantity, 0);
+                });
+              } else {
+                exportHtml += `<p>Không có xuất kho - ${employeeName} ${timestamp} <button onclick="deleteReport('${report.date}', '${report.uid}')" class="text-red-500 hover:underline">Xóa</button></p>`;
+              }
+            });
           })
         ).then(() => {
           html += `
@@ -170,7 +189,7 @@ function loadSharedReports(elementId) {
 
 function deleteReport(date, uid) {
   if (confirm('Bạn có chắc muốn xóa báo cáo này?')) {
-    remove(ref(db, `dailyData/${date}/${uid}`)).then(() => {
+    db.ref(`dailyData/${date}/${uid}`).remove().then(() => {
       alert('Xóa báo cáo thành công!');
       console.log('Đã xóa báo cáo:', date, uid);
     }).catch(error => {
