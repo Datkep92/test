@@ -52,8 +52,8 @@
       <div>
         <h2>Báo cáo tổng</h2>
         <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-          <input id="manager-report-date" type="date" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-          <select id="manager-report-filter" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+          <input id="report-date" type="date" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+          <select id="report-filter" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
             <option value="day">Theo ngày</option>
             <option value="month">Theo tháng</option>
           </select>
@@ -87,8 +87,8 @@
       <div>
         <h2>Báo cáo tổng</h2>
         <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-          <input id="employee-report-date" type="date" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-          <select id="employee-report-filter" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+          <input id="report-date" type="date" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+          <select id="report-filter" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
             <option value="day">Theo ngày</option>
             <option value="month">Theo tháng</option>
           </select>
@@ -104,10 +104,10 @@
     // Set default date to today
     document.addEventListener('DOMContentLoaded', () => {
       const today = new Date().toISOString().split('T')[0];
-      const managerDateInput = document.getElementById('manager-report-date');
-      const employeeDateInput = document.getElementById('employee-report-date');
-      if (managerDateInput) managerDateInput.value = today;
-      if (employeeDateInput) employeeDateInput.value = today;
+      const dateInputs = document.querySelectorAll('#report-date');
+      dateInputs.forEach(input => {
+        if (input) input.value = today;
+      });
     });
   </script>
 </body>
