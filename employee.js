@@ -217,6 +217,7 @@ function loadExpenseSummary(elementId) {
     Object.entries(data).forEach(([date, users]) => {
       Object.entries(users).forEach(([uid, report]) => {
         if (report.expenseHistory) {
+          const user = report.user || 'Không xác định'; // Lấy tên nhân viên từ node cha
           report.expenseHistory.forEach(expense => {
             const expenseType = expense.info.trim().toLowerCase() || 'Không có thông tin';
             if (!expenseSummary[expenseType]) {
@@ -226,7 +227,8 @@ function loadExpenseSummary(elementId) {
             expenseSummary[expenseType].count += 1;
             expenseSummary[expenseType].details.push({
               amount: expense.amount,
-              timestamp: new Date(expense.timestamp).toLocaleString()
+              timestamp: new Date(expense.timestamp).toLocaleString(),
+              user: user // Thêm tên nhân viên
             });
           });
         }
@@ -237,7 +239,7 @@ function loadExpenseSummary(elementId) {
     let grandTotal = 0;
     let grandCount = 0;
     Object.entries(expenseSummary).forEach(([type, summary]) => {
-      html += `<tr><td style="border: 1px solid #ccc; padding: 8px;">${type}</td><td style="border: 1px solid #ccc; padding: 8px;">${summary.total}</td><td style="border: 1px solid #ccc; padding: 8px;">${summary.count}</td><td style="border: 1px solid #ccc; padding: 8px;">${summary.details.map(d => `${d.amount} (${d.timestamp})`).join('<br>')}</td></tr>`;
+      html += `<tr><td style="border: 1px solid #ccc; padding: 8px;">${type}</td><td style="border: 1px solid #ccc; padding: 8px;">${summary.total}</td><td style="border: 1px solid #ccc; padding: 8px;">${summary.count}</td><td style="border: 1px solid #ccc; padding: 8px;">${summary.details.map(d => `${d.amount} (${d.timestamp} - ${d.user})`).join('<br>')}</td></tr>`;
       grandTotal += summary.total;
       grandCount += summary.count;
     });
