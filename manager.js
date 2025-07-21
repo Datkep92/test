@@ -102,7 +102,7 @@ function loadSharedReports(elementId) {
         totalRevenue += report.revenue || 0;
         if (report.expense && report.expense.amount) {
           totalExpense += report.expense.amount;
-          expenseDetails.push(`${report.expense.amount} (Thông tin: ${report.expense.info || 'Không có'}, Nhân viên: ${report.user})`);
+          expenseDetails.push(`${report.expense.amount} (Thông tin: ${report.expense.info || 'Không có'}, Nhân viên: ${report.user}, Thời gian: ${new Date(report.expense.timestamp).toLocaleString()})`);
         }
         if (report.revenue) {
           revenueDetails.push(`${report.revenue} (Nhân viên: ${report.user})`);
@@ -163,13 +163,15 @@ function loadExpenseSummary(elementId) {
     const expenseSummary = {};
     Object.entries(data).forEach(([date, users]) => {
       Object.entries(users).forEach(([uid, report]) => {
-        if (report.expense && report.expense.amount && report.expense.info) {
-          const expenseType = report.expense.info.trim().toLowerCase();
-          if (!expenseSummary[expenseType]) {
-            expenseSummary[expenseType] = { total: 0, count: 0 };
-          }
-          expenseSummary[expenseType].total += report.expense.amount;
-          expenseSummary[expenseType].count += 1;
+        if (report.expenseHistory) {
+          report.expenseHistory.forEach(expense => {
+            const expenseType = expense.info.trim().toLowerCase();
+            if (!expenseSummary[expenseType]) {
+              expenseSummary[expenseType] = { total: 0, count: 0 };
+            }
+            expenseSummary[expenseType].total += expense.amount;
+            expenseSummary[expenseType].count += 1;
+          });
         }
       });
     });
