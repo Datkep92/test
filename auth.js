@@ -1,5 +1,6 @@
-// Thiết lập persistence để giữ trạng thái đăng nhập
-auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+import { setPersistence, signInWithEmailAndPassword, browserLocalPersistence, browserSessionPersistence, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+
+setPersistence(auth, browserLocalPersistence)
   .then(() => {
     console.log('Đã thiết lập persistence đăng nhập: LOCAL');
   })
@@ -7,78 +8,56 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
     console.error('Lỗi thiết lập persistence:', error);
   });
 
-// Load saved credentials if available
-window.onload = function() {
-  const savedEmail = localStorage.getItem('savedEmail');
-  const savedPassword = localStorage.getItem('savedPassword');
-  if (savedEmail && savedPassword) {
-    document.getElementById('email').value = savedEmail;
-    document.getElementById('password').value = savedPassword;
-    document.getElementById('save-password').checked = true;
-  }
-};
-
 function login() {
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
-  const savePassword = document.getElementById('save-password').checked;
+  const rememberMe = document.getElementById('remember-me') ? document.getElementById('remember-me').checked : false;
 
-  if (savePassword) {
-    localStorage.setItem('savedEmail', email);
-    localStorage.setItem('savedPassword', password);
-  } else {
-    localStorage.removeItem('savedEmail');
-    localStorage.removeItem('savedPassword');
+  if (!email || !password) {
+    alert('Vui lòng nhập email và mật khẩu.');
+    return;
   }
 
-  auth.signInWithEmailAndPassword(email, password)
+  setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence)
+    .then(() => {
+      return signInWithEmailAndPassword(auth, email, password);
+    })
     .then(userCredential => {
-      const user = userCredential.user;
-      console.log('User UID:', user.uid);
-      checkUserRole(user.uid);
+      console.log('User UID:', userCredential.user.uid);
     })
     .catch(error => {
-      document.getElementById('error').textContent = 'Lỗi đăng nhập: ' + error.message;
-      document.getElementById('error').classList.remove('hidden');
+      console.error('Lỗi đăng nhập:', error);
+      alert('Lỗi đăng nhập: ' + error.message);
     });
 }
 
-function checkUserRole(uid) {
-  db.ref('users/' + uid).once('value').then(snapshot => {
-    const userData = snapshot.val();
-    if (!userData) {
-      console.error('Không tìm thấy dữ liệu người dùng cho UID:', uid);
-      alert('Lỗi: Không tìm thấy dữ liệu người dùng. Vui lòng kiểm tra cấu hình.');
-      return;
-    }
-
-    document.getElementById('login-page').classList.add('hidden');
-    
-    if (userData.role === 'manager') {
-      console.log('Đăng nhập quản lý, hiển thị giao diện quản lý...');
-      const managerPage = document.getElementById('manager-page');
-      if (!managerPage) {
-        console.error('Không tìm thấy phần tử manager-page trong DOM');
-        alert('Lỗi: Không tìm thấy giao diện quản lý. Vui lòng kiểm tra giao diện.');
-        return;
+onAuthStateChanged(auth, user => {
+  if (user) {
+    db.ref('users/' + user.uid).once('value').then(snapshot => {
+      const userData = snapshot.val();
+      if (userData && userData.role === 'manager') {
+        console.log('Đăng nhập quản lý, hiển thị giao diện quản lý...');
+        document.getElementById('login-page').classList.add('hidden');
+        document.getElementById('manager-page').classList.remove('hidden');
+        document.getElementById('employee-page').classList.add('hidden');
+        loadInventory('inventory-list');
+        loadSharedReports('report-table');
+      } else {
+        console.log('Đăng nhập nhân viên, hiển thị giao diện nhân viên...');
+        document.getElementById('login-page').classList.add('hidden');
+        document.getElementById('employee-page').classList.remove('hidden');
+        document.getElementById('manager-page').classList.add('hidden');
+        loadInventory('inventory-list');
+        loadSharedReports('report-table');
       }
-      managerPage.classList.remove('hidden');
-      loadInventory('inventory-list');
-      loadSharedReports('report-table');
-    } else {
-      console.log('Đăng nhập nhân viên, hiển thị giao diện nhân viên...');
-      const employeePage = document.getElementById('employee-page');
-      if (!employeePage) {
-        console.error('Không tìm thấy phần tử employee-page trong DOM');
-        alert('Lỗi: Không tìm thấy giao diện nhân viên. Vui lòng kiểm tra giao diện.');
-        return;
-      }
-      employeePage.classList.remove('hidden');
-      loadInventory('inventory-list');
-      loadSharedReports('report-table');
-    }
-  }).catch(error => {
-    console.error('Lỗi kiểm tra vai trò:', error);
-    alert('Lỗi kiểm tra vai trò: ' + error.message);
-  });
-}
+    }).catch(error => {
+      console.error('Lỗi lấy thông tin người dùng:', error);
+      alert('Lỗi: ' + error.message);
+    });
+  } else {
+    console.log('Không có người dùng, hiển thị trang đăng nhập...');
+    document.getElementById('login-page').classList.remove('hidden');
+    document.getElementById('manager-page').classList.add('hidden');
+    document.getElementById('employee-page').classList.add('hidden');
+  }
+});
