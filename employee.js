@@ -1,3 +1,5 @@
+import { ref, set, onValue, update } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js';
+
 let expenseCategories = [];
 
 function capitalizeFirstLetter(string) {
@@ -23,8 +25,7 @@ function parseExpenseInput(input) {
   
   if (!expenseCategories.includes(category)) {
     expenseCategories.push(category);
-    const categoriesRef = db.ref('expenseCategories');
-    categoriesRef.set(expenseCategories).catch(error => {
+    set(ref(db, 'expenseCategories'), expenseCategories).catch(error => {
       console.error('Lỗi cập nhật danh mục chi phí:', error);
     });
   }
@@ -41,7 +42,6 @@ function submitSharedReport() {
   const noteInput = document.getElementById('shared-note');
   const exportInputs = document.getElementsByClassName('export-quantity');
 
-  // Kiểm tra linh hoạt hơn
   if (!revenueInput) {
     console.error('Không tìm thấy shared-revenue trong DOM');
     alert('Lỗi: Không tìm thấy input doanh thu. Vui lòng kiểm tra giao diện.');
@@ -88,19 +88,19 @@ function submitSharedReport() {
   console.log('Dữ liệu báo cáo gửi đi:', reportData);
 
   const dateKey = reportData.date.replace(/\//g, '_');
-  const reportRef = db.ref(`dailyData/${dateKey}/${auth.currentUser.uid}`);
-  reportRef.set(reportData).then(() => {
+  const reportRef = ref(db, `dailyData/${dateKey}/${auth.currentUser.uid}`);
+  set(reportRef, reportData).then(() => {
     console.log('Đã lưu báo cáo vào dailyData:', dateKey, auth.currentUser.uid);
     if (Object.keys(exportQuantities).length > 0) {
       return Promise.all(Object.entries(exportQuantities).map(([productId, exportItem]) => {
         console.log(`Cập nhật tồn kho cho productId ${productId}: ${exportItem.quantity}`);
-        return db.ref('inventory/' + productId).once('value').then(snapshot => {
+        return onValue(ref(db, 'inventory/' + productId), snapshot => {
           const product = snapshot.val();
           if (!product) {
             throw new Error(`Không tìm thấy sản phẩm ${productId} trong kho.`);
           }
           if (product.quantity >= exportItem.quantity) {
-            return db.ref('inventory/' + productId).update({
+            return update(ref(db, 'inventory/' + productId), {
               quantity: product.quantity - exportItem.quantity
             }).then(() => {
               console.log(`Đã cập nhật tồn kho cho ${productId}: ${product.quantity - exportItem.quantity}`);
@@ -108,7 +108,7 @@ function submitSharedReport() {
           } else {
             throw new Error(`Số lượng xuất kho (${exportItem.quantity}) vượt quá tồn kho (${product.quantity}) cho sản phẩm ${productId}.`);
           }
-        });
+        }, { onlyOnce: true });
       }));
     }
   }).then(() => {
@@ -131,7 +131,7 @@ function loadInventory(elementId) {
     return;
   }
 
-  db.ref('inventory').on('value', snapshot => {
+  onValue(ref(db, 'inventory'), snapshot => {
     inventoryList.innerHTML = '';
     const data = snapshot.val();
     if (!data) {
@@ -172,7 +172,7 @@ function loadSharedReports(elementId) {
     return;
   }
 
-  db.ref('dailyData').on('value', snapshot => {
+  onValue(ref(db, 'dailyData'), snapshot => {
     reportsList.innerHTML = '';
     const data = snapshot.val();
     if (!data) {
@@ -190,6 +190,10 @@ function loadSharedReports(elementId) {
       const formattedDate = date.replace(/_/g, '/');
       const key = filterType === 'day' ? formattedDate : formattedDate.substring(3); // DD/MM/YYYY or MM/YYYY
       Object.entries(users).forEach(([uid, report]) => {
+        if (uid === 'expenses' || !/^[a-zA-Z0-9]+$/.test(uid)) {
+          console.warn('Bỏ qua key không hợp lệ:', uid);
+          return;
+        }
         if (!groupedReports[key]) groupedReports[key] = [];
         groupedReports[key].push({ date, uid, ...report });
       });
@@ -205,8 +209,8 @@ function loadSharedReports(elementId) {
           reports.map(report => {
             const timestamp = new Date(report.lastUpdated).toLocaleString('vi-VN');
             console.log('Xử lý báo cáo:', report.date, 'UID:', report.uid);
-            return db.ref('users/' + report.uid).once('value').then(userSnapshot => {
-              const user = userSnapshot.val();
+            return onValue(ref(db, 'users/' + report.uid), snapshot => {
+              const user = snapshot.val();
               const employeeName = user && user.name ? user.name : report.user || report.uid;
 
               if (report.revenue) {
@@ -215,10 +219,10 @@ function loadSharedReports(elementId) {
               }
               if (report.exports) {
                 return Promise.all(Object.entries(report.exports).map(([index, exportItem]) => {
-                  return db.ref('inventory/' + exportItem.productId).once('value').then(s => {
+                  return onValue(ref(db, 'inventory/' + exportItem.productId), s => {
                     const product = s.val();
                     return product ? `<p>${exportItem.quantity} ${exportItem.productName} - ${employeeName} ${timestamp}</p>` : `<p>${exportItem.quantity} Sản phẩm ${exportItem.productId} - ${employeeName} ${timestamp}</p>`;
-                  });
+                  }, { onlyOnce: true });
                 })).then(texts => {
                   exportHtml += texts.join('');
                   totalExport += Object.values(report.exports).reduce((sum, item) => sum + item.quantity, 0);
@@ -226,27 +230,7 @@ function loadSharedReports(elementId) {
               } else {
                 exportHtml += `<p>Không có xuất kho - ${employeeName} ${timestamp}</p>`;
               }
-            }).catch(error => {
-              console.error(`Lỗi tải tên người dùng cho UID ${report.uid}:`, error);
-              const employeeName = report.user || report.uid;
-              if (report.revenue) {
-                revenueHtml += `<p>${report.revenue} - ${employeeName} ${timestamp}</p>`;
-                totalRevenue += report.revenue;
-              }
-              if (report.exports) {
-                return Promise.all(Object.entries(report.exports).map(([index, exportItem]) => {
-                  return db.ref('inventory/' + exportItem.productId).once('value').then(s => {
-                    const product = s.val();
-                    return product ? `<p>${exportItem.quantity} ${exportItem.productName} - ${employeeName} ${timestamp}</p>` : `<p>${exportItem.quantity} Sản phẩm ${exportItem.productId} - ${employeeName} ${timestamp}</p>`;
-                  });
-                })).then(texts => {
-                  exportHtml += texts.join('');
-                  totalExport += Object.values(report.exports).reduce((sum, item) => sum + item.quantity, 0);
-                });
-              } else {
-                exportHtml += `<p>Không có xuất kho - ${employeeName} ${timestamp}</p>`;
-              }
-            });
+            }, { onlyOnce: true });
           })
         ).then(() => {
           html += `
