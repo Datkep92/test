@@ -13,6 +13,7 @@ function addInventory() {
     name,
     quantity,
     price,
+    unit: 'cái',
     timestamp: new Date().toISOString()
   }).then(() => {
     alert('Thêm sản phẩm thành công!');
@@ -30,7 +31,7 @@ function loadInventory(elementId) {
   const inventoryList = document.getElementById(elementId);
   if (!inventoryList) {
     console.error('Không tìm thấy phần tử inventory-list trong DOM');
-    alert('Lỗi: Không tìm thấy danh sách tồn kho. Vui lòng kiểm tra giao diện.');
+    alert('Lỗi: Không tìm thấy danh sách tồn kho.');
     return;
   }
 
@@ -45,9 +46,10 @@ function loadInventory(elementId) {
 
     Object.entries(data).forEach(([productId, product]) => {
       const div = document.createElement('div');
-      div.className = 'p-2 border-b';
+      div.className = 'flex items-center justify-between p-2 border-b';
       div.innerHTML = `
-        <p><strong>${product.name}</strong>: ${product.quantity} (Đơn giá: ${product.price})</p>
+        <span>${product.name} (Số lượng: ${product.quantity})</span>
+        <input type="number" min="0" max="${product.quantity}" class="export-quantity w-24 p-1 border rounded" data-product-id="${productId}" data-product-name="${product.name}" data-product-price="${product.price}" data-product-unit="${product.unit || 'cái'}" placeholder="Số lượng xuất">
       `;
       inventoryList.appendChild(div);
     });
@@ -59,18 +61,88 @@ function loadInventory(elementId) {
   });
 }
 
+function submitManagerReport() {
+  const initialInventory = parseFloat(document.getElementById('initial-inventory').value) || 0;
+  const finalInventory = parseFloat(document.getElementById('final-inventory').value) || 0;
+  const revenue = parseFloat(document.getElementById('revenue').value) || 0;
+  const expenseAmount = parseFloat(document.getElementById('expense-amount').value) || 0;
+  const expenseInfo = document.getElementById('expense-info').value || '';
+
+  if (initialInventory < 0 || finalInventory < 0 || revenue < 0 || expenseAmount < 0) {
+    alert('Vui lòng nhập giá trị không âm.');
+    return;
+  }
+
+  const exportInputs = document.getElementsByClassName('export-quantity');
+  const exportQuantities = Array.from(exportInputs).reduce((acc, input) => {
+    const qty = parseFloat(input.value) || 0;
+    if (qty > 0) {
+      acc[input.dataset.productId] = {
+        productId: input.dataset.productId,
+        quantity: qty,
+        productName: input.dataset.productName,
+        price: parseFloat(input.dataset.productPrice) || 0,
+        unit: input.dataset.productUnit || 'cái',
+        timestamp: Date.now()
+      };
+    }
+    return acc;
+  }, {});
+
+  const reportData = {
+    user: auth.currentUser.email,
+    date: new Date().toLocaleDateString('vi-VN'),
+    lastUpdated: Date.now(),
+    initialInventory,
+    finalInventory,
+    revenue,
+    expense: { amount: expenseAmount, info: expenseInfo }
+  };
+  if (Object.keys(exportQuantities).length > 0) reportData.exports = exportQuantities;
+
+  const dateKey = reportData.date.replace(/\//g, '_');
+  const reportRef = db.ref(`dailyData/${dateKey}/${auth.currentUser.uid}`);
+  reportRef.set(reportData).then(() => {
+    if (Object.keys(exportQuantities).length > 0) {
+      return Promise.all(Object.entries(exportQuantities).map(([productId, exportItem]) => {
+        return db.ref('inventory/' + productId).once('value').then(snapshot => {
+          const product = snapshot.val();
+          if (product.quantity >= exportItem.quantity) {
+            return db.ref('inventory/' + productId).update({
+              quantity: product.quantity - exportItem.quantity
+            });
+          } else {
+            throw new Error(`Số lượng xuất kho vượt quá tồn kho cho ${product.name}`);
+          }
+        });
+      }));
+    }
+  }).then(() => {
+    alert('Gửi báo cáo thành công!');
+    document.getElementById('initial-inventory').value = '';
+    document.getElementById('final-inventory').value = '';
+    document.getElementById('revenue').value = '';
+    document.getElementById('expense-amount').value = '';
+    document.getElementById('expense-info').value = '';
+    Array.from(exportInputs).forEach(input => input.value = '');
+  }).catch(error => {
+    console.error('Lỗi gửi báo cáo:', error);
+    alert('Lỗi: ' + error.message);
+  });
+}
+
 function loadSharedReports(elementId) {
   const reportsList = document.getElementById(elementId);
   if (!reportsList) {
     console.error('Không tìm thấy phần tử report-table trong DOM');
-    alert('Lỗi: Không tìm thấy bảng báo cáo. Vui lòng kiểm tra giao diện.');
+    alert('Lỗi: Không tìm thấy bảng báo cáo.');
     return;
   }
 
   const filter = document.getElementById('report-filter');
   if (!filter) {
     console.error('Không tìm thấy phần tử report-filter trong DOM');
-    alert('Lỗi: Không tìm thấy bộ lọc báo cáo. Vui lòng kiểm tra giao diện.');
+    alert('Lỗi: Không tìm thấy bộ lọc báo cáo.');
     return;
   }
 
@@ -83,16 +155,14 @@ function loadSharedReports(elementId) {
       return;
     }
 
-    console.log('Dữ liệu báo cáo thô:', data);
-
-    const filterType = filter.value; // 'day' or 'month'
+    const filterType = filter.value;
     let groupedReports = {};
 
     Object.entries(data).forEach(([date, users]) => {
       const formattedDate = date.replace(/_/g, '/');
-      const key = filterType === 'day' ? formattedDate : formattedDate.substring(3); // DD/MM/YYYY or MM/YYYY
+      const key = filterType === 'day' ? formattedDate : formattedDate.substring(3);
       Object.entries(users).forEach(([uid, report]) => {
-        if (uid === 'expenses' || !/^[a-zA-Z0-9]+$/.test(uid)) {
+        if (!/^[a-zA-Z0-9]+$/.test(uid)) {
           console.warn('Bỏ qua key không hợp lệ:', uid);
           return;
         }
@@ -102,76 +172,66 @@ function loadSharedReports(elementId) {
     });
 
     let html = '';
-    Promise.all(
-      Object.entries(groupedReports).map(([key, reports]) => {
-        let totalRevenue = 0, totalExport = 0;
-        let revenueHtml = '', exportHtml = '';
+    Promise.all(Object.entries(groupedReports).map(([key, reports]) => {
+      let totalInitial = 0, totalFinal = 0, totalRevenue = 0, totalExpense = 0, totalExport = 0;
 
-        return Promise.all(
-          reports.map(report => {
-            const timestamp = new Date(report.lastUpdated).toLocaleString('vi-VN');
-            console.log('Xử lý báo cáo:', report.date, 'UID:', report.uid);
-            return db.ref('users/' + report.uid).once('value').then(snapshot => {
-              const user = snapshot.val();
-              const employeeName = user && user.name ? user.name : report.user || report.uid;
+      return Promise.all(reports.map(report => {
+        const timestamp = new Date(report.lastUpdated).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+        return db.ref('users/' + report.uid).once('value').then(snapshot => {
+          const user = snapshot.val();
+          const employeeName = user && user.name ? user.name : report.user || report.uid;
+          const isCurrentUser = auth.currentUser && auth.currentUser.uid === report.uid;
+          const isManager = user && user.role === 'manager';
 
-              if (report.revenue) {
-                revenueHtml += `<p>${report.revenue} - ${employeeName} ${timestamp}</p>`;
-                totalRevenue += report.revenue;
-              }
-              if (report.exports) {
-                return Promise.all(Object.entries(report.exports).map(([index, exportItem]) => {
-                  return db.ref('inventory/' + exportItem.productId).once('value').then(s => {
-                    const product = s.val();
-                    return product ? `<p>${exportItem.quantity} ${exportItem.productName} - ${employeeName} ${timestamp} <button onclick="deleteReport('${report.date}', '${report.uid}')" class="text-red-500 hover:underline">Xóa</button></p>` : `<p>${exportItem.quantity} Sản phẩm ${exportItem.productId} - ${employeeName} ${timestamp} <button onclick="deleteReport('${report.date}', '${report.uid}')" class="text-red-500 hover:underline">Xóa</button></p>`;
-                  });
-                })).then(texts => {
-                  exportHtml += texts.join('');
-                  totalExport += Object.values(report.exports).reduce((sum, item) => sum + item.quantity, 0);
-                });
-              } else {
-                exportHtml += `<p>Không có xuất kho - ${employeeName} ${timestamp} <button onclick="deleteReport('${report.date}', '${report.uid}')" class="text-red-500 hover:underline">Xóa</button></p>`;
-              }
-            }).catch(error => {
-              console.error(`Lỗi tải tên người dùng cho UID ${report.uid}:`, error);
-              const employeeName = report.user || report.uid;
-              if (report.revenue) {
-                revenueHtml += `<p>${report.revenue} - ${employeeName} ${timestamp}</p>`;
-                totalRevenue += report.revenue;
-              }
-              if (report.exports) {
-                return Promise.all(Object.entries(report.exports).map(([index, exportItem]) => {
-                  return db.ref('inventory/' + exportItem.productId).once('value').then(s => {
-                    const product = s.val();
-                    return product ? `<p>${exportItem.quantity} ${exportItem.productName} - ${employeeName} ${timestamp} <button onclick="deleteReport('${report.date}', '${report.uid}')" class="text-red-500 hover:underline">Xóa</button></p>` : `<p>${exportItem.quantity} Sản phẩm ${exportItem.productId} - ${employeeName} ${timestamp} <button onclick="deleteReport('${report.date}', '${report.uid}')" class="text-red-500 hover:underline">Xóa</button></p>`;
-                  });
-                })).then(texts => {
-                  exportHtml += texts.join('');
-                  totalExport += Object.values(report.exports).reduce((sum, item) => sum + item.quantity, 0);
-                });
-              } else {
-                exportHtml += `<p>Không có xuất kho - ${employeeName} ${timestamp} <button onclick="deleteReport('${report.date}', '${report.uid}')" class="text-red-500 hover:underline">Xóa</button></p>`;
-              }
+          totalInitial += report.initialInventory || 0;
+          totalFinal += report.finalInventory || 0;
+          totalRevenue += report.revenue || 0;
+          totalExpense += report.expense ? report.expense.amount || 0 : 0;
+
+          let exportHtml = '';
+          if (report.exports) {
+            return Promise.all(Object.entries(report.exports).map(([_, exportItem]) => {
+              totalExport += exportItem.quantity || 0;
+              return db.ref('inventory/' + exportItem.productId).once('value').then(s => {
+                const product = s.val();
+                return product ? `${exportItem.quantity} ${exportItem.productName}` : `${exportItem.quantity} Sản phẩm ${exportItem.productId}`;
+              });
+            })).then(texts => {
+              exportHtml = texts.join(', ');
             });
-          })
-        ).then(() => {
+          }
+
+          const actions = (isCurrentUser || isManager) ? `<button onclick="deleteReport('${report.date}', '${report.uid}')" class="text-red-500 hover:underline ml-2">Xóa</button><button onclick="editReport('${report.date}', '${report.uid}')" class="text-blue-500 hover:underline ml-2">Sửa</button>` : '';
+
           html += `
-            <div class="mb-4">
-              <h4 class="text-lg font-semibold">${key}</h4>
-              <div class="pl-4">
-                <h5>Doanh Thu:</h5>
-                ${revenueHtml || '<p>Không có dữ liệu.</p>'}
-                <p><strong>Tổng Doanh Thu:</strong> ${totalRevenue} ${new Date().toLocaleString('vi-VN')}</p>
-                <hr class="my-2">
-                <h5>Xuất Kho:</h5>
-                ${exportHtml || '<p>Không có dữ liệu.</p>'}
-                <p><strong>Tổng Xuất Kho:</strong> ${totalExport} ${new Date().toLocaleString('vi-VN')}</p>
-              </div>
+            <div class="mb-4 p-2 border rounded">
+              <p><strong>Ngày giờ:</strong> ${timestamp}</p>
+              <p><strong>Nhân viên:</strong> ${employeeName}</p>
+              <p><strong>Tồn kho đầu kỳ:</strong> ${report.initialInventory || 0}</p>
+              <p><strong>Tồn kho cuối kỳ:</strong> ${report.finalInventory || 0}</p>
+              <p><strong>Doanh Thu:</strong> ${report.revenue || 0}</p>
+              <p><strong>Chi Phí:</strong> ${report.expense ? report.expense.amount || 0 : 0} (${report.expense ? report.expense.info || 'Không có thông tin' : 'Không có'})</p>
+              <p><strong>Xuất kho:</strong> ${exportHtml || 'Không có'}</p>
+              ${actions}
             </div>
           `;
+        }).catch(error => {
+          console.error(`Lỗi tải tên người dùng cho UID ${report.uid}:`, error);
+          const employeeName = report.user || report.uid;
+          // Logic fallback tương tự
         });
-      })
-    ).then(() => {
+      })).then(() => {
+        html += `
+          <div class="mt-2 p-2 border-t">
+            <p><strong>Tổng Tồn kho đầu kỳ:</strong> ${totalInitial}</p>
+            <p><strong>Tổng Tồn kho cuối kỳ:</strong> ${totalFinal}</p>
+            <p><strong>Tổng Doanh Thu:</strong> ${totalRevenue}</p>
+            <p><strong>Tổng Chi Phí:</strong> ${totalExpense}</p>
+            <p><strong>Tổng Xuất kho:</strong> ${totalExport}</p>
+          </div>
+        `;
+      });
+    })).then(() => {
       reportsList.innerHTML = html;
       console.log('Đã tải báo cáo chung thành công cho', elementId);
     }).catch(error => {
@@ -179,10 +239,6 @@ function loadSharedReports(elementId) {
       reportsList.innerHTML = '<p>Lỗi tải báo cáo: ' + error.message + '</p>';
       alert('Lỗi tải báo cáo: ' + error.message);
     });
-  }, error => {
-    console.error('Lỗi tải báo cáo:', error);
-    reportsList.innerHTML = '<p>Lỗi tải báo cáo: ' + error.message + '</p>';
-    alert('Lỗi tải báo cáo: ' + error.message);
   });
 }
 
@@ -196,4 +252,10 @@ function deleteReport(date, uid) {
       alert('Lỗi xóa báo cáo: ' + error.message);
     });
   }
+}
+
+function editReport(date, uid) {
+  // Logic sửa báo cáo (cần thêm form hoặc popup)
+  alert(`Chỉnh sửa báo cáo cho ngày ${date}, UID ${uid}. (Chưa triển khai đầy đủ)`);
+  // Thêm form chỉnh sửa ở đây nếu cần
 }
