@@ -81,7 +81,6 @@ function submitSharedReport() {
 
   const reportRef = db.ref('shared_reports').push();
   reportRef.set(reportData).then(() => {
-    // Update inventory for exports
     Promise.all(Object.entries(exportQuantities).map(([productId, qty]) => {
       return db.ref('inventory/' + productId).once('value').then(snapshot => {
         const product = snapshot.val();
@@ -112,7 +111,10 @@ function submitSharedReport() {
 
 function loadInventory(elementId) {
   const inventoryList = document.getElementById(elementId);
-  if (!inventoryList) return;
+  if (!inventoryList) {
+    console.error('Không tìm thấy phần tử inventory-list trong DOM');
+    return;
+  }
 
   db.ref('inventory').on('value', snapshot => {
     inventoryList.innerHTML = '';
@@ -140,7 +142,16 @@ function loadInventory(elementId) {
 
 function loadSharedReports(elementId) {
   const reportsList = document.getElementById(elementId);
-  if (!reportsList) return;
+  if (!reportsList) {
+    console.error('Không tìm thấy phần tử report-table trong DOM');
+    return;
+  }
+
+  const filter = document.getElementById('report-filter');
+  if (!filter) {
+    console.error('Không tìm thấy phần tử report-filter trong DOM');
+    return;
+  }
 
   db.ref('shared_reports').on('value', snapshot => {
     reportsList.innerHTML = '';
@@ -150,58 +161,90 @@ function loadSharedReports(elementId) {
       return;
     }
 
-    let totalOpeningBalance = 0, totalCost = 0, totalRevenue = 0, totalClosingBalance = 0, totalExport = 0;
-    Object.entries(data).forEach(([reportId, report]) => {
-      const isOwnReport = auth.currentUser && report.uid === auth.currentUser.uid;
-      const div = document.createElement('div');
-      div.className = 'p-2 border-b';
-      let exportText = '';
-      if (report.exports) {
-        exportText = Object.entries(report.exports).map(([productId, qty]) => {
-          return db.ref('inventory/' + productId).once('value').then(s => {
-            const product = s.val();
-            return product ? `${product.name}: ${qty}` : `Sản phẩm ${productId}: ${qty}`;
-          });
-        });
-        Promise.all(exportText).then(texts => {
-          div.innerHTML = `
-            <p><strong>Ngày:</strong> ${report.date}</p>
-            ${report.openingBalance ? `<p><strong>Số Dư Đầu Kỳ:</strong> ${report.openingBalance}</p>` : ''}
-            ${report.cost ? `<p><strong>Chi Phí:</strong> ${report.costDescription} (${report.cost} - ${report.costCategory})</p>` : ''}
-            ${report.revenue ? `<p><strong>Doanh Thu:</strong> ${report.revenue}</p>` : ''}
-            ${report.closingBalance ? `<p><strong>Số Dư Cuối Kỳ:</strong> ${report.closingBalance}</p>` : ''}
-            ${texts.length ? `<p><strong>Xuất Kho:</strong> ${texts.join(', ')}</p>` : ''}
-            ${isOwnReport ? `<button onclick="editReport('${reportId}')" class="text-blue-500">Sửa</button>` : ''}
-          `;
-        });
-      } else {
-        div.innerHTML = `
-          <p><strong>Ngày:</strong> ${report.date}</p>
-          ${report.openingBalance ? `<p><strong>Số Dư Đầu Kỳ:</strong> ${report.openingBalance}</p>` : ''}
-          ${report.cost ? `<p><strong>Chi Phí:</strong> ${report.costDescription} (${report.cost} - ${report.costCategory})</p>` : ''}
-          ${report.revenue ? `<p><strong>Doanh Thu:</strong> ${report.revenue}</p>` : ''}
-          ${report.closingBalance ? `<p><strong>Số Dư Cuối Kỳ:</strong> ${report.closingBalance}</p>` : ''}
-          ${isOwnReport ? `<button onclick="editReport('${reportId}')" class="text-blue-500">Sửa</button>` : ''}
-        `;
-      }
-      reportsList.appendChild(div);
+    const filterType = filter.value; // 'day' or 'month'
+    let groupedReports = {};
 
-      totalOpeningBalance += report.openingBalance || 0;
-      totalCost += report.cost || 0;
-      totalRevenue += report.revenue || 0;
-      totalClosingBalance += report.closingBalance || 0;
-      totalExport += report.exports ? Object.values(report.exports).reduce((sum, qty) => sum + qty, 0) : 0;
+    Object.entries(data).forEach(([reportId, report]) => {
+      const key = filterType === 'day' ? report.date : report.date.substring(0, 7); // YYYY-MM-DD or YYYY-MM
+      if (!groupedReports[key]) groupedReports[key] = [];
+      groupedReports[key].push({ reportId, ...report });
     });
 
-    const netProfit = totalOpeningBalance - totalCost + totalRevenue - totalClosingBalance;
-    document.getElementById('total-opening-balance').textContent = totalOpeningBalance;
-    document.getElementById('total-cost').textContent = totalCost;
-    document.getElementById('total-revenue').textContent = totalRevenue;
-    document.getElementById('total-closing-balance').textContent = totalClosingBalance;
-    document.getElementById('net-profit').textContent = netProfit;
-    document.getElementById('total-export').textContent = totalExport;
+    let html = '';
+    Object.entries(groupedReports).forEach(([key, reports]) => {
+      let totalOpeningBalance = 0, totalCost = 0, totalRevenue = 0, totalClosingBalance = 0, totalExport = 0;
+      let openingBalanceHtml = '', costHtml = '', revenueHtml = '', closingBalanceHtml = '', exportHtml = '';
 
-    console.log('Đã tải báo cáo chung thành công cho', elementId);
+      reports.forEach(report => {
+        const timestamp = new Date(report.timestamp).toLocaleString('vi-VN');
+        return db.ref('users/' + report.uid).once('value').then(userSnapshot => {
+          const user = userSnapshot.val();
+          const employeeName = user && user.name ? user.name : report.uid;
+
+          if (report.openingBalance) {
+            openingBalanceHtml += `<p>${report.openingBalance} - ${employeeName} ${timestamp}</p>`;
+            totalOpeningBalance += report.openingBalance;
+          }
+          if (report.cost) {
+            costHtml += `<p>${report.costDescription} ${report.cost} - ${employeeName} ${timestamp}</p>`;
+            totalCost += report.cost;
+          }
+          if (report.revenue) {
+            revenueHtml += `<p>${report.revenue} - ${employeeName} ${timestamp}</p>`;
+            totalRevenue += report.revenue;
+          }
+          if (report.closingBalance) {
+            closingBalanceHtml += `<p>${report.closingBalance} - ${employeeName} ${timestamp}</p>`;
+            totalClosingBalance += report.closingBalance;
+          }
+          if (report.exports) {
+            return Promise.all(Object.entries(report.exports).map(([productId, qty]) => {
+              return db.ref('inventory/' + productId).once('value').then(s => {
+                const product = s.val();
+                return product ? `${qty} ${product.name} - ${employeeName} ${timestamp}` : `${qty} Sản phẩm ${productId} - ${employeeName} ${timestamp}`;
+              });
+            })).then(texts => {
+              exportHtml += texts.map(text => `<p>${text}</p>`).join('');
+              totalExport += Object.values(report.exports).reduce((sum, qty) => sum + qty, 0);
+            });
+          }
+        });
+      });
+
+      Promise.all(reports.map(report => db.ref('users/' + report.uid).once('value'))).then(() => {
+        const netProfit = totalOpeningBalance + totalRevenue - totalCost - totalClosingBalance;
+        html += `
+          <div class="mb-4">
+            <h4 class="text-lg font-semibold">${key}</h4>
+            <div class="pl-4">
+              <h5>Số Dư Đầu Kỳ:</h5>
+              ${openingBalanceHtml || '<p>Không có dữ liệu.</p>'}
+              <p><strong>Tổng Số Dư Đầu Kỳ:</strong> ${totalOpeningBalance} ${timestamp}</p>
+              <hr class="my-2">
+              <h5>Số Dư Cuối Kỳ:</h5>
+              ${closingBalanceHtml || '<p>Không có dữ liệu.</p>'}
+              <p><strong>Tổng Số Dư Cuối Kỳ:</strong> ${totalClosingBalance} ${timestamp}</p>
+              <hr class="my-2">
+              <h5>Chi Phí:</h5>
+              ${costHtml || '<p>Không có dữ liệu.</p>'}
+              <p><strong>Tổng Chi Phí:</strong> ${totalCost} ${timestamp}</p>
+              <hr class="my-2">
+              <h5>Doanh Thu:</h5>
+              ${revenueHtml || '<p>Không có dữ liệu.</p>'}
+              <p><strong>Tổng Doanh Thu:</strong> ${totalRevenue} ${timestamp}</p>
+              <hr class="my-2">
+              <h5>Số Tiền Thực Tế:</h5>
+              <p>= Dư Đầu Kỳ: ${totalOpeningBalance} + Tổng Doanh Thu: ${totalRevenue} - Tổng Chi Phí: ${totalCost} - Tổng Số Dư Cuối Kỳ: ${totalClosingBalance} = ${netProfit} ${timestamp}</p>
+              <hr class="my-2">
+              <h5>Xuất Kho:</h5>
+              ${exportHtml || '<p>Không có dữ liệu.</p>'}
+              <p><strong>Tổng Xuất Kho:</strong> ${totalExport} ${timestamp}</p>
+            </div>
+          </div>
+        `;
+        reportsList.innerHTML = html;
+      });
+    });
   }, error => {
     console.error('Lỗi tải báo cáo:', error);
     reportsList.innerHTML = '<p>Lỗi tải báo cáo.</p>';
