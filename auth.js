@@ -1,5 +1,5 @@
 
-firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
   .then(() => {
     console.log('Đã thiết lập persistence đăng nhập: LOCAL');
   })
@@ -17,9 +17,9 @@ function login() {
     return;
   }
 
-  firebase.auth().setPersistence(rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION)
+  auth.setPersistence(rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION)
     .then(() => {
-      return firebase.auth().signInWithEmailAndPassword(email, password);
+      return auth.signInWithEmailAndPassword(email, password);
     })
     .then(userCredential => {
       console.log('User UID:', userCredential.user.uid);
@@ -30,7 +30,7 @@ function login() {
     });
 }
 
-firebase.auth().onAuthStateChanged(user => {
+auth.onAuthStateChanged(user => {
   if (user) {
     db.ref('users/' + user.uid).once('value').then(snapshot => {
       const userData = snapshot.val();
