@@ -23,15 +23,52 @@ function parseExpenseInput(input) {
   
   if (!expenseCategories.includes(category)) {
     expenseCategories.push(category);
-    const categoriesRef = db.ref('expenseCategories');
-    categoriesRef.set(expenseCategories);
+    db.ref('expenseCategories').set(expenseCategories);
   }
   
   return {
     description: capitalizeFirstLetter(description),
-    amount: amount,
+    amount,
     category: capitalizeFirstLetter(category)
   };
+}
+
+function loadEmployeeInventory(elementId) {
+  const inventoryList = document.getElementById(elementId);
+  if (!inventoryList) return;
+
+  db.ref('inventory').on('value', snapshot => {
+    inventoryList.innerHTML = '';
+    const data = snapshot.val();
+    if (!data) {
+      inventoryList.innerHTML = '<p>Không có dữ liệu tồn kho.</p>';
+      return;
+    }
+
+    Object.entries(data).forEach(([productId, product]) => {
+      const div = document.createElement('div');
+      div.className = 'flex items-center justify-between p-2 border-b';
+      div.innerHTML = `
+        <span class="cursor-pointer flex-1" onclick="increaseExportQuantity('${productId}')">
+          ${product.name} (Số lượng: ${product.quantity})
+        </span>
+        <input type="number" min="0" class="export-quantity w-24 p-1 border rounded ml-2" data-product-id="${productId}" placeholder="Số lượng xuất">
+      `;
+      inventoryList.appendChild(div);
+    });
+    console.log('Đã tải danh sách tồn kho cho nhân viên');
+  }, error => {
+    console.error('Lỗi tải tồn kho:', error);
+    inventoryList.innerHTML = '<p>Lỗi tải tồn kho.</p>';
+  });
+}
+
+function increaseExportQuantity(productId) {
+  const input = document.querySelector(`.export-quantity[data-product-id="${productId}"]`);
+  if (input) {
+    let current = parseFloat(input.value) || 0;
+    input.value = current + 1;
+  }
 }
 
 function submitSharedReport() {
@@ -41,7 +78,6 @@ function submitSharedReport() {
   const closingBalanceInput = document.getElementById('closing-balance');
 
   if (!openingBalanceInput || !costInput || !revenueInput || !closingBalanceInput) {
-    console.error('Không tìm thấy một hoặc nhiều phần tử input trong DOM');
     alert('Lỗi: Giao diện chưa tải đúng. Vui lòng kiểm tra lại.');
     return;
   }
@@ -64,8 +100,8 @@ function submitSharedReport() {
 
   const reportData = {
     uid: auth.currentUser.uid,
-    date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
-    timestamp: new Date().toISOString(),
+    date: new Date().toISOString().split('T')[0],
+    timestamp: new Date().toISOString()
   };
 
   if (openingBalance > 0) reportData.openingBalance = openingBalance;
@@ -81,7 +117,7 @@ function submitSharedReport() {
 
   const reportRef = db.ref('shared_reports').push();
   reportRef.set(reportData).then(() => {
-    // Update inventory for exports
+    // Trừ tồn kho
     Promise.all(Object.entries(exportQuantities).map(([productId, qty]) => {
       return db.ref('inventory/' + productId).once('value').then(snapshot => {
         const product = snapshot.val();
@@ -110,35 +146,6 @@ function submitSharedReport() {
   });
 }
 
-function loadEmployeeInventory(elementId) {
-  const inventoryList = document.getElementById(elementId);
-  if (!inventoryList) return;
-
-  db.ref('inventory').on('value', snapshot => {
-    inventoryList.innerHTML = '';
-    const data = snapshot.val();
-    if (!data) {
-      inventoryList.innerHTML = '<p>Không có dữ liệu tồn kho.</p>';
-      return;
-    }
-
-    Object.entries(data).forEach(([productId, product]) => {
-      const div = document.createElement('div');
-      div.className = 'flex items-center justify-between p-2 border-b';
-      div.innerHTML = `
-  <span class="cursor-pointer flex-1" onclick="increaseExportQuantity('${productId}')">${product.name} (Số lượng: ${product.quantity})</span>
-  <input type="number" min="0" class="export-quantity w-24 p-1 border rounded ml-2" data-product-id="${productId}" placeholder="Số lượng xuất">
-`;
-
-      inventoryList.appendChild(div);
-    });
-    console.log('Đã tải danh sách tồn kho thành công cho', elementId);
-  }, error => {
-    console.error('Lỗi tải tồn kho:', error);
-    inventoryList.innerHTML = '<p>Lỗi tải tồn kho.</p>';
-  });
-}
-
 function loadSharedReports(elementId) {
   const reportsList = document.getElementById(elementId);
   if (!reportsList) return;
@@ -157,6 +164,7 @@ function loadSharedReports(elementId) {
       const div = document.createElement('div');
       div.className = 'p-2 border-b';
       let exportText = '';
+
       if (report.exports) {
         exportText = Object.entries(report.exports).map(([productId, qty]) => {
           return db.ref('inventory/' + productId).once('value').then(s => {
@@ -185,8 +193,8 @@ function loadSharedReports(elementId) {
           ${isOwnReport ? `<button onclick="editReport('${reportId}')" class="text-blue-500">Sửa</button>` : ''}
         `;
       }
-      reportsList.appendChild(div);
 
+      reportsList.appendChild(div);
       totalOpeningBalance += report.openingBalance || 0;
       totalCost += report.cost || 0;
       totalRevenue += report.revenue || 0;
@@ -202,10 +210,7 @@ function loadSharedReports(elementId) {
     document.getElementById('net-profit').textContent = netProfit;
     document.getElementById('total-export').textContent = totalExport;
 
-    console.log('Đã tải báo cáo chung thành công cho', elementId);
-  }, error => {
-    console.error('Lỗi tải báo cáo:', error);
-    reportsList.innerHTML = '<p>Lỗi tải báo cáo.</p>';
+    console.log('Đã tải báo cáo chung cho nhân viên');
   });
 }
 
@@ -220,8 +225,7 @@ function editReport(reportId) {
     const closingBalanceInput = document.getElementById('closing-balance');
 
     if (!openingBalanceInput || !costInput || !revenueInput || !closingBalanceInput) {
-      console.error('Không tìm thấy một hoặc nhiều phần tử input trong DOM');
-      alert('Lỗi: Giao diện chưa tải đúng. Vui lòng kiểm tra lại.');
+      alert('Giao diện chưa tải đúng. Vui lòng kiểm tra lại.');
       return;
     }
 
@@ -229,49 +233,15 @@ function editReport(reportId) {
     costInput.value = report.cost ? `${report.costDescription} ${report.cost}` : '';
     revenueInput.value = report.revenue || '';
     closingBalanceInput.value = report.closingBalance || '';
-    
+
     if (report.exports) {
       Object.entries(report.exports).forEach(([productId, qty]) => {
         const input = document.querySelector(`.export-quantity[data-product-id="${productId}"]`);
         if (input) input.value = qty;
       });
     }
-
-    const reportRef = db.ref('shared_reports/' + reportId);
-    reportRef.set({
-      ...report,
-      openingBalance: parseFloat(openingBalanceInput.value) || 0,
-      cost: parseExpenseInput(costInput.value).amount || undefined,
-      costDescription: parseExpenseInput(costInput.value).description || undefined,
-      costCategory: parseExpenseInput(costInput.value).category || undefined,
-      revenue: parseFloat(revenueInput.value) || undefined,
-      closingBalance: parseFloat(closingBalanceInput.value) || undefined,
-      exports: Array.from(document.getElementsByClassName('export-quantity')).reduce((acc, input) => {
-        const productId = input.dataset.productId;
-        const qty = parseFloat(input.value) || 0;
-        if (qty > 0) acc[productId] = qty;
-        return acc;
-      }, {}),
-      uid: auth.currentUser.uid,
-      date: new Date().toISOString().split('T')[0],
-      timestamp: new Date().toISOString()
-    }).then(() => {
-      alert('Cập nhật báo cáo thành công!');
-      openingBalanceInput.value = '';
-      costInput.value = '';
-      revenueInput.value = '';
-      closingBalanceInput.value = '';
-      document.querySelectorAll('.export-quantity').forEach(input => input.value = '');
-    }).catch(error => {
-      console.error('Lỗi cập nhật báo cáo:', error);
-      alert('Lỗi cập nhật báo cáo: ' + error.message);
-    });
   });
 }
-function increaseExportQuantity(productId) {
-  const input = document.querySelector(`.export-quantity[data-product-id="${productId}"]`);
-  if (input) {
-    let current = parseFloat(input.value) || 0;
-    input.value = current + 1;
-  }
-}
+
+// Gán vào global để auth.js có thể gọi được
+window.loadEmployeeInventory = loadEmployeeInventory;
