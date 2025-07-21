@@ -1,4 +1,3 @@
-
 function submitEmployeeReport() {
   const initialInventory = parseFloat(document.getElementById('employee-initial-inventory').value) || 0;
   const finalInventory = parseFloat(document.getElementById('employee-final-inventory').value) || 0;
@@ -174,6 +173,8 @@ function loadSharedReports(elementId) {
 
     let html = `
       <div style="margin-bottom: 16px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">Báo cáo tổng</h2>
+        <p><strong>Theo:</strong> ${filterType === 'day' ? 'Ngày' : 'Tháng'}</p>
         <p><strong>Tổng Tồn kho đầu kỳ:</strong> ${totalInitial}</p>
         <p><strong>Tổng Tồn kho cuối kỳ:</strong> ${totalFinal}</p>
         <p><strong>Tổng Doanh Thu:</strong> ${totalRevenue}</p>
@@ -218,7 +219,7 @@ function loadExpenseSummary(elementId) {
     Object.entries(data).forEach(([date, users]) => {
       Object.entries(users).forEach(([uid, report]) => {
         if (report.expenseHistory) {
-          const user = report.user || 'Không xác định'; // Lấy tên nhân viên từ node cha
+          const user = report.user || 'Không xác định';
           report.expenseHistory.forEach(expense => {
             const expenseType = expense.info.trim().toLowerCase() || 'Không có thông tin';
             if (!expenseSummary[expenseType]) {
@@ -229,7 +230,7 @@ function loadExpenseSummary(elementId) {
             expenseSummary[expenseType].details.push({
               amount: expense.amount,
               timestamp: new Date(expense.timestamp).toLocaleString(),
-              user: user // Thêm tên nhân viên
+              user: user
             });
           });
         }
