@@ -1,6 +1,5 @@
-import { setPersistence, signInWithEmailAndPassword, browserLocalPersistence, browserSessionPersistence, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
 
-setPersistence(auth, browserLocalPersistence)
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
   .then(() => {
     console.log('Đã thiết lập persistence đăng nhập: LOCAL');
   })
@@ -18,9 +17,9 @@ function login() {
     return;
   }
 
-  setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence)
+  firebase.auth().setPersistence(rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION)
     .then(() => {
-      return signInWithEmailAndPassword(auth, email, password);
+      return firebase.auth().signInWithEmailAndPassword(email, password);
     })
     .then(userCredential => {
       console.log('User UID:', userCredential.user.uid);
@@ -31,7 +30,7 @@ function login() {
     });
 }
 
-onAuthStateChanged(auth, user => {
+firebase.auth().onAuthStateChanged(user => {
   if (user) {
     db.ref('users/' + user.uid).once('value').then(snapshot => {
       const userData = snapshot.val();
