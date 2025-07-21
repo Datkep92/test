@@ -1,4 +1,4 @@
-// employee.js (cập nhật: tất cả nhân viên cộng dồn vào 1 bảng báo cáo duy nhất mỗi ngày)
+// employee.js (cập nhật: báo cáo tổng ngày, hiển thị + chọn ngày)
 
 function loadEmployeeInventory(elementId) {
   const inventoryList = document.getElementById(elementId);
@@ -63,13 +63,7 @@ function submitSharedReport() {
         const expense = parseExpenseInput(costInput);
         current.totalCost = (current.totalCost || 0) + expense.amount;
         if (!current.costDetails) current.costDetails = [];
-        current.costDetails.push({
-          uid,
-          name,
-          amount: expense.amount,
-          description: expense.description,
-          category: expense.category
-        });
+        current.costDetails.push({ uid, name, amount: expense.amount, description: expense.description, category: expense.category });
       }
 
       if (Object.keys(exportQuantities).length > 0) {
@@ -90,9 +84,7 @@ function submitSharedReport() {
       return db.ref('inventory/' + productId).once('value').then(snapshot => {
         const product = snapshot.val();
         if (product && product.quantity >= qty) {
-          return db.ref('inventory/' + productId).update({
-            quantity: product.quantity - qty
-          });
+          return db.ref('inventory/' + productId).update({ quantity: product.quantity - qty });
         } else {
           throw new Error('Số lượng xuất kho vượt quá tồn kho.');
         }
@@ -108,6 +100,54 @@ function submitSharedReport() {
   }).catch(error => {
     console.error('Lỗi gửi báo cáo:', error);
     alert('Lỗi gửi báo cáo: ' + error.message);
+  });
+}
+
+function displaySharedReportSummary(date) {
+  const container = document.getElementById('shared-report-summary');
+  if (!container) return;
+
+  db.ref('shared_reports/' + date).once('value').then(snapshot => {
+    const report = snapshot.val();
+    if (!report) {
+      container.innerHTML = '<p>Không có báo cáo nào cho ngày này.</p>';
+      return;
+    }
+
+    const {
+      totalOpeningBalance = 0,
+      totalRevenue = 0,
+      totalClosingBalance = 0,
+      totalCost = 0,
+      totalExport = 0,
+      exports = {},
+      costDetails = [],
+      entries = []
+    } = report;
+
+    const netProfit = totalOpeningBalance - totalCost + totalRevenue - totalClosingBalance;
+
+    container.innerHTML = `
+      <h3 class="text-lg font-semibold">Tổng hợp báo cáo ngày ${date}</h3>
+      <p><strong>Tổng Số Dư Đầu Kỳ:</strong> ${totalOpeningBalance}</p>
+      <p><strong>Tổng Chi Phí:</strong> ${totalCost}</p>
+      <p><strong>Tổng Doanh Thu:</strong> ${totalRevenue}</p>
+      <p><strong>Tổng Số Dư Cuối Kỳ:</strong> ${totalClosingBalance}</p>
+      <p><strong>Tổng Xuất Kho:</strong> ${totalExport}</p>
+      <p><strong>Số Tiền Thực Tế:</strong> ${netProfit}</p>
+      <hr class="my-2">
+      <h4 class="font-medium">Chi tiết xuất kho:</h4>
+      <ul>${Object.entries(exports).map(([pid, qty]) => `<li>${pid}: ${qty}</li>`).join('')}</ul>
+      <hr class="my-2">
+      <h4 class="font-medium">Chi phí từng người:</h4>
+      <ul>${costDetails.map(d => `<li>${d.name}: ${d.amount} (${d.description} - ${d.category})</li>`).join('')}</ul>
+      <hr class="my-2">
+      <h4 class="font-medium">Gửi báo cáo:</h4>
+      <ul>${entries.map(e => `<li>${e.name} (${new Date(e.timestamp).toLocaleTimeString()})</li>`).join('')}</ul>
+    `;
+  }).catch(error => {
+    console.error('Lỗi tải báo cáo tổng:', error);
+    container.innerHTML = '<p>Lỗi tải báo cáo.</p>';
   });
 }
 
