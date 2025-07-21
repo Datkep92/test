@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -29,7 +28,7 @@
       <input id="product-quantity" type="number" class="p-2 m-2 border rounded" placeholder="Số lượng">
       <input id="product-price" type="number" class="p-2 m-2 border rounded" placeholder="Đơn giá">
       <button onclick="addInventory()" class="p-2 bg-blue-500 text-white rounded">Thêm</button>
-      <h2 class="text-xl font-semibold mt-4">Danh sách tồn kho</h2>
+      <h2 class="text-xl font-semibold mt-4">Danh mục hàng trong kho</h2>
       <div id="inventory-list" class="mt-2"></div>
       <h2 class="text-xl font-semibold mt-4">Báo cáo</h2>
       <select id="report-filter" class="p-2 m-2 border rounded">
@@ -37,6 +36,13 @@
         <option value="month">Theo tháng</option>
       </select>
       <div id="report-table" class="mt-2"></div>
+      <h2 class="text-xl font-semibold mt-4">Gửi báo cáo</h2>
+      <input id="initial-inventory" type="number" class="p-2 m-2 border rounded" placeholder="Tồn kho đầu kỳ">
+      <input id="final-inventory" type="number" class="p-2 m-2 border rounded" placeholder="Tồn kho cuối kỳ">
+      <input id="revenue" type="number" class="p-2 m-2 border rounded" placeholder="Doanh Thu">
+      <input id="expense-amount" type="number" class="p-2 m-2 border rounded" placeholder="Chi Phí">
+      <input id="expense-info" type="text" class="p-2 m-2 border rounded" placeholder="Thông tin Chi Phí">
+      <button onclick="submitManagerReport()" class="p-2 bg-blue-500 text-white rounded">Gửi Báo Cáo</button>
     </div>
   </div>
   <div id="employee-page" class="hidden">
@@ -45,9 +51,12 @@
       <h2 class="text-xl font-semibold">Danh sách tồn kho</h2>
       <div id="inventory-list" class="mt-2"></div>
       <h2 class="text-xl font-semibold mt-4">Gửi báo cáo</h2>
-      <input id="shared-revenue" type="number" class="p-2 m-2 border rounded" placeholder="Doanh thu">
-      <textarea id="shared-note" class="p-2 m-2 border rounded w-full" placeholder="Ghi chú"></textarea>
-      <button onclick="submitSharedReport()" class="p-2 bg-blue-500 text-white rounded">Gửi Báo Cáo</button>
+      <input id="initial-inventory" type="number" class="p-2 m-2 border rounded" placeholder="Tồn kho đầu kỳ">
+      <input id="final-inventory" type="number" class="p-2 m-2 border rounded" placeholder="Tồn kho cuối kỳ">
+      <input id="revenue" type="number" class="p-2 m-2 border rounded" placeholder="Doanh Thu">
+      <input id="expense-amount" type="number" class="p-2 m-2 border rounded" placeholder="Chi Phí">
+      <input id="expense-info" type="text" class="p-2 m-2 border rounded" placeholder="Thông tin Chi Phí">
+      <button onclick="submitEmployeeReport()" class="p-2 bg-blue-500 text-white rounded">Gửi Báo Cáo</button>
       <h2 class="text-xl font-semibold mt-4">Báo cáo</h2>
       <select id="report-filter" class="p-2 m-2 border rounded">
         <option value="day">Theo ngày</option>
@@ -65,4 +74,3 @@
   <script src="employee.js"></script>
 </body>
 </html>
-```
