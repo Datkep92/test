@@ -1,10 +1,12 @@
-function loadSharedReports(elementId, userRole, userId) {
+function loadSharedReports(elementId, userId) {
+  console.log('loadSharedReports called with:', { elementId, userId });
   const reportsList = document.getElementById(elementId);
-  const filter = document.getElementById(`${userRole}-report-filter`);
-  const dateInput = document.getElementById(`${userRole}-report-date`);
+  const filter = document.getElementById('report-filter');
+  const dateInput = document.getElementById('report-date');
 
+  console.log('DOM elements:', { reportsList, filter, dateInput });
   if (!reportsList || !filter || !dateInput) {
-    console.error('Không tìm thấy phần tử shared-report-table, report-filter hoặc report-date trong DOM');
+    console.error('Không tìm thấy phần tử shared-report-table, report-filter hoặc report-date trong DOM', { elementId });
     alert('Lỗi: Không tìm thấy bảng báo cáo, bộ lọc hoặc mục chọn ngày.');
     return;
   }
@@ -12,12 +14,14 @@ function loadSharedReports(elementId, userRole, userId) {
   const updateReports = () => {
     const selectedDate = dateInput.value;
     const dateKey = selectedDate ? new Date(selectedDate).toLocaleDateString('vi-VN').replace(/\//g, '_') : new Date().toLocaleDateString('vi-VN').replace(/\//g, '_');
+    console.log('Selected date and dateKey:', { selectedDate, dateKey });
 
     db.ref('dailyData').on('value', snapshot => {
       reportsList.innerHTML = '';
       const data = snapshot.val();
+      console.log('Firebase dailyData:', data);
       if (!data) {
-        reportsList.innerHTML = '<p style="margin: 0;">Không có báo cáo.</p>';
+        reportsList.innerHTML = '<p style="margin: 0;">Không có báo cáo cho ngày/tháng đã chọn.</p>';
         console.log('Không có dữ liệu báo cáo trong dailyData.');
         return;
       }
@@ -33,6 +37,7 @@ function loadSharedReports(elementId, userRole, userId) {
         if (filterType === 'month' && formattedDate.substring(3) !== new Date(selectedDate).toLocaleDateString('vi-VN').substring(3)) return;
 
         Object.entries(users).forEach(([uid, report]) => {
+          console.log('Processing report:', { date, uid, report });
           if (!/^[a-zA-Z0-9]+$/.test(uid)) {
             console.warn('Bỏ qua key không hợp lệ:', uid);
             return;
@@ -43,11 +48,10 @@ function loadSharedReports(elementId, userRole, userId) {
           if (report.expense && report.expense.amount) {
             totalExpense += report.expense.amount;
             const expenseDetail = `${report.expense.amount} (Thông tin: ${report.expense.info || 'Không có'}, Nhân viên: ${report.user}, Thời gian: ${new Date(report.expense.timestamp).toLocaleString()})`;
-            const canDelete = userRole === 'manager' || (userRole === 'employee' && uid === userId);
             expenseDetails.push(`
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span>${expenseDetail}</span>
-                ${canDelete ? `<button onclick="deleteReport('${date}', '${uid}')" style="padding: 4px 8px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">Xóa</button>` : ''}
+                <button onclick="deleteReport('${date}', '${uid}')" style="padding: 4px 8px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">Xóa</button>
               </div>
             `);
           }
@@ -73,12 +77,12 @@ function loadSharedReports(elementId, userRole, userId) {
           <p><strong>Tổng Chi Phí:</strong> ${totalExpense}</p>
           <p><strong>Số dư còn lại:</strong> ${remainingBalance >= 0 ? remainingBalance : 0}</p>
           <p><strong>Chi tiết Chi Phí:</strong></p>
-          ${expenseDetails.map(detail => `<p style="margin: 0;">${detail}</p>`).join('')}
+          ${expenseDetails.length > 0 ? expenseDetails.map(detail => `<p style="margin: 0;">${detail}</p>`).join('') : '<p style="margin: 0;">Không có chi phí.</p>'}
           <p><strong>Chi tiết Doanh Thu:</strong></p>
-          ${revenueDetails.map(detail => `<p style="margin: 0;">${detail}</p>`).join('')}
+          ${revenueDetails.length > 0 ? revenueDetails.map(detail => `<p style="margin: 0;">${detail}</p>`).join('') : '<p style="margin: 0;">Không có doanh thu.</p>'}
           <p><strong>Tổng Xuất kho:</strong> ${totalExport}</p>
           <p><strong>Chi tiết Xuất kho:</strong></p>
-          ${exportDetails.map(detail => `<p style="margin: 0;">${detail}</p>`).join('')}
+          ${exportDetails.length > 0 ? exportDetails.map(detail => `<p style="margin: 0;">${detail}</p>`).join('') : '<p style="margin: 0;">Không có xuất kho.</p>'}
         </div>
       `;
       reportsList.innerHTML = html;
