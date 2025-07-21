@@ -1,4 +1,4 @@
-```html
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -27,36 +27,33 @@
     <h2 class="text-2xl font-bold mb-6">Báo Cáo Nhân Viên</h2>
     <div class="grid grid-cols-1 gap-4 mb-6">
       <div>
-        <label class="block">Số Dư Đầu Kỳ</label>
-        <input id="opening-balance" type="number" min="0" class="w-full p-2 border rounded">
-      </div>
-      <div>
-        <label class="block">Chi Phí (VD: mua xăng 80000)</label>
-        <input id="shared-cost" type="text" class="w-full p-2 border rounded">
+        <label class="block">Chi Phí</label>
+        <input id="shared-cost" type="number" class="w-full p-2 border rounded">
       </div>
       <div>
         <label class="block">Doanh Thu</label>
-        <input id="shared-revenue" type="number" min="0" class="w-full p-2 border rounded">
-      </div>
-      <div>
-        <label class="block">Số Dư Cuối Kỳ</label>
-        <input id="closing-balance" type="number" min="0" class="w-full p-2 border rounded">
+        <input id="shared-revenue" type="number" class="w-full p-2 border rounded">
       </div>
       <div>
         <label class="block">Xuất Kho</label>
-        <div id="inventory-list" class="mt-2"></div>
+        <select id="product-select" class="w-full p-2 border rounded mb-2">
+          <option value="">Chọn sản phẩm</option>
+        </select>
+        <input id="export-quantity" type="number" placeholder="Số lượng xuất kho" class="w-full p-2 border rounded">
       </div>
       <button onclick="submitSharedReport()" class="bg-green-500 text-white p-2 rounded hover:bg-green-600">Gửi Báo Cáo</button>
+    </div>
+    <div class="mb-6">
+      <h3 class="text-xl font-semibold">Danh Mục Tồn Kho</h3>
+      <div id="employee-inventory-list" class="mt-4"></div>
     </div>
     <div>
       <h3 class="text-xl font-semibold">Báo Cáo Chung</h3>
       <div id="shared-reports" class="mt-4"></div>
       <div id="total-report" class="mt-4 p-4 border rounded">
-        <p><strong>Tổng Số Dư Đầu Kỳ:</strong> <span id="total-opening-balance">0</span></p>
         <p><strong>Tổng Chi Phí:</strong> <span id="total-cost">0</span></p>
         <p><strong>Tổng Doanh Thu:</strong> <span id="total-revenue">0</span></p>
-        <p><strong>Tổng Số Dư Cuối Kỳ:</strong> <span id="total-closing-balance">0</span></p>
-        <p><strong>Số Tiền Thực Tế:</strong> <span id="net-profit">0</span></p>
+        <p><strong>Số Tiền Thực:</strong> <span id="net-profit">0</span></p>
         <p><strong>Tổng Xuất Kho:</strong> <span id="total-export">0</span></p>
       </div>
     </div>
@@ -67,8 +64,8 @@
     <div class="mb-6">
       <h3 class="text-xl font-semibold">Tạo Danh Sách Tồn Kho</h3>
       <input id="product-name" type="text" placeholder="Tên sản phẩm" class="w-full p-2 border rounded mb-2">
-      <input id="product-quantity" type="number" min="0" placeholder="Số lượng" class="w-full p-2 border rounded mb-2">
-      <input id="product-price" type="number" min="0" placeholder="Đơn giá" class="w-full p-2 border rounded mb-2">
+      <input id="product-quantity" type="number" placeholder="Số lượng" class="w-full p-2 border rounded mb-2">
+      <input id="product-price" type="number" placeholder="Đơn giá" class="w-full p-2 border rounded mb-2">
       <button onclick="addInventory()" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Thêm Sản Phẩm</button>
     </div>
     <div class="mb-6">
@@ -76,18 +73,12 @@
       <div id="inventory-list" class="mt-4"></div>
     </div>
     <div>
-      <h3 class="text-xl font-semibold">Báo Cáo Tổng Hợp</h3>
-      <select id="report-filter" class="p-2 border rounded mb-4">
-        <option value="day">Theo ngày</option>
-        <option value="month">Theo tháng</option>
-      </select>
+      <h3 class="text-xl font-semibold">Báo Cáo Chung</h3>
       <div id="manager-shared-reports" class="mt-4"></div>
       <div id="manager-total-report" class="mt-4 p-4 border rounded">
-        <p><strong>Tổng Số Dư Đầu Kỳ:</strong> <span id="manager-total-opening-balance">0</span></p>
         <p><strong>Tổng Chi Phí:</strong> <span id="manager-total-cost">0</span></p>
         <p><strong>Tổng Doanh Thu:</strong> <span id="manager-total-revenue">0</span></p>
-        <p><strong>Tổng Số Dư Cuối Kỳ:</strong> <span id="manager-total-closing-balance">0</span></p>
-        <p><strong>Số Tiền Thực Tế:</strong> <span id="manager-net-profit">0</span></p>
+        <p><strong>Số Tiền Thực:</strong> <span id="manager-net-profit">0</span></p>
         <p><strong>Tổng Xuất Kho:</strong> <span id="manager-total-export">0</span></p>
       </div>
     </div>
@@ -102,4 +93,3 @@
   <script src="manager.js"></script>
 </body>
 </html>
-```
