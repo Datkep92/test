@@ -70,7 +70,7 @@ function loadSharedReports(containerId) {
         ${report.cost ? `<p><strong>Chi Phí:</strong> ${report.cost}</p>` : ''}
         ${report.revenue ? `<p><strong>Doanh Thu:</strong> ${report.revenue}</p>` : ''}
         ${report.closingBalance ? `<p><strong>Số Dư Cuối Kỳ:</strong> ${report.closingBalance}</p>` : ''}
-        ${exportText ? `<p><strong>Xuất Kho:</strong> ${exportText}</p>` : ''}
+        ${report.exports ? `<p><strong>Xuất Kho:</strong> ${exportText}</p>` : ''}
         <button onclick="editReport('${report.id}')" class="text-blue-500 hover:underline">Sửa</button>
         <button onclick="deleteReport('${report.id}')" class="text-red-500 hover:underline ml-2">Xóa</button>
       `;
