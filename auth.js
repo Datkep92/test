@@ -1,3 +1,4 @@
+
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
   .then(() => {
     console.log('Đã thiết lập persistence đăng nhập: LOCAL');
@@ -39,15 +40,21 @@ auth.onAuthStateChanged(user => {
         document.getElementById('login-page').classList.add('hidden');
         document.getElementById('manager-page').classList.remove('hidden');
         document.getElementById('employee-page').classList.add('hidden');
-        loadInventory('manager-inventory-list');
-        loadSharedReports('manager-report-table');
+        // Gọi hàm tải dữ liệu sau khi DOM sẵn sàng
+        if (document.getElementById('manager-inventory-list') && document.getElementById('shared-report-table')) {
+          loadInventory('manager-inventory-list');
+          loadSharedReports('shared-report-table');
+        }
       } else {
         console.log('Đăng nhập nhân viên, hiển thị giao diện nhân viên...');
         document.getElementById('login-page').classList.add('hidden');
         document.getElementById('employee-page').classList.remove('hidden');
         document.getElementById('manager-page').classList.add('hidden');
-        loadInventory('employee-inventory-list');
-        loadSharedReports('employee-report-table');
+        // Gọi hàm tải dữ liệu sau khi DOM sẵn sàng
+        if (document.getElementById('employee-inventory-list') && document.getElementById('shared-report-table')) {
+          loadInventory('employee-inventory-list');
+          loadSharedReports('shared-report-table');
+        }
       }
     }).catch(error => {
       console.error('Lỗi lấy thông tin người dùng:', error);
