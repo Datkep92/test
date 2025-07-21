@@ -5,6 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ứng dụng Quản lý Kinh doanh</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <link rel="stylesheet" href="styles.css">
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -30,7 +33,10 @@
   </div>
 
   <div id="manager-page" style="max-width: 800px; margin: 40px auto; padding: 16px;">
-    <h1>Giao diện Quản lý</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h1>Giao diện Quản lý</h1>
+      <button onclick="logout()" style="padding: 8px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">Đăng xuất</button>
+    </div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
       <div>
         <h2>Thêm sản phẩm</h2>
@@ -60,7 +66,10 @@
   </div>
 
   <div id="employee-page" style="max-width: 800px; margin: 40px auto; padding: 16px;">
-    <h1>Giao diện Nhân viên</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h1>Giao diện Nhân viên</h1>
+      <button onclick="logout()" style="padding: 8px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">Đăng xuất</button>
+    </div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
       <div>
         <h2>Danh sách hàng trong kho</h2>
