@@ -38,18 +38,19 @@ function parseExpenseInput(input) {
 
 function submitSharedReport() {
   const revenueInput = document.getElementById('shared-revenue');
-  const exportInputs = document.getElementsByClassName('export-quantity');
   const noteInput = document.getElementById('shared-note');
+  const exportInputs = document.getElementsByClassName('export-quantity');
 
-  if (!revenueInput || !noteInput) {
-    console.error('Không tìm thấy một hoặc nhiều phần tử input trong DOM');
-    alert('Lỗi: Giao diện chưa tải đúng. Vui lòng kiểm tra lại.');
+  // Kiểm tra linh hoạt hơn
+  if (!revenueInput) {
+    console.error('Không tìm thấy shared-revenue trong DOM');
+    alert('Lỗi: Không tìm thấy input doanh thu. Vui lòng kiểm tra giao diện.');
     return;
   }
 
   console.log('Bắt đầu xử lý báo cáo...');
   const revenue = parseFloat(revenueInput.value) || 0;
-  const note = noteInput.value || '';
+  const note = noteInput ? noteInput.value || '' : '';
   const exportQuantities = Array.from(exportInputs).reduce((acc, input) => {
     const productId = input.dataset.productId;
     const qty = parseFloat(input.value) || 0;
@@ -113,7 +114,7 @@ function submitSharedReport() {
   }).then(() => {
     alert('Gửi báo cáo thành công!');
     revenueInput.value = '';
-    noteInput.value = '';
+    if (noteInput) noteInput.value = '';
     Array.from(exportInputs).forEach(input => input.value = '');
     console.log('Đã xóa các trường nhập sau khi gửi báo cáo.');
   }).catch(error => {
