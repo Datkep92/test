@@ -126,9 +126,10 @@ function loadInventory(elementId) {
       const div = document.createElement('div');
       div.className = 'flex items-center justify-between p-2 border-b';
       div.innerHTML = `
-        <span>${product.name} (Số lượng: ${product.quantity})</span>
-        <input type="number" min="0" class="export-quantity w-24 p-1 border rounded" data-product-id="${productId}" placeholder="Số lượng xuất">
-      `;
+  <span class="cursor-pointer flex-1" onclick="increaseExportQuantity('${productId}')">${product.name} (Số lượng: ${product.quantity})</span>
+  <input type="number" min="0" class="export-quantity w-24 p-1 border rounded ml-2" data-product-id="${productId}" placeholder="Số lượng xuất">
+`;
+
       inventoryList.appendChild(div);
     });
     console.log('Đã tải danh sách tồn kho thành công cho', elementId);
@@ -266,4 +267,11 @@ function editReport(reportId) {
       alert('Lỗi cập nhật báo cáo: ' + error.message);
     });
   });
+}
+function increaseExportQuantity(productId) {
+  const input = document.querySelector(`.export-quantity[data-product-id="${productId}"]`);
+  if (input) {
+    let current = parseFloat(input.value) || 0;
+    input.value = current + 1;
+  }
 }
