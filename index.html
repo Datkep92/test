@@ -1,11 +1,43 @@
+```html
 <!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quản lý Kho</title>
   <style>
-    #login-page, #manager-page, #employee-page {
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
       padding: 20px;
+      background-color: #f4f4f4;
+    }
+    #login-page, #manager-page, #employee-page {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    #login-page h2, #manager-page h2, #employee-page h2 {
+      margin-top: 0;
+    }
+    input, select, button {
+      margin: 10px 0;
+      padding: 8px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
     }
     #shared-report-table, #expense-summary-table, #manager-inventory-list, #employee-inventory-list {
       display: block;
@@ -17,6 +49,17 @@
     #expense-summary-table li, #manager-inventory-list li, #employee-inventory-list li {
       padding: 8px;
       border-bottom: 1px solid #ccc;
+    }
+    #shared-report-table div {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #report-filter, #report-date {
+      width: 200px;
+    }
+    label {
+      margin-right: 10px;
     }
   </style>
 </head>
@@ -31,25 +74,33 @@
   <div id="manager-page" style="display: none;">
     <h2>Quản lý</h2>
     <button onclick="logout()">Đăng xuất</button>
+    <h3>Bộ lọc báo cáo</h3>
     <select id="report-filter">
       <option value="day">Ngày</option>
       <option value="month">Tháng</option>
     </select>
     <input type="date" id="report-date">
+    <h3>Danh sách tồn kho</h3>
     <div id="manager-inventory-list"></div>
+    <h3>Báo cáo tổng hợp</h3>
     <div id="shared-report-table"></div>
+    <h3>Danh mục chi phí</h3>
     <div id="expense-summary-table"></div>
   </div>
   <div id="employee-page" style="display: none;">
     <h2>Nhân viên</h2>
     <button onclick="logout()">Đăng xuất</button>
+    <h3>Bộ lọc báo cáo</h3>
     <select id="report-filter">
       <option value="day">Ngày</option>
       <option value="month">Tháng</option>
     </select>
     <input type="date" id="report-date">
+    <h3>Danh sách tồn kho</h3>
     <div id="employee-inventory-list"></div>
+    <h3>Báo cáo tổng hợp</h3>
     <div id="shared-report-table"></div>
+    <h3>Danh mục chi phí</h3>
     <div id="expense-summary-table"></div>
   </div>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -62,3 +113,4 @@
   <script src="auth.js"></script>
 </body>
 </html>
+```
