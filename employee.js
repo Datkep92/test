@@ -1,4 +1,4 @@
-// employee.js (cập nhật: báo cáo tổng ngày, hiển thị + chọn ngày)
+// employee.js (cập nhật: gộp báo cáo ngày, tối ưu chọn hàng xuất, hover trực quan)
 
 function loadEmployeeInventory(elementId) {
   const inventoryList = document.getElementById(elementId);
@@ -14,11 +14,18 @@ function loadEmployeeInventory(elementId) {
 
     Object.entries(data).forEach(([productId, product]) => {
       const div = document.createElement('div');
-      div.className = 'p-2 border-b cursor-pointer hover:bg-gray-100';
+      div.className = 'p-2 border-b cursor-pointer hover:bg-yellow-100 flex items-center justify-between';
       div.innerHTML = `
-        <p><strong>${product.name}</strong> - Tồn: ${product.quantity}</p>
-        <input type="number" min="0" class="export-quantity mt-1 border p-1 w-full" data-product-id="${productId}" placeholder="Số lượng xuất...">
+        <span><strong>${product.name}</strong> - Tồn: ${product.quantity}</span>
+        <input type="number" min="0" class="export-quantity border p-1 w-20 ml-2 text-right" data-product-id="${productId}" placeholder="0">
       `;
+
+      div.addEventListener('click', () => {
+        const input = div.querySelector('.export-quantity');
+        input.value = parseFloat(input.value || '0') + 1;
+        input.focus();
+      });
+
       inventoryList.appendChild(div);
     });
   }).catch(error => {
@@ -75,17 +82,8 @@ function submitSharedReport() {
         });
       }
 
-      if (!current.entries) current.entries = {};
-current.entries[uid] = {
-  name,
-  openingBalance,
-  revenue,
-  closingBalance,
-  costInput,
-  exportQuantities,
-  timestamp: new Date().toISOString()
-};
-
+      if (!current.entries) current.entries = [];
+      current.entries.push({ uid, name, openingBalance, revenue, closingBalance, costInput, exportQuantities, timestamp: new Date().toISOString() });
       return current;
     });
   }).then(() => {
