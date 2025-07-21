@@ -33,13 +33,21 @@ function submitEmployeeReport() {
     initialInventory,
     finalInventory,
     revenue,
-    expense: { amount: expenseAmount, info: expenseInfo }
+    expense: { amount: expenseAmount, info: expenseInfo, timestamp: Date.now() }
   };
   if (Object.keys(exportQuantities).length > 0) reportData.exports = exportQuantities;
 
   const dateKey = reportData.date.replace(/\//g, '_');
   const reportRef = db.ref(`dailyData/${dateKey}/${auth.currentUser.uid}`);
-  reportRef.set(reportData).then(() => {
+  reportRef.once('value').then(snapshot => {
+    const existingData = snapshot.val() || {};
+    const newReport = {
+      ...existingData,
+      ...reportData,
+      expenseHistory: existingData.expenseHistory ? [...existingData.expenseHistory, { amount: expenseAmount, info: expenseInfo, timestamp: Date.now() }] : [{ amount: expenseAmount, info: expenseInfo, timestamp: Date.now() }]
+    };
+    return reportRef.update(newReport);
+  }).then(() => {
     if (Object.keys(exportQuantities).length > 0) {
       return Promise.all(Object.entries(exportQuantities).map(([productId, exportItem]) => {
         return db.ref('inventory/' + productId).once('value').then(snapshot => {
@@ -144,7 +152,7 @@ function loadSharedReports(elementId) {
         totalRevenue += report.revenue || 0;
         if (report.expense && report.expense.amount) {
           totalExpense += report.expense.amount;
-          expenseDetails.push(`${report.expense.amount} (Thông tin: ${report.expense.info || 'Không có'}, Nhân viên: ${report.user})`);
+          expenseDetails.push(`${report.expense.amount} (Thông tin: ${report.expense.info || 'Không có'}, Nhân viên: ${report.user}, Thời gian: ${new Date(report.expense.timestamp).toLocaleString()})`);
         }
         if (report.revenue) {
           revenueDetails.push(`${report.revenue} (Nhân viên: ${report.user})`);
@@ -205,13 +213,15 @@ function loadExpenseSummary(elementId) {
     const expenseSummary = {};
     Object.entries(data).forEach(([date, users]) => {
       Object.entries(users).forEach(([uid, report]) => {
-        if (report.expense && report.expense.amount && report.expense.info) {
-          const expenseType = report.expense.info.trim().toLowerCase();
-          if (!expenseSummary[expenseType]) {
-            expenseSummary[expenseType] = { total: 0, count: 0 };
-          }
-          expenseSummary[expenseType].total += report.expense.amount;
-          expenseSummary[expenseType].count += 1;
+        if (report.expenseHistory) {
+          report.expenseHistory.forEach(expense => {
+            const expenseType = expense.info.trim().toLowerCase();
+            if (!expenseSummary[expenseType]) {
+              expenseSummary[expenseType] = { total: 0, count: 0 };
+            }
+            expenseSummary[expenseType].total += expense.amount;
+            expenseSummary[expenseType].count += 1;
+          });
         }
       });
     });
