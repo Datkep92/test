@@ -1,78 +1,79 @@
-```html
 <!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quản lý nhân viên</title>
+  <title>Đăng nhập</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="auth.js"></script>
+  <script src="employee.js"></script>
+  <script src="manager.js"></script>
 </head>
 <body>
   <div id="login-page">
-    <h1 style="font-size: 24px; font-weight: bold; text-align: center; margin-top: 32px;">Đăng nhập</h1>
-    <div style="max-width: 400px; margin: 16px auto; padding: 16px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 4px;">
-      <input id="email" type="email" style="width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Email">
-      <input id="password" type="password" style="width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Mật khẩu">
-      <label style="display: inline-flex; align-items: center; margin-bottom: 8px;">
-        <input id="remember-me" type="checkbox" style="margin-right: 8px;">
-        <span>Ghi nhớ đăng nhập</span>
-      </label>
-      <button onclick="login()" style="width: 100%; padding: 8px; background: #007bff; color: #fff; border: none; border-radius: 4px;">Đăng nhập</button>
-    </div>
-  </div>
-  <div id="manager-page">
-    <h1 style="font-size: 24px; font-weight: bold; text-align: center; margin-top: 32px;">Giao diện Quản lý</h1>
-    <div style="max-width: 800px; margin: 16px auto; padding: 16px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 4px;">
-      <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">Thêm sản phẩm</h2>
-      <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-        <input id="product-name" type="text" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 33%;" placeholder="Tên sản phẩm">
-        <input id="product-quantity" type="number" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 33%;" placeholder="Số lượng">
-        <input id="product-price" type="number" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 33%;" placeholder="Đơn giá">
-        <button onclick="addInventory()" style="padding: 8px; background: #007bff; color: #fff; border: none; border-radius: 4px;">Thêm</button>
+    <h2>Đăng nhập</h2>
+    <div style="display: grid; gap: 16px; max-width: 400px; margin: 0 auto; padding: 16px;">
+      <input id="email" type="email" placeholder="Email" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+      <input id="password" type="password" placeholder="Mật khẩu" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+      <div>
+        <input id="remember-me" type="checkbox">
+        <label for="remember-me">Ghi nhớ đăng nhập</label>
       </div>
-      <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">Danh sách hàng trong kho</h2>
-      <div id="manager-inventory-list" style="margin-bottom: 16px;"></div>
-      <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">Báo cáo tổng</h2>
-      <select id="manager-report-filter" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 8px;">
-        <option value="day">Theo ngày</option>
-        <option value="month">Theo tháng</option>
-      </select>
-      <div id="shared-report-table" style="margin-bottom: 16px;"></div>
-      <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">Tổng hợp chi phí</h2>
-      <div id="expense-summary-table" style="margin-bottom: 16px;"></div>
+      <button onclick="login()" style="padding: 8px; background: #2563eb; color: white; border: none; border-radius: 4px;">Đăng nhập</button>
     </div>
   </div>
-  <div id="employee-page">
-    <h1 style="font-size: 24px; font-weight: bold; text-align: center; margin-top: 32px;">Giao diện Nhân viên</h1>
-    <div style="max-width: 800px; margin: 16px auto; padding: 16px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 4px;">
-      <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">Danh sách hàng trong kho</h2>
-      <div id="employee-inventory-list" style="margin-bottom: 16px;"></div>
-      <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">Gửi báo cáo</h2>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-        <input id="employee-initial-inventory" type="number" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Tồn kho đầu kỳ">
-        <input id="employee-final-inventory" type="number" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Tồn kho cuối kỳ">
-        <input id="employee-revenue" type="number" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Doanh Thu">
-        <input id="employee-expense-amount" type="number" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Chi Phí">
-        <input id="employee-expense-info" type="text" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; grid-column: span 2;" placeholder="Thông tin Chi Phí">
-      </div>
-      <button onclick="submitEmployeeReport()" style="padding: 8px; background: #007bff; color: #fff; border: none; border-radius: 4px; margin-bottom: 16px;">Gửi Báo Cáo</button>
-      <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">Báo cáo tổng</h2>
-      <select id="employee-report-filter" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 8px;">
-        <option value="day">Theo ngày</option>
-        <option value="month">Theo tháng</option>
-      </select>
-      <div id="shared-report-table" style="margin-bottom: 16px;"></div>
-      <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">Tổng hợp chi phí</h2>
-      <div id="expense-summary-table" style="margin-bottom: 16px;"></div>
+
+  <div id="manager-page" style="max-width: 800px; margin: 0 auto; padding: 16px;">
+    <h2>Giao diện Quản lý</h2>
+    <h3>Thêm sản phẩm</h3>
+    <div style="display: grid; gap: 16px; margin-bottom: 16px;">
+      <input id="product-name" type="text" placeholder="Tên sản phẩm" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+      <input id="product-quantity" type="number" placeholder="Số lượng" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+      <input id="product-price" type="number" placeholder="Giá" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+      <button onclick="addInventory()" style="padding: 8px; background: #2563eb; color: white; border: none; border-radius: 4px;">Thêm</button>
     </div>
+
+    <h3>Danh sách hàng trong kho</h3>
+    <div id="manager-inventory-list"></div>
+
+    <h3>Báo cáo tổng</h3>
+    <input type="date" id="manager-date-picker" style="margin-bottom: 16px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+    <div id="shared-report-table"></div>
+
+    <h3>Tổng hợp chi phí</h3>
+    <div id="expense-summary-table"></div>
   </div>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-  <script src="firebase-config.js"></script>
-  <script src="auth.js"></script>
-  <script src="manager.js"></script>
-  <script src="employee.js"></script>
+
+  <div id="employee-page" style="max-width: 800px; margin: 0 auto; padding: 16px;">
+    <h2>Giao diện Nhân viên</h2>
+    <h3>Danh sách hàng trong kho</h3>
+    <div id="employee-inventory-list"></div>
+
+    <h3>Gửi báo cáo</h3>
+    <div id="employee-report-form" style="display: grid; gap: 16px; margin-bottom: 16px;">
+      <input id="employee-initial-inventory" type="number" placeholder="Tồn kho đầu kỳ" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+      <input id="employee-final-inventory" type="number" placeholder="Tồn kho cuối kỳ" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+      <input id="employee-revenue" type="number" placeholder="Doanh thu" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+      <input id="employee-expense-amount" type="number" placeholder="Chi phí" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+      <input id="employee-expense-info" type="text" placeholder="Thông tin chi phí" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+      <button onclick="submitEmployeeReport()" style="padding: 8px; background: #2563eb; color: white; border: none; border-radius: 4px;">Gửi Báo Cáo</button>
+    </div>
+
+    <h3>Báo cáo tổng</h3>
+    <input type="date" id="employee-date-picker" style="margin-bottom: 16px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+    <div id="shared-report-table"></div>
+
+    <h3>Tổng hợp chi phí</h3>
+    <div id="expense-summary-table"></div>
+  </div>
+
+  <script>
+    document.getElementById('employee-date-picker')?.addEventListener('change', () => loadSharedReports('shared-report-table'));
+    document.getElementById('manager-date-picker')?.addEventListener('change', () => loadSharedReports('shared-report-table'));
+  </script>
 </body>
 </html>
-```
