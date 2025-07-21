@@ -1,4 +1,3 @@
-
 // Thiết lập persistence để giữ trạng thái đăng nhập
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
   .then(() => {
@@ -64,7 +63,7 @@ function checkUserRole(uid) {
         return;
       }
       managerPage.classList.remove('hidden');
-      loadInventory();
+      loadInventory('inventory-list');
       loadSharedReports('manager-shared-reports');
     } else {
       console.log('Đăng nhập nhân viên, hiển thị giao diện nhân viên...');
@@ -75,8 +74,7 @@ function checkUserRole(uid) {
         return;
       }
       employeePage.classList.remove('hidden');
-      loadInventory('employee-inventory-list');
-      loadProducts();
+      loadInventory('inventory-list');
       loadSharedReports('shared-reports');
     }
   }).catch(error => {
