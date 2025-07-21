@@ -1,6 +1,6 @@
 // Khởi tạo auth sau khi DOM loaded
 document.addEventListener('DOMContentLoaded', () => {
-  auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+  window.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
     .then(() => {
       console.log('Đã thiết lập persistence đăng nhập: LOCAL');
     })
@@ -19,9 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    auth.setPersistence(rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION)
+    window.auth.setPersistence(rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION)
       .then(() => {
-        return auth.signInWithEmailAndPassword(email, password);
+        return window.auth.signInWithEmailAndPassword(email, password);
       })
       .then(userCredential => {
         console.log('Đăng nhập thành công, User UID:', userCredential.user.uid);
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let isRoleChecked = false;
 
-  auth.onAuthStateChanged(user => {
+  window.auth.onAuthStateChanged(user => {
     console.log('Auth state changed, user:', user ? user.uid : 'null');
     const loginPage = document.getElementById('login-page');
     const managerPage = document.getElementById('manager-page');
@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (user && !isRoleChecked) {
       isRoleChecked = true;
       console.log('Kiểm tra vai trò cho UID:', user.uid);
-      db.ref('users/' + user.uid).once('value').then(snapshot => {
+      window.db.ref('users/' + user.uid).once('value').then(snapshot => {
         const userData = snapshot.val();
         console.log('Dữ liệu người dùng:', userData);
         if (userData) {
