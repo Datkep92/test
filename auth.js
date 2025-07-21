@@ -4,6 +4,7 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
   })
   .catch(error => {
     console.error('Lỗi thiết lập persistence:', error);
+    alert('Lỗi thiết lập phiên đăng nhập: ' + error.message);
   });
 
 window.onload = function() {
@@ -14,6 +15,14 @@ window.onload = function() {
     document.getElementById('password').value = savedPassword;
     document.getElementById('save-password').checked = true;
   }
+
+  // Check if user is already logged in
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      console.log('User UID:', user.uid);
+      checkUserRole(user.uid);
+    }
+  });
 };
 
 function login() {
@@ -26,6 +35,9 @@ function login() {
     document.getElementById('error').classList.remove('hidden');
     return;
   }
+
+  document.getElementById('error').classList.add('hidden');
+  document.getElementById('login-page').innerHTML += '<p class="text-gray-500 text-center">Đang đăng nhập...</p>';
 
   if (savePassword) {
     localStorage.setItem('savedEmail', email);
@@ -44,6 +56,7 @@ function login() {
     .catch(error => {
       document.getElementById('error').textContent = 'Lỗi đăng nhập: ' + error.message;
       document.getElementById('error').classList.remove('hidden');
+      document.getElementById('login-page').innerHTML = document.getElementById('login-page').innerHTML.replace('<p class="text-gray-500 text-center">Đang đăng nhập...</p>', '');
     });
 }
 
@@ -53,6 +66,8 @@ function checkUserRole(uid) {
     if (!userData) {
       console.error('Không tìm thấy dữ liệu người dùng cho UID:', uid);
       alert('Lỗi: Không tìm thấy dữ liệu người dùng.');
+      auth.signOut();
+      document.getElementById('login-page').classList.remove('hidden');
       return;
     }
 
@@ -60,6 +75,7 @@ function checkUserRole(uid) {
 
     const role = userData.role;
     if (role === 'manager') {
+      console.log('Đăng nhập quản lý, hiển thị giao diện quản lý...');
       const managerPage = document.getElementById('manager-page');
       if (!managerPage) {
         console.error('Không tìm thấy manager-page');
@@ -70,6 +86,7 @@ function checkUserRole(uid) {
       loadInventory('inventory-list');
       loadSharedReports('manager-shared-reports');
     } else if (role === 'employee' || role === 'staff') {
+      console.log('Đăng nhập nhân viên, hiển thị giao diện nhân viên...');
       const employeePage = document.getElementById('employee-page');
       if (!employeePage) {
         console.error('Không tìm thấy employee-page');
@@ -82,97 +99,17 @@ function checkUserRole(uid) {
     } else {
       console.error('Vai trò không hợp lệ:', role);
       alert('Lỗi: Vai trò người dùng không hợp lệ.');
+      auth.signOut();
+      document.getElementById('login-page').classList.remove('hidden');
     }
   }).catch(error => {
     console.error('Lỗi kiểm tra vai trò:', error);
-    alert('Lỗi kiểm tra vai trò: ' + error.message);
-  });
-}
-function parseCostString(costStr) {
-  if (!costStr) return 0;
-  const numbers = costStr.match(/\d+/g);
-  return numbers ? numbers.reduce((sum, num) => sum + Number(num), 0) : 0;
-}
-
-function formatTimestamp(ts) {
-  const date = new Date(ts);
-  return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')} ${date.toLocaleDateString('vi-VN')}`;
-}
-
-function fetchReportSummary(date, filterType, callback) {
-  const reportsRef = firebase.database().ref('shared_reports');
-  const usersRef = firebase.database().ref('users');
-
-  reportsRef.orderByChild('date').equalTo(date).once('value').then(snapshot => {
-    const allReports = [];
-    snapshot.forEach(child => allReports.push({ id: child.key, ...child.val() }));
-
-    usersRef.once('value').then(userSnap => {
-      const users = userSnap.val() || {};
-      const group = { opening: [], cost: [], revenue: [], closing: [], exports: [] };
-      let sum = { opening: 0, cost: 0, revenue: 0, closing: 0, export: 0 };
-
-      allReports.forEach(r => {
-        const name = users[r.uid]?.name || r.uid.substring(0, 6);
-        const time = formatTimestamp(r.timestamp);
-        group.opening.push(`${r.openingBalance || 0} - ${name} ${time}`);
-        group.cost.push(`${r.cost || '0'} - ${name} ${time}`);
-        group.revenue.push(`${r.revenue || 0} - ${name} ${time}`);
-        group.closing.push(`${r.closingBalance || 0} - ${name} ${time}`);
-
-        sum.opening += r.openingBalance || 0;
-        sum.revenue += r.revenue || 0;
-        sum.closing += r.closingBalance || 0;
-        sum.cost += parseCostString(r.cost);
-
-        if (r.exports) {
-          r.exports.forEach(e => {
-            group.exports.push(`${e.quantity} ${e.productName || e.productId} - ${name} ${time}`);
-            sum.export += e.quantity || 0;
-          });
-        }
-      });
-
-      sum.real = sum.opening + sum.revenue - sum.cost - sum.closing;
-      callback(group, sum, allReports, null);
-    }).catch(error => {
-      console.error('Lỗi tải thông tin người dùng:', error);
-      callback(null, null, null, error.code === 'PERMISSION_DENIED' ? 'Bạn không có quyền truy cập danh sách người dùng.' : error.message);
-    });
-  }).catch(error => {
-    console.error('Lỗi tải báo cáo:', error);
-    callback(null, null, null, error.code === 'PERMISSION_DENIED' ? 'Bạn không có quyền truy cập báo cáo.' : error.message);
+    alert('Lỗi kiểm tra vai trò: ' + (error.code === 'PERMISSION_DENIED' ? 'Bạn không có quyền truy cập dữ liệu người dùng.' : error.message));
+    auth.signOut();
+    document.getElementById('login-page').classList.remove('hidden');
   });
 }
 
-function loadInventoryData(containerId, renderCallback) {
-  const inventoryList = document.getElementById(containerId);
-  if (!inventoryList) {
-    console.error(`Không tìm thấy container ${containerId}`);
-    return;
-  }
-
-  inventoryList.innerHTML = '<p class="text-gray-500">Đang tải dữ liệu...</p>';
-  db.ref('inventory').on('value', snapshot => {
-    inventoryList.innerHTML = '';
-    const data = snapshot.val();
-    if (!data) {
-      inventoryList.innerHTML = '<p class="text-gray-500">Không có dữ liệu tồn kho.</p>';
-      return;
-    }
-
-    Object.entries(data).forEach(([productId, product]) => {
-      const div = document.createElement('div');
-      div.className = 'p-2 border-b';
-      renderCallback(div, productId, product);
-      inventoryList.appendChild(div);
-    });
-    console.log(`Đã tải danh sách tồn kho thành công cho ${containerId}`);
-  }, error => {
-    console.error('Lỗi tải tồn kho:', error);
-    inventoryList.innerHTML = `<p class="text-red-500">${error.code === 'PERMISSION_DENIED' ? 'Bạn không có quyền truy cập tồn kho.' : 'Lỗi tải tồn kho.'}</p>`;
-  });
-}
 function clearBrowserCache() {
   if (confirm("Bạn có chắc muốn xóa cache trình duyệt? Trang sẽ được tải lại.")) {
     localStorage.clear();
