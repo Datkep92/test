@@ -1,6 +1,6 @@
 // Khởi tạo auth sau khi DOM loaded
 document.addEventListener('DOMContentLoaded', () => {
-  window.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+  auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
     .then(() => {
       console.log('Đã thiết lập persistence đăng nhập: LOCAL');
     })
@@ -19,9 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    window.auth.setPersistence(rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION)
+    auth.setPersistence(rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION)
       .then(() => {
-        return window.auth.signInWithEmailAndPassword(email, password);
+        return auth.signInWithEmailAndPassword(email, password);
       })
       .then(userCredential => {
         console.log('Đăng nhập thành công, User UID:', userCredential.user.uid);
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let isRoleChecked = false;
 
-  window.auth.onAuthStateChanged(user => {
+  auth.onAuthStateChanged(user => {
     console.log('Auth state changed, user:', user ? user.uid : 'null');
     const loginPage = document.getElementById('login-page');
     const managerPage = document.getElementById('manager-page');
@@ -49,11 +49,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (user && !isRoleChecked) {
       isRoleChecked = true;
       console.log('Kiểm tra vai trò cho UID:', user.uid);
-      window.db.ref('users/' + user.uid).once('value').then(snapshot => {
+      db.ref('users/' + user.uid).once('value').then(snapshot => {
         const userData = snapshot.val();
         console.log('Dữ liệu người dùng:', userData);
         if (userData) {
-          loginPage.style.display = 'none';
+          loginPage.style.display = 'none'; // Ẩn trang đăng nhập trước
           if (userData.role === 'manager') {
             console.log('Đăng nhập quản lý, hiển thị giao diện quản lý...');
             managerPage.style.display = 'block';
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
           } else {
             console.error('Vai trò không xác định:', userData.role);
             alert('Lỗi: Vai trò không được xác định.');
-            loginPage.style.display = 'block';
+            loginPage.style.display = 'block'; // Quay lại trang đăng nhập nếu lỗi
           }
         } else {
           console.error('Không tìm thấy dữ liệu vai trò cho UID:', user.uid);
@@ -99,4 +99,4 @@ document.addEventListener('DOMContentLoaded', () => {
       isRoleChecked = false;
     }
   });
-}
+});
