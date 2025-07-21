@@ -37,9 +37,6 @@ function loadEmployeeInventory(elementId) {
 window.loadEmployeeInventory = loadEmployeeInventory;
 
 function submitSharedReport() {
-  const uid = auth.currentUser.uid;
-  const date = new Date().toISOString().split('T')[0]; // luôn là hôm nay
-
   const openingBalance = parseFloat(document.getElementById('opening-balance').value) || 0;
   const costInput = document.getElementById('shared-cost').value;
   const revenue = parseFloat(document.getElementById('shared-revenue').value) || 0;
@@ -56,6 +53,9 @@ function submitSharedReport() {
     alert('Vui lòng nhập ít nhất một trường thông tin.');
     return;
   }
+
+  const uid = auth.currentUser.uid;
+  const date = new Date().toISOString().split('T')[0];
 
   db.ref('users/' + uid + '/name').once('value').then(snapshot => {
     const name = snapshot.val() || 'Không rõ';
@@ -110,7 +110,6 @@ function submitSharedReport() {
   });
 }
 
-
 function displaySharedReportSummary(date) {
   const container = document.getElementById('shared-report-summary');
   if (!container) return;
@@ -133,25 +132,36 @@ function displaySharedReportSummary(date) {
       entries = []
     } = report;
 
-    const netProfit = totalOpeningBalance - totalCost + totalRevenue - totalClosingBalance;
+    const netProfit = totalOpeningBalance + totalRevenue - totalCost - totalClosingBalance;
+
+    const groupField = (field) => {
+      return entries.filter(e => e[field] > 0).map(e => `<li>${e.name}: ${e[field]}</li>`).join('');
+    };
 
     container.innerHTML = `
-      <h3 class="text-lg font-semibold">Tổng hợp báo cáo ngày ${date}</h3>
-      <p><strong>Tổng Số Dư Đầu Kỳ:</strong> ${totalOpeningBalance}</p>
-      <p><strong>Tổng Chi Phí:</strong> ${totalCost}</p>
-      <p><strong>Tổng Doanh Thu:</strong> ${totalRevenue}</p>
-      <p><strong>Tổng Số Dư Cuối Kỳ:</strong> ${totalClosingBalance}</p>
-      <p><strong>Tổng Xuất Kho:</strong> ${totalExport}</p>
-      <p><strong>Số Tiền Thực Tế:</strong> ${netProfit}</p>
-      <hr class="my-2">
-      <h4 class="font-medium">Chi tiết xuất kho:</h4>
-      <ul>${Object.entries(exports).map(([pid, qty]) => `<li>${pid}: ${qty}</li>`).join('')}</ul>
-      <hr class="my-2">
-      <h4 class="font-medium">Chi phí từng người:</h4>
+      <h3 class="text-lg font-semibold">Báo cáo ngày ${date}</h3>
+
+      <h4 class="font-medium mt-2">Đầu kỳ:</h4>
+      <ul>${groupField('openingBalance')}</ul>
+      <p><strong>Tổng đầu kỳ:</strong> ${totalOpeningBalance}</p>
+
+      <h4 class="font-medium mt-2">Doanh thu:</h4>
+      <ul>${groupField('revenue')}</ul>
+      <p><strong>Tổng doanh thu:</strong> ${totalRevenue}</p>
+
+      <h4 class="font-medium mt-2">Chi phí:</h4>
       <ul>${costDetails.map(d => `<li>${d.name}: ${d.amount} (${d.description} - ${d.category})</li>`).join('')}</ul>
-      <hr class="my-2">
-      <h4 class="font-medium">Gửi báo cáo:</h4>
-      <ul>${entries.map(e => `<li>${e.name} (${new Date(e.timestamp).toLocaleTimeString()})</li>`).join('')}</ul>
+      <p><strong>Tổng chi phí:</strong> ${totalCost}</p>
+
+      <h4 class="font-medium mt-2">Cuối kỳ:</h4>
+      <ul>${groupField('closingBalance')}</ul>
+      <p><strong>Tổng cuối kỳ:</strong> ${totalClosingBalance}</p>
+
+      <h4 class="font-medium mt-2">Tổng Xuất Kho:</h4>
+      <p>${totalExport}</p>
+
+      <h4 class="font-medium mt-2">Số tiền còn lại:</h4>
+      <p><strong>${totalOpeningBalance} + ${totalRevenue} - ${totalCost} - ${totalClosingBalance} = ${netProfit}</strong></p>
     `;
   }).catch(error => {
     console.error('Lỗi tải báo cáo tổng:', error);
