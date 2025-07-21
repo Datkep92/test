@@ -9,7 +9,8 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
 function login() {
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
-  const rememberMe = document.getElementById('remember-me') ? document.getElementById('remember-me').checked : false;
+  const rememberMeCheckbox = document.getElementById('remember-me');
+  const rememberMe = rememberMeCheckbox ? rememberMeCheckbox.checked : false;
 
   if (!email || !password) {
     alert('Vui lòng nhập email và mật khẩu.');
@@ -38,15 +39,15 @@ auth.onAuthStateChanged(user => {
         document.getElementById('login-page').classList.add('hidden');
         document.getElementById('manager-page').classList.remove('hidden');
         document.getElementById('employee-page').classList.add('hidden');
-        loadInventory('inventory-list');
-        loadSharedReports('report-table');
+        loadInventory('manager-inventory-list');
+        loadSharedReports('manager-report-table');
       } else {
         console.log('Đăng nhập nhân viên, hiển thị giao diện nhân viên...');
         document.getElementById('login-page').classList.add('hidden');
         document.getElementById('employee-page').classList.remove('hidden');
         document.getElementById('manager-page').classList.add('hidden');
-        loadInventory('inventory-list');
-        loadSharedReports('report-table');
+        loadInventory('employee-inventory-list');
+        loadSharedReports('employee-report-table');
       }
     }).catch(error => {
       console.error('Lỗi lấy thông tin người dùng:', error);
