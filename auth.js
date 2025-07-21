@@ -103,6 +103,7 @@ function checkUserRole(uid) {
         return;
       }
       managerPage.classList.remove('hidden');
+      managerPage.style.display = 'block';
       document.getElementById('employee-page').classList.add('hidden');
       loadInventory('inventory-list');
       loadSharedReports('manager-shared-reports');
