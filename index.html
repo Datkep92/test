@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quản Lý Nhân Viên</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
 </head>
 <body class="bg-gray-100">
 
@@ -20,7 +19,7 @@
         <label for="save-password">Lưu mật khẩu</label>
       </div>
       <button onclick="login()" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Đăng Nhập</button>
-      <button onclick="clearAppCache()" class="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600 mt-2">Xóa Cache Trình Duyệt</button>
+      <button onclick="clearAppCache()" class="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600 mt-2">Xóa Cache</button>
       <p id="error" class="text-red-500 text-center mt-4 hidden"></p>
     </div>
   </div>
@@ -28,6 +27,7 @@
   <!-- Trang nhân viên -->
   <div id="employee-page" class="hidden p-8">
     <h2 class="text-2xl font-bold mb-6">Báo Cáo Nhân Viên</h2>
+
     <div class="grid grid-cols-1 gap-4 mb-6">
       <div>
         <label class="block">Số Dư Đầu Kỳ</label>
@@ -45,52 +45,42 @@
         <label class="block">Số Dư Cuối Kỳ</label>
         <input id="closing-balance" type="number" min="0" class="w-full p-2 border rounded">
       </div>
+
+      <!-- Danh sách xuất kho -->
       <div>
         <label class="block">Xuất Kho</label>
-        <div id="employee-inventory" class="border mt-2 p-2 bg-white"></div>
+        <div id="employee-inventory" class="mt-2 border p-2 bg-white rounded"></div>
       </div>
+
       <button onclick="submitSharedReport()" class="bg-green-500 text-white p-2 rounded hover:bg-green-600">Gửi Báo Cáo</button>
     </div>
+
+    <!-- Báo cáo hiển thị -->
     <div>
       <h3 class="text-xl font-semibold">Báo Cáo Chung</h3>
-      <div id="report-table" class="mt-4 bg-white p-4 rounded shadow"></div>
+      <div id="shared-reports" class="mt-4 space-y-4"></div>
+
+      <div id="total-report" class="mt-6 p-4 bg-gray-100 border rounded shadow">
+        <p><strong>Tổng Số Dư Đầu Kỳ:</strong> <span id="total-opening-balance">0</span></p>
+        <p><strong>Tổng Chi Phí:</strong> <span id="total-cost">0</span></p>
+        <p><strong>Tổng Doanh Thu:</strong> <span id="total-revenue">0</span></p>
+        <p><strong>Tổng Số Dư Cuối Kỳ:</strong> <span id="total-closing-balance">0</span></p>
+        <p><strong>Tổng Xuất Kho:</strong> <span id="total-export">0</span></p>
+        <p><strong>Số Tiền Thực Tế:</strong> <span id="net-profit">0</span></p>
+      </div>
     </div>
   </div>
 
-  <!-- Trang quản lý -->
-  <div id="manager-page" class="hidden p-8">
-    <h2 class="text-2xl font-bold mb-6">Quản Lý</h2>
-    <div class="mb-6">
-      <h3 class="text-xl font-semibold">Tạo Danh Sách Tồn Kho</h3>
-      <input id="product-name" type="text" placeholder="Tên sản phẩm" class="w-full p-2 border rounded mb-2">
-      <input id="product-quantity" type="number" min="0" placeholder="Số lượng" class="w-full p-2 border rounded mb-2">
-      <input id="product-price" type="number" min="0" placeholder="Đơn giá" class="w-full p-2 border rounded mb-2">
-      <button onclick="addInventory()" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Thêm Sản Phẩm</button>
-    </div>
-    <div class="mb-6">
-      <h3 class="text-xl font-semibold">Danh Sách Tồn Kho</h3>
-      <div id="inventory-list" class="mt-4"></div>
-    </div>
-    <div>
-      <h3 class="text-xl font-semibold">Báo Cáo Tổng Hợp</h3>
-      <select id="report-filter" class="p-2 border rounded mb-4">
-        <option value="day">Theo ngày</option>
-        <option value="month">Theo tháng</option>
-      </select>
-      <div id="report-table" class="mt-4 bg-white p-4 rounded shadow"></div>
-    </div>
-  </div>
-
-  <!-- Firebase & script -->
+  <!-- Firebase SDK & Script -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
   <script src="firebase-config.js"></script>
   <script src="auth.js"></script>
   <script src="employee.js"></script>
-  <script src="manager.js"></script>
 
-  <!-- Gọi hiển thị dữ liệu ngày hiện tại -->
+  <!-- Tự động tải tồn kho & báo cáo -->
   <script>
     window.addEventListener('DOMContentLoaded', () => {
       loadEmployeeInventory('employee-inventory');
@@ -99,16 +89,14 @@
     });
 
     function clearAppCache() {
-      const confirmClear = confirm("Bạn có chắc muốn xoá cache và tải lại trang?");
-      if (!confirmClear) return;
-      localStorage.clear();
-      sessionStorage.clear();
-      if ('caches' in window) {
-        caches.keys().then(cacheNames => {
-          cacheNames.forEach(name => caches.delete(name));
-        });
+      if (confirm("Bạn có chắc muốn xoá cache và tải lại trang?")) {
+        localStorage.clear();
+        sessionStorage.clear();
+        if ('caches' in window) {
+          caches.keys().then(names => names.forEach(n => caches.delete(n)));
+        }
+        location.reload(true);
       }
-      location.reload(true);
     }
   </script>
 </body>
