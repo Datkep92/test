@@ -79,13 +79,33 @@ function displaySharedReportSummary(date) {
     return;
   }
 
+  // Ensure employee page is visible
+  if (document.getElementById('employee-page').classList.contains('hidden')) {
+    console.warn('Employee page is hidden. Showing employee page...');
+    document.getElementById('employee-page').classList.remove('hidden');
+    document.getElementById('manager-page').classList.add('hidden');
+    document.getElementById('login-page').classList.add('hidden');
+  }
+
   container.innerHTML = '<p class="text-gray-500">Đang tải báo cáo...</p>';
   const filterType = filter.value;
   const dateKey = filterType === 'day' ? date : date.substring(0, 7);
 
   fetchReportSummary(dateKey, filterType, (group, sum, reports, error) => {
     if (error) {
+      console.error('Lỗi hiển thị báo cáo:', error);
       container.innerHTML = `<p class="text-red-500">${error}</p>`;
+      return;
+    }
+
+    if (!reports || reports.length === 0) {
+      container.innerHTML = '<p class="text-gray-500">Không có báo cáo nào cho ngày/tháng này.</p>';
+      document.getElementById('total-opening-balance').textContent = '0';
+      document.getElementById('total-cost').textContent = '0';
+      document.getElementById('total-revenue').textContent = '0';
+      document.getElementById('total-closing-balance').textContent = '0';
+      document.getElementById('net-profit').textContent = '0';
+      document.getElementById('total-export').textContent = '0';
       return;
     }
 
