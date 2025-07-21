@@ -1,75 +1,72 @@
-// auth.js
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+  .then(() => console.log('Đã thiết lập persistence đăng nhập: LOCAL'));
 
-function login() {
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value.trim();
-  const rememberMe = document.getElementById('remember-me')?.checked || false;
-
-  if (!email || !password) {
-    alert('Vui lòng nhập email và mật khẩu.');
+firebase.auth().onAuthStateChanged(async user => {
+  if (!user) {
+    console.log('Không có người dùng đăng nhập');
     return;
   }
 
-  auth.setPersistence(rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION)
-    .then(() => auth.signInWithEmailAndPassword(email, password))
-    .then(userCredential => {
-      console.log('Đăng nhập thành công:', userCredential.user.uid);
-    })
-    .catch(error => {
-      alert('Lỗi đăng nhập: ' + error.message);
-      console.error(error);
-    });
-}
+  console.log('Auth state changed, user:', user.uid);
 
-function logout() {
-  auth.signOut().then(() => {
-    alert('Đăng xuất thành công!');
-    showPage('login');
-  });
-}
+  const userRef = firebase.database().ref(`users/${user.uid}`);
+  const snapshot = await userRef.once('value');
+  const userData = snapshot.val();
 
-function showPage(role) {
-  document.getElementById('login-page').style.display = role === 'login' ? 'block' : 'none';
-  document.getElementById('manager-page').style.display = role === 'manager' ? 'block' : 'none';
-  document.getElementById('employee-page').style.display = role === 'employee' ? 'block' : 'none';
-}
+  console.log('Dữ liệu người dùng:', userData);
 
-document.addEventListener('DOMContentLoaded', () => {
-  auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+  if (!userData || !userData.role || userData.active === false) {
+    document.getElementById('loginError').innerText = 'Tài khoản bị vô hiệu hóa hoặc thiếu thông tin.';
+    firebase.auth().signOut();
+    return;
+  }
 
-  auth.onAuthStateChanged(user => {
-    if (!user) {
-      showPage('login');
-      return;
-    }
+  const role = userData.role;
+  document.getElementById('login-page').classList.add('hidden');
 
-    db.ref('users/' + user.uid).once('value').then(snapshot => {
-      const userData = snapshot.val();
-      if (!userData || !userData.role) {
-        alert('Tài khoản chưa được phân quyền.');
-        showPage('login');
-        return;
-      }
+  if (role === 'manager') {
+    console.log('Đăng nhập quản lý, hiển thị giao diện quản lý...');
+    document.getElementById('manager-page').classList.remove('hidden');
 
-      const role = userData.role;
-      const uid = user.uid;
-      console.log('Đăng nhập với vai trò:', role);
+    const ids = [
+      'managerInventoryList',
+      'sharedReportTable',
+      'expenseSummaryTable'
+    ];
+    const domStatus = checkDomExists(ids);
+    console.log('Kiểm tra DOM manager-page:', domStatus);
+  }
 
-      if (role === 'manager') {
-        showPage('manager');
-        loadInventory('inventory-list-manager', 'manager');
-        loadExpenseSummary('expense-summary-table-manager');
-        loadSharedReports('shared-report-table-manager', uid);
-      } else {
-        showPage('employee');
-        loadInventory('inventory-list-employee', 'employee');
-        loadExpenseSummary('expense-summary-table-employee');
-        loadSharedReports('shared-report-table-employee', uid);
-      }
-    }).catch(error => {
-      alert('Lỗi khi lấy dữ liệu người dùng: ' + error.message);
-      console.error(error);
-      showPage('login');
-    });
-  });
+  if (role === 'employee') {
+    console.log('Đăng nhập nhân viên, hiển thị giao diện nhân viên...');
+    document.getElementById('employee-page').classList.remove('hidden');
+
+    const ids = [
+      'employeeInventoryList',
+      'sharedReportTable',
+      'reportFilter',
+      'reportDate',
+      'expenseSummaryTable'
+    ];
+    const domStatus = checkDomExists(ids);
+    console.log('Kiểm tra DOM employee-page:', domStatus);
+  }
 });
+
+function login() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  firebase.auth().signInWithEmailAndPassword(email, password)
+    .catch(error => {
+      console.error('Lỗi đăng nhập:', error.message);
+      document.getElementById('loginError').innerText = 'Sai tài khoản hoặc mật khẩu.';
+    });
+}
+
+function checkDomExists(ids = []) {
+  return ids.reduce((acc, id) => {
+    acc[id] = !!document.getElementById(id);
+    return acc;
+  }, {});
+}
