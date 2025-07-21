@@ -109,3 +109,64 @@ function submitSharedReport() {
     alert('Lỗi gửi báo cáo: ' + error.message);
   });
 }
+
+
+function displaySharedReportSummary(date) {
+  const container = document.getElementById('shared-report-summary');
+  if (!container) return;
+
+  db.ref('shared_reports/' + date).once('value').then(snapshot => {
+    const report = snapshot.val();
+    if (!report) {
+      container.innerHTML = '<p>Không có báo cáo nào cho ngày này.</p>';
+      return;
+    }
+
+    const {
+      totalOpeningBalance = 0,
+      totalRevenue = 0,
+      totalClosingBalance = 0,
+      totalCost = 0,
+      totalExport = 0,
+      exports = {},
+      costDetails = [],
+      entries = []
+    } = report;
+
+    const netProfit = totalOpeningBalance - totalCost + totalRevenue - totalClosingBalance;
+
+    container.innerHTML = `
+      <h3 class="text-lg font-semibold">Tổng hợp báo cáo ngày ${date}</h3>
+      <p><strong>Tổng Số Dư Đầu Kỳ:</strong> ${totalOpeningBalance}</p>
+      <p><strong>Tổng Chi Phí:</strong> ${totalCost}</p>
+      <p><strong>Tổng Doanh Thu:</strong> ${totalRevenue}</p>
+      <p><strong>Tổng Số Dư Cuối Kỳ:</strong> ${totalClosingBalance}</p>
+      <p><strong>Tổng Xuất Kho:</strong> ${totalExport}</p>
+      <p><strong>Số Tiền Thực Tế:</strong> ${netProfit}</p>
+      <hr class="my-2">
+      <h4 class="font-medium">Chi tiết xuất kho:</h4>
+      <ul>${Object.entries(exports).map(([pid, qty]) => `<li>${pid}: ${qty}</li>`).join('')}</ul>
+      <hr class="my-2">
+      <h4 class="font-medium">Chi phí từng người:</h4>
+      <ul>${costDetails.map(d => `<li>${d.name}: ${d.amount} (${d.description} - ${d.category})</li>`).join('')}</ul>
+      <hr class="my-2">
+      <h4 class="font-medium">Gửi báo cáo:</h4>
+      <ul>${entries.map(e => `<li>${e.name} (${new Date(e.timestamp).toLocaleTimeString()})</li>`).join('')}</ul>
+    `;
+  }).catch(error => {
+    console.error('Lỗi tải báo cáo tổng:', error);
+    container.innerHTML = '<p>Lỗi tải báo cáo.</p>';
+  });
+}
+
+function parseExpenseInput(input) {
+  const match = input.match(/^(.*?)\s*(\d+(\.\d+)?)(\s*-\s*(.*))?$/);
+  if (match) {
+    return {
+      description: match[1].trim(),
+      amount: parseFloat(match[2]),
+      category: match[5] ? match[5].trim() : 'Khác'
+    };
+  }
+  return { amount: 0, description: '', category: 'Khác' };
+}
