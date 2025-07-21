@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
               console.log('loadExpenseSummary defined:', typeof loadExpenseSummary);
               if (typeof loadSharedReports === 'function' && typeof loadInventory === 'function' && typeof loadExpenseSummary === 'function') {
                 loadInventory('manager-inventory-list');
-                loadSharedReports('shared-report-table', 'manager', user.uid);
+                loadSharedReports('shared-report-table', user.uid);
                 loadExpenseSummary('expense-summary-table');
               } else {
                 console.error('Một hoặc nhiều hàm không được định nghĩa:', {
@@ -87,10 +87,12 @@ document.addEventListener('DOMContentLoaded', () => {
                   loadExpenseSummary: typeof loadExpenseSummary
                 });
                 alert('Lỗi: Một hoặc nhiều chức năng chưa được tải. Vui lòng thử lại.');
+                managerPage.style.display = 'block';
               }
             } else {
               console.error('Không tìm thấy các phần tử trong manager-page.');
               alert('Lỗi: Không tìm thấy các phần tử trong giao diện quản lý.');
+              managerPage.style.display = 'block';
             }
           } else if (userData.role === 'employee') {
             console.log('Đăng nhập nhân viên, hiển thị giao diện nhân viên...');
@@ -102,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
               console.log('loadExpenseSummary defined:', typeof loadExpenseSummary);
               if (typeof loadSharedReports === 'function' && typeof loadInventory === 'function' && typeof loadExpenseSummary === 'function') {
                 loadInventory('employee-inventory-list');
-                loadSharedReports('shared-report-table', 'employee', user.uid);
+                loadSharedReports('shared-report-table', user.uid);
                 loadExpenseSummary('expense-summary-table');
               } else {
                 console.error('Một hoặc nhiều hàm không được định nghĩa:', {
@@ -111,10 +113,12 @@ document.addEventListener('DOMContentLoaded', () => {
                   loadExpenseSummary: typeof loadExpenseSummary
                 });
                 alert('Lỗi: Một hoặc nhiều chức năng chưa được tải. Vui lòng thử lại.');
+                employeePage.style.display = 'block';
               }
             } else {
               console.error('Không tìm thấy các phần tử trong employee-page.');
               alert('Lỗi: Không tìm thấy các phần tử trong giao diện nhân viên.');
+              employeePage.style.display = 'block';
             }
           } else {
             console.error('Vai trò không xác định:', userData.role);
