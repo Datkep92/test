@@ -64,7 +64,7 @@ function loadInventory(elementId) {
 function loadSharedReports(elementId) {
   const reportsList = document.getElementById(elementId);
   if (!reportsList) {
-    console.error('Không tìm thấy phần tử report-table trong DOM');
+    console.error('Không tìm thấy phần tử shared-report-table trong DOM');
     alert('Lỗi: Không tìm thấy bảng báo cáo.');
     return;
   }
