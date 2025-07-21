@@ -11,19 +11,26 @@ function formatTimestamp(ts) {
 
 function fetchReportSummary(date, filterType, callback) {
   const reportsRef = firebase.database().ref('shared_reports');
-  const usersRef = firebase.database().ref('users');
-
   reportsRef.orderByChild('date').equalTo(date).once('value').then(snapshot => {
     const allReports = [];
     snapshot.forEach(child => allReports.push({ id: child.key, ...child.val() }));
 
-    usersRef.once('value').then(userSnap => {
-      const users = userSnap.val() || {};
-      const group = { opening: [], cost: [], revenue: [], closing: [], exports: [] };
-      let sum = { opening: 0, cost: 0, revenue: 0, closing: 0, export: 0 };
+    const group = { opening: [], cost: [], revenue: [], closing: [], exports: [] };
+    let sum = { opening: 0, cost: 0, revenue: 0, closing: 0, export: 0 };
+
+    // Process reports without fetching /users initially
+    const userIds = [...new Set(allReports.map(r => r.uid))]; // Unique UIDs
+    const userPromises = userIds.map(uid =>
+      firebase.database().ref(`users/${uid}/name`).once('value')
+        .then(snap => ({ uid, name: snap.val() || uid.substring(0, 6) }))
+        .catch(() => ({ uid, name: auth.currentUser?.uid === uid ? auth.currentUser.displayName || uid.substring(0, 6) : uid.substring(0, 6) }))
+    );
+
+    Promise.all(userPromises).then(userData => {
+      const users = userData.reduce((acc, { uid, name }) => ({ ...acc, [uid]: { name } }), {});
 
       allReports.forEach(r => {
-        const name = users[r.uid]?.name || auth.currentUser?.uid === r.uid ? auth.currentUser.displayName || r.uid.substring(0, 6) : r.uid.substring(0, 6);
+        const name = users[r.uid]?.name || r.uid.substring(0, 6);
         const time = formatTimestamp(r.timestamp);
         group.opening.push(`${r.openingBalance || 0} - ${name} ${time}`);
         group.cost.push(`${r.cost || '0'} - ${name} ${time}`);
@@ -47,10 +54,7 @@ function fetchReportSummary(date, filterType, callback) {
       callback(group, sum, allReports, null);
     }).catch(error => {
       console.error('Lỗi tải thông tin người dùng:', error);
-      // Fallback to using auth.currentUser.displayName for the current user
-      const group = { opening: [], cost: [], revenue: [], closing: [], exports: [] };
-      let sum = { opening: 0, cost: 0, revenue: 0, closing: 0, export: 0 };
-
+      // Fallback: process reports without user names
       allReports.forEach(r => {
         const name = auth.currentUser?.uid === r.uid ? auth.currentUser.displayName || r.uid.substring(0, 6) : r.uid.substring(0, 6);
         const time = formatTimestamp(r.timestamp);
