@@ -27,7 +27,7 @@ function submitEmployeeReport() {
   }, {});
 
   const reportData = {
-    user: auth.currentUser.email,
+    user: window.auth.currentUser.email,
     date: new Date().toLocaleDateString('vi-VN'),
     lastUpdated: Date.now(),
     initialInventory,
@@ -38,7 +38,7 @@ function submitEmployeeReport() {
   if (Object.keys(exportQuantities).length > 0) reportData.exports = exportQuantities;
 
   const dateKey = reportData.date.replace(/\//g, '_');
-  const reportRef = db.ref(`dailyData/${dateKey}/${auth.currentUser.uid}`);
+  const reportRef = window.db.ref(`dailyData/${dateKey}/${window.auth.currentUser.uid}`);
   reportRef.once('value').then(snapshot => {
     const existingData = snapshot.val() || {};
     const newExpenseHistory = existingData.expenseHistory ? [...existingData.expenseHistory] : [];
@@ -53,10 +53,10 @@ function submitEmployeeReport() {
   }).then(() => {
     if (Object.keys(exportQuantities).length > 0) {
       return Promise.all(Object.entries(exportQuantities).map(([productId, exportItem]) => {
-        return db.ref('inventory/' + productId).once('value').then(snapshot => {
+        return window.db.ref('inventory/' + productId).once('value').then(snapshot => {
           const product = snapshot.val();
           if (product && product.quantity >= exportItem.quantity) {
-            return db.ref('inventory/' + productId).update({
+            return window.db.ref('inventory/' + productId).update({
               quantity: product.quantity - exportItem.quantity
             });
           } else {
@@ -74,7 +74,6 @@ function submitEmployeeReport() {
     document.getElementById('employee-expense-info').value = '';
     Array.from(exportInputs).forEach(input => input.value = '');
     loadInventory('employee-inventory-list');
-    loadSharedReports('shared-report-table');
   }).catch(error => {
     console.error('Lỗi gửi báo cáo:', error);
     alert('Lỗi: ' + error.message);
@@ -89,7 +88,7 @@ function loadInventory(elementId) {
     return;
   }
 
-  db.ref('inventory').on('value', snapshot => {
+  window.db.ref('inventory').on('value', snapshot => {
     inventoryList.innerHTML = '';
     const data = snapshot.val();
     if (!data) {
@@ -123,14 +122,7 @@ function loadSharedReports(elementId) {
     return;
   }
 
-  const filter = document.getElementById('employee-report-filter');
-  if (!filter) {
-    console.error('Không tìm thấy phần tử report-filter trong DOM');
-    alert('Lỗi: Không tìm thấy bộ lọc báo cáo.');
-    return;
-  }
-
-  db.ref('dailyData').on('value', snapshot => {
+  window.db.ref('dailyData').on('value', snapshot => {
     reportsList.innerHTML = '';
     const data = snapshot.val();
     if (!data) {
@@ -139,13 +131,12 @@ function loadSharedReports(elementId) {
       return;
     }
 
-    const filterType = filter.value;
+    const filterType = 'day'; // Không có bộ lọc, mặc định theo ngày
     let totalInitial = 0, totalFinal = 0, totalRevenue = 0, totalExpense = 0, totalExport = 0;
     let expenseDetails = [], revenueDetails = [], exportDetails = [];
 
     Object.entries(data).forEach(([date, users]) => {
       const formattedDate = date.replace(/_/g, '/');
-      const key = filterType === 'day' ? formattedDate : formattedDate.substring(3);
       Object.entries(users).forEach(([uid, report]) => {
         if (!/^[a-zA-Z0-9]+$/.test(uid)) {
           console.warn('Bỏ qua key không hợp lệ:', uid);
@@ -175,7 +166,7 @@ function loadSharedReports(elementId) {
     let html = `
       <div style="margin-bottom: 16px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
         <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">Báo cáo tổng</h2>
-        <p><strong>Theo:</strong> ${filterType === 'day' ? 'Ngày' : 'Tháng'}</p>
+        <p><strong>Theo:</strong> Ngày</p>
         <p><strong>Tổng Tồn kho đầu kỳ:</strong> ${totalInitial}</p>
         <p><strong>Tổng Tồn kho cuối kỳ:</strong> ${totalFinal}</p>
         <p><strong>Tổng Doanh Thu:</strong> ${totalRevenue}</p>
@@ -207,7 +198,7 @@ function loadExpenseSummary(elementId) {
     return;
   }
 
-  db.ref('dailyData').on('value', snapshot => {
+  window.db.ref('dailyData').on('value', snapshot => {
     summaryTable.innerHTML = '';
     const data = snapshot.val();
     if (!data) {
