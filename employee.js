@@ -35,10 +35,21 @@ function parseExpenseInput(input) {
 }
 
 function submitSharedReport() {
-  const openingBalance = parseFloat(document.getElementById('opening-balance').value) || 0;
-  const costInput = document.getElementById('shared-cost').value;
-  const revenue = parseFloat(document.getElementById('shared-revenue').value) || 0;
-  const closingBalance = parseFloat(document.getElementById('closing-balance').value) || 0;
+  const openingBalanceInput = document.getElementById('opening-balance');
+  const costInput = document.getElementById('shared-cost');
+  const revenueInput = document.getElementById('shared-revenue');
+  const closingBalanceInput = document.getElementById('closing-balance');
+
+  if (!openingBalanceInput || !costInput || !revenueInput || !closingBalanceInput) {
+    console.error('Không tìm thấy một hoặc nhiều phần tử input trong DOM');
+    alert('Lỗi: Giao diện chưa tải đúng. Vui lòng kiểm tra lại.');
+    return;
+  }
+
+  const openingBalance = parseFloat(openingBalanceInput.value) || 0;
+  const costInputValue = costInput.value;
+  const revenue = parseFloat(revenueInput.value) || 0;
+  const closingBalance = parseFloat(closingBalanceInput.value) || 0;
   const exportQuantities = Array.from(document.getElementsByClassName('export-quantity')).reduce((acc, input) => {
     const productId = input.dataset.productId;
     const qty = parseFloat(input.value) || 0;
@@ -46,7 +57,7 @@ function submitSharedReport() {
     return acc;
   }, {});
 
-  if (openingBalance === 0 && !costInput && revenue === 0 && closingBalance === 0 && Object.keys(exportQuantities).length === 0) {
+  if (openingBalance === 0 && !costInputValue && revenue === 0 && closingBalance === 0 && Object.keys(exportQuantities).length === 0) {
     alert('Vui lòng nhập ít nhất một trường thông tin.');
     return;
   }
@@ -58,8 +69,8 @@ function submitSharedReport() {
   };
 
   if (openingBalance > 0) reportData.openingBalance = openingBalance;
-  if (costInput) {
-    const expense = parseExpenseInput(costInput);
+  if (costInputValue) {
+    const expense = parseExpenseInput(costInputValue);
     reportData.cost = expense.amount;
     reportData.costDescription = expense.description;
     reportData.costCategory = expense.category;
@@ -84,10 +95,10 @@ function submitSharedReport() {
       });
     })).then(() => {
       alert('Gửi báo cáo thành công!');
-      document.getElementById('opening-balance').value = '';
-      document.getElementById('shared-cost').value = '';
-      document.getElementById('shared-revenue').value = '';
-      document.getElementById('closing-balance').value = '';
+      openingBalanceInput.value = '';
+      costInput.value = '';
+      revenueInput.value = '';
+      closingBalanceInput.value = '';
       document.querySelectorAll('.export-quantity').forEach(input => input.value = '');
     }).catch(error => {
       console.error('Lỗi cập nhật tồn kho:', error);
@@ -202,10 +213,21 @@ function editReport(reportId) {
     const report = snapshot.val();
     if (!report) return;
 
-    document.getElementById('opening-balance').value = report.openingBalance || '';
-    document.getElementById('shared-cost').value = report.cost ? `${report.costDescription} ${report.cost}` : '';
-    document.getElementById('shared-revenue').value = report.revenue || '';
-    document.getElementById('closing-balance').value = report.closingBalance || '';
+    const openingBalanceInput = document.getElementById('opening-balance');
+    const costInput = document.getElementById('shared-cost');
+    const revenueInput = document.getElementById('shared-revenue');
+    const closingBalanceInput = document.getElementById('closing-balance');
+
+    if (!openingBalanceInput || !costInput || !revenueInput || !closingBalanceInput) {
+      console.error('Không tìm thấy một hoặc nhiều phần tử input trong DOM');
+      alert('Lỗi: Giao diện chưa tải đúng. Vui lòng kiểm tra lại.');
+      return;
+    }
+
+    openingBalanceInput.value = report.openingBalance || '';
+    costInput.value = report.cost ? `${report.costDescription} ${report.cost}` : '';
+    revenueInput.value = report.revenue || '';
+    closingBalanceInput.value = report.closingBalance || '';
     
     if (report.exports) {
       Object.entries(report.exports).forEach(([productId, qty]) => {
@@ -217,12 +239,12 @@ function editReport(reportId) {
     const reportRef = db.ref('shared_reports/' + reportId);
     reportRef.set({
       ...report,
-      openingBalance: parseFloat(document.getElementById('opening-balance').value) || 0,
-      cost: parseExpenseInput(document.getElementById('shared-cost').value).amount || undefined,
-      costDescription: parseExpenseInput(document.getElementById('shared-cost').value).description || undefined,
-      costCategory: parseExpenseInput(document.getElementById('shared-cost').value).category || undefined,
-      revenue: parseFloat(document.getElementById('shared-revenue').value) || undefined,
-      closingBalance: parseFloat(document.getElementById('closing-balance').value) || undefined,
+      openingBalance: parseFloat(openingBalanceInput.value) || 0,
+      cost: parseExpenseInput(costInput.value).amount || undefined,
+      costDescription: parseExpenseInput(costInput.value).description || undefined,
+      costCategory: parseExpenseInput(costInput.value).category || undefined,
+      revenue: parseFloat(revenueInput.value) || undefined,
+      closingBalance: parseFloat(closingBalanceInput.value) || undefined,
       exports: Array.from(document.getElementsByClassName('export-quantity')).reduce((acc, input) => {
         const productId = input.dataset.productId;
         const qty = parseFloat(input.value) || 0;
@@ -234,10 +256,10 @@ function editReport(reportId) {
       timestamp: new Date().toISOString()
     }).then(() => {
       alert('Cập nhật báo cáo thành công!');
-      document.getElementById('opening-balance').value = '';
-      document.getElementById('shared-cost').value = '';
-      document.getElementById('shared-revenue').value = '';
-      document.getElementById('closing-balance').value = '';
+      openingBalanceInput.value = '';
+      costInput.value = '';
+      revenueInput.value = '';
+      closingBalanceInput.value = '';
       document.querySelectorAll('.export-quantity').forEach(input => input.value = '');
     }).catch(error => {
       console.error('Lỗi cập nhật báo cáo:', error);
