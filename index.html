@@ -41,11 +41,12 @@
         <input id="closing-balance" type="number" placeholder="Số dư cuối kỳ" class="p-2 border rounded mr-2">
         <button onclick="submitSharedReport()" class="bg-green-500 text-white p-2 rounded hover:bg-green-600">Gửi báo cáo</button>
       </div>
-      <div class="mb-4">
-        <select id="report-filter" class="p-2 border rounded">
+      <div class="mb-4 flex items-center">
+        <select id="report-filter" class="p-2 border rounded mr-2">
           <option value="day">Ngày</option>
           <option value="month">Tháng</option>
         </select>
+        <input id="report-date-picker" type="date" class="p-2 border rounded" value="2025-07-21">
       </div>
       <div id="shared-reports" class="mb-4"></div>
       <div>
