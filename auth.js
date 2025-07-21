@@ -1,4 +1,3 @@
-
 // Thiết lập persistence để giữ trạng thái đăng nhập
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
   .then(() => {
@@ -66,7 +65,6 @@ function checkUserRole(uid) {
       }
       managerPage.classList.remove('hidden');
 
-      // Dùng loadInventory từ manager.js
       if (typeof loadInventory === 'function') {
         loadInventory('inventory-list');
       } else {
@@ -75,7 +73,7 @@ function checkUserRole(uid) {
 
       loadSharedReports('manager-shared-reports');
 
-    } else if (role === 'employee') {
+    } else if (role === 'employee' || role === 'staff') {
       console.log('Đăng nhập nhân viên, hiển thị giao diện nhân viên...');
       const employeePage = document.getElementById('employee-page');
       if (!employeePage) {
@@ -85,7 +83,6 @@ function checkUserRole(uid) {
       }
       employeePage.classList.remove('hidden');
 
-      // Dùng loadEmployeeInventory từ employee.js
       if (typeof loadEmployeeInventory === 'function') {
         loadEmployeeInventory('inventory-list');
       } else {
@@ -113,10 +110,14 @@ function clearBrowserCache() {
   if (confirm("Bạn có chắc muốn xóa cache trình duyệt? Trang sẽ được tải lại.")) {
     localStorage.clear();
     sessionStorage.clear();
-    caches.keys().then(function(names) {
-      for (let name of names) caches.delete(name);
-    }).finally(() => {
-      location.reload(true); // Force reload không cache
-    });
+    if (caches && caches.keys) {
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      }).finally(() => {
+        location.reload(true); // Force reload không cache
+      });
+    } else {
+      location.reload(true);
+    }
   }
 }
