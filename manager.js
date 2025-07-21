@@ -6,17 +6,24 @@ function loadSharedReports(elementId) {
     return;
   }
 
-  const datePicker = document.getElementById('manager-date-picker');
+  const datePicker = document.getElementById('employee-date-picker');
   if (!datePicker) {
     console.error('Không tìm thấy phần tử date-picker trong DOM');
     alert('Lỗi: Không tìm thấy bộ chọn ngày.');
     return;
   }
 
-  const selectedDate = datePicker.value;
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    console.error('Không có người dùng hiện tại');
+    alert('Lỗi: Vui lòng đăng nhập lại.');
+    return;
+  }
+
+  const selectedDate = datePicker.value; // Giá trị ngày dạng YYYY-MM-DD
   const dateKey = selectedDate ? selectedDate.replace(/-/g, '_') : new Date().toLocaleDateString('vi-VN').replace(/\//g, '_');
 
-  db.ref(`dailyData/${dateKey}`).on('value', snapshot => {
+  db.ref(`dailyData/${dateKey}/${currentUser.uid}/reports`).on('value', snapshot => {
     reportsList.innerHTML = '';
     const data = snapshot.val();
     if (!data) {
@@ -28,38 +35,39 @@ function loadSharedReports(elementId) {
     let totalInitial = 0, totalFinal = 0, totalRevenue = 0, totalExpense = 0, totalExport = 0;
     let expenseDetails = [], revenueDetails = [], exportDetails = [];
 
-    Object.entries(data).forEach(([uid, userData]) => {
-      if (!userData.reports) return;
-      Object.entries(userData.reports).forEach(([reportId, report]) => {
-        totalInitial += report.initialInventory || 0;
-        totalFinal += report.finalInventory || 0;
-        totalRevenue += report.revenue || 0;
+    Object.entries(data).forEach(([reportId, report]) => {
+      totalInitial += report.initialInventory || 0;
+      totalFinal += report.finalInventory || 0;
+      totalRevenue += report.revenue || 0;
 
-        if (report.expenseHistory) {
-          report.expenseHistory.forEach(expense => {
-            totalExpense += expense.amount || 0;
-            expenseDetails.push(`${expense.amount} (Thông tin: ${expense.info || 'Không có'}, Nhân viên: ${report.user}, Thời gian: ${new Date(expense.timestamp).toLocaleString()})`);
-          });
-        }
+      if (report.expenseHistory) {
+        report.expenseHistory.forEach(expense => {
+          totalExpense += expense.amount || 0;
+          expenseDetails.push(`${expense.amount} (Thông tin: ${expense.info || 'Không có'}, Thời gian: ${new Date(expense.timestamp).toLocaleString()})`);
+        });
+      }
 
-        if (report.revenue) {
-          revenueDetails.push(`${report.revenue} (Nhân viên: ${report.user}, Thời gian: ${new Date(report.lastUpdated).toLocaleString()})`);
-        }
-        if (report.exports) {
-          Object.values(report.exports).forEach(exportItem => {
-            totalExport += exportItem.quantity || 0;
-            exportDetails.push(`${exportItem.quantity} ${exportItem.productName} (Nhân viên: ${report.user}, Thời gian: ${new Date(exportItem.timestamp).toLocaleString()})`);
-          });
-        }
+      if (report.revenue) {
+        revenueDetails.push(`${report.revenue} (Thời gian: ${new Date(report.lastUpdated).toLocaleString()})`);
+      }
+      if (report.exports) {
+        Object.values(report.exports).forEach(exportItem => {
+          totalExport += exportItem.quantity || 0;
+          exportDetails.push(`${exportItem.quantity} ${exportItem.productName} (Thời gian: ${new Date(exportItem.timestamp).toLocaleString()})`);
+        });
+      }
 
+      // Thêm nút sửa/xóa cho báo cáo ngày hiện tại
+      const today = new Date().toLocaleDateString('vi-VN').replace(/\//g, '_');
+      if (dateKey === today) {
         const reportDiv = document.createElement('div');
         reportDiv.innerHTML = `
-          <p>Báo cáo ${new Date(report.lastUpdated).toLocaleString()} (Nhân viên: ${report.user})</p>
-          <button class="action-btn" onclick="editManagerReport('${reportId}', '${dateKey}', '${uid}')">Sửa</button>
-          <button class="action-btn" onclick="deleteManagerReport('${reportId}', '${dateKey}', '${uid}')">Xóa</button>
+          <p>Báo cáo ${new Date(report.lastUpdated).toLocaleString()}</p>
+          <button class="action-btn" onclick="editEmployeeReport('${reportId}', '${dateKey}')">Sửa</button>
+          <button class="action-btn" onclick="deleteEmployeeReport('${reportId}', '${dateKey}')">Xóa</button>
         `;
         reportsList.appendChild(reportDiv);
-      });
+      }
     });
 
     const remainingBalance = totalRevenue - totalExpense;
@@ -88,7 +96,49 @@ function loadSharedReports(elementId) {
     alert('Lỗi tải báo cáo: ' + error.message);
   });
 }
+function editEmployeeReport(reportId, dateKey) {
+  const reportRef = db.ref(`dailyData/${dateKey}/${auth.currentUser.uid}/reports/${reportId}`);
+  reportRef.once('value').then(snapshot => {
+    const report = snapshot.val();
+    if (!report) {
+      alert('Báo cáo không tồn tại.');
+      return;
+    }
 
+    // Điền dữ liệu vào form để chỉnh sửa
+    document.getElementById('employee-initial-inventory').value = report.initialInventory || '';
+    document.getElementById('employee-final-inventory').value = report.finalInventory || '';
+    document.getElementById('employee-revenue').value = report.revenue || '';
+    document.getElementById('employee-expense-amount').value = report.expense?.amount || '';
+    document.getElementById('employee-expense-info').value = report.expense?.info || '';
+
+    // Thêm nút lưu chỉnh sửa
+    const form = document.getElementById('employee-report-form');
+    const saveButton = document.createElement('button');
+    saveButton.textContent = 'Lưu chỉnh sửa';
+    saveButton.onclick = () => {
+      submitEmployeeReport(); // Gọi lại hàm gửi để lưu báo cáo mới
+      saveButton.remove(); // Xóa nút sau khi lưu
+    };
+    form.appendChild(saveButton);
+  }).catch(error => {
+    console.error('Lỗi tải báo cáo để chỉnh sửa:', error);
+    alert('Lỗi: ' + error.message);
+  });
+}
+
+function deleteEmployeeReport(reportId, dateKey) {
+  if (!confirm('Bạn có chắc muốn xóa báo cáo này?')) return;
+
+  const reportRef = db.ref(`dailyData/${dateKey}/${auth.currentUser.uid}/reports/${reportId}`);
+  reportRef.remove().then(() => {
+    alert('Xóa báo cáo thành công!');
+    loadSharedReports('shared-report-table'); // Tải lại báo cáo
+  }).catch(error => {
+    console.error('Lỗi xóa báo cáo:', error);
+    alert('Lỗi: ' + error.message);
+  });
+}
 function editManagerReport(reportId, dateKey, uid) {
   const reportRef = db.ref(`dailyData/${dateKey}/${uid}/reports/${reportId}`);
   reportRef.once('value').then(snapshot => {
