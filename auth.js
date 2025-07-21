@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
             managerPage.style.display = 'none';
             if (document.getElementById('employee-inventory-list') && document.getElementById('shared-report-table')) {
               loadInventory('employee-inventory-list');
-              loadSharedReports('shared-report-table');
+              loadSharedReports('shared-report-table'); // Đảm bảo gọi hàm này
               loadExpenseSummary('expense-summary-table');
             } else {
               console.error('Không tìm thấy các phần tử trong employee-page.');
@@ -99,4 +99,4 @@ document.addEventListener('DOMContentLoaded', () => {
       isRoleChecked = false;
     }
   });
-});
+}
