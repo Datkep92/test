@@ -1,4 +1,3 @@
-
 function addInventory() {
   const name = document.getElementById('product-name').value.trim();
   const quantity = parseFloat(document.getElementById('product-quantity').value);
@@ -137,4 +136,3 @@ function loadSharedReports(elementId) {
     alert('Lỗi tải báo cáo: ' + error.message);
   });
 }
-
