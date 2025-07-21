@@ -75,10 +75,13 @@
   <script src="employee.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM loaded, initializing auth...');
       if (auth.currentUser) {
         auth.onAuthStateChanged(user => {
+          console.log('Auth state changed, user:', user ? user.uid : 'null');
           if (user) {
             db.ref('users/' + user.uid).once('value').then(snapshot => {
+              console.log('User data fetched for UID:', user.uid);
               const userData = snapshot.val();
               if (userData && userData.role === 'manager') {
                 loadInventory('manager-inventory-list');
