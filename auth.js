@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const userData = snapshot.val();
         console.log('Dữ liệu người dùng:', userData);
         if (userData) {
-          loginPage.style.display = 'none'; // Ẩn trang đăng nhập trước
+          loginPage.style.display = 'none';
           if (userData.role === 'manager') {
             console.log('Đăng nhập quản lý, hiển thị giao diện quản lý...');
             managerPage.style.display = 'block';
