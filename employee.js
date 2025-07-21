@@ -81,6 +81,7 @@ function displaySharedReportSummary(date) {
   console.log('displaySharedReportSummary: Displaying reports for date:', date);
   const container = document.getElementById('shared-reports');
   const filter = document.getElementById('report-filter');
+  const datePicker = document.getElementById('report-date-picker');
   if (!container || !filter) {
     console.error('displaySharedReportSummary: Missing container or filter element');
     container.innerHTML = '<p class="text-red-500">Lỗi giao diện: Không tìm thấy container báo cáo.</p>';
@@ -90,7 +91,7 @@ function displaySharedReportSummary(date) {
   // Ensure container is visible
   container.classList.remove('hidden');
   container.style.display = 'block';
-  console.log('displaySharedReportSummary: Container classes:', container.className);
+  console.log('displaySharedReportSummary: Container classes:', container.className, 'Style:', container.style.cssText);
 
   container.innerHTML = '<p class="text-gray-500">Đang tải báo cáo...</p>';
   const filterType = filter.value;
@@ -105,7 +106,7 @@ function displaySharedReportSummary(date) {
     }
 
     if (!reports || reports.length === 0) {
-      console.log('displaySharedReportSummary: No reports to display');
+      console.log('displaySharedReportSummary: No reports to display for date:', dateKey);
       container.innerHTML = '<p class="text-gray-500">Không có báo cáo nào cho ngày/tháng này.</p>';
       document.getElementById('total-opening-balance').textContent = '0';
       document.getElementById('total-cost').textContent = '0';
@@ -164,6 +165,14 @@ function displaySharedReportSummary(date) {
     document.getElementById('total-closing-balance').textContent = sum.closing;
     document.getElementById('net-profit').textContent = sum.real;
     document.getElementById('total-export').textContent = sum.export;
-    console.log('displaySharedReportSummary: Table rendered successfully');
+    console.log('displaySharedReportSummary: Table rendered successfully for date:', dateKey);
   });
+
+  // Update date picker event listener
+  if (datePicker) {
+    datePicker.addEventListener('change', (e) => {
+      console.log('displaySharedReportSummary: Date picker changed to:', e.target.value);
+      displaySharedReportSummary(e.target.value);
+    });
+  }
 }
