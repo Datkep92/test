@@ -24,7 +24,9 @@ function parseExpenseInput(input) {
   if (!expenseCategories.includes(category)) {
     expenseCategories.push(category);
     const categoriesRef = db.ref('expenseCategories');
-    categoriesRef.set(expenseCategories);
+    categoriesRef.set(expenseCategories).catch(error => {
+      console.error('Lỗi cập nhật danh mục chi phí:', error);
+    });
   }
   
   return {
@@ -35,90 +37,106 @@ function parseExpenseInput(input) {
 }
 
 function submitSharedReport() {
-  const openingBalanceInput = document.getElementById('opening-balance');
-  const costInput = document.getElementById('shared-cost');
   const revenueInput = document.getElementById('shared-revenue');
-  const closingBalanceInput = document.getElementById('closing-balance');
+  const noteInput = document.getElementById('shared-note');
+  const exportInputs = document.getElementsByClassName('export-quantity');
 
-  if (!openingBalanceInput || !costInput || !revenueInput || !closingBalanceInput) {
-    console.error('Không tìm thấy một hoặc nhiều phần tử input trong DOM');
-    alert('Lỗi: Giao diện chưa tải đúng. Vui lòng kiểm tra lại.');
+  // Kiểm tra linh hoạt hơn
+  if (!revenueInput) {
+    console.error('Không tìm thấy shared-revenue trong DOM');
+    alert('Lỗi: Không tìm thấy input doanh thu. Vui lòng kiểm tra giao diện.');
     return;
   }
 
-  const openingBalance = parseFloat(openingBalanceInput.value) || 0;
-  const costInputValue = costInput.value;
+  console.log('Bắt đầu xử lý báo cáo...');
   const revenue = parseFloat(revenueInput.value) || 0;
-  const closingBalance = parseFloat(closingBalanceInput.value) || 0;
-  const exportQuantities = Array.from(document.getElementsByClassName('export-quantity')).reduce((acc, input) => {
+  const note = noteInput ? noteInput.value || '' : '';
+  const exportQuantities = Array.from(exportInputs).reduce((acc, input) => {
     const productId = input.dataset.productId;
     const qty = parseFloat(input.value) || 0;
-    if (qty > 0) acc[productId] = qty;
+    if (qty > 0) {
+      acc[productId] = {
+        productId,
+        quantity: qty,
+        productName: input.dataset.productName || 'Unknown',
+        price: parseFloat(input.dataset.productPrice) || 0,
+        unit: input.dataset.productUnit || 'Unknown',
+        timestamp: Date.now()
+      };
+    }
     return acc;
   }, {});
 
-  if (openingBalance === 0 && !costInputValue && revenue === 0 && closingBalance === 0 && Object.keys(exportQuantities).length === 0) {
+  console.log('Dữ liệu nhập:', { revenue, note, exportQuantities });
+
+  if (revenue === 0 && Object.keys(exportQuantities).length === 0 && !note) {
     alert('Vui lòng nhập ít nhất một trường thông tin.');
+    console.log('Không có dữ liệu hợp lệ để gửi báo cáo.');
     return;
   }
 
   const reportData = {
-    uid: auth.currentUser.uid,
-    date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
-    timestamp: new Date().toISOString(),
+    user: auth.currentUser.email,
+    date: new Date().toLocaleDateString('vi-VN'),
+    lastUpdated: Date.now()
   };
 
-  if (openingBalance > 0) reportData.openingBalance = openingBalance;
-  if (costInputValue) {
-    const expense = parseExpenseInput(costInputValue);
-    reportData.cost = expense.amount;
-    reportData.costDescription = expense.description;
-    reportData.costCategory = expense.category;
-  }
   if (revenue > 0) reportData.revenue = revenue;
-  if (closingBalance > 0) reportData.closingBalance = closingBalance;
+  if (note) reportData.note = note;
   if (Object.keys(exportQuantities).length > 0) reportData.exports = exportQuantities;
 
-  const reportRef = db.ref('shared_reports').push();
+  console.log('Dữ liệu báo cáo gửi đi:', reportData);
+
+  const dateKey = reportData.date.replace(/\//g, '_');
+  const reportRef = db.ref(`dailyData/${dateKey}/${auth.currentUser.uid}`);
   reportRef.set(reportData).then(() => {
-    // Update inventory for exports
-    Promise.all(Object.entries(exportQuantities).map(([productId, qty]) => {
-      return db.ref('inventory/' + productId).once('value').then(snapshot => {
-        const product = snapshot.val();
-        if (product && product.quantity >= qty) {
-          return db.ref('inventory/' + productId).update({
-            quantity: product.quantity - qty
-          });
-        } else {
-          throw new Error('Số lượng xuất kho vượt quá tồn kho.');
-        }
-      });
-    })).then(() => {
-      alert('Gửi báo cáo thành công!');
-      openingBalanceInput.value = '';
-      costInput.value = '';
-      revenueInput.value = '';
-      closingBalanceInput.value = '';
-      document.querySelectorAll('.export-quantity').forEach(input => input.value = '');
-    }).catch(error => {
-      console.error('Lỗi cập nhật tồn kho:', error);
-      alert('Lỗi cập nhật tồn kho: ' + error.message);
-    });
+    console.log('Đã lưu báo cáo vào dailyData:', dateKey, auth.currentUser.uid);
+    if (Object.keys(exportQuantities).length > 0) {
+      return Promise.all(Object.entries(exportQuantities).map(([productId, exportItem]) => {
+        console.log(`Cập nhật tồn kho cho productId ${productId}: ${exportItem.quantity}`);
+        return db.ref('inventory/' + productId).once('value').then(snapshot => {
+          const product = snapshot.val();
+          if (!product) {
+            throw new Error(`Không tìm thấy sản phẩm ${productId} trong kho.`);
+          }
+          if (product.quantity >= exportItem.quantity) {
+            return db.ref('inventory/' + productId).update({
+              quantity: product.quantity - exportItem.quantity
+            }).then(() => {
+              console.log(`Đã cập nhật tồn kho cho ${productId}: ${product.quantity - exportItem.quantity}`);
+            });
+          } else {
+            throw new Error(`Số lượng xuất kho (${exportItem.quantity}) vượt quá tồn kho (${product.quantity}) cho sản phẩm ${productId}.`);
+          }
+        });
+      }));
+    }
+  }).then(() => {
+    alert('Gửi báo cáo thành công!');
+    revenueInput.value = '';
+    if (noteInput) noteInput.value = '';
+    Array.from(exportInputs).forEach(input => input.value = '');
+    console.log('Đã xóa các trường nhập sau khi gửi báo cáo.');
   }).catch(error => {
-    console.error('Lỗi gửi báo cáo:', error);
-    alert('Lỗi gửi báo cáo: ' + error.message);
+    console.error('Lỗi gửi báo cáo hoặc cập nhật tồn kho:', error);
+    alert('Lỗi: ' + error.message);
   });
 }
 
 function loadInventory(elementId) {
   const inventoryList = document.getElementById(elementId);
-  if (!inventoryList) return;
+  if (!inventoryList) {
+    console.error('Không tìm thấy phần tử inventory-list trong DOM');
+    alert('Lỗi: Không tìm thấy danh sách tồn kho. Vui lòng kiểm tra giao diện.');
+    return;
+  }
 
   db.ref('inventory').on('value', snapshot => {
     inventoryList.innerHTML = '';
     const data = snapshot.val();
     if (!data) {
       inventoryList.innerHTML = '<p>Không có dữ liệu tồn kho.</p>';
+      console.log('Không có dữ liệu tồn kho trong Firebase.');
       return;
     }
 
@@ -127,143 +145,137 @@ function loadInventory(elementId) {
       div.className = 'flex items-center justify-between p-2 border-b';
       div.innerHTML = `
         <span>${product.name} (Số lượng: ${product.quantity})</span>
-        <input type="number" min="0" class="export-quantity w-24 p-1 border rounded" data-product-id="${productId}" placeholder="Số lượng xuất">
+        <input type="number" min="0" class="export-quantity w-24 p-1 border rounded" data-product-id="${productId}" data-product-name="${product.name}" data-product-price="${product.price}" data-product-unit="${product.unit || 'Unknown'}" placeholder="Số lượng xuất">
       `;
       inventoryList.appendChild(div);
     });
-    console.log('Đã tải danh sách tồn kho thành công cho', elementId);
+    console.log('Đã tải danh sách tồn kho thành công cho', elementId, Object.keys(data));
   }, error => {
     console.error('Lỗi tải tồn kho:', error);
-    inventoryList.innerHTML = '<p>Lỗi tải tồn kho.</p>';
+    inventoryList.innerHTML = '<p>Lỗi tải tồn kho: ' + error.message + '</p>';
+    alert('Lỗi tải tồn kho: ' + error.message);
   });
 }
 
 function loadSharedReports(elementId) {
   const reportsList = document.getElementById(elementId);
-  if (!reportsList) return;
+  if (!reportsList) {
+    console.error('Không tìm thấy phần tử report-table trong DOM');
+    alert('Lỗi: Không tìm thấy bảng báo cáo. Vui lòng kiểm tra giao diện.');
+    return;
+  }
 
-  db.ref('shared_reports').on('value', snapshot => {
+  const filter = document.getElementById('report-filter');
+  if (!filter) {
+    console.error('Không tìm thấy phần tử report-filter trong DOM');
+    alert('Lỗi: Không tìm thấy bộ lọc báo cáo. Vui lòng kiểm tra giao diện.');
+    return;
+  }
+
+  db.ref('dailyData').on('value', snapshot => {
     reportsList.innerHTML = '';
     const data = snapshot.val();
     if (!data) {
       reportsList.innerHTML = '<p>Không có báo cáo.</p>';
+      console.log('Không có dữ liệu báo cáo trong dailyData.');
       return;
     }
 
-    let totalOpeningBalance = 0, totalCost = 0, totalRevenue = 0, totalClosingBalance = 0, totalExport = 0;
-    Object.entries(data).forEach(([reportId, report]) => {
-      const isOwnReport = auth.currentUser && report.uid === auth.currentUser.uid;
-      const div = document.createElement('div');
-      div.className = 'p-2 border-b';
-      let exportText = '';
-      if (report.exports) {
-        exportText = Object.entries(report.exports).map(([productId, qty]) => {
-          return db.ref('inventory/' + productId).once('value').then(s => {
-            const product = s.val();
-            return product ? `${product.name}: ${qty}` : `Sản phẩm ${productId}: ${qty}`;
-          });
-        });
-        Promise.all(exportText).then(texts => {
-          div.innerHTML = `
-            <p><strong>Ngày:</strong> ${report.date}</p>
-            ${report.openingBalance ? `<p><strong>Số Dư Đầu Kỳ:</strong> ${report.openingBalance}</p>` : ''}
-            ${report.cost ? `<p><strong>Chi Phí:</strong> ${report.costDescription} (${report.cost} - ${report.costCategory})</p>` : ''}
-            ${report.revenue ? `<p><strong>Doanh Thu:</strong> ${report.revenue}</p>` : ''}
-            ${report.closingBalance ? `<p><strong>Số Dư Cuối Kỳ:</strong> ${report.closingBalance}</p>` : ''}
-            ${texts.length ? `<p><strong>Xuất Kho:</strong> ${texts.join(', ')}</p>` : ''}
-            ${isOwnReport ? `<button onclick="editReport('${reportId}')" class="text-blue-500">Sửa</button>` : ''}
+    console.log('Dữ liệu báo cáo thô:', data);
+
+    const filterType = filter.value; // 'day' or 'month'
+    let groupedReports = {};
+
+    Object.entries(data).forEach(([date, users]) => {
+      const formattedDate = date.replace(/_/g, '/');
+      const key = filterType === 'day' ? formattedDate : formattedDate.substring(3); // DD/MM/YYYY or MM/YYYY
+      Object.entries(users).forEach(([uid, report]) => {
+        if (!groupedReports[key]) groupedReports[key] = [];
+        groupedReports[key].push({ date, uid, ...report });
+      });
+    });
+
+    let html = '';
+    Promise.all(
+      Object.entries(groupedReports).map(([key, reports]) => {
+        let totalRevenue = 0, totalExport = 0;
+        let revenueHtml = '', exportHtml = '';
+
+        return Promise.all(
+          reports.map(report => {
+            const timestamp = new Date(report.lastUpdated).toLocaleString('vi-VN');
+            console.log('Xử lý báo cáo:', report.date, 'UID:', report.uid);
+            return db.ref('users/' + report.uid).once('value').then(userSnapshot => {
+              const user = userSnapshot.val();
+              const employeeName = user && user.name ? user.name : report.user || report.uid;
+
+              if (report.revenue) {
+                revenueHtml += `<p>${report.revenue} - ${employeeName} ${timestamp}</p>`;
+                totalRevenue += report.revenue;
+              }
+              if (report.exports) {
+                return Promise.all(Object.entries(report.exports).map(([index, exportItem]) => {
+                  return db.ref('inventory/' + exportItem.productId).once('value').then(s => {
+                    const product = s.val();
+                    return product ? `<p>${exportItem.quantity} ${exportItem.productName} - ${employeeName} ${timestamp}</p>` : `<p>${exportItem.quantity} Sản phẩm ${exportItem.productId} - ${employeeName} ${timestamp}</p>`;
+                  });
+                })).then(texts => {
+                  exportHtml += texts.join('');
+                  totalExport += Object.values(report.exports).reduce((sum, item) => sum + item.quantity, 0);
+                });
+              } else {
+                exportHtml += `<p>Không có xuất kho - ${employeeName} ${timestamp}</p>`;
+              }
+            }).catch(error => {
+              console.error(`Lỗi tải tên người dùng cho UID ${report.uid}:`, error);
+              const employeeName = report.user || report.uid;
+              if (report.revenue) {
+                revenueHtml += `<p>${report.revenue} - ${employeeName} ${timestamp}</p>`;
+                totalRevenue += report.revenue;
+              }
+              if (report.exports) {
+                return Promise.all(Object.entries(report.exports).map(([index, exportItem]) => {
+                  return db.ref('inventory/' + exportItem.productId).once('value').then(s => {
+                    const product = s.val();
+                    return product ? `<p>${exportItem.quantity} ${exportItem.productName} - ${employeeName} ${timestamp}</p>` : `<p>${exportItem.quantity} Sản phẩm ${exportItem.productId} - ${employeeName} ${timestamp}</p>`;
+                  });
+                })).then(texts => {
+                  exportHtml += texts.join('');
+                  totalExport += Object.values(report.exports).reduce((sum, item) => sum + item.quantity, 0);
+                });
+              } else {
+                exportHtml += `<p>Không có xuất kho - ${employeeName} ${timestamp}</p>`;
+              }
+            });
+          })
+        ).then(() => {
+          html += `
+            <div class="mb-4">
+              <h4 class="text-lg font-semibold">${key}</h4>
+              <div class="pl-4">
+                <h5>Doanh Thu:</h5>
+                ${revenueHtml || '<p>Không có dữ liệu.</p>'}
+                <p><strong>Tổng Doanh Thu:</strong> ${totalRevenue} ${new Date().toLocaleString('vi-VN')}</p>
+                <hr class="my-2">
+                <h5>Xuất Kho:</h5>
+                ${exportHtml || '<p>Không có dữ liệu.</p>'}
+                <p><strong>Tổng Xuất Kho:</strong> ${totalExport} ${new Date().toLocaleString('vi-VN')}</p>
+              </div>
+            </div>
           `;
         });
-      } else {
-        div.innerHTML = `
-          <p><strong>Ngày:</strong> ${report.date}</p>
-          ${report.openingBalance ? `<p><strong>Số Dư Đầu Kỳ:</strong> ${report.openingBalance}</p>` : ''}
-          ${report.cost ? `<p><strong>Chi Phí:</strong> ${report.costDescription} (${report.cost} - ${report.costCategory})</p>` : ''}
-          ${report.revenue ? `<p><strong>Doanh Thu:</strong> ${report.revenue}</p>` : ''}
-          ${report.closingBalance ? `<p><strong>Số Dư Cuối Kỳ:</strong> ${report.closingBalance}</p>` : ''}
-          ${isOwnReport ? `<button onclick="editReport('${reportId}')" class="text-blue-500">Sửa</button>` : ''}
-        `;
-      }
-      reportsList.appendChild(div);
-
-      totalOpeningBalance += report.openingBalance || 0;
-      totalCost += report.cost || 0;
-      totalRevenue += report.revenue || 0;
-      totalClosingBalance += report.closingBalance || 0;
-      totalExport += report.exports ? Object.values(report.exports).reduce((sum, qty) => sum + qty, 0) : 0;
+      })
+    ).then(() => {
+      reportsList.innerHTML = html;
+      console.log('Đã tải báo cáo chung thành công cho', elementId);
+    }).catch(error => {
+      console.error('Lỗi tải báo cáo:', error);
+      reportsList.innerHTML = '<p>Lỗi tải báo cáo: ' + error.message + '</p>';
+      alert('Lỗi tải báo cáo: ' + error.message);
     });
-
-    const netProfit = totalOpeningBalance - totalCost + totalRevenue - totalClosingBalance;
-    document.getElementById('total-opening-balance').textContent = totalOpeningBalance;
-    document.getElementById('total-cost').textContent = totalCost;
-    document.getElementById('total-revenue').textContent = totalRevenue;
-    document.getElementById('total-closing-balance').textContent = totalClosingBalance;
-    document.getElementById('net-profit').textContent = netProfit;
-    document.getElementById('total-export').textContent = totalExport;
-
-    console.log('Đã tải báo cáo chung thành công cho', elementId);
   }, error => {
     console.error('Lỗi tải báo cáo:', error);
-    reportsList.innerHTML = '<p>Lỗi tải báo cáo.</p>';
-  });
-}
-
-function editReport(reportId) {
-  db.ref('shared_reports/' + reportId).once('value').then(snapshot => {
-    const report = snapshot.val();
-    if (!report) return;
-
-    const openingBalanceInput = document.getElementById('opening-balance');
-    const costInput = document.getElementById('shared-cost');
-    const revenueInput = document.getElementById('shared-revenue');
-    const closingBalanceInput = document.getElementById('closing-balance');
-
-    if (!openingBalanceInput || !costInput || !revenueInput || !closingBalanceInput) {
-      console.error('Không tìm thấy một hoặc nhiều phần tử input trong DOM');
-      alert('Lỗi: Giao diện chưa tải đúng. Vui lòng kiểm tra lại.');
-      return;
-    }
-
-    openingBalanceInput.value = report.openingBalance || '';
-    costInput.value = report.cost ? `${report.costDescription} ${report.cost}` : '';
-    revenueInput.value = report.revenue || '';
-    closingBalanceInput.value = report.closingBalance || '';
-    
-    if (report.exports) {
-      Object.entries(report.exports).forEach(([productId, qty]) => {
-        const input = document.querySelector(`.export-quantity[data-product-id="${productId}"]`);
-        if (input) input.value = qty;
-      });
-    }
-
-    const reportRef = db.ref('shared_reports/' + reportId);
-    reportRef.set({
-      ...report,
-      openingBalance: parseFloat(openingBalanceInput.value) || 0,
-      cost: parseExpenseInput(costInput.value).amount || undefined,
-      costDescription: parseExpenseInput(costInput.value).description || undefined,
-      costCategory: parseExpenseInput(costInput.value).category || undefined,
-      revenue: parseFloat(revenueInput.value) || undefined,
-      closingBalance: parseFloat(closingBalanceInput.value) || undefined,
-      exports: Array.from(document.getElementsByClassName('export-quantity')).reduce((acc, input) => {
-        const productId = input.dataset.productId;
-        const qty = parseFloat(input.value) || 0;
-        if (qty > 0) acc[productId] = qty;
-        return acc;
-      }, {}),
-      uid: auth.currentUser.uid,
-      date: new Date().toISOString().split('T')[0],
-      timestamp: new Date().toISOString()
-    }).then(() => {
-      alert('Cập nhật báo cáo thành công!');
-      openingBalanceInput.value = '';
-      costInput.value = '';
-      revenueInput.value = '';
-      closingBalanceInput.value = '';
-      document.querySelectorAll('.export-quantity').forEach(input => input.value = '');
-    }).catch(error => {
-      console.error('Lỗi cập nhật báo cáo:', error);
-      alert('Lỗi cập nhật báo cáo: ' + error.message);
-    });
+    reportsList.innerHTML = '<p>Lỗi tải báo cáo: ' + error.message + '</p>';
+    alert('Lỗi tải báo cáo: ' + error.message);
   });
 }
