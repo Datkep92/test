@@ -9,7 +9,7 @@ firebase.auth().onAuthStateChanged(async user => {
     document.getElementById('employee-section').classList.add('hidden');
     return;
   }
-
+av
   const userRef = db.ref(`users/${user.uid}`);
   const snapshot = await userRef.once('value');
   const userData = snapshot.val();
