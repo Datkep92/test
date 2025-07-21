@@ -10,74 +10,75 @@
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 </head>
 <body>
-  <!-- 🔐 Đăng nhập -->
-  <div id="login-page">
-    <h2>Đăng nhập</h2>
+
+  <!-- 🔐 Login -->
+  <section id="login-section">
+    <h2>Đăng nhập hệ thống</h2>
     <input id="email" type="email" placeholder="Email" />
     <input id="password" type="password" placeholder="Mật khẩu" />
-    <button onclick="login()">Đăng nhập</button>
+    <button onclick="login()">🔐 Đăng nhập</button>
     <div id="loginError" class="error"></div>
-  </div>
+  </section>
 
-  <!-- 👨‍💼 Trang Quản Lý -->
-  <div id="manager-page" class="hidden">
-    <h2>Trang quản lý</h2>
+  <!-- 👨‍💼 Quản lý -->
+  <section id="manager-section" class="hidden">
+    <h2>👨‍💼 Trang Quản Lý</h2>
 
-    <div class="section">
-      <h3>➕ Thêm hàng tồn kho</h3>
+    <div class="box">
+      <h3>➕ Thêm sản phẩm</h3>
       <input id="product-name" placeholder="Tên sản phẩm" />
       <input id="product-quantity" placeholder="Số lượng" />
       <input id="product-price" placeholder="Giá nhập" />
-      <button onclick="addInventory()">➕ Thêm hàng</button>
+      <button onclick="addInventory()">Thêm</button>
     </div>
 
-    <div class="section">
+    <div class="box">
       <h3>📦 Danh sách tồn kho</h3>
       <ul id="managerInventoryList"></ul>
     </div>
 
-    <div class="section">
-      <h3>📊 Tổng hợp báo cáo</h3>
-      <table class="summary-table" id="sharedReportTable"></table>
+    <div class="box">
+      <h3>📊 Báo cáo tổng hợp</h3>
+      <table id="sharedReportTable" class="table"></table>
     </div>
 
-    <div class="section">
-      <h3>💰 Tổng hợp chi phí</h3>
-      <table class="summary-table" id="expenseSummaryTable"></table>
+    <div class="box">
+      <h3>💸 Danh mục chi phí</h3>
+      <table id="expenseSummaryTable" class="table"></table>
     </div>
-  </div>
+  </section>
 
-  <!-- 👩‍🍳 Trang Nhân Viên -->
-  <div id="employee-page" class="hidden">
-    <h2>Trang nhân viên</h2>
+  <!-- 👩‍🍳 Nhân viên -->
+  <section id="employee-section" class="hidden">
+    <h2>👩‍🍳 Trang Nhân Viên</h2>
 
-    <div class="section">
-      <h3>📄 Báo cáo doanh thu</h3>
-      <input id="employee-initial" placeholder="Tồn đầu" />
-      <input id="employee-final" placeholder="Tồn cuối" />
+    <div class="box">
+      <h3>📝 Gửi báo cáo</h3>
+      <input id="employee-initial" placeholder="Tồn đầu ca" />
+      <input id="employee-final" placeholder="Tồn cuối ca" />
       <input id="employee-revenue" placeholder="Doanh thu" />
       <input id="employee-expense-amount" placeholder="Chi phí (nếu có)" />
       <input id="employee-expense-note" placeholder="Ghi chú chi phí" />
-      <button onclick="submitEmployeeReport()">Gửi báo cáo</button>
+      <button onclick="submitEmployeeReport()">Gửi</button>
     </div>
 
-    <div class="section">
+    <div class="box">
       <h3>📦 Tồn kho hôm nay</h3>
       <ul id="employeeInventoryList"></ul>
     </div>
 
-    <div class="section">
-      <h3>📊 Báo cáo tổng hợp</h3>
+    <div class="box">
+      <h3>📊 Tổng hợp</h3>
       <select id="reportFilter"></select>
       <input id="reportDate" type="date" />
-      <table class="summary-table" id="sharedReportTable"></table>
+      <table id="sharedReportTable" class="table"></table>
     </div>
 
-    <div class="section">
-      <h3>💰 Tổng hợp chi phí</h3>
-      <table class="summary-table" id="expenseSummaryTable"></table>
+    <div class="box">
+      <h3>💸 Chi phí</h3>
+      <table id="expenseSummaryTable" class="table"></table>
     </div>
-  </div>
+  </section>
 
   <!-- Scripts -->
   <script src="firebase-config.js"></script>
