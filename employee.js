@@ -39,18 +39,22 @@ function submitEmployeeReport() {
   if (Object.keys(exportQuantities).length > 0) reportData.exports = exportQuantities;
 
   const dateKey = reportData.date.replace(/\//g, '_');
-  const reportRef = db.ref(`dailyData/${dateKey}/${auth.currentUser.uid}`);
+  const reportId = Date.now().toString(); // ID duy nhất cho mỗi báo cáo
+  const reportRef = db.ref(`dailyData/${dateKey}/${auth.currentUser.uid}/reports/${reportId}`);
+
+  // Thêm vào expenseHistory
   reportRef.once('value').then(snapshot => {
     const existingData = snapshot.val() || {};
     const newExpenseHistory = existingData.expenseHistory ? [...existingData.expenseHistory] : [];
     newExpenseHistory.push({ amount: expenseAmount, info: expenseInfo, timestamp: Date.now() });
 
     const newReport = {
-      ...existingData,
       ...reportData,
       expenseHistory: newExpenseHistory
     };
-    return reportRef.update(newReport);
+
+    // Lưu báo cáo mới
+    return reportRef.set(newReport);
   }).then(() => {
     if (Object.keys(exportQuantities).length > 0) {
       return Promise.all(Object.entries(exportQuantities).map(([productId, exportItem]) => {
@@ -80,6 +84,9 @@ function submitEmployeeReport() {
     alert('Lỗi: ' + error.message);
   });
 }
+
+// Giữ nguyên các hàm khác như loadInventory, loadSharedReports, loadExpenseSummary
+// (loadSharedReports sẽ được cập nhật ở phần sau)
 
 function loadInventory(elementId) {
   const inventoryList = document.getElementById(elementId);
