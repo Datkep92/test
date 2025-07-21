@@ -116,12 +116,15 @@ function loadSharedReports(elementId) {
       });
     });
 
+    const remainingBalance = totalRevenue - totalExpense;
+
     let html = `
       <div class="report-row">
         <p><strong>Tổng Tồn kho đầu kỳ:</strong> ${totalInitial}</p>
         <p><strong>Tổng Tồn kho cuối kỳ:</strong> ${totalFinal}</p>
         <p><strong>Tổng Doanh Thu:</strong> ${totalRevenue}</p>
         <p><strong>Tổng Chi Phí:</strong> ${totalExpense}</p>
+        <p><strong>Số dư còn lại:</strong> ${remainingBalance >= 0 ? remainingBalance : 0}</p>
         <p><strong>Chi tiết Chi Phí:</strong></p>
         ${expenseDetails.map(detail => `<p>${detail}</p>`).join('')}
         <p><strong>Chi tiết Doanh Thu:</strong></p>
@@ -137,5 +140,54 @@ function loadSharedReports(elementId) {
     console.error('Lỗi tải báo cáo:', error);
     reportsList.innerHTML = '<p>Lỗi tải báo cáo: ' + error.message + '</p>';
     alert('Lỗi tải báo cáo: ' + error.message);
+  });
+}
+
+function loadExpenseSummary(elementId) {
+  const summaryTable = document.getElementById(elementId);
+  if (!summaryTable) {
+    console.error('Không tìm thấy phần tử expense-summary-table trong DOM');
+    alert('Lỗi: Không tìm thấy bảng tổng hợp chi phí.');
+    return;
+  }
+
+  db.ref('dailyData').on('value', snapshot => {
+    summaryTable.innerHTML = '';
+    const data = snapshot.val();
+    if (!data) {
+      summaryTable.innerHTML = '<p>Không có dữ liệu chi phí.</p>';
+      console.log('Không có dữ liệu chi phí trong dailyData.');
+      return;
+    }
+
+    const expenseSummary = {};
+    Object.entries(data).forEach(([date, users]) => {
+      Object.entries(users).forEach(([uid, report]) => {
+        if (report.expense && report.expense.amount && report.expense.info) {
+          const expenseType = report.expense.info.trim().toLowerCase();
+          if (!expenseSummary[expenseType]) {
+            expenseSummary[expenseType] = { total: 0, count: 0 };
+          }
+          expenseSummary[expenseType].total += report.expense.amount;
+          expenseSummary[expenseType].count += 1;
+        }
+      });
+    });
+
+    let html = '<table class="summary-table"><tr><th>Loại chi phí</th><th>Tổng chi phí</th><th>Số lượng giao dịch</th></tr>';
+    let grandTotal = 0;
+    let grandCount = 0;
+    Object.entries(expenseSummary).forEach(([type, summary]) => {
+      html += `<tr><td>${type}</td><td>${summary.total}</td><td>${summary.count}</td></tr>`;
+      grandTotal += summary.total;
+      grandCount += summary.count;
+    });
+    html += `<tr><td><strong>Tổng cộng</strong></td><td><strong>${grandTotal}</strong></td><td><strong>${grandCount}</strong></td></tr></table>`;
+    summaryTable.innerHTML = html;
+    console.log('Đã tải tổng hợp chi phí thành công cho', elementId);
+  }, error => {
+    console.error('Lỗi tải tổng hợp chi phí:', error);
+    summaryTable.innerHTML = '<p>Lỗi tải tổng hợp chi phí: ' + error.message + '</p>';
+    alert('Lỗi tải tổng hợp chi phí: ' + error.message);
   });
 }
