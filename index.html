@@ -1,95 +1,89 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quản lý Kinh doanh</title>
-  <link rel="stylesheet" href="styles.css">
-  <style>
-    body { font-family: Arial, sans-serif; background: #f3f4f6; margin: 0; padding: 20px; }
-    h1, h2, h3 { margin-bottom: 10px; }
-    input, select, button {
-      padding: 8px; margin-bottom: 8px;
-      border: 1px solid #ccc; border-radius: 4px;
-      width: 100%;
-    }
-    button { cursor: pointer; background: #2563eb; color: white; border: none; }
-    .section { margin-bottom: 24px; }
-    .hidden { display: none; }
-    .summary-table {
-      border-collapse: collapse; width: 100%;
-      margin-top: 8px;
-    }
-    .summary-table th, .summary-table td {
-      border: 1px solid #ccc; padding: 8px; text-align: left;
-    }
-    .summary-table th {
-      background: #e2e8f0;
-    }
-  </style>
-
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-  <!-- Project scripts -->
-  <script src="firebase-config.js"></script>
-  <script src="reports.js"></script>
-  <script src="auth.js" defer></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản lý Kinh Doanh</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 </head>
 <body>
-
-  <!-- 🔐 Trang đăng nhập -->
+  <!-- 🔐 Đăng nhập -->
   <div id="login-page">
-    <h1>🔐 Đăng nhập</h1>
-    <input id="email" type="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Mật khẩu">
-    <label><input type="checkbox" id="remember-me"> Ghi nhớ đăng nhập</label>
+    <h2>Đăng nhập</h2>
+    <input id="email" type="email" placeholder="Email" />
+    <input id="password" type="password" placeholder="Mật khẩu" />
     <button onclick="login()">Đăng nhập</button>
+    <div id="loginError" class="error"></div>
   </div>
 
-  <!-- 🧑‍💼 Giao diện Quản lý -->
+  <!-- 👨‍💼 Trang Quản Lý -->
   <div id="manager-page" class="hidden">
-    <h1>🧑‍💼 Quản lý</h1>
-    <button onclick="logout()">Đăng xuất</button>
+    <h2>Trang quản lý</h2>
 
     <div class="section">
-      <h2>📦 Tồn kho</h2>
-      <div id="inventory-list-manager"></div>
+      <h3>➕ Thêm hàng tồn kho</h3>
+      <input id="product-name" placeholder="Tên sản phẩm" />
+      <input id="product-quantity" placeholder="Số lượng" />
+      <input id="product-price" placeholder="Giá nhập" />
+      <button onclick="addInventory()">➕ Thêm hàng</button>
     </div>
 
     <div class="section">
-      <h2>💸 Bảng kê chi phí</h2>
-      <div id="expense-summary-table-manager"></div>
+      <h3>📦 Danh sách tồn kho</h3>
+      <ul id="managerInventoryList"></ul>
     </div>
 
     <div class="section">
-      <h2>📊 Báo cáo tổng hợp</h2>
-      <div id="shared-report-table-manager"></div>
+      <h3>📊 Tổng hợp báo cáo</h3>
+      <table class="summary-table" id="sharedReportTable"></table>
+    </div>
+
+    <div class="section">
+      <h3>💰 Tổng hợp chi phí</h3>
+      <table class="summary-table" id="expenseSummaryTable"></table>
     </div>
   </div>
 
-  <!-- 👩‍🍳 Giao diện Nhân viên -->
+  <!-- 👩‍🍳 Trang Nhân Viên -->
   <div id="employee-page" class="hidden">
-    <h1>👩‍🍳 Nhân viên</h1>
-    <button onclick="logout()">Đăng xuất</button>
+    <h2>Trang nhân viên</h2>
 
     <div class="section">
-      <h2>📦 Tồn kho</h2>
-      <div id="inventory-list-employee"></div>
+      <h3>📄 Báo cáo doanh thu</h3>
+      <input id="employee-initial" placeholder="Tồn đầu" />
+      <input id="employee-final" placeholder="Tồn cuối" />
+      <input id="employee-revenue" placeholder="Doanh thu" />
+      <input id="employee-expense-amount" placeholder="Chi phí (nếu có)" />
+      <input id="employee-expense-note" placeholder="Ghi chú chi phí" />
+      <button onclick="submitEmployeeReport()">Gửi báo cáo</button>
     </div>
 
     <div class="section">
-      <h2>💸 Bảng kê chi phí</h2>
-      <div id="expense-summary-table-employee"></div>
+      <h3>📦 Tồn kho hôm nay</h3>
+      <ul id="employeeInventoryList"></ul>
     </div>
 
     <div class="section">
-      <h2>📊 Báo cáo tổng hợp</h2>
-      <div id="shared-report-table-employee"></div>
+      <h3>📊 Báo cáo tổng hợp</h3>
+      <select id="reportFilter"></select>
+      <input id="reportDate" type="date" />
+      <table class="summary-table" id="sharedReportTable"></table>
+    </div>
+
+    <div class="section">
+      <h3>💰 Tổng hợp chi phí</h3>
+      <table class="summary-table" id="expenseSummaryTable"></table>
     </div>
   </div>
 
+  <!-- Scripts -->
+  <script src="firebase-config.js"></script>
+  <script src="auth.js"></script>
+  <script src="employee.js"></script>
+  <script src="manager.js"></script>
+  <script src="reports.js"></script>
 </body>
 </html>
