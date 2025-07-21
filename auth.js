@@ -30,6 +30,8 @@ function login() {
     });
 }
 
+let isRoleChecked = false;
+
 auth.onAuthStateChanged(user => {
   const loginPage = document.getElementById('login-page');
   const managerPage = document.getElementById('manager-page');
@@ -41,42 +43,41 @@ auth.onAuthStateChanged(user => {
     return;
   }
 
-  if (user) {
+  if (user && !isRoleChecked) {
+    isRoleChecked = true;
     db.ref('users/' + user.uid).once('value').then(snapshot => {
       const userData = snapshot.val();
-      if (userData && userData.role === 'manager') {
-        console.log('Đăng nhập quản lý, hiển thị giao diện quản lý...');
-        loginPage.style.display = 'none';
-        managerPage.style.display = 'block';
-        employeePage.style.display = 'none';
-        if (document.getElementById('manager-inventory-list') && document.getElementById('shared-report-table')) {
+      if (userData) {
+        if (userData.role === 'manager') {
+          console.log('Đăng nhập quản lý, hiển thị giao diện quản lý...');
+          loginPage.style.display = 'none';
+          managerPage.style.display = 'block';
+          employeePage.style.display = 'none';
           loadInventory('manager-inventory-list');
           loadSharedReports('shared-report-table');
           loadExpenseSummary('expense-summary-table');
         } else {
-          console.error('Không tìm thấy các phần tử inventory-list hoặc report-table trong manager-page.');
-        }
-      } else {
-        console.log('Đăng nhập nhân viên, hiển thị giao diện nhân viên...');
-        loginPage.style.display = 'none';
-        employeePage.style.display = 'block';
-        managerPage.style.display = 'none';
-        if (document.getElementById('employee-inventory-list') && document.getElementById('shared-report-table')) {
+          console.log('Đăng nhập nhân viên, hiển thị giao diện nhân viên...');
+          loginPage.style.display = 'none';
+          employeePage.style.display = 'block';
+          managerPage.style.display = 'none';
           loadInventory('employee-inventory-list');
           loadSharedReports('shared-report-table');
           loadExpenseSummary('expense-summary-table');
-        } else {
-          console.error('Không tìm thấy các phần tử inventory-list hoặc report-table trong employee-page.');
         }
+      } else {
+        console.error('Không tìm thấy dữ liệu vai trò cho UID:', user.uid);
+        alert('Lỗi: Không xác định được vai trò người dùng.');
       }
     }).catch(error => {
       console.error('Lỗi lấy thông tin người dùng:', error);
       alert('Lỗi: ' + error.message);
     });
-  } else {
+  } else if (!user) {
     console.log('Không có người dùng, hiển thị trang đăng nhập...');
     loginPage.style.display = 'block';
     managerPage.style.display = 'none';
     employeePage.style.display = 'none';
+    isRoleChecked = false;
   }
 });
