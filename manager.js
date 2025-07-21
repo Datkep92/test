@@ -62,11 +62,11 @@ function loadInventory(elementId) {
 }
 
 function submitManagerReport() {
-  const initialInventory = parseFloat(document.getElementById('initial-inventory').value) || 0;
-  const finalInventory = parseFloat(document.getElementById('final-inventory').value) || 0;
-  const revenue = parseFloat(document.getElementById('revenue').value) || 0;
-  const expenseAmount = parseFloat(document.getElementById('expense-amount').value) || 0;
-  const expenseInfo = document.getElementById('expense-info').value.trim() || '';
+  const initialInventory = parseFloat(document.getElementById('manager-initial-inventory').value) || 0;
+  const finalInventory = parseFloat(document.getElementById('manager-final-inventory').value) || 0;
+  const revenue = parseFloat(document.getElementById('manager-revenue').value) || 0;
+  const expenseAmount = parseFloat(document.getElementById('manager-expense-amount').value) || 0;
+  const expenseInfo = document.getElementById('manager-expense-info').value.trim() || '';
 
   if (initialInventory < 0 || finalInventory < 0 || revenue < 0 || expenseAmount < 0) {
     alert('Vui lòng nhập giá trị không âm.');
@@ -119,13 +119,13 @@ function submitManagerReport() {
     }
   }).then(() => {
     alert('Gửi báo cáo thành công!');
-    document.getElementById('initial-inventory').value = '';
-    document.getElementById('final-inventory').value = '';
-    document.getElementById('revenue').value = '';
-    document.getElementById('expense-amount').value = '';
-    document.getElementById('expense-info').value = '';
+    document.getElementById('manager-initial-inventory').value = '';
+    document.getElementById('manager-final-inventory').value = '';
+    document.getElementById('manager-revenue').value = '';
+    document.getElementById('manager-expense-amount').value = '';
+    document.getElementById('manager-expense-info').value = '';
     Array.from(exportInputs).forEach(input => input.value = '');
-    loadInventory('inventory-list'); // Cập nhật lại danh sách tồn kho
+    loadInventory('manager-inventory-list');
   }).catch(error => {
     console.error('Lỗi gửi báo cáo:', error);
     alert('Lỗi: ' + error.message);
@@ -140,7 +140,7 @@ function loadSharedReports(elementId) {
     return;
   }
 
-  const filter = document.getElementById('report-filter');
+  const filter = document.getElementById('manager-report-filter');
   if (!filter) {
     console.error('Không tìm thấy phần tử report-filter trong DOM');
     alert('Lỗi: Không tìm thấy bộ lọc báo cáo.');
