@@ -72,30 +72,35 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Đăng nhập quản lý, hiển thị giao diện quản lý...');
             managerPage.style.display = 'block';
             employeePage.style.display = 'none';
+            console.log('Kiểm tra script reports.js đã tải:', typeof loadSharedReports, typeof loadInventory, typeof loadExpenseSummary);
             if (document.getElementById('manager-inventory-list') && document.getElementById('shared-report-table') && document.getElementById('expense-summary-table')) {
-              console.log('loadSharedReports defined:', typeof loadSharedReports);
-              console.log('loadInventory defined:', typeof loadInventory);
-              console.log('loadExpenseSummary defined:', typeof loadExpenseSummary);
               if (typeof loadSharedReports === 'function') {
+                console.log('Gọi loadSharedReports cho shared-report-table (manager)');
                 loadSharedReports('shared-report-table', user.uid);
               } else {
                 console.error('loadSharedReports không được định nghĩa');
-                alert('Lỗi: Chức năng báo cáo chưa được tải.');
+                document.getElementById('shared-report-table').innerHTML = '<p style="margin: 0;">Lỗi tải báo cáo tổng hợp.</p>';
               }
               if (typeof loadInventory === 'function') {
+                console.log('Gọi loadInventory cho manager-inventory-list');
                 loadInventory('manager-inventory-list');
               } else {
                 console.error('loadInventory không được định nghĩa');
                 document.getElementById('manager-inventory-list').innerHTML = '<p style="margin: 0;">Lỗi tải danh sách tồn kho.</p>';
               }
               if (typeof loadExpenseSummary === 'function') {
+                console.log('Gọi loadExpenseSummary cho expense-summary-table (manager)');
                 loadExpenseSummary('expense-summary-table');
               } else {
                 console.error('loadExpenseSummary không được định nghĩa');
                 document.getElementById('expense-summary-table').innerHTML = '<p style="margin: 0;">Lỗi tải tổng hợp chi phí.</p>';
               }
             } else {
-              console.error('Không tìm thấy các phần tử trong manager-page.');
+              console.error('Không tìm thấy các phần tử trong manager-page:', {
+                managerInventoryList: !!document.getElementById('manager-inventory-list'),
+                sharedReportTable: !!document.getElementById('shared-report-table'),
+                expenseSummaryTable: !!document.getElementById('expense-summary-table')
+              });
               alert('Lỗi: Không tìm thấy các phần tử trong giao diện quản lý.');
               managerPage.style.display = 'block';
             }
@@ -103,30 +108,37 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Đăng nhập nhân viên, hiển thị giao diện nhân viên...');
             employeePage.style.display = 'block';
             managerPage.style.display = 'none';
-            if (document.getElementById('employee-inventory-list') && document.getElementById('shared-report-table') && document.getElementById('expense-summary-table')) {
-              console.log('loadSharedReports defined:', typeof loadSharedReports);
-              console.log('loadInventory defined:', typeof loadInventory);
-              console.log('loadExpenseSummary defined:', typeof loadExpenseSummary);
+            console.log('Kiểm tra script reports.js đã tải:', typeof loadSharedReports, typeof loadInventory, typeof loadExpenseSummary);
+            if (document.getElementById('employee-inventory-list') && document.getElementById('shared-report-table') && document.getElementById('report-filter') && document.getElementById('report-date') && document.getElementById('expense-summary-table')) {
               if (typeof loadSharedReports === 'function') {
+                console.log('Gọi loadSharedReports cho shared-report-table (employee)');
                 loadSharedReports('shared-report-table', user.uid);
               } else {
                 console.error('loadSharedReports không được định nghĩa');
-                alert('Lỗi: Chức năng báo cáo chưa được tải.');
+                document.getElementById('shared-report-table').innerHTML = '<p style="margin: 0;">Lỗi tải báo cáo tổng hợp.</p>';
               }
               if (typeof loadInventory === 'function') {
+                console.log('Gọi loadInventory cho employee-inventory-list');
                 loadInventory('employee-inventory-list');
               } else {
                 console.error('loadInventory không được định nghĩa');
                 document.getElementById('employee-inventory-list').innerHTML = '<p style="margin: 0;">Lỗi tải danh sách tồn kho.</p>';
               }
               if (typeof loadExpenseSummary === 'function') {
+                console.log('Gọi loadExpenseSummary cho expense-summary-table (employee)');
                 loadExpenseSummary('expense-summary-table');
               } else {
                 console.error('loadExpenseSummary không được định nghĩa');
                 document.getElementById('expense-summary-table').innerHTML = '<p style="margin: 0;">Lỗi tải tổng hợp chi phí.</p>';
               }
             } else {
-              console.error('Không tìm thấy các phần tử trong employee-page.');
+              console.error('Không tìm thấy các phần tử trong employee-page:', {
+                employeeInventoryList: !!document.getElementById('employee-inventory-list'),
+                sharedReportTable: !!document.getElementById('shared-report-table'),
+                reportFilter: !!document.getElementById('report-filter'),
+                reportDate: !!document.getElementById('report-date'),
+                expenseSummaryTable: !!document.getElementById('expense-summary-table')
+              });
               alert('Lỗi: Không tìm thấy các phần tử trong giao diện nhân viên.');
               employeePage.style.display = 'block';
             }
