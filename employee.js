@@ -1,49 +1,54 @@
+// employee.js
+
 function submitEmployeeReport() {
-  const initialInventory = parseInt(document.getElementById('employee-initial-inventory').value);
-  const finalInventory = parseInt(document.getElementById('employee-final-inventory').value);
+  const initial = parseInt(document.getElementById('employee-initial').value);
+  const final = parseInt(document.getElementById('employee-final').value);
   const revenue = parseFloat(document.getElementById('employee-revenue').value);
   const expenseAmount = parseFloat(document.getElementById('employee-expense-amount').value);
-  const expenseInfo = document.getElementById('employee-expense-info').value;
+  const expenseNote = document.getElementById('employee-expense-note').value.trim();
 
-  if (isNaN(initialInventory) || isNaN(finalInventory) || isNaN(revenue)) {
-    alert('Vui lòng nhập đầy đủ thông tin tồn kho và doanh thu.');
+  if (isNaN(initial) || isNaN(final) || isNaN(revenue)) {
+    alert('Vui lòng nhập đủ tồn kho và doanh thu.');
     return;
   }
 
-  const dateKey = new Date().toLocaleDateString('vi-VN').replace(/\//g, '_');
-  const user = firebase.auth().currentUser;
+  const user = auth.currentUser;
   if (!user) {
-    alert('Vui lòng đăng nhập để gửi báo cáo.');
+    alert('Chưa đăng nhập.');
     return;
   }
+
+  const today = new Date().toLocaleDateString('vi-VN').replace(/\//g, '_');
+  const reportRef = db.ref(`dailyData/${today}/${user.uid}`);
 
   const reportData = {
-    date: dateKey,
+    date: today,
     user: user.email,
-    initialInventory,
-    finalInventory,
-    revenue,
+    initialInventory: initial,
+    finalInventory: final,
+    revenue: revenue,
     lastUpdated: Date.now()
   };
 
   if (!isNaN(expenseAmount) && expenseAmount > 0) {
     reportData.expense = {
       amount: expenseAmount,
-      info: expenseInfo || 'Không có thông tin',
+      info: expenseNote || 'Không rõ',
       timestamp: Date.now()
     };
   }
 
-  db.ref(`dailyData/${dateKey}/${user.uid}`).set(reportData).then(() => {
-    alert('Gửi báo cáo thành công!');
-    console.log('Đã gửi báo cáo:', reportData);
-    document.getElementById('employee-initial-inventory').value = '';
-    document.getElementById('employee-final-inventory').value = '';
-    document.getElementById('employee-revenue').value = '';
-    document.getElementById('employee-expense-amount').value = '';
-    document.getElementById('employee-expense-info').value = '';
-  }).catch(error => {
-    console.error('Lỗi gửi báo cáo:', error);
-    alert('Lỗi gửi báo cáo: ' + error.message);
-  });
+  reportRef.set(reportData)
+    .then(() => {
+      alert('Gửi báo cáo thành công!');
+      document.getElementById('employee-initial').value = '';
+      document.getElementById('employee-final').value = '';
+      document.getElementById('employee-revenue').value = '';
+      document.getElementById('employee-expense-amount').value = '';
+      document.getElementById('employee-expense-note').value = '';
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Lỗi gửi báo cáo: ' + err.message);
+    });
 }
