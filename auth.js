@@ -76,18 +76,23 @@ document.addEventListener('DOMContentLoaded', () => {
               console.log('loadSharedReports defined:', typeof loadSharedReports);
               console.log('loadInventory defined:', typeof loadInventory);
               console.log('loadExpenseSummary defined:', typeof loadExpenseSummary);
-              if (typeof loadSharedReports === 'function' && typeof loadInventory === 'function' && typeof loadExpenseSummary === 'function') {
-                loadInventory('manager-inventory-list');
+              if (typeof loadSharedReports === 'function') {
                 loadSharedReports('shared-report-table', user.uid);
+              } else {
+                console.error('loadSharedReports không được định nghĩa');
+                alert('Lỗi: Chức năng báo cáo chưa được tải.');
+              }
+              if (typeof loadInventory === 'function') {
+                loadInventory('manager-inventory-list');
+              } else {
+                console.error('loadInventory không được định nghĩa');
+                document.getElementById('manager-inventory-list').innerHTML = '<p style="margin: 0;">Lỗi tải danh sách tồn kho.</p>';
+              }
+              if (typeof loadExpenseSummary === 'function') {
                 loadExpenseSummary('expense-summary-table');
               } else {
-                console.error('Một hoặc nhiều hàm không được định nghĩa:', {
-                  loadSharedReports: typeof loadSharedReports,
-                  loadInventory: typeof loadInventory,
-                  loadExpenseSummary: typeof loadExpenseSummary
-                });
-                alert('Lỗi: Một hoặc nhiều chức năng chưa được tải. Vui lòng thử lại.');
-                managerPage.style.display = 'block';
+                console.error('loadExpenseSummary không được định nghĩa');
+                document.getElementById('expense-summary-table').innerHTML = '<p style="margin: 0;">Lỗi tải tổng hợp chi phí.</p>';
               }
             } else {
               console.error('Không tìm thấy các phần tử trong manager-page.');
@@ -102,18 +107,23 @@ document.addEventListener('DOMContentLoaded', () => {
               console.log('loadSharedReports defined:', typeof loadSharedReports);
               console.log('loadInventory defined:', typeof loadInventory);
               console.log('loadExpenseSummary defined:', typeof loadExpenseSummary);
-              if (typeof loadSharedReports === 'function' && typeof loadInventory === 'function' && typeof loadExpenseSummary === 'function') {
-                loadInventory('employee-inventory-list');
+              if (typeof loadSharedReports === 'function') {
                 loadSharedReports('shared-report-table', user.uid);
+              } else {
+                console.error('loadSharedReports không được định nghĩa');
+                alert('Lỗi: Chức năng báo cáo chưa được tải.');
+              }
+              if (typeof loadInventory === 'function') {
+                loadInventory('employee-inventory-list');
+              } else {
+                console.error('loadInventory không được định nghĩa');
+                document.getElementById('employee-inventory-list').innerHTML = '<p style="margin: 0;">Lỗi tải danh sách tồn kho.</p>';
+              }
+              if (typeof loadExpenseSummary === 'function') {
                 loadExpenseSummary('expense-summary-table');
               } else {
-                console.error('Một hoặc nhiều hàm không được định nghĩa:', {
-                  loadSharedReports: typeof loadSharedReports,
-                  loadInventory: typeof loadInventory,
-                  loadExpenseSummary: typeof loadExpenseSummary
-                });
-                alert('Lỗi: Một hoặc nhiều chức năng chưa được tải. Vui lòng thử lại.');
-                employeePage.style.display = 'block';
+                console.error('loadExpenseSummary không được định nghĩa');
+                document.getElementById('expense-summary-table').innerHTML = '<p style="margin: 0;">Lỗi tải tổng hợp chi phí.</p>';
               }
             } else {
               console.error('Không tìm thấy các phần tử trong employee-page.');
