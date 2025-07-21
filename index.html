@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -5,58 +6,83 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quản lý nhân viên</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <style>
+    .hidden { display: none; }
+    .report-row { margin-bottom: 1rem; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 0.375rem; }
+    .action-btn { margin-left: 0.5rem; }
+  </style>
 </head>
 <body class="bg-gray-100">
   <div id="login-page">
     <h1 class="text-2xl font-bold text-center mt-8">Đăng nhập</h1>
-    <div class="max-w-md mx-auto mt-4">
+    <div class="max-w-md mx-auto mt-4 p-4 bg-white shadow rounded">
       <input id="email" type="email" class="w-full p-2 mb-2 border rounded" placeholder="Email">
       <input id="password" type="password" class="w-full p-2 mb-2 border rounded" placeholder="Mật khẩu">
+      <label class="inline-flex items-center mb-2">
+        <input id="remember-me" type="checkbox" class="form-checkbox">
+        <span class="ml-2">Ghi nhớ đăng nhập</span>
+      </label>
       <button onclick="login()" class="w-full p-2 bg-blue-500 text-white rounded">Đăng nhập</button>
     </div>
   </div>
   <div id="manager-page" class="hidden">
     <h1 class="text-2xl font-bold text-center mt-8">Giao diện Quản lý</h1>
-    <div class="max-w-4xl mx-auto mt-4">
-      <h2 class="text-xl font-semibold">Thêm sản phẩm</h2>
-      <input id="product-name" type="text" class="p-2 m-2 border rounded" placeholder="Tên sản phẩm">
-      <input id="product-quantity" type="number" class="p-2 m-2 border rounded" placeholder="Số lượng">
-      <input id="product-price" type="number" class="p-2 m-2 border rounded" placeholder="Đơn giá">
-      <button onclick="addInventory()" class="p-2 bg-blue-500 text-white rounded">Thêm</button>
-      <h2 class="text-xl font-semibold mt-4">Danh sách tồn kho</h2>
-      <div id="inventory-list" class="mt-2"></div>
-      <h2 class="text-xl font-semibold mt-4">Báo cáo</h2>
-      <select id="report-filter" class="p-2 m-2 border rounded">
+    <div class="max-w-4xl mx-auto mt-4 p-4 bg-white shadow rounded">
+      <h2 class="text-xl font-semibold mb-2">Thêm sản phẩm</h2>
+      <div class="flex space-x-2 mb-4">
+        <input id="product-name" type="text" class="p-2 border rounded w-1/3" placeholder="Tên sản phẩm">
+        <input id="product-quantity" type="number" class="p-2 border rounded w-1/3" placeholder="Số lượng">
+        <input id="product-price" type="number" class="p-2 border rounded w-1/3" placeholder="Đơn giá">
+        <button onclick="addInventory()" class="p-2 bg-blue-500 text-white rounded">Thêm</button>
+      </div>
+      <h2 class="text-xl font-semibold mb-2">Danh sách hàng trong kho</h2>
+      <div id="inventory-list" class="mb-4"></div>
+      <h2 class="text-xl font-semibold mb-2">Gửi báo cáo</h2>
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <input id="initial-inventory" type="number" class="p-2 border rounded" placeholder="Tồn kho đầu kỳ">
+        <input id="final-inventory" type="number" class="p-2 border rounded" placeholder="Tồn kho cuối kỳ">
+        <input id="revenue" type="number" class="p-2 border rounded" placeholder="Doanh Thu">
+        <input id="expense-amount" type="number" class="p-2 border rounded" placeholder="Chi Phí">
+        <input id="expense-info" type="text" class="p-2 border rounded col-span-2" placeholder="Thông tin Chi Phí">
+      </div>
+      <button onclick="submitManagerReport()" class="p-2 bg-blue-500 text-white rounded mb-4">Gửi Báo Cáo</button>
+      <h2 class="text-xl font-semibold mb-2">Báo cáo</h2>
+      <select id="report-filter" class="p-2 border rounded mb-2">
         <option value="day">Theo ngày</option>
         <option value="month">Theo tháng</option>
       </select>
-      <div id="report-table" class="mt-2"></div>
+      <div id="report-table" class="mb-4"></div>
     </div>
   </div>
   <div id="employee-page" class="hidden">
     <h1 class="text-2xl font-bold text-center mt-8">Giao diện Nhân viên</h1>
-    <div class="max-w-4xl mx-auto mt-4">
-      <h2 class="text-xl font-semibold">Danh sách tồn kho</h2>
-      <div id="inventory-list" class="mt-2"></div>
-      <h2 class="text-xl font-semibold mt-4">Gửi báo cáo</h2>
-      <input id="shared-revenue" type="number" class="p-2 m-2 border rounded" placeholder="Doanh thu">
-      <textarea id="shared-note" class="p-2 m-2 border rounded w-full" placeholder="Ghi chú"></textarea>
-      <button onclick="submitSharedReport()" class="p-2 bg-blue-500 text-white rounded">Gửi Báo Cáo</button>
-      <h2 class="text-xl font-semibold mt-4">Báo cáo</h2>
-      <select id="report-filter" class="p-2 m-2 border rounded">
+    <div class="max-w-4xl mx-auto mt-4 p-4 bg-white shadow rounded">
+      <h2 class="text-xl font-semibold mb-2">Danh sách hàng trong kho</h2>
+      <div id="inventory-list" class="mb-4"></div>
+      <h2 class="text-xl font-semibold mb-2">Gửi báo cáo</h2>
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <input id="initial-inventory" type="number" class="p-2 border rounded" placeholder="Tồn kho đầu kỳ">
+        <input id="final-inventory" type="number" class="p-2 border rounded" placeholder="Tồn kho cuối kỳ">
+        <input id="revenue" type="number" class="p-2 border rounded" placeholder="Doanh Thu">
+        <input id="expense-amount" type="number" class="p-2 border rounded" placeholder="Chi Phí">
+        <input id="expense-info" type="text" class="p-2 border rounded col-span-2" placeholder="Thông tin Chi Phí">
+      </div>
+      <button onclick="submitEmployeeReport()" class="p-2 bg-blue-500 text-white rounded mb-4">Gửi Báo Cáo</button>
+      <h2 class="text-xl font-semibold mb-2">Báo cáo</h2>
+      <select id="report-filter" class="p-2 border rounded mb-2">
         <option value="day">Theo ngày</option>
         <option value="month">Theo tháng</option>
       </select>
-      <div id="report-table" class="mt-2"></div>
+      <div id="report-table" class="mb-4"></div>
     </div>
   </div>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="auth.js"></script>
   <script src="manager.js"></script>
   <script src="employee.js"></script>
 </body>
 </html>
+```
