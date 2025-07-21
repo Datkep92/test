@@ -36,44 +36,44 @@
         <button onclick="addInventory()" class="p-2 bg-blue-500 text-white rounded">Thêm</button>
       </div>
       <h2 class="text-xl font-semibold mb-2">Danh sách hàng trong kho</h2>
-      <div id="inventory-list" class="mb-4"></div>
+      <div id="manager-inventory-list" class="mb-4"></div>
       <h2 class="text-xl font-semibold mb-2">Gửi báo cáo</h2>
       <div class="grid grid-cols-2 gap-4 mb-4">
-        <input id="initial-inventory" type="number" class="p-2 border rounded" placeholder="Tồn kho đầu kỳ">
-        <input id="final-inventory" type="number" class="p-2 border rounded" placeholder="Tồn kho cuối kỳ">
-        <input id="revenue" type="number" class="p-2 border rounded" placeholder="Doanh Thu">
-        <input id="expense-amount" type="number" class="p-2 border rounded" placeholder="Chi Phí">
-        <input id="expense-info" type="text" class="p-2 border rounded col-span-2" placeholder="Thông tin Chi Phí">
+        <input id="manager-initial-inventory" type="number" class="p-2 border rounded" placeholder="Tồn kho đầu kỳ">
+        <input id="manager-final-inventory" type="number" class="p-2 border rounded" placeholder="Tồn kho cuối kỳ">
+        <input id="manager-revenue" type="number" class="p-2 border rounded" placeholder="Doanh Thu">
+        <input id="manager-expense-amount" type="number" class="p-2 border rounded" placeholder="Chi Phí">
+        <input id="manager-expense-info" type="text" class="p-2 border rounded col-span-2" placeholder="Thông tin Chi Phí">
       </div>
       <button onclick="submitManagerReport()" class="p-2 bg-blue-500 text-white rounded mb-4">Gửi Báo Cáo</button>
       <h2 class="text-xl font-semibold mb-2">Báo cáo</h2>
-      <select id="report-filter" class="p-2 border rounded mb-2">
+      <select id="manager-report-filter" class="p-2 border rounded mb-2">
         <option value="day">Theo ngày</option>
         <option value="month">Theo tháng</option>
       </select>
-      <div id="report-table" class="mb-4"></div>
+      <div id="manager-report-table" class="mb-4"></div>
     </div>
   </div>
   <div id="employee-page" class="hidden">
     <h1 class="text-2xl font-bold text-center mt-8">Giao diện Nhân viên</h1>
     <div class="max-w-4xl mx-auto mt-4 p-4 bg-white shadow rounded">
       <h2 class="text-xl font-semibold mb-2">Danh sách hàng trong kho</h2>
-      <div id="inventory-list" class="mb-4"></div>
+      <div id="employee-inventory-list" class="mb-4"></div>
       <h2 class="text-xl font-semibold mb-2">Gửi báo cáo</h2>
       <div class="grid grid-cols-2 gap-4 mb-4">
-        <input id="initial-inventory" type="number" class="p-2 border rounded" placeholder="Tồn kho đầu kỳ">
-        <input id="final-inventory" type="number" class="p-2 border rounded" placeholder="Tồn kho cuối kỳ">
-        <input id="revenue" type="number" class="p-2 border rounded" placeholder="Doanh Thu">
-        <input id="expense-amount" type="number" class="p-2 border rounded" placeholder="Chi Phí">
-        <input id="expense-info" type="text" class="p-2 border rounded col-span-2" placeholder="Thông tin Chi Phí">
+        <input id="employee-initial-inventory" type="number" class="p-2 border rounded" placeholder="Tồn kho đầu kỳ">
+        <input id="employee-final-inventory" type="number" class="p-2 border rounded" placeholder="Tồn kho cuối kỳ">
+        <input id="employee-revenue" type="number" class="p-2 border rounded" placeholder="Doanh Thu">
+        <input id="employee-expense-amount" type="number" class="p-2 border rounded" placeholder="Chi Phí">
+        <input id="employee-expense-info" type="text" class="p-2 border rounded col-span-2" placeholder="Thông tin Chi Phí">
       </div>
       <button onclick="submitEmployeeReport()" class="p-2 bg-blue-500 text-white rounded mb-4">Gửi Báo Cáo</button>
       <h2 class="text-xl font-semibold mb-2">Báo cáo</h2>
-      <select id="report-filter" class="p-2 border rounded mb-2">
+      <select id="employee-report-filter" class="p-2 border rounded mb-2">
         <option value="day">Theo ngày</option>
         <option value="month">Theo tháng</option>
       </select>
-      <div id="report-table" class="mb-4"></div>
+      <div id="employee-report-table" class="mb-4"></div>
     </div>
   </div>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
