@@ -89,7 +89,7 @@ function submitSharedReport() {
             quantity: product.quantity - qty
           });
         } else {
-          throw new Error('Số lượng xuất kho vượt quá tồn kho.');
+          throw new Error(`Số lượng xuất kho vượt quá tồn kho cho sản phẩm ${productId}.`);
         }
       });
     })).then(() => {
@@ -113,6 +113,7 @@ function loadInventory(elementId) {
   const inventoryList = document.getElementById(elementId);
   if (!inventoryList) {
     console.error('Không tìm thấy phần tử inventory-list trong DOM');
+    alert('Lỗi: Không tìm thấy danh sách tồn kho. Vui lòng kiểm tra giao diện.');
     return;
   }
 
@@ -121,6 +122,7 @@ function loadInventory(elementId) {
     const data = snapshot.val();
     if (!data) {
       inventoryList.innerHTML = '<p>Không có dữ liệu tồn kho.</p>';
+      console.log('Không có dữ liệu tồn kho trong Firebase.');
       return;
     }
 
@@ -136,7 +138,8 @@ function loadInventory(elementId) {
     console.log('Đã tải danh sách tồn kho thành công cho', elementId);
   }, error => {
     console.error('Lỗi tải tồn kho:', error);
-    inventoryList.innerHTML = '<p>Lỗi tải tồn kho.</p>';
+    inventoryList.innerHTML = '<p>Lỗi tải tồn kho: ' + error.message + '</p>';
+    alert('Lỗi tải tồn kho: ' + error.message);
   });
 }
 
@@ -144,12 +147,14 @@ function loadSharedReports(elementId) {
   const reportsList = document.getElementById(elementId);
   if (!reportsList) {
     console.error('Không tìm thấy phần tử report-table trong DOM');
+    alert('Lỗi: Không tìm thấy bảng báo cáo. Vui lòng kiểm tra giao diện.');
     return;
   }
 
   const filter = document.getElementById('report-filter');
   if (!filter) {
     console.error('Không tìm thấy phần tử report-filter trong DOM');
+    alert('Lỗi: Không tìm thấy bộ lọc báo cáo. Vui lòng kiểm tra giao diện.');
     return;
   }
 
@@ -158,6 +163,7 @@ function loadSharedReports(elementId) {
     const data = snapshot.val();
     if (!data) {
       reportsList.innerHTML = '<p>Không có báo cáo.</p>';
+      console.log('Không có dữ liệu báo cáo trong Firebase.');
       return;
     }
 
@@ -171,83 +177,96 @@ function loadSharedReports(elementId) {
     });
 
     let html = '';
-    Object.entries(groupedReports).forEach(([key, reports]) => {
-      let totalOpeningBalance = 0, totalCost = 0, totalRevenue = 0, totalClosingBalance = 0, totalExport = 0;
-      let openingBalanceHtml = '', costHtml = '', revenueHtml = '', closingBalanceHtml = '', exportHtml = '';
+    Promise.all(
+      Object.entries(groupedReports).map(([key, reports]) => {
+        let totalOpeningBalance = 0, totalCost = 0, totalRevenue = 0, totalClosingBalance = 0, totalExport = 0;
+        let openingBalanceHtml = '', costHtml = '', revenueHtml = '', closingBalanceHtml = '', exportHtml = '';
 
-      reports.forEach(report => {
-        const timestamp = new Date(report.timestamp).toLocaleString('vi-VN');
-        return db.ref('users/' + report.uid).once('value').then(userSnapshot => {
-          const user = userSnapshot.val();
-          const employeeName = user && user.name ? user.name : report.uid;
+        return Promise.all(
+          reports.map(report => {
+            const timestamp = new Date(report.timestamp).toLocaleString('vi-VN');
+            return db.ref('users/' + report.uid).once('value').then(userSnapshot => {
+              const user = userSnapshot.val();
+              const employeeName = user && user.name ? user.name : report.uid;
 
-          if (report.openingBalance) {
-            openingBalanceHtml += `<p>${report.openingBalance} - ${employeeName} ${timestamp}</p>`;
-            totalOpeningBalance += report.openingBalance;
-          }
-          if (report.cost) {
-            costHtml += `<p>${report.costDescription} ${report.cost} - ${employeeName} ${timestamp}</p>`;
-            totalCost += report.cost;
-          }
-          if (report.revenue) {
-            revenueHtml += `<p>${report.revenue} - ${employeeName} ${timestamp}</p>`;
-            totalRevenue += report.revenue;
-          }
-          if (report.closingBalance) {
-            closingBalanceHtml += `<p>${report.closingBalance} - ${employeeName} ${timestamp}</p>`;
-            totalClosingBalance += report.closingBalance;
-          }
-          if (report.exports) {
-            return Promise.all(Object.entries(report.exports).map(([productId, qty]) => {
-              return db.ref('inventory/' + productId).once('value').then(s => {
-                const product = s.val();
-                return product ? `${qty} ${product.name} - ${employeeName} ${timestamp}` : `${qty} Sản phẩm ${productId} - ${employeeName} ${timestamp}`;
-              });
-            })).then(texts => {
-              exportHtml += texts.map(text => `<p>${text}</p>`).join('');
-              totalExport += Object.values(report.exports).reduce((sum, qty) => sum + qty, 0);
+              if (report.openingBalance) {
+                openingBalanceHtml += `<p>${report.openingBalance} - ${employeeName} ${timestamp}</p>`;
+                totalOpeningBalance += report.openingBalance;
+              }
+              if (report.cost) {
+                costHtml += `<p>${report.costDescription} ${report.cost} - ${employeeName} ${timestamp}</p>`;
+                totalCost += report.cost;
+              }
+              if (report.revenue) {
+                revenueHtml += `<p>${report.revenue} - ${employeeName} ${timestamp}</p>`;
+                totalRevenue += report.revenue;
+              }
+              if (report.closingBalance) {
+                closingBalanceHtml += `<p>${report.closingBalance} - ${employeeName} ${timestamp}</p>`;
+                totalClosingBalance += report.closingBalance;
+              }
+              if (report.exports) {
+                return Promise.all(Object.entries(report.exports).map(([productId, qty]) => {
+                  return db.ref('inventory/' + productId).once('value').then(s => {
+                    const product = s.val();
+                    return product ? `<p>${qty} ${product.name} - ${employeeName} ${timestamp}</p>` : `<p>${qty} Sản phẩm ${productId} - ${employeeName} ${timestamp}</p>`;
+                  });
+                })).then(texts => {
+                  exportHtml += texts.join('');
+                  totalExport += Object.values(report.exports).reduce((sum, qty) => sum + qty, 0);
+                });
+              }
+              // Thêm nút chỉnh sửa cho báo cáo của nhân viên hiện tại
+              if (auth.currentUser && report.uid === auth.currentUser.uid) {
+                exportHtml += `<p><button onclick="editReport('${reportId}')" class="text-blue-500 hover:underline">Sửa</button></p>`;
+              }
             });
-          }
-        });
-      });
-
-      Promise.all(reports.map(report => db.ref('users/' + report.uid).once('value'))).then(() => {
-        const netProfit = totalOpeningBalance + totalRevenue - totalCost - totalClosingBalance;
-        html += `
-          <div class="mb-4">
-            <h4 class="text-lg font-semibold">${key}</h4>
-            <div class="pl-4">
-              <h5>Số Dư Đầu Kỳ:</h5>
-              ${openingBalanceHtml || '<p>Không có dữ liệu.</p>'}
-              <p><strong>Tổng Số Dư Đầu Kỳ:</strong> ${totalOpeningBalance} ${timestamp}</p>
-              <hr class="my-2">
-              <h5>Số Dư Cuối Kỳ:</h5>
-              ${closingBalanceHtml || '<p>Không có dữ liệu.</p>'}
-              <p><strong>Tổng Số Dư Cuối Kỳ:</strong> ${totalClosingBalance} ${timestamp}</p>
-              <hr class="my-2">
-              <h5>Chi Phí:</h5>
-              ${costHtml || '<p>Không có dữ liệu.</p>'}
-              <p><strong>Tổng Chi Phí:</strong> ${totalCost} ${timestamp}</p>
-              <hr class="my-2">
-              <h5>Doanh Thu:</h5>
-              ${revenueHtml || '<p>Không có dữ liệu.</p>'}
-              <p><strong>Tổng Doanh Thu:</strong> ${totalRevenue} ${timestamp}</p>
-              <hr class="my-2">
-              <h5>Số Tiền Thực Tế:</h5>
-              <p>= Dư Đầu Kỳ: ${totalOpeningBalance} + Tổng Doanh Thu: ${totalRevenue} - Tổng Chi Phí: ${totalCost} - Tổng Số Dư Cuối Kỳ: ${totalClosingBalance} = ${netProfit} ${timestamp}</p>
-              <hr class="my-2">
-              <h5>Xuất Kho:</h5>
-              ${exportHtml || '<p>Không có dữ liệu.</p>'}
-              <p><strong>Tổng Xuất Kho:</strong> ${totalExport} ${timestamp}</p>
+          })
+        ).then(() => {
+          const netProfit = totalOpeningBalance + totalRevenue - totalCost - totalClosingBalance;
+          html += `
+            <div class="mb-4">
+              <h4 class="text-lg font-semibold">${key}</h4>
+              <div class="pl-4">
+                <h5>Số Dư Đầu Kỳ:</h5>
+                ${openingBalanceHtml || '<p>Không có dữ liệu.</p>'}
+                <p><strong>Tổng Số Dư Đầu Kỳ:</strong> ${totalOpeningBalance} ${new Date().toLocaleString('vi-VN')}</p>
+                <hr class="my-2">
+                <h5>Số Dư Cuối Kỳ:</h5>
+                ${closingBalanceHtml || '<p>Không có dữ liệu.</p>'}
+                <p><strong>Tổng Số Dư Cuối Kỳ:</strong> ${totalClosingBalance} ${new Date().toLocaleString('vi-VN')}</p>
+                <hr class="my-2">
+                <h5>Chi Phí:</h5>
+                ${costHtml || '<p>Không có dữ liệu.</p>'}
+                <p><strong>Tổng Chi Phí:</strong> ${totalCost} ${new Date().toLocaleString('vi-VN')}</p>
+                <hr class="my-2">
+                <h5>Doanh Thu:</h5>
+                ${revenueHtml || '<p>Không có dữ liệu.</p>'}
+                <p><strong>Tổng Doanh Thu:</strong> ${totalRevenue} ${new Date().toLocaleString('vi-VN')}</p>
+                <hr class="my-2">
+                <h5>Số Tiền Thực Tế:</h5>
+                <p>= Dư Đầu Kỳ: ${totalOpeningBalance} + Tổng Doanh Thu: ${totalRevenue} - Tổng Chi Phí: ${totalCost} - Tổng Số Dư Cuối Kỳ: ${totalClosingBalance} = ${netProfit} ${new Date().toLocaleString('vi-VN')}</p>
+                <hr class="my-2">
+                <h5>Xuất Kho:</h5>
+                ${exportHtml || '<p>Không có dữ liệu.</p>'}
+                <p><strong>Tổng Xuất Kho:</strong> ${totalExport} ${new Date().toLocaleString('vi-VN')}</p>
+              </div>
             </div>
-          </div>
-        `;
-        reportsList.innerHTML = html;
-      });
+          `;
+        });
+      })
+    ).then(() => {
+      reportsList.innerHTML = html;
+      console.log('Đã tải báo cáo chung thành công cho', elementId);
+    }).catch(error => {
+      console.error('Lỗi tải báo cáo:', error);
+      reportsList.innerHTML = '<p>Lỗi tải báo cáo: ' + error.message + '</p>';
+      alert('Lỗi tải báo cáo: ' + error.message);
     });
   }, error => {
     console.error('Lỗi tải báo cáo:', error);
-    reportsList.innerHTML = '<p>Lỗi tải báo cáo.</p>';
+    reportsList.innerHTML = '<p>Lỗi tải báo cáo: ' + error.message + '</p>';
+    alert('Lỗi tải báo cáo: ' + error.message);
   });
 }
 
@@ -308,5 +327,8 @@ function editReport(reportId) {
       console.error('Lỗi cập nhật báo cáo:', error);
       alert('Lỗi cập nhật báo cáo: ' + error.message);
     });
+  }).catch(error => {
+    console.error('Lỗi tải báo cáo để chỉnh sửa:', error);
+    alert('Lỗi tải báo cáo để chỉnh sửa: ' + error.message);
   });
 }
