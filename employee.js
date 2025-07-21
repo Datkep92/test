@@ -1,5 +1,3 @@
-// employee.js
-
 function submitEmployeeReport() {
   const initial = parseInt(document.getElementById('employee-initial').value);
   const final = parseInt(document.getElementById('employee-final').value);
@@ -41,11 +39,10 @@ function submitEmployeeReport() {
   reportRef.set(reportData)
     .then(() => {
       alert('Gửi báo cáo thành công!');
-      document.getElementById('employee-initial').value = '';
-      document.getElementById('employee-final').value = '';
-      document.getElementById('employee-revenue').value = '';
-      document.getElementById('employee-expense-amount').value = '';
-      document.getElementById('employee-expense-note').value = '';
+      // Reset form
+      ['initial', 'final', 'revenue', 'expense-amount', 'expense-note'].forEach(id => {
+        document.getElementById(`employee-${id}`).value = '';
+      });
     })
     .catch(err => {
       console.error(err);
