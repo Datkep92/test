@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -50,15 +49,11 @@
     </div>
     <div>
       <h3 class="text-xl font-semibold">Báo Cáo Chung</h3>
-      <div id="shared-reports" class="mt-4"></div>
-      <div id="total-report" class="mt-4 p-4 border rounded">
-        <p><strong>Tổng Số Dư Đầu Kỳ:</strong> <span id="total-opening-balance">0</span></p>
-        <p><strong>Tổng Chi Phí:</strong> <span id="total-cost">0</span></p>
-        <p><strong>Tổng Doanh Thu:</strong> <span id="total-revenue">0</span></p>
-        <p><strong>Tổng Số Dư Cuối Kỳ:</strong> <span id="total-closing-balance">0</span></p>
-        <p><strong>Số Tiền Thực Tế:</strong> <span id="net-profit">0</span></p>
-        <p><strong>Tổng Xuất Kho:</strong> <span id="total-export">0</span></p>
-      </div>
+      <select id="report-filter" class="p-2 border rounded mb-4">
+        <option value="day">Theo ngày</option>
+        <option value="month">Theo tháng</option>
+      </select>
+      <div id="report-table" class="mt-4"></div>
     </div>
   </div>
 
@@ -81,15 +76,7 @@
         <option value="day">Theo ngày</option>
         <option value="month">Theo tháng</option>
       </select>
-      <div id="manager-shared-reports" class="mt-4"></div>
-      <div id="manager-total-report" class="mt-4 p-4 border rounded">
-        <p><strong>Tổng Số Dư Đầu Kỳ:</strong> <span id="manager-total-opening-balance">0</span></p>
-        <p><strong>Tổng Chi Phí:</strong> <span id="manager-total-cost">0</span></p>
-        <p><strong>Tổng Doanh Thu:</strong> <span id="manager-total-revenue">0</span></p>
-        <p><strong>Tổng Số Dư Cuối Kỳ:</strong> <span id="manager-total-closing-balance">0</span></p>
-        <p><strong>Số Tiền Thực Tế:</strong> <span id="manager-net-profit">0</span></p>
-        <p><strong>Tổng Xuất Kho:</strong> <span id="manager-total-export">0</span></p>
-      </div>
+      <div id="report-table" class="mt-4"></div>
     </div>
   </div>
 
@@ -102,4 +89,3 @@
   <script src="manager.js"></script>
 </body>
 </html>
-```
