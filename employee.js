@@ -1,4 +1,3 @@
-import { ref, set, onValue, update } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js';
 
 let expenseCategories = [];
 
@@ -25,7 +24,7 @@ function parseExpenseInput(input) {
   
   if (!expenseCategories.includes(category)) {
     expenseCategories.push(category);
-    set(ref(db, 'expenseCategories'), expenseCategories).catch(error => {
+    db.ref('expenseCategories').set(expenseCategories).catch(error => {
       console.error('Lỗi cập nhật danh mục chi phí:', error);
     });
   }
@@ -88,19 +87,19 @@ function submitSharedReport() {
   console.log('Dữ liệu báo cáo gửi đi:', reportData);
 
   const dateKey = reportData.date.replace(/\//g, '_');
-  const reportRef = ref(db, `dailyData/${dateKey}/${auth.currentUser.uid}`);
-  set(reportRef, reportData).then(() => {
+  const reportRef = db.ref(`dailyData/${dateKey}/${auth.currentUser.uid}`);
+  reportRef.set(reportData).then(() => {
     console.log('Đã lưu báo cáo vào dailyData:', dateKey, auth.currentUser.uid);
     if (Object.keys(exportQuantities).length > 0) {
       return Promise.all(Object.entries(exportQuantities).map(([productId, exportItem]) => {
         console.log(`Cập nhật tồn kho cho productId ${productId}: ${exportItem.quantity}`);
-        return onValue(ref(db, 'inventory/' + productId), snapshot => {
+        return db.ref('inventory/' + productId).once('value').then(snapshot => {
           const product = snapshot.val();
           if (!product) {
             throw new Error(`Không tìm thấy sản phẩm ${productId} trong kho.`);
           }
           if (product.quantity >= exportItem.quantity) {
-            return update(ref(db, 'inventory/' + productId), {
+            return db.ref('inventory/' + productId).update({
               quantity: product.quantity - exportItem.quantity
             }).then(() => {
               console.log(`Đã cập nhật tồn kho cho ${productId}: ${product.quantity - exportItem.quantity}`);
@@ -108,7 +107,7 @@ function submitSharedReport() {
           } else {
             throw new Error(`Số lượng xuất kho (${exportItem.quantity}) vượt quá tồn kho (${product.quantity}) cho sản phẩm ${productId}.`);
           }
-        }, { onlyOnce: true });
+        });
       }));
     }
   }).then(() => {
@@ -131,7 +130,7 @@ function loadInventory(elementId) {
     return;
   }
 
-  onValue(ref(db, 'inventory'), snapshot => {
+  db.ref('inventory').on('value', snapshot => {
     inventoryList.innerHTML = '';
     const data = snapshot.val();
     if (!data) {
@@ -172,7 +171,7 @@ function loadSharedReports(elementId) {
     return;
   }
 
-  onValue(ref(db, 'dailyData'), snapshot => {
+  db.ref('dailyData').on('value', snapshot => {
     reportsList.innerHTML = '';
     const data = snapshot.val();
     if (!data) {
@@ -209,7 +208,7 @@ function loadSharedReports(elementId) {
           reports.map(report => {
             const timestamp = new Date(report.lastUpdated).toLocaleString('vi-VN');
             console.log('Xử lý báo cáo:', report.date, 'UID:', report.uid);
-            return onValue(ref(db, 'users/' + report.uid), snapshot => {
+            return db.ref('users/' + report.uid).once('value').then(snapshot => {
               const user = snapshot.val();
               const employeeName = user && user.name ? user.name : report.user || report.uid;
 
@@ -219,10 +218,10 @@ function loadSharedReports(elementId) {
               }
               if (report.exports) {
                 return Promise.all(Object.entries(report.exports).map(([index, exportItem]) => {
-                  return onValue(ref(db, 'inventory/' + exportItem.productId), s => {
+                  return db.ref('inventory/' + exportItem.productId).once('value').then(s => {
                     const product = s.val();
                     return product ? `<p>${exportItem.quantity} ${exportItem.productName} - ${employeeName} ${timestamp}</p>` : `<p>${exportItem.quantity} Sản phẩm ${exportItem.productId} - ${employeeName} ${timestamp}</p>`;
-                  }, { onlyOnce: true });
+                  });
                 })).then(texts => {
                   exportHtml += texts.join('');
                   totalExport += Object.values(report.exports).reduce((sum, item) => sum + item.quantity, 0);
@@ -230,7 +229,27 @@ function loadSharedReports(elementId) {
               } else {
                 exportHtml += `<p>Không có xuất kho - ${employeeName} ${timestamp}</p>`;
               }
-            }, { onlyOnce: true });
+            }).catch(error => {
+              console.error(`Lỗi tải tên người dùng cho UID ${report.uid}:`, error);
+              const employeeName = report.user || report.uid;
+              if (report.revenue) {
+                revenueHtml += `<p>${report.revenue} - ${employeeName} ${timestamp}</p>`;
+                totalRevenue += report.revenue;
+              }
+              if (report.exports) {
+                return Promise.all(Object.entries(report.exports).map(([index, exportItem]) => {
+                  return db.ref('inventory/' + exportItem.productId).once('value').then(s => {
+                    const product = s.val();
+                    return product ? `<p>${exportItem.quantity} ${exportItem.productName} - ${employeeName} ${timestamp}</p>` : `<p>${exportItem.quantity} Sản phẩm ${exportItem.productId} - ${employeeName} ${timestamp}</p>`;
+                  });
+                })).then(texts => {
+                  exportHtml += texts.join('');
+                  totalExport += Object.values(report.exports).reduce((sum, item) => sum + item.quantity, 0);
+                });
+              } else {
+                exportHtml += `<p>Không có xuất kho - ${employeeName} ${timestamp}</p>`;
+              }
+            });
           })
         ).then(() => {
           html += `
