@@ -122,10 +122,13 @@ function loadSharedReports(elementId) {
         <p><strong>Tổng Tồn kho cuối kỳ:</strong> ${totalFinal}</p>
         <p><strong>Tổng Doanh Thu:</strong> ${totalRevenue}</p>
         <p><strong>Tổng Chi Phí:</strong> ${totalExpense}</p>
-        <p><strong>Chi tiết Chi Phí:</strong> ${expenseDetails.length ? expenseDetails.join('; ') : 'Không có'}</p>
-        <p><strong>Chi tiết Doanh Thu:</strong> ${revenueDetails.length ? revenueDetails.join('; ') : 'Không có'}</p>
+        <p><strong>Chi tiết Chi Phí:</strong></p>
+        ${expenseDetails.map(detail => `<p>${detail}</p>`).join('')}
+        <p><strong>Chi tiết Doanh Thu:</strong></p>
+        ${revenueDetails.map(detail => `<p>${detail}</p>`).join('')}
         <p><strong>Tổng Xuất kho:</strong> ${totalExport}</p>
-        <p><strong>Chi tiết Xuất kho:</strong> ${exportDetails.length ? exportDetails.join('; ') : 'Không có'}</p>
+        <p><strong>Chi tiết Xuất kho:</strong></p>
+        ${exportDetails.map(detail => `<p>${detail}</p>`).join('')}
       </div>
     `;
     reportsList.innerHTML = html;
