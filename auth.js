@@ -83,3 +83,14 @@ function checkUserRole(uid) {
     alert('Lỗi kiểm tra vai trò: ' + error.message);
   });
 }
+function clearBrowserCache() {
+  if (confirm("Bạn có chắc muốn xóa cache trình duyệt? Trang sẽ được tải lại.")) {
+    localStorage.clear();
+    sessionStorage.clear();
+    caches.keys().then(function(names) {
+      for (let name of names) caches.delete(name);
+    }).finally(() => {
+      location.reload(true); // Force reload không cache
+    });
+  }
+}
