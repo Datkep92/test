@@ -110,7 +110,7 @@ function submitSharedReport() {
   });
 }
 
-function loadInventory(elementId) {
+function loadEmployeeInventory(elementId) {
   const inventoryList = document.getElementById(elementId);
   if (!inventoryList) return;
 
