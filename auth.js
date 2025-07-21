@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
             employeePage.style.display = 'none';
             if (document.getElementById('manager-inventory-list') && document.getElementById('shared-report-table')) {
               loadInventory('manager-inventory-list');
-              loadSharedReports('shared-report-table');
+              loadSharedReports('shared-report-table', 'manager');
               loadExpenseSummary('expense-summary-table');
             } else {
               console.error('Không tìm thấy các phần tử trong manager-page.');
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
             managerPage.style.display = 'none';
             if (document.getElementById('employee-inventory-list') && document.getElementById('shared-report-table')) {
               loadInventory('employee-inventory-list');
-              loadSharedReports('shared-report-table');
+              loadSharedReports('shared-report-table', 'employee');
               loadExpenseSummary('expense-summary-table');
             } else {
               console.error('Không tìm thấy các phần tử trong employee-page.');
