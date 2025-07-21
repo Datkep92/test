@@ -98,21 +98,19 @@ function formatTimestamp(ts) {
 }
 
 function displaySharedReportSummary(date) {
-  const ref = firebase.database().ref('shared_reports');
   const container = document.getElementById('shared-reports');
-  const totalBox = document.getElementById('total-report');
-  container.innerHTML = '';
+  if (!container) {
+    console.error('Không tìm thấy container shared-reports');
+    return;
+  }
 
-  let totalOpening = 0, totalRevenue = 0, totalCost = 0, totalClosing = 0, totalExport = 0;
+  fetchReportSummary(date, (group, sum, reports, error) => {
+    if (error) {
+      container.innerHTML = '<p class="text-red-500">Lỗi khi tải báo cáo. Vui lòng thử lại.</p>';
+      return;
+    }
 
-  ref.orderByChild('date').equalTo(date).once('value').then(snapshot => {
-    const reports = [];
-    snapshot.forEach(child => reports.push({ id: child.key, ...child.val() }));
-
-    // Sắp xếp báo cáo theo thời gian (mới nhất lên đầu)
-    reports.sort((a, b) => b.timestamp - a.timestamp);
-
-    // Tạo bảng tổng hợp
+    container.innerHTML = '';
     const summaryTable = document.createElement('div');
     summaryTable.className = 'mb-6 overflow-x-auto';
     summaryTable.innerHTML = `
@@ -128,23 +126,19 @@ function displaySharedReportSummary(date) {
             <th class="py-2 px-4 border">Thời gian</th>
           </tr>
         </thead>
-        <tbody id="report-rows">
-        </tbody>
+        <tbody id="report-rows"></tbody>
       </table>
     `;
     container.appendChild(summaryTable);
 
     const tbody = document.getElementById('report-rows');
+    reports.sort((a, b) => b.timestamp - a.timestamp);
 
     reports.forEach(report => {
       const row = document.createElement('tr');
       row.className = 'hover:bg-gray-50';
-
-      // Tính tổng xuất kho
-      const exportTotal = report.exports?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
-      
-      // Format thời gian
       const timeStr = formatTimestamp(report.timestamp);
+      const exportText = report.exports?.map(e => `${e.productName}: ${e.quantity}`).join('<br>') || '0';
 
       row.innerHTML = `
         <td class="py-2 px-4 border">${report.userName || report.uid.substring(0, 6)}</td>
@@ -152,31 +146,17 @@ function displaySharedReportSummary(date) {
         <td class="py-2 px-4 border text-right">${report.revenue || 0}</td>
         <td class="py-2 px-4 border">${report.cost || '0'}</td>
         <td class="py-2 px-4 border text-right">${report.closingBalance || 0}</td>
-        <td class="py-2 px-4 border">
-          ${report.exports?.map(e => `${e.productName}: ${e.quantity}`).join('<br>') || '0'}
-        </td>
+        <td class="py-2 px-4 border">${exportText}</td>
         <td class="py-2 px-4 border">${timeStr}</td>
       `;
       tbody.appendChild(row);
-
-      // Cộng vào tổng
-      totalOpening += report.openingBalance || 0;
-      totalRevenue += report.revenue || 0;
-      totalCost += parseCostString(report.cost);
-      totalClosing += report.closingBalance || 0;
-      totalExport += exportTotal;
     });
 
-    // Cập nhật bảng tổng cuối
-    document.getElementById('total-opening-balance').textContent = totalOpening;
-    document.getElementById('total-cost').textContent = totalCost;
-    document.getElementById('total-revenue').textContent = totalRevenue;
-    document.getElementById('total-closing-balance').textContent = totalClosing;
-    document.getElementById('net-profit').textContent = totalOpening + totalRevenue - totalCost - totalClosing;
-    document.getElementById('total-export').textContent = totalExport;
-
-  }).catch(error => {
-    console.error('Lỗi khi tải báo cáo:', error);
-    container.innerHTML = '<p class="text-red-500">Lỗi khi tải báo cáo. Vui lòng thử lại.</p>';
+    document.getElementById('total-opening-balance').textContent = sum.opening;
+    document.getElementById('total-cost').textContent = sum.cost;
+    document.getElementById('total-revenue').textContent = sum.revenue;
+    document.getElementById('total-closing-balance').textContent = sum.closing;
+    document.getElementById('net-profit').textContent = sum.real;
+    document.getElementById('total-export').textContent = sum.export;
   });
 }
