@@ -10,24 +10,41 @@ function formatTimestamp(ts) {
 }
 
 function fetchReportSummary(date, filterType, callback) {
+  console.log('fetchReportSummary: Fetching reports for date:', date, 'filterType:', filterType);
   const reportsRef = firebase.database().ref('shared_reports');
   reportsRef.orderByChild('date').equalTo(date).once('value').then(snapshot => {
     const allReports = [];
-    snapshot.forEach(child => allReports.push({ id: child.key, ...child.val() }));
+    snapshot.forEach(child => {
+      allReports.push({ id: child.key, ...child.val() });
+    });
+    console.log('fetchReportSummary: Retrieved reports:', allReports);
+
+    if (allReports.length === 0) {
+      console.log('fetchReportSummary: No reports found for date:', date);
+      callback(null, null, [], null);
+      return;
+    }
 
     const group = { opening: [], cost: [], revenue: [], closing: [], exports: [] };
     let sum = { opening: 0, cost: 0, revenue: 0, closing: 0, export: 0 };
 
-    // Process reports without fetching /users initially
-    const userIds = [...new Set(allReports.map(r => r.uid))]; // Unique UIDs
+    const userIds = [...new Set(allReports.map(r => r.uid))];
+    console.log('fetchReportSummary: Unique user IDs:', userIds);
     const userPromises = userIds.map(uid =>
       firebase.database().ref(`users/${uid}/name`).once('value')
-        .then(snap => ({ uid, name: snap.val() || uid.substring(0, 6) }))
-        .catch(() => ({ uid, name: auth.currentUser?.uid === uid ? auth.currentUser.displayName || uid.substring(0, 6) : uid.substring(0, 6) }))
+        .then(snap => {
+          console.log(`fetchReportSummary: Fetched name for UID ${uid}:`, snap.val());
+          return { uid, name: snap.val() || (auth.currentUser?.uid === uid ? auth.currentUser.displayName || uid.substring(0, 6) : uid.substring(0, 6)) };
+        })
+        .catch(error => {
+          console.warn(`fetchReportSummary: Failed to fetch name for UID ${uid}:`, error.message);
+          return { uid, name: auth.currentUser?.uid === uid ? auth.currentUser.displayName || uid.substring(0, 6) : uid.substring(0, 6) };
+        })
     );
 
     Promise.all(userPromises).then(userData => {
       const users = userData.reduce((acc, { uid, name }) => ({ ...acc, [uid]: { name } }), {});
+      console.log('fetchReportSummary: User data:', users);
 
       allReports.forEach(r => {
         const name = users[r.uid]?.name || r.uid.substring(0, 6);
@@ -51,9 +68,10 @@ function fetchReportSummary(date, filterType, callback) {
       });
 
       sum.real = sum.opening + sum.revenue - sum.cost - sum.closing;
+      console.log('fetchReportSummary: Processed data:', { group, sum, reports: allReports });
       callback(group, sum, allReports, null);
     }).catch(error => {
-      console.error('Lỗi tải thông tin người dùng:', error);
+      console.error('fetchReportSummary: Error processing user data:', error);
       // Fallback: process reports without user names
       allReports.forEach(r => {
         const name = auth.currentUser?.uid === r.uid ? auth.currentUser.displayName || r.uid.substring(0, 6) : r.uid.substring(0, 6);
@@ -77,10 +95,11 @@ function fetchReportSummary(date, filterType, callback) {
       });
 
       sum.real = sum.opening + sum.revenue - sum.cost - sum.closing;
+      console.log('fetchReportSummary: Fallback processed data:', { group, sum, reports: allReports });
       callback(group, sum, allReports, null);
     });
   }).catch(error => {
-    console.error('Lỗi tải báo cáo:', error);
+    console.error('fetchReportSummary: Error fetching reports:', error);
     callback(null, null, null, error.code === 'PERMISSION_DENIED' ? 'Bạn không có quyền truy cập báo cáo.' : error.message);
   });
 }
@@ -88,7 +107,7 @@ function fetchReportSummary(date, filterType, callback) {
 function loadInventoryData(containerId, renderCallback) {
   const inventoryList = document.getElementById(containerId);
   if (!inventoryList) {
-    console.error(`Không tìm thấy container ${containerId}`);
+    console.error(`loadInventoryData: Không tìm thấy container ${containerId}`);
     return;
   }
 
@@ -97,6 +116,7 @@ function loadInventoryData(containerId, renderCallback) {
     inventoryList.innerHTML = '';
     const data = snapshot.val();
     if (!data) {
+      console.log(`loadInventoryData: Không có dữ liệu tồn kho cho ${containerId}`);
       inventoryList.innerHTML = '<p class="text-gray-500">Không có dữ liệu tồn kho.</p>';
       return;
     }
@@ -107,9 +127,9 @@ function loadInventoryData(containerId, renderCallback) {
       renderCallback(div, productId, product);
       inventoryList.appendChild(div);
     });
-    console.log(`Đã tải danh sách tồn kho thành công cho ${containerId}`);
+    console.log(`loadInventoryData: Đã tải danh sách tồn kho thành công cho ${containerId}`);
   }, error => {
-    console.error('Lỗi tải tồn kho:', error);
+    console.error('loadInventoryData: Lỗi tải tồn kho:', error);
     inventoryList.innerHTML = `<p class="text-red-500">${error.code === 'PERMISSION_DENIED' ? 'Bạn không có quyền truy cập tồn kho.' : 'Lỗi tải tồn kho.'}</p>`;
   });
 }
