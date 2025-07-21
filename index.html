@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -13,6 +14,10 @@
     <div class="max-w-md mx-auto mt-4">
       <input id="email" type="email" class="w-full p-2 mb-2 border rounded" placeholder="Email">
       <input id="password" type="password" class="w-full p-2 mb-2 border rounded" placeholder="Mật khẩu">
+      <label class="inline-flex items-center mb-2">
+        <input id="remember-me" type="checkbox" class="form-checkbox">
+        <span class="ml-2">Ghi nhớ đăng nhập</span>
+      </label>
       <button onclick="login()" class="w-full p-2 bg-blue-500 text-white rounded">Đăng nhập</button>
     </div>
   </div>
@@ -51,12 +56,18 @@
       <div id="report-table" class="mt-2"></div>
     </div>
   </div>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-  <script src="firebase-config.js"></script>
-  <script src="auth.js"></script>
-  <script src="manager.js"></script>
-  <script src="employee.js"></script>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
+    import { getAuth } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+    import { getDatabase } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js';
+    import { firebaseConfig } from './firebase-config.js';
+    const app = initializeApp(firebaseConfig);
+    window.auth = getAuth(app);
+    window.db = getDatabase(app);
+  </script>
+  <script type="module" src="auth.js"></script>
+  <script type="module" src="manager.js"></script>
+  <script type="module" src="employee.js"></script>
 </body>
 </html>
+```
