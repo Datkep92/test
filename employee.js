@@ -75,8 +75,17 @@ function submitSharedReport() {
         });
       }
 
-      if (!current.entries) current.entries = [];
-      current.entries.push({ uid, name, openingBalance, revenue, closingBalance, costInput, exportQuantities, timestamp: new Date().toISOString() });
+      if (!current.entries) current.entries = {};
+current.entries[uid] = {
+  name,
+  openingBalance,
+  revenue,
+  closingBalance,
+  costInput,
+  exportQuantities,
+  timestamp: new Date().toISOString()
+};
+
       return current;
     });
   }).then(() => {
