@@ -1,4 +1,3 @@
-
 function loadSharedReports(elementId, userId) {
   console.log('loadSharedReports called with:', { elementId, userId });
   const reportsList = document.getElementById(elementId);
@@ -28,8 +27,7 @@ function loadSharedReports(elementId, userId) {
         return;
       }
 
-      // Kiểm tra vai trò người dùng
-      let userRole = 'employee'; // Mặc định là nhân viên
+      let userRole = 'employee';
       db.ref('users/' + userId).once('value').then(userSnapshot => {
         const userData = userSnapshot.val();
         if (userData && userData.role === 'manager') {
@@ -98,6 +96,7 @@ function loadSharedReports(elementId, userId) {
           </div>
         `;
         reportsList.innerHTML = html;
+        console.log('HTML đã tạo cho shared-report-table:', html);
         console.log('Đã tải báo cáo tổng thành công cho', elementId, 'ngày:', selectedDate);
       }).catch(error => {
         console.error('Lỗi lấy vai trò người dùng:', error);
