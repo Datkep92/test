@@ -1,3 +1,42 @@
+function login() {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  const rememberMeCheckbox = document.getElementById('remember-me');
+  const rememberMe = rememberMeCheckbox ? rememberMeCheckbox.checked : false;
+
+  if (!email || !password) {
+    alert('Vui lòng nhập email và mật khẩu.');
+    return;
+  }
+
+  auth.setPersistence(rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION)
+    .then(() => {
+      return auth.signInWithEmailAndPassword(email, password);
+    })
+    .then(userCredential => {
+      console.log('Đăng nhập thành công, User UID:', userCredential.user.uid);
+    })
+    .catch(error => {
+      console.error('Lỗi đăng nhập:', error);
+      alert('Lỗi đăng nhập: ' + error.message);
+    });
+}
+
+function logout() {
+  auth.signOut()
+    .then(() => {
+      console.log('Đăng xuất thành công');
+      alert('Đăng xuất thành công!');
+      document.getElementById('login-page').style.display = 'block';
+      document.getElementById('manager-page').style.display = 'none';
+      document.getElementById('employee-page').style.display = 'none';
+    })
+    .catch(error => {
+      console.error('Lỗi đăng xuất:', error);
+      alert('Lỗi đăng xuất: ' + error.message);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
     .then(() => {
@@ -6,30 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
     .catch(error => {
       console.error('Lỗi thiết lập persistence:', error);
     });
-
-  function login() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const rememberMeCheckbox = document.getElementById('remember-me');
-    const rememberMe = rememberMeCheckbox ? rememberMeCheckbox.checked : false;
-
-    if (!email || !password) {
-      alert('Vui lòng nhập email và mật khẩu.');
-      return;
-    }
-
-    auth.setPersistence(rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION)
-      .then(() => {
-        return auth.signInWithEmailAndPassword(email, password);
-      })
-      .then(userCredential => {
-        console.log('Đăng nhập thành công, User UID:', userCredential.user.uid);
-      })
-      .catch(error => {
-        console.error('Lỗi đăng nhập:', error);
-        alert('Lỗi đăng nhập: ' + error.message);
-      });
-  }
 
   let isRoleChecked = false;
 
@@ -57,23 +72,49 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Đăng nhập quản lý, hiển thị giao diện quản lý...');
             managerPage.style.display = 'block';
             employeePage.style.display = 'none';
-            if (document.getElementById('manager-inventory-list') && document.getElementById('shared-report-table')) {
-              loadInventory('manager-inventory-list');
-              loadSharedReports('shared-report-table', 'manager', user.uid);
-              loadExpenseSummary('expense-summary-table');
+            if (document.getElementById('manager-inventory-list') && document.getElementById('shared-report-table') && document.getElementById('expense-summary-table')) {
+              console.log('loadSharedReports defined:', typeof loadSharedReports);
+              console.log('loadInventory defined:', typeof loadInventory);
+              console.log('loadExpenseSummary defined:', typeof loadExpenseSummary);
+              if (typeof loadSharedReports === 'function' && typeof loadInventory === 'function' && typeof loadExpenseSummary === 'function') {
+                loadInventory('manager-inventory-list');
+                loadSharedReports('shared-report-table', 'manager', user.uid);
+                loadExpenseSummary('expense-summary-table');
+              } else {
+                console.error('Một hoặc nhiều hàm không được định nghĩa:', {
+                  loadSharedReports: typeof loadSharedReports,
+                  loadInventory: typeof loadInventory,
+                  loadExpenseSummary: typeof loadExpenseSummary
+                });
+                alert('Lỗi: Một hoặc nhiều chức năng chưa được tải. Vui lòng thử lại.');
+              }
             } else {
               console.error('Không tìm thấy các phần tử trong manager-page.');
+              alert('Lỗi: Không tìm thấy các phần tử trong giao diện quản lý.');
             }
           } else if (userData.role === 'employee') {
             console.log('Đăng nhập nhân viên, hiển thị giao diện nhân viên...');
             employeePage.style.display = 'block';
             managerPage.style.display = 'none';
-            if (document.getElementById('employee-inventory-list') && document.getElementById('shared-report-table')) {
-              loadInventory('employee-inventory-list');
-              loadSharedReports('shared-report-table', 'employee', user.uid);
-              loadExpenseSummary('expense-summary-table');
+            if (document.getElementById('employee-inventory-list') && document.getElementById('shared-report-table') && document.getElementById('expense-summary-table')) {
+              console.log('loadSharedReports defined:', typeof loadSharedReports);
+              console.log('loadInventory defined:', typeof loadInventory);
+              console.log('loadExpenseSummary defined:', typeof loadExpenseSummary);
+              if (typeof loadSharedReports === 'function' && typeof loadInventory === 'function' && typeof loadExpenseSummary === 'function') {
+                loadInventory('employee-inventory-list');
+                loadSharedReports('shared-report-table', 'employee', user.uid);
+                loadExpenseSummary('expense-summary-table');
+              } else {
+                console.error('Một hoặc nhiều hàm không được định nghĩa:', {
+                  loadSharedReports: typeof loadSharedReports,
+                  loadInventory: typeof loadInventory,
+                  loadExpenseSummary: typeof loadExpenseSummary
+                });
+                alert('Lỗi: Một hoặc nhiều chức năng chưa được tải. Vui lòng thử lại.');
+              }
             } else {
               console.error('Không tìm thấy các phần tử trong employee-page.');
+              alert('Lỗi: Không tìm thấy các phần tử trong giao diện nhân viên.');
             }
           } else {
             console.error('Vai trò không xác định:', userData.role);
