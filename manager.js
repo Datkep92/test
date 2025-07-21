@@ -1,4 +1,3 @@
-
 function addInventory() {
   const name = document.getElementById('product-name').value;
   const quantity = parseFloat(document.getElementById('product-quantity').value);
