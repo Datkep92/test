@@ -1,1 +1,57 @@
-/*
+```css
+body {
+  background-color: #f3f4f6;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+}
+
+#login-page, #manager-page, #employee-page {
+  display: none;
+}
+
+#login-page {
+  display: block;
+}
+
+input {
+  box-sizing: border-box;
+}
+
+.report-row {
+  margin-bottom: 16px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.action-btn {
+  margin-left: 8px;
+}
+
+.summary-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 16px;
+}
+
+.summary-table th,
+.summary-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+}
+
+.summary-table th {
+  background-color: #f3f4f6;
+}
+
+@media (max-width: 600px) {
+  div[style*="max-width: 800px"] {
+    max-width: 100%;
+  }
+  div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr;
+  }
+}
+```
