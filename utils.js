@@ -44,12 +44,14 @@ function fetchReportSummary(date, filterType, callback) {
       });
 
       sum.real = sum.opening + sum.revenue - sum.cost - sum.closing;
-      callback(group, sum, allReports);
+      callback(group, sum, allReports, null);
     }).catch(error => {
-      callback(null, null, null, error);
+      console.error('Lỗi tải thông tin người dùng:', error);
+      callback(null, null, null, error.code === 'PERMISSION_DENIED' ? 'Bạn không có quyền truy cập danh sách người dùng.' : error.message);
     });
   }).catch(error => {
-    callback(null, null, null, error);
+    console.error('Lỗi tải báo cáo:', error);
+    callback(null, null, null, error.code === 'PERMISSION_DENIED' ? 'Bạn không có quyền truy cập báo cáo.' : error.message);
   });
 }
 
@@ -60,6 +62,7 @@ function loadInventoryData(containerId, renderCallback) {
     return;
   }
 
+  inventoryList.innerHTML = '<p class="text-gray-500">Đang tải dữ liệu...</p>';
   db.ref('inventory').on('value', snapshot => {
     inventoryList.innerHTML = '';
     const data = snapshot.val();
@@ -77,6 +80,6 @@ function loadInventoryData(containerId, renderCallback) {
     console.log(`Đã tải danh sách tồn kho thành công cho ${containerId}`);
   }, error => {
     console.error('Lỗi tải tồn kho:', error);
-    inventoryList.innerHTML = '<p class="text-red-500">Lỗi tải tồn kho.</p>';
+    inventoryList.innerHTML = `<p class="text-red-500">${error.code === 'PERMISSION_DENIED' ? 'Bạn không có quyền truy cập tồn kho.' : 'Lỗi tải tồn kho.'}</p>`;
   });
 }
