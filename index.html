@@ -1,14 +1,57 @@
-```html
 <!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ứng dụng Quản lý Kinh doanh</title>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="styles.css">
+  <title>Quản lý Kho</title>
+  <style>
+    #login-page, #manager-page, #employee-page {
+      padding: 20px;
+    }
+    #shared-report-table, #expense-summary-table, #manager-inventory-list, #employee-inventory-list {
+      display: block;
+      margin: 16px 0;
+    }
+    #shared-report-table p, #shared-report-table div, #expense-summary-table ul, #manager-inventory-list ul, #employee-inventory-list ul {
+      margin: 0;
+    }
+    #expense-summary-table li, #manager-inventory-list li, #employee-inventory-list li {
+      padding: 8px;
+      border-bottom: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div id="login-page">
+    <h2>Đăng nhập</h2>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Mật khẩu">
+    <label><input type="checkbox" id="remember-me"> Ghi nhớ đăng nhập</label>
+    <button onclick="login()">Đăng nhập</button>
+  </div>
+  <div id="manager-page" style="display: none;">
+    <h2>Quản lý</h2>
+    <button onclick="logout()">Đăng xuất</button>
+    <select id="report-filter">
+      <option value="day">Ngày</option>
+      <option value="month">Tháng</option>
+    </select>
+    <input type="date" id="report-date">
+    <div id="manager-inventory-list"></div>
+    <div id="shared-report-table"></div>
+    <div id="expense-summary-table"></div>
+  </div>
+  <div id="employee-page" style="display: none;">
+    <h2>Nhân viên</h2>
+    <button onclick="logout()">Đăng xuất</button>
+    <select id="report-filter">
+      <option value="day">Ngày</option>
+      <option value="month">Tháng</option>
+    </select>
+    <input type="date" id="report-date">
+    <div id="employee-inventory-list"></div>
+    <div id="shared-report-table"></div>
+    <div id="expense-summary-table"></div>
+  </div>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -17,99 +60,5 @@
   <script src="manager.js"></script>
   <script src="employee.js"></script>
   <script src="auth.js"></script>
-</head>
-<body>
-  <div id="login-page" style="max-width: 400px; margin: 40px auto; padding: 16px;">
-    <h1>Đăng nhập</h1>
-    <div style="display: flex; flex-direction: column; gap: 8px;">
-      <input id="email" type="email" placeholder="Email" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-      <input id="password" type="password" placeholder="Mật khẩu" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <input id="remember-me" type="checkbox">
-        <label for="remember-me">Ghi nhớ đăng nhập</label>
-      </div>
-      <button onclick="login()" style="padding: 8px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;">Đăng nhập</button>
-    </div>
-  </div>
-
-  <div id="manager-page" style="max-width: 800px; margin: 40px auto; padding: 16px;">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <h1>Giao diện Quản lý</h1>
-      <button onclick="logout()" style="padding: 8px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">Đăng xuất</button>
-    </div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-      <div>
-        <h2>Thêm sản phẩm</h2>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <input id="product-name" type="text" placeholder="Tên sản phẩm" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-          <input id="product-quantity" type="number" min="0" placeholder="Số lượng" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-          <input id="product-price" type="number" min="0" placeholder="Giá" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-          <button onclick="addInventory()" style="padding: 8px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;">Thêm</button>
-        </div>
-        <h2>Danh sách hàng trong kho</h2>
-        <div id="manager-inventory-list"></div>
-      </div>
-      <div>
-        <h2>Báo cáo tổng</h2>
-        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-          <input id="report-date" type="date" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-          <select id="report-filter" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-            <option value="day">Theo ngày</option>
-            <option value="month">Theo tháng</option>
-          </select>
-        </div>
-        <div id="shared-report-table"></div>
-        <h2>Tổng hợp chi phí</h2>
-        <div id="expense-summary-table"></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="employee-page" style="max-width: 800px; margin: 40px auto; padding: 16px;">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <h1>Giao diện Nhân viên</h1>
-      <button onclick="logout()" style="padding: 8px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">Đăng xuất</button>
-    </div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-      <div>
-        <h2>Danh sách hàng trong kho</h2>
-        <div id="employee-inventory-list"></div>
-        <h2>Gửi báo cáo</h2>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <input id="employee-initial-inventory" type="number" min="0" placeholder="Tồn kho đầu kỳ" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-          <input id="employee-final-inventory" type="number" min="0" placeholder="Tồn kho cuối kỳ" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-          <input id="employee-revenue" type="number" min="0" placeholder="Doanh thu" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-          <input id="employee-expense-amount" type="number" min="0" placeholder="Chi phí" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-          <input id="employee-expense-info" type="text" placeholder="Thông tin chi phí" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-          <button onclick="submitEmployeeReport()" style="padding: 8px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;">Gửi Báo Cáo</button>
-        </div>
-      </div>
-      <div>
-        <h2>Báo cáo tổng</h2>
-        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-          <input id="report-date" type="date" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-          <select id="report-filter" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-            <option value="day">Theo ngày</option>
-            <option value="month">Theo tháng</option>
-          </select>
-        </div>
-        <div id="shared-report-table"></div>
-        <h2>Tổng hợp chi phí</h2>
-        <div id="expense-summary-table"></div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // Set default date to today
-    document.addEventListener('DOMContentLoaded', () => {
-      const today = new Date().toISOString().split('T')[0];
-      const dateInputs = document.querySelectorAll('#report-date');
-      dateInputs.forEach(input => {
-        if (input) input.value = today;
-      });
-    });
-  </script>
 </body>
 </html>
-```
