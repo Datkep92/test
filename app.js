@@ -446,32 +446,80 @@ function incrementProductCount(productId) {
   renderReportProductList();
 }
 
+
+
 function filterReports() {
-  const filterDate = document.getElementById("filter-date").value;
-  const startDate = document.getElementById("filter-start-date").value;
-  const endDate = document.getElementById("filter-end-date").value;
+  // Tạo overlay và lịch chọn
+  const overlay = document.createElement("div");
+  overlay.id = "date-filter-overlay";
+  overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center;";
+  
+  const filterBox = document.createElement("div");
+  filterBox.style.cssText = "background: white; padding: 20px; border-radius: 5px; width: 300px; text-align: center;";
+  
+  const closeBtn = document.createElement("button");
+  closeBtn.textContent = "Đóng";
+  closeBtn.style.cssText = "margin-top: 10px;";
+  closeBtn.onclick = () => document.body.removeChild(overlay);
 
-  if (!filterDate && (!startDate || !endDate)) {
-    alert("Vui lòng chọn ngày hoặc khoảng thời gian để lọc!");
-    renderReports();
-    return;
-  }
+  const singleDateLabel = document.createElement("label");
+  singleDateLabel.textContent = "Chọn ngày: ";
+  const singleDateInput = document.createElement("input");
+  singleDateInput.type = "date";
+  singleDateInput.id = "single-filter-date";
+  singleDateInput.max = new Date().toISOString().split("T")[0]; // Giới hạn ngày tối đa là hôm nay
 
-  let filteredReports = reportData;
+  const rangeDateLabel = document.createElement("label");
+  rangeDateLabel.textContent = "Chọn khoảng thời gian: ";
+  const startDateInput = document.createElement("input");
+  startDateInput.type = "date";
+  startDateInput.id = "filter-start-date";
+  startDateInput.max = new Date().toISOString().split("T")[0];
+  const endDateInput = document.createElement("input");
+  endDateInput.type = "date";
+  endDateInput.id = "filter-end-date";
+  endDateInput.max = new Date().toISOString().split("T")[0];
 
-  if (filterDate) {
-    const selectedDate = new Date(filterDate).toISOString().split('T')[0];
-    filteredReports = reportData.filter(r => r.date.split('T')[0] === selectedDate);
-  } else if (startDate && endDate) {
-    const start = new Date(startDate).getTime();
-    const end = new Date(endDate).getTime() + 24 * 60 * 60 * 1000; // Include end date
-    filteredReports = reportData.filter(r => {
-      const reportDate = new Date(r.date).getTime();
-      return reportDate >= start && reportDate < end;
-    });
-  }
+  const filterBtn = document.createElement("button");
+  filterBtn.textContent = "Lọc";
+  filterBtn.className = "primary-btn";
+  filterBtn.onclick = () => {
+    const singleDate = singleDateInput.value;
+    const startDate = startDateInput.value;
+    const endDate = endDateInput.value;
 
-  renderFilteredReports(filteredReports);
+    let filteredReports = reportData;
+
+    if (singleDate) {
+      const selectedDate = new Date(singleDate).toISOString().split('T')[0];
+      filteredReports = reportData.filter(r => r.date.split('T')[0] === selectedDate);
+    } else if (startDate && endDate) {
+      const start = new Date(startDate).getTime();
+      const end = new Date(endDate).getTime() + 24 * 60 * 60 * 1000; // Bao gồm ngày kết thúc
+      filteredReports = reportData.filter(r => {
+        const reportDate = new Date(r.date).getTime();
+        return reportDate >= start && reportDate < end;
+      });
+    } else {
+      alert("Vui lòng chọn một ngày hoặc khoảng thời gian!");
+      return;
+    }
+
+    renderFilteredReports(filteredReports);
+    document.body.removeChild(overlay);
+  };
+
+  filterBox.appendChild(singleDateLabel);
+  filterBox.appendChild(singleDateInput);
+  filterBox.appendChild(document.createElement("br"));
+  filterBox.appendChild(rangeDateLabel);
+  filterBox.appendChild(startDateInput);
+  filterBox.appendChild(endDateInput);
+  filterBox.appendChild(document.createElement("br"));
+  filterBox.appendChild(filterBtn);
+  filterBox.appendChild(closeBtn);
+  overlay.appendChild(filterBox);
+  document.body.appendChild(overlay);
 }
 
 function renderFilteredReports(filteredReports) {
@@ -542,15 +590,6 @@ function renderFilteredReports(filteredReports) {
   `;
   reportContainer.appendChild(totalReportDiv);
 
-  // Log để kiểm tra tổng kết
-  console.log("Tổng kết báo cáo:", {
-    totalOpeningBalance,
-    totalRevenue,
-    totalExpense,
-    totalClosingBalance,
-    finalBalance
-  });
-
   // Product Report Table
   const productReports = sortedReports.flatMap((r, index) => 
     Array.isArray(r.products) && r.products.length > 0 
@@ -605,6 +644,10 @@ function renderFilteredReports(filteredReports) {
     <strong>Tổng xuất kho:</strong> ${totalProductText || "Không có"}
   `;
   productContainer.appendChild(totalProductDiv);
+}
+
+function renderReports() {
+  renderFilteredReports(reportData);
 }
 
 function renderReports() {
