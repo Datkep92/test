@@ -5,6 +5,17 @@
 // ===================== //
 // Firebase References   //
 // ===================== //
+function toggleMenu() {
+  const options = document.getElementById('float-options');
+  options.style.display = (options.style.display === 'flex') ? 'none' : 'flex';
+}
+
+function openTabBubble(tabId) {
+  const tabs = document.querySelectorAll('.tabcontent');
+  tabs.forEach(t => t.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  toggleMenu(); // tự đóng menu
+}
 const inventoryRef = db.ref("inventory");
 const reportsRef = db.ref("reports");
 const employeesRef = db.ref("employees");
