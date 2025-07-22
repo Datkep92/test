@@ -1022,3 +1022,38 @@ auth.onAuthStateChanged(user => {
     document.getElementById("main-page").style.display = "none";
   }
 });
+// Update employee display name
+function updateEmployeeName() {
+  const displayNameInput = document.getElementById("employee-display-name");
+  if (!displayNameInput) {
+    alert("Lỗi: Không tìm thấy trường nhập tên hiển thị!");
+    return;
+  }
+
+  const newName = displayNameInput.value.trim();
+  if (!newName) {
+    alert("Vui lòng nhập tên hiển thị!");
+    return;
+  }
+
+  if (!currentEmployeeId) {
+    alert("Lỗi: Không tìm thấy ID nhân viên!");
+    return;
+  }
+
+  // Update name in Firebase
+  employeesRef.child(currentEmployeeId).update({ name: newName })
+    .then(() => {
+      // Update local employeeData
+      const employee = employeeData.find(e => e.id === currentEmployeeId);
+      if (employee) {
+        employee.name = newName;
+      } else {
+        employeeData.push({ id: currentEmployeeId, name: newName });
+      }
+      alert("Cập nhật tên hiển thị thành công!");
+      displayNameInput.value = "";
+      renderReports(); // Refresh reports to show updated name
+    })
+    .catch(err => alert("Lỗi khi cập nhật tên: " + err.message));
+}
