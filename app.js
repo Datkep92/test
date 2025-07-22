@@ -5,17 +5,6 @@
 // ===================== //
 // Firebase References   //
 // ===================== //
-function toggleMenu() {
-  const options = document.getElementById('float-options');
-  options.style.display = (options.style.display === 'flex') ? 'none' : 'flex';
-}
-
-function openTabBubble(tabId) {
-  const tabs = document.querySelectorAll('.tabcontent');
-  tabs.forEach(t => t.classList.remove('active'));
-  document.getElementById(tabId).classList.add('active');
-  toggleMenu(); // tự đóng menu
-}
 const inventoryRef = db.ref("inventory");
 const reportsRef = db.ref("reports");
 const employeesRef = db.ref("employees");
@@ -46,7 +35,7 @@ function login() {
       currentEmployeeId = user.user.uid;
       document.getElementById("login-page").style.display = "none";
       document.getElementById("main-page").style.display = "block";
-      document.querySelectorAll(".tablinks")[0].click();
+      openTabBubble('revenue-expense'); // Mở tab mặc định
       loadFirebaseData();
     })
     .catch(err => alert("Lỗi đăng nhập: " + err.message));
@@ -61,23 +50,27 @@ function logout() {
 }
 
 /**********************
- * 2. Tabs
+ * 2. Floating Button Tabs
  **********************/
-function openTab(evt, tabName) {
-  const tabcontent = document.getElementsByClassName("tabcontent");
-  for (let i = 0; i < tabcontent.length; i++) tabcontent[i].style.display = "none";
-  const tablinks = document.querySelectorAll(".tablinks");
-  tablinks.forEach(btn => btn.classList.remove("active"));
-  document.getElementById(tabName).style.display = "block";
-  evt.currentTarget.classList.add("active");
+function toggleMenu() {
+  const options = document.getElementById('float-options');
+  options.style.display = (options.style.display === 'flex') ? 'none' : 'flex';
+}
 
-  if (tabName === "profile") {
+function openTabBubble(tabId) {
+  const tabs = document.querySelectorAll('.tabcontent');
+  tabs.forEach(t => t.classList.remove('active'));
+  const tab = document.getElementById(tabId);
+  if (tab) tab.classList.add('active');
+
+  toggleMenu(); // tự động đóng menu
+  if (tabId === "profile") {
     renderAdvanceHistory();
     renderSalarySummary();
-  } else if (tabName === "employee-management") {
+  } else if (tabId === "employee-management") {
     renderEmployeeList();
     renderAdvanceApprovalList();
-  } else if (tabName === "business-report") {
+  } else if (tabId === "business-report") {
     renderExpenseSummary();
     generateBusinessChart();
   }
