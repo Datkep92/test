@@ -955,6 +955,121 @@ function renderInventory() {
   list.appendChild(table);
 }
 
+// Initialize Firebase Listeners (phần inventoryRef được cập nhật)
+function loadFirebaseData() {
+  console.log("Initializing Firebase listeners");
+  inventoryRef.on("value", snapshot => {
+    inventoryData = [];
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        const product = { id: child.key, ...child.val() };
+        console.log("Fetched product from Firebase:", product);
+        inventoryData.push(product);
+      });
+    } else {
+      console.log("No data in inventory");
+    }
+    console.log("Updated inventoryData:", inventoryData);
+    renderInventory();
+    renderReportProductList();
+  }, err => {
+    console.error("Error fetching inventory data:", err);
+  });
+
+  reportsRef.on("value", snapshot => {
+    reportData = [];
+    expenseNotes = [];
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        const report = { id: child.key, ...child.val() };
+        console.log("Fetched report from Firebase:", report);
+        reportData.push(report);
+        if (report.expenseNote) {
+          expenseNotes.push({ reportId: child.key, note: report.expenseNote });
+        }
+      });
+    } else {
+      console.log("No data in reports");
+    }
+    console.log("Updated reportData:", reportData);
+    console.log("Updated expenseNotes:", expenseNotes);
+    renderReports();
+    renderExpenseSummary();
+  }, err => {
+    console.error("Error fetching reports data:", err);
+  });
+
+  employeesRef.on("value", snapshot => {
+    employeeData = [];
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        const employee = { id: child.key, ...child.val() };
+        console.log("Fetched employee from Firebase:", employee);
+        employeeData.push(employee);
+      });
+    } else {
+      console.log("No data in employees");
+    }
+    console.log("Updated employeeData:", employeeData);
+    renderEmployeeList();
+    renderSalarySummary();
+  }, err => {
+    console.error("Error fetching employees data:", err);
+  });
+
+  advancesRef.on("value", snapshot => {
+    advanceRequests = [];
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        const advance = { id: child.key, ...child.val() };
+        console.log("Fetched advance from Firebase:", advance);
+        advanceRequests.push(advance);
+      });
+    } else {
+      console.log("No data in advances");
+    }
+    console.log("Updated advanceRequests:", advanceRequests);
+    renderAdvanceHistory();
+    renderAdvanceApprovalList();
+  }, err => {
+    console.error("Error fetching advances data:", err);
+  });
+
+  messagesRef.child("group").on("value", snapshot => {
+    messages.group = [];
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        const message = child.val();
+        console.log("Fetched group message:", message);
+        messages.group.push(message);
+      });
+    } else {
+      console.log("No group messages");
+    }
+    console.log("Updated group messages:", messages.group);
+    renderChat("group");
+  }, err => {
+    console.error("Error fetching group messages:", err);
+  });
+
+  messagesRef.child("manager").on("value", snapshot => {
+    messages.manager = [];
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        const message = child.val();
+        console.log("Fetched manager message:", message);
+        messages.manager.push(message);
+      });
+    } else {
+      console.log("No manager messages");
+    }
+    console.log("Updated manager messages:", messages.manager);
+    renderChat("manager");
+  }, err => {
+    console.error("Error fetching manager messages:", err);
+  });
+}
+
 // Initialize Firebase Listeners and Auth State
 auth.onAuthStateChanged(user => {
   if (user) {
@@ -1029,368 +1144,3 @@ function updateEmployeeName() {
     })
     .catch(err => alert("Lỗi khi cập nhật tên: " + err.message));
 }
-
-// Thêm các hàm mới cho tab Profile
-function uploadProfileImage() {
-  const fileInput = document.getElementById("profile-image-upload");
-  const file = fileInput.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const base64String = e.target.result;
-      localStorage.setItem(`profileImage_${currentEmployeeId}`, base64String);
-      document.getElementById("profile-image").src = base64String;
-    };
-    reader.readAsDataURL(file);
-  }
-}
-
-function updateProfileInfo() {
-  const address = document.getElementById("profile-address").value.trim();
-  const phone = document.getElementById("profile-phone").value.trim();
-  const dob = document.getElementById("profile-dob").value;
-
-  if (!address || !phone || !dob) {
-    alert("Vui lòng nhập đầy đủ thông tin!");
-    return;
-  }
-
-  const employeeRef = employeesRef.child(currentEmployeeId);
-  employeeRef.update({
-    address: address,
-    phone: phone,
-    dob: dob
-  }).then(() => {
-    alert("Cập nhật thông tin thành công!");
-    loadEmployeeData(); // Cập nhật lại employeeData
-  }).catch(err => alert("Lỗi khi cập nhật: " + err.message));
-}
-
-function loadEmployeeData() {
-  employeesRef.on("value", snapshot => {
-    employeeData = [];
-    if (snapshot.exists()) {
-      snapshot.forEach(child => {
-        const employee = { id: child.key, ...child.val() };
-        employeeData.push(employee);
-      });
-    }
-    renderProfile();
-    renderSchedule();
-    renderSalarySummary();
-  }, err => console.error("Error fetching employees data:", err));
-}
-
-function renderProfile() {
-  const emp = employeeData.find(e => e.id === currentEmployeeId);
-  if (emp) {
-    document.getElementById("profile-address").value = emp.address || "";
-    document.getElementById("profile-phone").value = emp.phone || "";
-    document.getElementById("profile-dob").value = emp.dob || "";
-    const savedImage = localStorage.getItem(`profileImage_${currentEmployeeId}`);
-    if (savedImage) {
-      document.getElementById("profile-image").src = savedImage;
-    }
-  }
-}
-
-function renderSchedule() {
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
-  document.getElementById("current-month").textContent = `${currentYear}-${currentMonth + 1}`;
-
-  const table = document.createElement("table");
-  table.classList.add("table-style");
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate(); // 30 hoặc 31
-  const firstDay = new Date(currentYear, currentMonth, 1).getDay(); // 0 (CN) đến 6 (T7)
-
-  const headerRow = `<tr><th>Nhân viên</th>${Array.from({ length: daysInMonth }, (_, i) => `<th>${i + 1}</th>`).join("")}</tr>`;
-  let bodyRows = employeeData.map(emp => {
-    const schedule = emp.schedule || {};
-    return `<tr><td>${emp.name}</td>${Array.from({ length: daysInMonth }, (_, i) => {
-      const day = i + 1;
-      const status = schedule[day] || "Làm";
-      return `<td><button onclick="handleDayClick('${emp.id}', ${day}, '${status}')">${status}</button></td>`;
-    }).join("")}</tr>`;
-  }).join("");
-
-  table.innerHTML = `<thead>${headerRow}</thead><tbody>${bodyRows}</tbody>`;
-  document.getElementById("schedule-table").innerHTML = "";
-  document.getElementById("schedule-table").appendChild(table);
-}
-
-function changeMonth(offset) {
-  const now = new Date();
-  let currentMonth = now.getMonth() + offset;
-  let currentYear = now.getFullYear();
-  if (currentMonth < 0) {
-    currentMonth += 12;
-    currentYear -= 1;
-  } else if (currentMonth > 11) {
-    currentMonth -= 12;
-    currentYear += 1;
-  }
-  document.getElementById("current-month").textContent = `${currentYear}-${currentMonth + 1}`;
-  renderSchedule(); // Cần cập nhật logic để load lịch tháng khác
-}
-
-function handleDayClick(empId, day, status) {
-  const options = ["Off", "Tăng ca", "Đổi ca"];
-  const currentEmp = employeeData.find(e => e.id === currentEmployeeId);
-  const targetEmp = employeeData.find(e => e.id === empId);
-
-  if (status === "Off" && currentEmp.id !== empId) {
-    if (confirm(`Gửi đề xuất đổi ca với ${targetEmp.name} ngày ${day}?`)) {
-      sendSwapRequest(empId, day);
-    }
-  } else {
-    const newStatus = prompt("Chọn trạng thái:", options.join(", ")) || status;
-    if (options.includes(newStatus)) {
-      if (newStatus === "Off" && checkOffConflict(day)) {
-        alert("Ngày nghỉ đã bị trùng, vui lòng chọn ngày khác hoặc gửi đề xuất đổi ca!");
-      } else {
-        updateSchedule(day, newStatus);
-        sendApprovalRequest(day, newStatus);
-      }
-    }
-  }
-}
-
-function checkOffConflict(day) {
-  return employeeData.some(emp => emp.schedule && emp.schedule[day] === "Off" && emp.id !== currentEmployeeId);
-}
-
-function updateSchedule(day, status) {
-  const empRef = employeesRef.child(currentEmployeeId).child("schedule");
-  empRef.update({ [day]: status });
-}
-
-function sendApprovalRequest(day, status) {
-  advancesRef.push({
-    employeeId: currentEmployeeId,
-    type: "schedule_change",
-    day: day,
-    status: status,
-    requestTime: new Date().toISOString(),
-    status: "pending"
-  }).then(() => console.log("Gửi yêu cầu duyệt thành công"));
-}
-
-function sendSwapRequest(targetEmpId, day) {
-  advancesRef.push({
-    employeeId: currentEmployeeId,
-    targetEmpId: targetEmpId,
-    type: "swap_request",
-    day: day,
-    requestTime: new Date().toISOString(),
-    status: "pending"
-  }).then(() => console.log("Gửi đề xuất đổi ca thành công"));
-}
-
-function calculateSalary(empId) {
-  const emp = employeeData.find(e => e.id === empId);
-  if (!emp) return 0;
-  const now = new Date();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(); // 30 hoặc 31
-  const baseWorkdays = daysInMonth;
-  const schedule = emp.schedule || {};
-  const offDays = Object.values(schedule).filter(s => s === "Off").length;
-  const overtimeDays = Object.values(schedule).filter(s => s === "Tăng ca").length;
-  const totalAdvance = advanceRequests.filter(a => a.employeeId === empId && a.status === "approved")
-    .reduce((sum, a) => sum + a.amount, 0);
-  const salary = (baseWorkdays + overtimeDays - offDays) * emp.dailyWage + (emp.allowance || 0) - (emp.otherFee || 0) - totalAdvance;
-  return salary;
-}
-
-function renderSalarySummary() {
-  const container = document.getElementById("salary-summary");
-  if (!container) return;
-  const emp = employeeData.find(e => e.id === currentEmployeeId);
-  if (!emp) {
-    container.innerHTML = "<p>Chưa có dữ liệu nhân viên.</p>";
-    return;
-  }
-  const salary = calculateSalary(emp.id);
-  const now = new Date();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  container.innerHTML = `
-    <p>Tháng: ${now.getFullYear()}-${now.getMonth() + 1} (Tổng ${daysInMonth} ngày)</p>
-    <p>Ngày làm: ${daysInMonth}</p>
-    <p>Ngày nghỉ: ${Object.values(emp.schedule || {}).filter(s => s === "Off").length}</p>
-    <p>Ngày tăng ca: ${Object.values(emp.schedule || {}).filter(s => s === "Tăng ca").length}</p>
-    <p>Lương/ngày: ${emp.dailyWage} VND</p>
-    <p>Phụ cấp: ${emp.allowance || 0} VND</p>
-    <p>Phí khác: ${emp.otherFee || 0} VND</p>
-    <p>Tạm ứng: ${advanceRequests.filter(a => a.employeeId === emp.id && a.status === "approved").reduce((sum, a) => sum + a.amount, 0)} VND</p>
-    <p><strong>Tổng lương: ${salary.toLocaleString('vi-VN')} VND</strong></p>`;
-}
-
-function renderSalaryComparison() {
-  const container = document.getElementById("salary-comparison");
-  if (!container) return;
-  const emp = employeeData.find(e => e.id === currentEmployeeId);
-  if (!emp) return;
-  const now = new Date();
-  const currentSalary = calculateSalary(emp.id);
-  const comparison = [];
-  for (let i = 1; i <= 3; i++) {
-    const pastDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const pastSalary = calculatePastSalary(emp.id, pastDate);
-    comparison.push({ month: `${pastDate.getFullYear()}-${pastDate.getMonth() + 1}`, salary: pastSalary });
-  }
-  container.innerHTML = `
-    <table class="table-style">
-      <thead><tr><th>Tháng</th><th>Lương (VND)</th></tr></thead>
-      <tbody>
-        ${comparison.map(c => `<tr><td>${c.month}</td><td>${c.salary.toLocaleString('vi-VN')}</td></tr>`).join("")}
-        <tr><td><strong>Tháng hiện tại</strong></td><td><strong>${currentSalary.toLocaleString('vi-VN')}</strong></td></tr>
-      </tbody>
-    </table>`;
-}
-
-function calculatePastSalary(empId, date) {
-  // Logic giả lập: Dựa trên dữ liệu lịch sử (cần lưu lịch sử lương trong Firebase)
-  const emp = employeeData.find(e => e.id === empId);
-  if (!emp) return 0;
-  const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  const baseWorkdays = daysInMonth;
-  const offDays = 0; // Giả lập, cần lịch sử schedule
-  const overtimeDays = 0; // Giả lập
-  const totalAdvance = 0; // Giả lập, cần lịch sử tạm ứng
-  return (baseWorkdays + overtimeDays - offDays) * emp.dailyWage + (emp.allowance || 0) - (emp.otherFee || 0) - totalAdvance;
-}
-
-function renderActivityHistory() {
-  const container = document.getElementById("activity-history");
-  if (!container) return;
-  const empActivities = reportData.filter(r => r.employeeId === currentEmployeeId)
-    .map(r => `Báo cáo ngày ${new Date(r.date).toLocaleDateString()}`);
-  const advanceActivities = advanceRequests.filter(a => a.employeeId === currentEmployeeId)
-    .map(a => `Yêu cầu tạm ứng ${a.amount} VND - ${a.status}`);
-  const approvalActivities = advanceRequests.filter(a => employeeData.some(e => e.id === a.employeeId && e.role === "manager"))
-    .map(a => `Duyệt yêu cầu của ${employeeData.find(e => e.id === a.employeeId)?.name} - ${a.status}`);
-  container.innerHTML = `
-    <h4>Hoạt động của bạn:</h4>
-    <ul>${empActivities.map(a => `<li>${a}</li>`).join("")}</ul>
-    <h4>Yêu cầu tạm ứng:</h4>
-    <ul>${advanceActivities.map(a => `<li>${a}</li>`).join("")}</ul>
-    <h4>Hoạt động quản lý (nếu có):</h4>
-    <ul>${approvalActivities.map(a => `<li>${a}</li>`).join("")}</ul>`;
-}
-
-// Cập nhật loadFirebaseData để bao gồm schedule
-function loadFirebaseData() {
-  console.log("Initializing Firebase listeners");
-  inventoryRef.on("value", snapshot => {
-    inventoryData = [];
-    if (snapshot.exists()) {
-      snapshot.forEach(child => {
-        const product = { id: child.key, ...child.val() };
-        inventoryData.push(product);
-      });
-    }
-    renderInventory();
-    renderReportProductList();
-  }, err => console.error("Error fetching inventory data:", err));
-
-  reportsRef.on("value", snapshot => {
-    reportData = [];
-    expenseNotes = [];
-    if (snapshot.exists()) {
-      snapshot.forEach(child => {
-        const report = { id: child.key, ...child.val() };
-        reportData.push(report);
-        if (report.expenseNote) {
-          expenseNotes.push({ reportId: child.key, note: report.expenseNote });
-        }
-      });
-    }
-    renderReports();
-    renderExpenseSummary();
-    renderActivityHistory();
-  }, err => console.error("Error fetching reports data:", err));
-
-  employeesRef.on("value", snapshot => {
-    employeeData = [];
-    if (snapshot.exists()) {
-      snapshot.forEach(child => {
-        const employee = { id: child.key, ...child.val() };
-        employeeData.push(employee);
-      });
-    }
-    renderProfile();
-    renderSchedule();
-    renderSalarySummary();
-    renderSalaryComparison();
-    renderActivityHistory();
-  }, err => console.error("Error fetching employees data:", err));
-
-  advancesRef.on("value", snapshot => {
-    advanceRequests = [];
-    if (snapshot.exists()) {
-      snapshot.forEach(child => {
-        const advance = { id: child.key, ...child.val() };
-        advanceRequests.push(advance);
-      });
-    }
-    renderAdvanceHistory();
-    renderAdvanceApprovalList();
-    renderActivityHistory();
-  }, err => console.error("Error fetching advances data:", err));
-
-  messagesRef.child("group").on("value", snapshot => {
-    messages.group = [];
-    if (snapshot.exists()) {
-      snapshot.forEach(child => {
-        const message = child.val();
-        messages.group.push(message);
-      });
-    }
-    renderChat("group");
-  }, err => console.error("Error fetching group messages:", err));
-
-  messagesRef.child("manager").on("value", snapshot => {
-    messages.manager = [];
-    if (snapshot.exists()) {
-      snapshot.forEach(child => {
-        const message = child.val();
-        messages.manager.push(message);
-      });
-    }
-    renderChat("manager");
-  }, err => console.error("Error fetching manager messages:", err));
-}
-
-// Cập nhật auth state để load Profile
-auth.onAuthStateChanged(user => {
-  if (user) {
-    currentEmployeeId = user.uid;
-    const employee = employeeData.find(e => e.id === user.uid);
-    if (!employee) {
-      employeesRef.child(user.uid).set({
-        name: user.displayName || user.email.split('@')[0] || 'Nhân viên',
-        email: user.email,
-        active: true,
-        role: 'employee',
-        dailyWage: 0,
-        allowance: 0,
-        otherFee: 0,
-        workdays: 26,
-        offdays: 0,
-        address: "",
-        phone: "",
-        dob: ""
-      }).then(() => console.log("Đã thêm nhân viên mới vào Firebase:", user.uid))
-        .catch(err => console.error("Lỗi khi thêm nhân viên:", err));
-    }
-    document.getElementById("login-page").style.display = "none";
-    document.getElementById("main-page").style.display = "block";
-    openTabBubble('profile'); // Mở tab Profile mặc định
-    loadFirebaseData();
-  } else {
-    currentEmployeeId = null;
-    document.getElementById("login-page").style.display = "flex";
-    document.getElementById("main-page").style.display = "none";
-  }
-});

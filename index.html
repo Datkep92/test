@@ -8,6 +8,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div id="login-page" class="center-screen">
@@ -53,30 +54,15 @@
 
     <div class="tabcontent" id="profile">
       <h2>Thông tin Cá nhân</h2>
-      <div id="profile-info">
-        <img id="profile-image" src="/images/default-avatar.png" alt="Ảnh đại diện" style="width: 100px; height: 100px;">
-        <input type="file" id="profile-image-upload" accept="image/*" onchange="uploadProfileImage()">
-        <input type="text" id="employee-display-name" placeholder="Tên hiển thị">
-        <button class="primary-btn" onclick="updateEmployeeName()">Đổi tên</button>
-        <input type="text" id="profile-address" placeholder="Địa chỉ">
-        <input type="tel" id="profile-phone" placeholder="Số điện thoại">
-        <input type="date" id="profile-dob" placeholder="Ngày tháng năm sinh">
-        <button class="primary-btn" onclick="updateProfileInfo()">Cập nhật</button>
-      </div>
-      <h3>Lịch Làm Việc và Nghỉ</h3>
-      <div id="schedule-month-nav">
-        <button onclick="changeMonth(-1)">Tháng trước</button>
-        <span id="current-month"></span>
-        <button onclick="changeMonth(1)">Tháng sau</button>
-      </div>
-      <input type="date" id="schedule-date-picker" onchange="updateScheduleFromDate()">
-      <div id="schedule-table"></div>
-      <h3>Lương và So sánh</h3>
+      <h3>Cập nhật tên hiển thị</h3>
+      <input type="text" id="employee-display-name" placeholder="Nhập tên hiển thị">
+      <button onclick="updateEmployeeName()">Lưu tên</button>
+      <h3>Yêu cầu tạm ứng</h3>
+      <input type="number" id="advance-amount" placeholder="Số tiền (VND)">
+      <textarea id="advance-reason" placeholder="Lý do"></textarea>
+      <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu</button>
+      <h3>Lương & Ngày công</h3>
       <div id="salary-summary"></div>
-      <div id="salary-comparison"></div>
-      <h3>Lịch sử Hoạt động</h3>
-      <div id="activity-history"></div>
-      <h3>Lịch sử Yêu cầu Tạm ứng</h3>
       <div id="advance-history"></div>
     </div>
 
