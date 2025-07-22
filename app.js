@@ -470,3 +470,16 @@ function loadFirebaseData() {
     renderChat("manager");
   });
 }
+//
+auth.onAuthStateChanged(user => {
+  if (user) {
+    currentEmployeeId = user.uid;
+    document.getElementById("login-page").style.display = "none";
+    document.getElementById("main-page").style.display = "block";
+    openTabBubble('revenue-expense'); // mở tab mặc định
+    loadFirebaseData();
+  } else {
+    document.getElementById("login-page").style.display = "flex";
+    document.getElementById("main-page").style.display = "none";
+  }
+});
