@@ -1,6 +1,23 @@
 /*********************************************
  * app.js - Milano 259 (Full Features - Firebase)
  *********************************************/
+/*********************************************
+ * app.js - Milano 259 (Full Features - Firebase)
+ *********************************************/
+
+// Firebase Configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
+  authDomain: "quanly-d7e54.firebaseapp.com",
+  databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com",
+  projectId: "quanly-d7e54",
+  storageBucket: "quanly-d7e54.firebasestorage.app",
+  messagingSenderId: "482686011267",
+  appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
 
 // Firebase References
 const inventoryRef = firebase.database().ref("inventory");
@@ -18,6 +35,7 @@ let messages = { group: [], manager: [] };
 let productClickCounts = {};
 let expenseNotes = [];
 let currentEmployeeId = null;
+
 
 // Parse entry function
 function parseEntry(text) {
