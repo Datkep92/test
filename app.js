@@ -474,11 +474,7 @@ function renderReports() {
       <tr>
         <th>STT</th>
         <th>Tên NV</th>
-        <th>Số dư đầu kỳ</th>
-        <th>Doanh thu</th>
         <th>Chi phí</th>
-        <th>Số dư cuối kỳ</th>
-        <th>Còn lại</th>
         <th>Hành động</th>
       </tr>
     </thead>
