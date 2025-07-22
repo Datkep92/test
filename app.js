@@ -211,58 +211,6 @@ function renderInventory() {
 }
 
 // Revenue-Expense Report
-function renderReportProductList() {
-  const container = document.getElementById("report-product-list");
-  if (!container) {
-    console.error("Report product list element not found!");
-    return;
-  }
-  if (inventoryData.length === 0) {
-    console.log("Waiting for inventory data to load");
-    return;
-  }
-  container.innerHTML = "";
-  console.log("Rendering report product list, total items:", inventoryData.length);
-
-  const table = document.createElement("table");
-  table.classList.add("table-style");
-  table.innerHTML = `
-    <thead>
-      <tr><th>Tên SP</th><th>Số lượng</th><th>Đơn giá</th><th>Số lượng xuất</th></tr>
-    </thead>
-    <tbody>
-      ${inventoryData.map(item => {
-        const clickCount = productClickCounts[item.id] || 0;
-        console.log("Rendering product for report:", { id: item.id, name: item.name, clickCount });
-        return `
-        <tr onclick="incrementProductCount('${item.id}')">
-          <td>${item.name}</td>
-          <td>${item.quantity}</td>
-          <td>${item.price}</td>
-          <td>
-            <input type="number" id="quantity-${item.id}" value="${clickCount}" min="0" max="${item.quantity}" readonly>
-          </td>
-        </tr>`;
-      }).join("")}
-    </tbody>`;
-  container.appendChild(table);
-  console.log("Current product click counts:", productClickCounts);
-}
-
-function incrementProductCount(productId) {
-  productClickCounts[productId] = (productClickCounts[productId] || 0) + 1;
-  const maxQuantity = inventoryData.find(p => p.id === productId)?.quantity || 0;
-  if (productClickCounts[productId] > maxQuantity) {
-    productClickCounts[productId] = maxQuantity;
-    console.warn("Max quantity reached for product:", productId);
-  }
-  const input = document.getElementById(`quantity-${productId}`);
-  if (input) {
-    input.value = productClickCounts[productId];
-  }
-  console.log("Incremented count for product:", { productId, count: productClickCounts[productId] });
-}
-
 function submitReport() {
   const expenseInputEl = document.getElementById("expense-input");
   const revenueEl = document.getElementById("revenue");
@@ -275,19 +223,20 @@ function submitReport() {
       revenue: revenueEl,
       closingBalance: closingBalanceEl
     });
-    alert("Lỗi: Không tìm thấy các trường nhập liệu. Vui lòng kiểm tra giao diện!");
+    alert("Lỗi: Không tìm thấy các trường nhập liệu!");
     return;
   }
 
   const expenseInput = expenseInputEl.value.trim();
   const revenue = parseFloat(revenueEl.value) || 0;
   const closingBalance = parseFloat(closingBalanceEl.value) || 0;
-
   const { money: expenseAmount, note: expenseNote } = parseEntry(expenseInput);
 
-  if (expenseAmount === 0 && revenue === 0 && closingBalance === 0) {
-    console.error("No financial data entered for report");
-    return alert("Vui lòng nhập ít nhất một thông tin (chi phí, doanh thu, số dư cuối kỳ)!");
+  // Kiểm tra nếu không có doanh thu, chi phí, hoặc xuất hàng
+  if (expenseAmount === 0 && revenue === 0 && Object.keys(productClickCounts).length === 0) {
+    console.error("No financial data or products entered for report");
+    alert("Vui lòng nhập ít nhất một thông tin: chi phí, doanh thu, hoặc xuất hàng!");
+    return;
   }
 
   // Lấy thời gian hiện tại (giờ Việt Nam)
@@ -296,6 +245,7 @@ function submitReport() {
   const currentDate = now.split(', ')[0].split('/').reverse().join('-'); // YYYY-MM-DD
   const sortedReports = reportData.sort((a, b) => new Date(a.date) - new Date(b.date));
 
+  // Tính số dư đầu kỳ
   let openingBalance = 0;
   if (currentHour >= 18) {
     // Sau 18:00, lấy closingBalance của báo cáo cuối ngày trước
@@ -310,8 +260,12 @@ function submitReport() {
     openingBalance = lastReportToday ? lastReportToday.closingBalance : 0;
   }
 
-  console.log("Submitting report:", { openingBalance, expenseAmount, expenseNote, revenue, closingBalance, productClickCounts });
+  // Tính số dư còn lại theo công thức mới
+  const remaining = openingBalance + revenue - expenseAmount - closingBalance;
 
+  console.log("Submitting report:", { openingBalance, expenseAmount, expenseNote, revenue, closingBalance, remaining, productClickCounts });
+
+  // Chuẩn bị danh sách sản phẩm xuất hàng
   const productsReported = Object.keys(productClickCounts).map(productId => {
     const product = inventoryData.find(p => p.id === productId);
     const quantity = productClickCounts[productId] || 0;
@@ -323,6 +277,7 @@ function submitReport() {
 
   console.log("Products reported:", productsReported);
 
+  // Cập nhật số lượng kho
   Promise.all(productsReported.map(p => {
     const product = inventoryData.find(prod => prod.id === p.productId);
     if (product && p.quantity > 0) {
@@ -341,7 +296,7 @@ function submitReport() {
       expenseNote: expenseNote || "Không có",
       revenue,
       closingBalance,
-      remaining: openingBalance - expenseAmount + revenue,
+      remaining,
       products: productsReported
     };
 
@@ -368,6 +323,60 @@ function submitReport() {
     alert("Lỗi khi cập nhật số lượng sản phẩm: " + err.message);
   });
 }
+
+function renderReportProductList() {
+  const container = document.getElementById("report-product-list");
+  if (!container) {
+    console.error("Report product list element not found!");
+    return;
+  }
+  if (inventoryData.length === 0) {
+    console.log("Waiting for inventory data to load");
+    container.innerHTML = "<p>Chưa có sản phẩm trong kho.</p>";
+    return;
+  }
+  container.innerHTML = "";
+  console.log("Rendering report product list, total items:", inventoryData.length);
+
+  const table = document.createElement("table");
+  table.classList.add("table-style");
+  table.innerHTML = `
+    <thead>
+      <tr><th>Tên sản phẩm</th><th>Số lượng trong kho</th><th>Đơn giá</th><th>Số lượng xuất</th></tr>
+    </thead>
+    <tbody>
+      ${inventoryData.map(item => {
+        const clickCount = productClickCounts[item.id] || 0;
+        console.log("Rendering product for report:", { id: item.id, name: item.name, clickCount });
+        return `
+        <tr onclick="incrementProductCount('${item.id}')">
+          <td>${item.name}</td>
+          <td>${item.quantity}</td>
+          <td>${item.price.toLocaleString('vi-VN')} VND</td>
+          <td>
+            <input type="number" id="quantity-${item.id}" value="${clickCount}" min="0" max="${item.quantity}" readonly>
+          </td>
+        </tr>`;
+      }).join("")}
+    </tbody>`;
+  container.appendChild(table);
+  console.log("Current product click counts:", productClickCounts);
+}
+
+function incrementProductCount(productId) {
+  productClickCounts[productId] = (productClickCounts[productId] || 0) + 1;
+  const maxQuantity = inventoryData.find(p => p.id === productId)?.quantity || 0;
+  if (productClickCounts[productId] > maxQuantity) {
+    productClickCounts[productId] = maxQuantity;
+    console.warn("Max quantity reached for product:", productId);
+  }
+  const input = document.getElementById(`quantity-${productId}`);
+  if (input) {
+    input.value = productClickCounts[productId];
+  }
+  console.log("Incremented count for product:", { productId, count: productClickCounts[productId] });
+}
+
 
 function renderReports() {
   const container = document.getElementById("shared-report-table");
