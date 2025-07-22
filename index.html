@@ -1,26 +1,40 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Milano 259 - Quản lý</title>
+
   <script>
     const version = Date.now();
 
-    // Thêm CSS với version
+    // Load styles.css với version
     const css = document.createElement("link");
     css.rel = "stylesheet";
     css.href = `./styles.css?v=${version}`;
     document.head.appendChild(css);
 
-    // Thêm app.js với version
+    // Load app.js và sau đó chạy kiểm tra đăng nhập
     const js = document.createElement("script");
     js.src = `./app.js?v=${version}`;
+    js.onload = () => {
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          currentEmployeeId = user.uid;
+          document.getElementById("login-page").style.display = "none";
+          document.getElementById("main-page").style.display = "block";
+          openTabBubble('revenue-expense');
+          loadFirebaseData();
+        } else {
+          document.getElementById("login-page").style.display = "flex";
+          document.getElementById("main-page").style.display = "none";
+        }
+      });
+    };
     document.head.appendChild(js);
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
@@ -41,13 +55,11 @@
   </script>
 </head>
 <body>
-  <!-- Phần nội dung giữ nguyên -->
-  <body>
   <!-- Đăng nhập -->
   <div id="login-page" class="center-screen">
     <h2>Đăng Nhập</h2>
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Mật khẩu">
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Mật khẩu" />
     <button onclick="login()">Đăng Nhập</button>
   </div>
 
@@ -63,9 +75,9 @@
       <section id="revenue-expense" class="tabcontent">
         <h2>Báo cáo Thu Chi</h2>
         <div id="report-product-list"></div>
-        <input type="number" id="report-quantity" placeholder="Số lượng xuất">
-        <input type="number" id="revenue" placeholder="Doanh thu">
-        <input type="number" id="expense-amount" placeholder="Chi phí">
+        <input type="number" id="report-quantity" placeholder="Số lượng xuất" />
+        <input type="number" id="revenue" placeholder="Doanh thu" />
+        <input type="number" id="expense-amount" placeholder="Chi phí" />
         <textarea id="expense-info" placeholder="Thông tin chi phí"></textarea>
         <button class="primary-btn" onclick="submitReport()">Gửi Báo Cáo</button>
         <h3>Danh sách Báo cáo</h3>
@@ -75,9 +87,9 @@
       <!-- Tab Kho -->
       <section id="inventory" class="tabcontent">
         <h2>Quản lý Kho</h2>
-        <input type="text" id="product-name" placeholder="Tên sản phẩm">
-        <input type="number" id="product-quantity" placeholder="Số lượng">
-        <input type="number" id="product-price" placeholder="Giá">
+        <input type="text" id="product-name" placeholder="Tên sản phẩm" />
+        <input type="number" id="product-quantity" placeholder="Số lượng" />
+        <input type="number" id="product-price" placeholder="Giá" />
         <button class="primary-btn" onclick="addInventory()">Thêm sản phẩm</button>
         <h3>Danh sách sản phẩm</h3>
         <div id="inventory-list"></div>
@@ -88,7 +100,7 @@
         <h2>Thông tin Cá nhân</h2>
         <div id="profile-info"></div>
         <h3>Yêu cầu tạm ứng</h3>
-        <input type="number" id="advance-amount" placeholder="Số tiền tạm ứng">
+        <input type="number" id="advance-amount" placeholder="Số tiền tạm ứng" />
         <textarea id="advance-reason" placeholder="Lý do"></textarea>
         <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu</button>
         <div id="advance-history"></div>
@@ -107,10 +119,10 @@
       <!-- Tab Nhân viên -->
       <section id="employee-management" class="tabcontent">
         <h2>Quản lý Nhân viên</h2>
-        <input type="text" id="employee-name" placeholder="Tên nhân viên">
-        <input type="number" id="employee-dailywage" placeholder="Lương ngày công">
-        <input type="number" id="employee-allowance" placeholder="Phụ cấp">
-        <input type="number" id="employee-otherfee" placeholder="Phí khác">
+        <input type="text" id="employee-name" placeholder="Tên nhân viên" />
+        <input type="number" id="employee-dailywage" placeholder="Lương ngày công" />
+        <input type="number" id="employee-allowance" placeholder="Phụ cấp" />
+        <input type="number" id="employee-otherfee" placeholder="Phí khác" />
         <button class="primary-btn" onclick="addEmployee()">Thêm nhân viên</button>
         <h3>Danh sách nhân viên</h3>
         <div id="employee-list"></div>
@@ -131,7 +143,7 @@
       </section>
     </main>
 
-    <!-- Floating Button -->
+    <!-- Floating Menu -->
     <div class="floating-menu">
       <button id="main-float-btn" onclick="toggleMenu()">☰</button>
       <div id="float-options" class="float-options">
@@ -144,10 +156,5 @@
       </div>
     </div>
   </div>
-  
-</body>
-</html>
-
-  <!-- app.js đã được thêm tự động phía trên -->
 </body>
 </html>
