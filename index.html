@@ -1,128 +1,228 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Đăng Nhập - Milano 259</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Milano 259</title>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+  <!-- CSS cơ bản -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    #login-page, #main-page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #login-page {
+      display: flex;
+    }
+    #main-page {
+      display: none;
+    }
+    .tabcontent {
+      display: none;
+      padding: 20px;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .tabcontent.active {
+      display: block;
+    }
+    input, button {
+      padding: 8px;
+      margin: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .table-style {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    .table-style th, .table-style td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    .table-style th {
+      background-color: #f2f2f2;
+    }
+    #float-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #007BFF;
+      color: white;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    #float-options {
+      display: none;
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #float-options button {
+      background-color: #007BFF;
+      color: white;
+    }
+    .report-total {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+    }
+    .chat-message {
+      margin: 5px 0;
+      padding: 5px;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+    }
+  </style>
 </head>
 <body>
-  <div id="login-page" class="center-screen">
+  <!-- Trang đăng nhập -->
+  <div id="login-page">
     <h2>Đăng Nhập</h2>
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Mật khẩu">
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Mật khẩu">
     <button onclick="login()">Đăng Nhập</button>
   </div>
 
-  <div id="main-page" style="display: none;">
-    <div class="app-header">
-      <span>Milano 259</span>
-      <button class="logout-btn" onclick="logout()">Đăng Xuất</button>
-    </div>
+  <!-- Trang chính -->
+  <div id="main-page">
+    <h2>Milano 259</h2>
+    <button onclick="logout()">Đăng Xuất</button>
 
-    <div class="tabcontent" id="revenue-expense">
-      <h2>Báo cáo Thu Chi</h2>
-      <h3>Bảng hàng hóa trong kho</h3>
-      <div id="report-product-list"></div>
+    <!-- Tab Thu Chi -->
+    <div id="revenue-expense" class="tabcontent">
       <h3>Nhập báo cáo</h3>
-      <input type="text" id="expense-input" placeholder="Chi phí (VD: 20k mua cà phê)">
-      <input type="number" id="revenue" placeholder="Doanh thu (VND)">
-      <input type="number" id="closing-balance" placeholder="Số dư cuối kỳ (VND)">
-      <button class="primary-btn" onclick="submitReport()">Gửi Báo Cáo</button>
+      <div>
+        <input id="expense-input" type="text" placeholder="Chi phí (VD: 500k mua nguyên liệu)">
+        <input id="revenue" type="number" placeholder="Doanh thu">
+        <input id="closing-balance" type="number" placeholder="Số dư cuối kỳ">
+      </div>
+      <div id="report-product-list"></div>
+      <button onclick="submitReport()">Gửi Báo Cáo</button>
       <h3>Danh sách Báo cáo</h3>
       <div id="shared-report-table"></div>
     </div>
 
-    <!-- Các tab khác giữ nguyên -->
-    <div class="tabcontent" id="inventory">
-      <h2>Quản lý Kho</h2>
-      <input type="text" id="product-name" placeholder="Tên sản phẩm">
-      <input type="number" id="product-quantity" placeholder="Số lượng">
-      <input type="number" id="product-price" placeholder="Đơn giá">
-      <button class="primary-btn" onclick="addInventory()">Thêm sản phẩm</button>
-      <h3>Danh sách sản phẩm</h3>
+    <!-- Tab Quản lý Kho -->
+    <div id="inventory" class="tabcontent">
+      <h3>Quản lý Kho</h3>
+      <input id="product-name" type="text" placeholder="Tên sản phẩm">
+      <input id="product-quantity" type="number" placeholder="Số lượng">
+      <input id="product-price" type="number" placeholder="Đơn giá">
+      <button onclick="addInventory()">Thêm sản phẩm</button>
+      <h3>Bảng hàng hóa trong kho</h3>
       <div id="inventory-list"></div>
     </div>
 
-    <div class="tabcontent" id="profile">
-      <h2>Thông tin Cá nhân</h2>
-      <h3>Yêu cầu tạm ứng</h3>
-      <input type="number" id="advance-amount" placeholder="Số tiền (VND)">
-      <textarea id="advance-reason" placeholder="Lý do"></textarea>
-      <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu</button>
-      <h3>Lương & Ngày công</h3>
+    <!-- Tab Thông tin Cá nhân -->
+    <div id="profile" class="tabcontent">
+      <h3>Thông tin Cá nhân</h3>
+      <h4>Yêu cầu tạm ứng</h4>
+      <input id="advance-amount" type="number" placeholder="Số tiền">
+      <input id="advance-reason" type="text" placeholder="Lý do">
+      <button onclick="requestAdvance()">Gửi yêu cầu</button>
+      <h4>Lương & Ngày công</h4>
       <div id="salary-summary"></div>
+      <h4>Lịch sử tạm ứng</h4>
       <div id="advance-history"></div>
     </div>
 
-    <div class="tabcontent" id="business-report">
-      <h2>Báo cáo Kinh doanh</h2>
-      <h3>Chi phí</h3>
+    <!-- Tab Báo cáo Kinh doanh -->
+    <div id="business-report" class="tabcontent">
+      <h3>Báo cáo Kinh doanh</h3>
+      <h4>Chi phí</h4>
       <div id="expense-summary-table"></div>
+      <h4>Biểu đồ</h4>
       <canvas id="growth-chart"></canvas>
     </div>
 
-    <div class="tabcontent" id="employee-management">
-      <h2>Quản lý Nhân viên</h2>
-      <input type="text" id="employee-name" placeholder="Tên nhân viên">
-      <input type="number" id="employee-dailywage" placeholder="Lương ngày">
-      <input type="number" id="employee-allowance" placeholder="Phụ cấp">
-      <input type="number" id="employee-otherfee" placeholder="Phí khác">
-      <button class="primary-btn" onclick="addEmployee()">Thêm nhân viên</button>
-      <h3>Danh sách nhân viên</h3>
+    <!-- Tab Quản lý Nhân viên -->
+    <div id="employee-management" class="tabcontent">
+      <h3>Quản lý Nhân viên</h3>
+      <input id="employee-name" type="text" placeholder="Tên nhân viên">
+      <input id="employee-dailywage" type="number" placeholder="Lương ngày">
+      <input id="employee-allowance" type="number" placeholder="Phụ cấp">
+      <input id="employee-otherfee" type="number" placeholder="Phí khác">
+      <button onclick="addEmployee()">Thêm nhân viên</button>
+      <h4>Danh sách nhân viên</h4>
       <div id="employee-list"></div>
-      <h3>Yêu cầu Tạm ứng</h3>
+      <h4>Yêu cầu Tạm ứng</h4>
       <div id="advance-approval-list"></div>
     </div>
 
-    <div class="tabcontent" id="chat">
-      <h2>Chat nhóm</h2>
-      <div id="group-chat" class="chat-box"></div>
-      <input type="text" id="group-message" placeholder="Nhập tin nhắn">
-      <button class="primary-btn" onclick="sendGroupMessage()">Gửi</button>
+    <!-- Tab Chat -->
+    <div id="chat" class="tabcontent">
+      <h3>Chat nhóm</h3>
+      <div id="group-chat"></div>
+      <input id="group-message" type="text" placeholder="Nhập tin nhắn nhóm">
+      <button onclick="sendGroupMessage()">Gửi</button>
       <h3>Chat quản lý</h3>
-      <div id="manager-chat" class="chat-box"></div>
-      <input type="text" id="manager-message" placeholder="Nhập tin nhắn">
-      <button class="primary-btn" onclick="sendManagerMessage()">Gửi</button>
+      <div id="manager-chat"></div>
+      <input id="manager-message" type="text" placeholder="Nhập tin nhắn quản lý">
+      <button onclick="sendManagerMessage()">Gửi</button>
     </div>
 
-    <div class="floating-menu">
-      <button id="main-float-btn" onclick="toggleMenu()">☰</button>
-      <div id="float-options" class="float-options">
-        <button onclick="openTabBubble('revenue-expense')">Thu Chi</button>
-        <button onclick="openTabBubble('inventory')">Kho</button>
-        <button onclick="openTabBubble('profile')">Cá nhân</button>
-        <button onclick="openTabBubble('business-report')">Báo cáo</button>
-        <button onclick="openTabBubble('employee-management')">Nhân viên</button>
-        <button onclick="openTabBubble('chat')">Chat</button>
-      </div>
+    <!-- Nút nổi -->
+    <div id="float-button" onclick="toggleMenu()">☰</div>
+    <div id="float-options">
+      <button onclick="openTabBubble('revenue-expense')">Thu Chi</button>
+      <button onclick="openTabBubble('inventory')">Kho</button>
+      <button onclick="openTabBubble('profile')">Cá nhân</button>
+      <button onclick="openTabBubble('business-report')">Báo cáo</button>
+      <button onclick="openTabBubble('employee-management')">Nhân viên</button>
+      <button onclick="openTabBubble('chat')">Chat</button>
     </div>
   </div>
 
+  <!-- Script Firebase Config -->
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
-      authDomain: "quanly-d7e54.firebaseapp.com",
-      databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com",
-      projectId: "quanly-d7e54",
-      storageBucket: "quanly-d7e54.firebasestorage.app",
-      messagingSenderId: "482686011267",
-      appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
+    var firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      databaseURL: "YOUR_DATABASE_URL",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
-
-    try {
-      firebase.initializeApp(firebaseConfig);
-      console.log("Firebase initialized successfully");
-    } catch (err) {
-      console.error("Firebase initialization failed:", err);
-    }
-
+    firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
+    const database = firebase.database();
   </script>
+  <!-- Script ứng dụng -->
   <script src="app.js"></script>
 </body>
 </html>
