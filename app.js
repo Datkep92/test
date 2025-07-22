@@ -28,24 +28,37 @@ let currentEmployeeId = null;
 function login() {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
-  if (!email || !password) return alert("Vui lòng nhập đầy đủ thông tin!");
+  if (!email || !password) {
+    console.error("Login failed: Missing email or password");
+    return alert("Vui lòng nhập đầy đủ thông tin!");
+  }
 
+  console.log("Attempting login with email:", email);
   auth.signInWithEmailAndPassword(email, password)
     .then(user => {
       currentEmployeeId = user.user.uid;
+      console.log("Login successful, user ID:", currentEmployeeId);
       document.getElementById("login-page").style.display = "none";
       document.getElementById("main-page").style.display = "block";
-      openTabBubble('revenue-expense'); // Mở tab mặc định
+      openTabBubble('revenue-expense');
       loadFirebaseData();
     })
-    .catch(err => alert("Lỗi đăng nhập: " + err.message));
+    .catch(err => {
+      console.error("Login error:", err.message);
+      alert("Lỗi đăng nhập: " + err.message);
+    });
 }
 
 function logout() {
+  console.log("Logging out user:", currentEmployeeId);
   auth.signOut().then(() => {
     currentEmployeeId = null;
+    console.log("Logout successful");
     document.getElementById("login-page").style.display = "flex";
     document.getElementById("main-page").style.display = "none";
+  }).catch(err => {
+    console.error("Logout error:", err.message);
+    alert("Lỗi đăng xuất: " + err.message);
   });
 }
 
@@ -54,23 +67,33 @@ function logout() {
  **********************/
 function toggleMenu() {
   const options = document.getElementById('float-options');
+  console.log("Toggling menu, current display:", options.style.display);
   options.style.display = (options.style.display === 'flex') ? 'none' : 'flex';
 }
 
 function openTabBubble(tabId) {
+  console.log("Opening tab:", tabId);
   const tabs = document.querySelectorAll('.tabcontent');
   tabs.forEach(t => t.classList.remove('active'));
   const tab = document.getElementById(tabId);
-  if (tab) tab.classList.add('active');
+  if (tab) {
+    tab.classList.add('active');
+    console.log("Tab activated:", tabId);
+  } else {
+    console.error("Tab not found:", tabId);
+  }
 
-  toggleMenu(); // tự động đóng menu
+  toggleMenu();
   if (tabId === "profile") {
+    console.log("Rendering profile data");
     renderAdvanceHistory();
     renderSalarySummary();
   } else if (tabId === "employee-management") {
+    console.log("Rendering employee management data");
     renderEmployeeList();
     renderAdvanceApprovalList();
   } else if (tabId === "business-report") {
+    console.log("Rendering business report data");
     renderExpenseSummary();
     generateBusinessChart();
   }
@@ -78,66 +101,73 @@ function openTabBubble(tabId) {
 
 /**********************
  * 3. Quản lý kho (CRUD)
+ **************** Franchise**
  **********************/
 function addInventory() {
   const name = document.getElementById("product-name").value.trim();
   const quantity = parseInt(document.getElementById("product-quantity").value) || 0;
   const price = parseFloat(document.getElementById("product-price").value) || 0;
 
-  // Kiểm tra dữ liệu đầu vào
+  console.log("Adding product:", { name, quantity, price });
+
   if (!name || quantity <= 0 || price <= 0) {
+    console.error("Invalid product input:", { name, quantity, price });
     alert("Vui lòng nhập đầy đủ và đúng thông tin sản phẩm!");
     return;
   }
 
-  // Log dữ liệu để debug
-  console.log("Thêm sản phẩm:", { name, quantity, price });
-
-  // Đẩy dữ liệu lên Firebase
   inventoryRef.push({ name, quantity, price })
     .then(() => {
-      console.log("Đã thêm sản phẩm vào Firebase!");
+      console.log("Product added successfully to Firebase:", { name, quantity, price });
       alert("Đã thêm sản phẩm thành công!");
-      // Xóa input
       document.getElementById("product-name").value = "";
       document.getElementById("product-quantity").value = "";
       document.getElementById("product-price").value = "";
     })
     .catch(err => {
-      console.error("Lỗi khi thêm sản phẩm:", err);
+      console.error("Error adding product to Firebase:", err);
       alert("Lỗi khi thêm sản phẩm: " + err.message);
     });
 }
 
 function editInventory(id) {
+  console.log("Editing product ID:", id);
   const product = inventoryData.find(p => p.id === id);
-  if (!product) return;
+  if (!product) {
+    console.error("Product not found for ID:", id);
+    return;
+  }
   const newName = prompt("Tên mới:", product.name) || product.name;
   const newQty = parseInt(prompt("Số lượng:", product.quantity)) || product.quantity;
   const newPrice = parseFloat(prompt("Đơn giá:", product.price)) || product.price;
-  inventoryRef.child(id).update({ name: newName, quantity: newQty, price: newPrice });
+  console.log("Updating product:", { id, newName, newQty, newPrice });
+  inventoryRef.child(id).update({ name: newName, quantity: newQty, price: newPrice })
+    .catch(err => console.error("Error updating product:", err));
 }
 
 function deleteInventory(id) {
+  console.log("Deleting product ID:", id);
   if (!confirm("Xóa sản phẩm này?")) return;
-  inventoryRef.child(id).remove();
+  inventoryRef.child(id).remove()
+    .then(() => console.log("Product deleted:", id))
+    .catch(err => console.error("Error deleting product:", err));
 }
 
 function renderInventory() {
   const list = document.getElementById("inventory-list");
   if (!list) {
-    console.error("Không tìm thấy phần tử inventory-list!");
+    console.error("Inventory list element not found!");
     return;
   }
   list.innerHTML = "";
+  console.log("Rendering inventory, total items:", inventoryData.length);
 
   if (inventoryData.length === 0) {
     list.innerHTML = "<p>Kho trống.</p>";
-    console.log("Không có sản phẩm để hiển thị.");
+    console.log("Inventory is empty");
     return;
   }
 
-  console.log("Hiển thị inventoryData:", inventoryData); // Debug danh sách
   const table = document.createElement("table");
   table.classList.add("table-style");
   table.innerHTML = `
@@ -145,7 +175,9 @@ function renderInventory() {
       <tr><th>Tên SP</th><th>Số lượng</th><th>Đơn giá</th><th>Hành động</th></tr>
     </thead>
     <tbody>
-      ${inventoryData.map(item => `
+      ${inventoryData.map(item => {
+        console.log("Rendering product:", item);
+        return `
         <tr>
           <td>${item.name}</td>
           <td>${item.quantity}</td>
@@ -154,7 +186,8 @@ function renderInventory() {
             <button onclick="editInventory('${item.id}')">Sửa</button>
             <button onclick="deleteInventory('${item.id}')">Xóa</button>
           </td>
-        </tr>`).join("")}
+        </tr>`;
+      }).join("")}
     </tbody>`;
   list.appendChild(table);
 }
@@ -164,11 +197,16 @@ function renderInventory() {
  **********************/
 function renderReportProductList() {
   const container = document.getElementById("report-product-list");
-  if (!container) return;
+  if (!container) {
+    console.error("Report product list element not found!");
+    return;
+  }
   container.innerHTML = "";
+  console.log("Rendering report product list, total items:", inventoryData.length);
 
   if (inventoryData.length === 0) {
     container.innerHTML = "<p>Kho trống, không có sản phẩm để xuất.</p>";
+    console.log("No products for report");
     return;
   }
 
@@ -191,35 +229,59 @@ function renderReportProductList() {
 }
 
 function submitReport() {
-  if (!selectedProductId) return alert("Chọn sản phẩm để xuất!");
+  console.log("Submitting report, selected product ID:", selectedProductId);
+  if (!selectedProductId) {
+    console.error("No product selected for report");
+    return alert("Chọn sản phẩm để xuất!");
+  }
   const product = inventoryData.find(p => p.id === selectedProductId);
-  if (!product) return alert("Sản phẩm không tồn tại!");
+  if (!product) {
+    console.error("Selected product not found:", selectedProductId);
+    return alert("Sản phẩm không tồn tại!");
+  }
 
   const qty = parseInt(document.getElementById("report-quantity").value) || 0;
-  if (qty <= 0 || qty > product.quantity) return alert("Số lượng không hợp lệ!");
+  console.log("Report quantity:", qty);
+  if (qty <= 0 || qty > product.quantity) {
+    console.error("Invalid report quantity:", qty, "Product quantity:", product.quantity);
+    return alert("Số lượng không hợp lệ!");
+  }
 
   const revenue = parseFloat(document.getElementById("revenue").value) || 0;
   const expenseAmount = parseFloat(document.getElementById("expense-amount").value) || 0;
   const expenseInfo = document.getElementById("expense-info").value.trim();
+  console.log("Report data:", { product: product.name, qty, revenue, expenseAmount, expenseInfo });
 
-  inventoryRef.child(product.id).update({ quantity: product.quantity - qty });
-  reportsRef.push({
-    date: new Date().toISOString().split("T")[0],
-    product: product.name,
-    quantity: qty,
-    revenue,
-    expenseAmount,
-    expenseInfo
-  }).then(() => alert("Báo cáo thành công!"));
+  inventoryRef.child(product.id).update({ quantity: product.quantity - qty })
+    .then(() => {
+      console.log("Updated product quantity:", product.id);
+      reportsRef.push({
+        date: new Date().toISOString().split("T")[0],
+        product: product.name,
+        quantity: qty,
+        revenue,
+        expenseAmount,
+        expenseInfo
+      }).then(() => {
+        console.log("Report submitted successfully");
+        alert("Báo cáo thành công!");
+      }).catch(err => console.error("Error submitting report:", err));
+    })
+    .catch(err => console.error("Error updating product quantity:", err));
 }
 
 function renderReports() {
   const container = document.getElementById("shared-report-table");
-  if (!container) return;
+  if (!container) {
+    console.error("Report table element not found!");
+    return;
+  }
   container.innerHTML = "";
+  console.log("Rendering reports, total items:", reportData.length);
 
   if (reportData.length === 0) {
     container.innerHTML = "<p>Chưa có báo cáo nào.</p>";
+    console.log("No reports available");
     return;
   }
 
@@ -252,19 +314,36 @@ function addEmployee() {
   const allowance = parseFloat(document.getElementById("employee-allowance").value) || 0;
   const otherFee = parseFloat(document.getElementById("employee-otherfee").value) || 0;
 
-  if (!name || dailyWage <= 0) return alert("Nhập thông tin nhân viên hợp lệ!");
+  console.log("Adding employee:", { name, dailyWage, allowance, otherFee });
+
+  if (!name || dailyWage <= 0) {
+    console.error("Invalid employee input:", { name, dailyWage });
+    return alert("Nhập thông tin nhân viên hợp lệ!");
+  }
 
   employeesRef.push({ name, dailyWage, allowance, otherFee, workdays: 26, offdays: 0 })
-    .then(() => alert("Đã thêm nhân viên!"));
+    .then(() => {
+      console.log("Employee added successfully");
+      alert("Đã thêm nhân viên!");
+    })
+    .catch(err => {
+      console.error("Error adding employee:", err);
+      alert("Lỗi khi thêm nhân viên: " + err.message);
+    });
 }
 
 function renderEmployeeList() {
   const list = document.getElementById("employee-list");
-  if (!list) return;
+  if (!list) {
+    console.error("Employee list element not found!");
+    return;
+  }
   list.innerHTML = "";
+  console.log("Rendering employee list, total items:", employeeData.length);
 
   if (employeeData.length === 0) {
     list.innerHTML = "<p>Chưa có nhân viên.</p>";
+    console.log("No employees available");
     return;
   }
 
@@ -293,25 +372,40 @@ function requestAdvance() {
   const amount = parseFloat(document.getElementById("advance-amount").value) || 0;
   const reason = document.getElementById("advance-reason").value.trim();
 
-  if (amount <= 0 || !reason) return alert("Vui lòng nhập số tiền và lý do!");
+  console.log("Requesting advance:", { amount, reason, employeeId: currentEmployeeId });
+
+  if (amount <= 0 || !reason) {
+    console.error("Invalid advance request:", { amount, reason });
+    return alert("Vui lòng nhập số tiền và lý do!");
+  }
 
   advancesRef.push({
     employeeId: currentEmployeeId,
     amount,
     reason,
     status: "pending"
-  }).then(() => alert("Đã gửi yêu cầu tạm ứng!"));
+  }).then(() => {
+    console.log("Advance request submitted successfully");
+    alert("Đã gửi yêu cầu tạm ứng!");
+  }).catch(err => {
+    console.error("Error submitting advance request:", err);
+    alert("Lỗi khi gửi yêu cầu tạm ứng: " + err.message);
+  });
 }
 
 function renderAdvanceHistory() {
   const container = document.getElementById("advance-history");
-  if (!container) return;
+  if (!container) {
+    console.error("Advance history element not found!");
+    return;
+  }
   container.innerHTML = "";
-
   const myAdvances = advanceRequests.filter(a => a.employeeId === currentEmployeeId);
+  console.log("Rendering advance history, total items:", myAdvances.length);
 
   if (myAdvances.length === 0) {
     container.innerHTML = "<p>Chưa có yêu cầu tạm ứng.</p>";
+    console.log("No advance requests for user:", currentEmployeeId);
     return;
   }
 
@@ -324,13 +418,17 @@ function renderAdvanceHistory() {
 
 function renderAdvanceApprovalList() {
   const container = document.getElementById("advance-approval-list");
-  if (!container) return;
+  if (!container) {
+    console.error("Advance approval list element not found!");
+    return;
+  }
   container.innerHTML = "";
-
   const pending = advanceRequests.filter(a => a.status === "pending");
+  console.log("Rendering advance approval list, total items:", pending.length);
 
   if (pending.length === 0) {
     container.innerHTML = "<p>Không có yêu cầu nào.</p>";
+    console.log("No pending advance requests");
     return;
   }
 
@@ -346,11 +444,17 @@ function renderAdvanceApprovalList() {
 }
 
 function approveAdvance(id) {
-  advancesRef.child(id).update({ status: "approved" });
+  console.log("Approving advance ID:", id);
+  advancesRef.child(id).update({ status: "approved" })
+    .then(() => console.log("Advance approved:", id))
+    .catch(err => console.error("Error approving advance:", err));
 }
 
 function rejectAdvance(id) {
-  advancesRef.child(id).update({ status: "rejected" });
+  console.log("Rejecting advance ID:", id);
+  advancesRef.child(id).update({ status: "rejected" })
+    .then(() => console.log("Advance rejected:", id))
+    .catch(err => console.error("Error rejecting advance:", err));
 }
 
 /**********************
@@ -358,18 +462,27 @@ function rejectAdvance(id) {
  **********************/
 function calculateSalary(empId) {
   const emp = employeeData.find(e => e.id === empId);
-  if (!emp) return 0;
+  if (!emp) {
+    console.error("Employee not found for salary calculation:", empId);
+    return 0;
+  }
   const totalAdvance = advanceRequests.filter(a => a.employeeId === empId && a.status === "approved")
     .reduce((sum, a) => sum + a.amount, 0);
-  return (emp.workdays - emp.offdays) * emp.dailyWage + emp.allowance - emp.otherFee - totalAdvance;
+  const salary = (emp.workdays - emp.offdays) * emp.dailyWage + emp.allowance - emp.otherFee - totalAdvance;
+  console.log("Calculated salary for employee:", { empId, salary });
+  return salary;
 }
 
 function renderSalarySummary() {
   const container = document.getElementById("salary-summary");
-  if (!container) return;
+  if (!container) {
+    console.error("Salary summary element not found!");
+    return;
+  }
   const emp = employeeData.find(e => e.id === currentEmployeeId);
   if (!emp) {
     container.innerHTML = "<p>Chưa có dữ liệu nhân viên.</p>";
+    console.error("No employee data for user:", currentEmployeeId);
     return;
   }
   const salary = calculateSalary(emp.id);
@@ -380,6 +493,7 @@ function renderSalarySummary() {
     <p>Phụ cấp: ${emp.allowance}</p>
     <p>Phí khác: ${emp.otherFee}</p>
     <p><strong>Tổng lương: ${salary} VND</strong></p>`;
+  console.log("Rendered salary summary for user:", currentEmployeeId);
 }
 
 /**********************
@@ -387,22 +501,42 @@ function renderSalarySummary() {
  **********************/
 function sendGroupMessage() {
   const msg = document.getElementById("group-message").value.trim();
-  if (!msg) return;
-  messagesRef.child("group").push({ text: msg, time: new Date().toISOString() });
-  document.getElementById("group-message").value = "";
+  if (!msg) {
+    console.error("Empty group message");
+    return;
+  }
+  console.log("Sending group message:", msg);
+  messagesRef.child("group").push({ text: msg, time: new Date().toISOString() })
+    .then(() => {
+      console.log("Group message sent successfully");
+      document.getElementById("group-message").value = "";
+    })
+    .catch(err => console.error("Error sending group message:", err));
 }
 
 function sendManagerMessage() {
   const msg = document.getElementById("manager-message").value.trim();
-  if (!msg) return;
-  messagesRef.child("manager").push({ text: msg, time: new Date().toISOString() });
-  document.getElementById("manager-message").value = "";
+  if (!msg) {
+    console.error("Empty manager message");
+    return;
+  }
+  console.log("Sending manager message:", msg);
+  messagesRef.child("manager").push({ text: msg, time: new Date().toISOString() })
+    .then(() => {
+      console.log("Manager message sent successfully");
+      document.getElementById("manager-message").value = "";
+    })
+    .catch(err => console.error("Error sending manager message:", err));
 }
 
 function renderChat(type) {
   const box = document.getElementById(type + "-chat");
-  if (!box) return;
+  if (!box) {
+    console.error("Chat box not found:", type);
+    return;
+  }
   box.innerHTML = "";
+  console.log(`Rendering ${type} chat, total messages:`, messages[type].length);
   messages[type].forEach(m => {
     const div = document.createElement("div");
     div.classList.add("chat-message");
@@ -416,8 +550,12 @@ function renderChat(type) {
  **********************/
 function renderExpenseSummary() {
   const container = document.getElementById("expense-summary-table");
-  if (!container) return;
+  if (!container) {
+    console.error("Expense summary table element not found!");
+    return;
+  }
   container.innerHTML = "";
+  console.log("Rendering expense summary, total items:", reportData.length);
   reportData.filter(r => r.expenseAmount > 0).forEach(r => {
     const row = document.createElement("div");
     row.innerHTML = `${r.date} - ${r.product} - Chi phí: ${r.expenseAmount} - ${r.expenseInfo}`;
@@ -427,12 +565,16 @@ function renderExpenseSummary() {
 
 function generateBusinessChart() {
   const ctx = document.getElementById("growth-chart");
-  if (!ctx) return;
+  if (!ctx) {
+    console.error("Chart canvas not found!");
+    return;
+  }
   const labels = [...new Set(reportData.map(r => r.date))];
   const revenueData = labels.map(d => reportData.filter(r => r.date === d)
     .reduce((sum, r) => sum + r.revenue, 0));
   const expenseData = labels.map(d => reportData.filter(r => r.date === d)
     .reduce((sum, r) => sum + r.expenseAmount, 0));
+  console.log("Generating business chart:", { labels, revenueData, expenseData });
   new Chart(ctx, {
     type: "bar",
     data: {
@@ -455,47 +597,109 @@ function loadFirebaseData() {
     if (snapshot.exists()) {
       snapshot.forEach(child => {
         const product = { id: child.key, ...child.val() };
+        console.log("Fetched product from Firebase:", product);
         inventoryData.push(product);
-        console.log("Sản phẩm từ Firebase:", product); // Debug mỗi sản phẩm
       });
     } else {
-      console.log("Không có dữ liệu trong inventory!");
+      console.log("No data in inventory");
     }
-    console.log("Danh sách inventoryData:", inventoryData); // Debug danh sách
+    console.log("Updated inventoryData:", inventoryData);
     renderInventory();
     renderReportProductList();
   });
 
-  // Các listener khác giữ nguyên
   reportsRef.on("value", snapshot => {
     reportData = [];
-    snapshot.forEach(child => reportData.push({ id: child.key, ...child.val() }));
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        const report = { id: child.key, ...child.val() };
+        console.log("Fetched report from Firebase:", report);
+        reportData.push(report);
+      });
+    } else {
+      console.log("No data in reports");
+    }
+    console.log("Updated reportData:", reportData);
     renderReports();
     renderExpenseSummary();
   });
 
   employeesRef.on("value", snapshot => {
     employeeData = [];
-    snapshot.forEach(child => employeeData.push({ id: child.key, ...child.val() }));
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        const employee = { id: child.key, ...child.val() };
+        console.log("Fetched employee from Firebase:", employee);
+        employeeData.push(employee);
+      });
+    } else {
+      console.log("No data in employees");
+    }
+    console.log("Updated employeeData:", employeeData);
     renderEmployeeList();
     renderSalarySummary();
   });
 
   advancesRef.on("value", snapshot => {
     advanceRequests = [];
-    snapshot.forEach(child => advanceRequests.push({ id: child.key, ...child.val() }));
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        const advance = { id: child.key, ...child.val() };
+        console.log("Fetched advance from Firebase:", advance);
+        advanceRequests.push(advance);
+      });
+    } else {
+      console.log("No data in advances");
+    }
+    console.log("Updated advanceRequests:", advanceRequests);
     renderAdvanceHistory();
     renderAdvanceApprovalList();
   });
 
   messagesRef.child("group").on("value", snapshot => {
     messages.group = [];
-    snapshot.forEach(child => messages.group.push(child.val()));
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        const message = child.val();
+        console.log("Fetched group message:", message);
+        messages.group.push(message);
+      });
+    } else {
+      console.log("No group messages");
+    }
+    console.log("Updated group messages:", messages.group);
     renderChat("group");
   });
+
   messagesRef.child("manager").on("value", snapshot => {
     messages.manager = [];
-    snapshot.forEach(child => messages.manager.push(child.val()));
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        const message = child.val();
+        console.log("Fetched manager message:", message);
+        messages.manager.push(message);
+      });
+    } else {
+      console.log("No manager messages");
+    }
+    console.log("Updated manager messages:", messages.manager);
     renderChat("manager");
   });
 }
+
+auth.onAuthStateChanged(user => {
+  console.log("Auth state changed:", user ? user.uid : "No user");
+  if (user) {
+    currentEmployeeId = user.uid;
+    console.log("User logged in, ID:", currentEmployeeId);
+    document.getElementById("login-page").style.display = "none";
+    document.getElementById("main-page").style.display = "block";
+    openTabBubble('revenue-expense');
+    loadFirebaseData();
+  } else {
+    currentEmployeeId = null;
+    console.log("User logged out");
+    document.getElementById("login-page").style.display = "flex";
+    document.getElementById("main-page").style.display = "none";
+  }
+});
