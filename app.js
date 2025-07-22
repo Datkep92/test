@@ -121,94 +121,8 @@ function openTabBubble(tabId) {
 }
 
 // Inventory Management (CRUD)
-function addInventory() {
-  const name = document.getElementById("product-name").value.trim();
-  const quantity = parseInt(document.getElementById("product-quantity").value) || 0;
-  const price = parseFloat(document.getElementById("product-price").value) || 0;
 
-  console.log("Adding product:", { name, quantity, price });
 
-  if (!name || quantity <= 0 || price <= 0) {
-    console.error("Invalid product input:", { name, quantity, price });
-    alert("Vui lòng nhập đầy đủ và đúng thông tin sản phẩm!");
-    return;
-  }
-
-  inventoryRef.push({ name, quantity, price })
-    .then(() => {
-      console.log("Product added successfully to Firebase:", { name, quantity, price });
-      alert("Đã thêm sản phẩm thành công!");
-      document.getElementById("product-name").value = "";
-      document.getElementById("product-quantity").value = "";
-      document.getElementById("product-price").value = "";
-    })
-    .catch(err => {
-      console.error("Error adding product to Firebase:", err);
-      alert("Lỗi khi thêm sản phẩm: " + err.message);
-    });
-}
-
-function editInventory(id) {
-  console.log("Editing product ID:", id);
-  const product = inventoryData.find(p => p.id === id);
-  if (!product) {
-    console.error("Product not found for ID:", id);
-    return;
-  }
-  const newName = prompt("Tên mới:", product.name) || product.name;
-  const newQty = parseInt(prompt("Số lượng:", product.quantity)) || product.quantity;
-  const newPrice = parseFloat(prompt("Đơn giá:", product.price)) || product.price;
-  console.log("Updating product:", { id, newName, newQty, newPrice });
-  inventoryRef.child(id).update({ name: newName, quantity: newQty, price: newPrice })
-    .catch(err => console.error("Error updating product:", err));
-}
-
-function deleteInventory(id) {
-  console.log("Deleting product ID:", id);
-  if (!confirm("Xóa sản phẩm này?")) return;
-  inventoryRef.child(id).remove()
-    .then(() => console.log("Product deleted:", id))
-    .catch(err => console.error("Error deleting product:", err));
-}
-
-function renderInventory() {
-  const list = document.getElementById("inventory-list");
-  if (!list) {
-    console.error("Inventory list element not found!");
-    return;
-  }
-  list.innerHTML = "";
-  console.log("Rendering inventory, total items:", inventoryData.length);
-
-  if (inventoryData.length === 0) {
-    list.innerHTML = "<p>Kho trống.</p>";
-    console.log("Inventory is empty");
-    return;
-  }
-
-  const table = document.createElement("table");
-  table.classList.add("table-style");
-  table.innerHTML = `
-    <thead>
-      <tr><th>Tên SP</th><th>Số lượng</th><th>Đơn giá</th><th>Hành động</th></tr>
-    </thead>
-    <tbody>
-      ${inventoryData.map(item => {
-        console.log("Rendering product:", item);
-        return `
-        <tr>
-          <td>${item.name}</td>
-          <td>${item.quantity}</td>
-          <td>${item.price}</td>
-          <td>
-            <button onclick="editInventory('${item.id}')">Sửa</button>
-            <button onclick="deleteInventory('${item.id}')">Xóa</button>
-          </td>
-        </tr>`;
-      }).join("")}
-    </tbody>`;
-  list.appendChild(table);
-}
 
 // Revenue-Expense Report
 function submitReport() {
@@ -947,8 +861,101 @@ function generateBusinessChart() {
   }
   ```
 }
+function addInventory() {
+  const name = document.getElementById("product-name").value.trim();
+  const quantity = parseInt(document.getElementById("product-quantity").value) || 0;
+  const price = parseFloat(document.getElementById("product-price").value) || 0;
 
-// Initialize Firebase Listeners
+  console.log("Adding product:", { name, quantity, price });
+
+  if (!name || quantity <= 0 || price <= 0) {
+    console.error("Invalid product input:", { name, quantity, price });
+    alert("Vui lòng nhập đầy đủ và đúng thông tin sản phẩm!");
+    return;
+  }
+
+  inventoryRef.push({ name, quantity, price })
+    .then(() => {
+      console.log("Product added successfully to Firebase:", { name, quantity, price });
+      alert("Đã thêm sản phẩm thành công!");
+      document.getElementById("product-name").value = "";
+      document.getElementById("product-quantity").value = "";
+      document.getElementById("product-price").value = "";
+    })
+    .catch(err => {
+      console.error("Error adding product to Firebase:", err);
+      alert("Lỗi khi thêm sản phẩm: " + err.message);
+    });
+}
+
+function editInventory(id) {
+  console.log("Editing product ID:", id);
+  const product = inventoryData.find(p => p.id === id);
+  if (!product) {
+    console.error("Product not found for ID:", id);
+    return;
+  }
+  const newName = prompt("Tên mới:", product.name) || product.name;
+  const newQty = parseInt(prompt("Số lượng:", product.quantity)) || product.quantity;
+  const newPrice = parseFloat(prompt("Đơn giá:", product.price)) || product.price;
+  console.log("Updating product:", { id, newName, newQty, newPrice });
+  inventoryRef.child(id).update({ name: newName, quantity: newQty, price: newPrice })
+    .catch(err => console.error("Error updating product:", err));
+}
+
+function deleteInventory(id) {
+  console.log("Deleting product ID:", id);
+  if (!confirm("Xóa sản phẩm này?")) return;
+  inventoryRef.child(id).remove()
+    .then(() => console.log("Product deleted:", id))
+    .catch(err => console.error("Error deleting product:", err));
+}
+
+function renderInventory() {
+  const list = document.getElementById("inventory-list");
+  if (!list) {
+    console.error("Inventory list element not found!");
+    return;
+  }
+  list.innerHTML = "";
+  console.log("Rendering inventory, total items:", inventoryData.length);
+
+  if (inventoryData.length === 0) {
+    list.innerHTML = "<p>Kho trống.</p>";
+    console.log("Inventory is empty");
+    return;
+  }
+
+  const table = document.createElement("table");
+  table.classList.add("table-style");
+  table.innerHTML = `
+    <thead>
+      <tr><th>Tên SP</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th><th>Hành động</th></tr>
+    </thead>
+    <tbody>
+      ${inventoryData.map(item => {
+        console.log("Rendering product:", item);
+        const total = item.quantity * item.price;
+        return `
+        <tr>
+          <td>${item.name}</td>
+          <td>${item.quantity}</td>
+          <td>${item.price.toLocaleString('vi-VN')} VND</td>
+          <td>${total.toLocaleString('vi-VN')} VND</td>
+          <td>
+            <button onclick="editInventory('${item.id}')">Sửa</button>
+            <button onclick="deleteInventory('${item.id}')">Xóa</button>
+          </td>
+        </tr>`;
+      }).join("")}
+    </tbody>
+    <tfoot>
+      <tr><td colspan="3"><strong>Tổng tiền tồn kho:</strong></td><td><strong>${inventoryData.reduce((sum, item) => sum + (item.quantity * item.price), 0).toLocaleString('vi-VN')} VND</strong></td><td></td></tr>
+    </tfoot>`;
+  list.appendChild(table);
+}
+
+// Initialize Firebase Listeners (phần inventoryRef được cập nhật)
 function loadFirebaseData() {
   console.log("Initializing Firebase listeners");
   inventoryRef.on("value", snapshot => {
