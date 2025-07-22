@@ -379,16 +379,19 @@ function incrementProductCount(productId) {
 
 
 function renderReports() {
-  const container = document.getElementById("shared-report-table");
-  if (!container) {
-    console.error("Report table element not found!");
+  const reportContainer = document.getElementById("shared-report-table");
+  const productContainer = document.getElementById("report-product-table");
+  if (!reportContainer || !productContainer) {
+    console.error("Report table element not found:", { reportContainer, productContainer });
     return;
   }
-  container.innerHTML = "";
+  reportContainer.innerHTML = "";
+  productContainer.innerHTML = "";
   console.log("Rendering reports, total items:", reportData.length);
 
   if (reportData.length === 0) {
-    container.innerHTML = "<p>Chưa có báo cáo nào.</p>";
+    reportContainer.innerHTML = "<p>Chưa có báo cáo thu chi.</p>";
+    productContainer.innerHTML = "<p>Chưa có báo cáo xuất hàng.</p>";
     return;
   }
 
@@ -406,9 +409,10 @@ function renderReports() {
   const finalClosingBalance = updatedReports[updatedReports.length - 1]?.closingBalance || 0;
   const finalBalance = updatedReports[updatedReports.length - 1]?.remaining || 0;
 
-  const table = document.createElement("table");
-  table.classList.add("table-style");
-  table.innerHTML = `
+  // Bảng báo cáo thu chi
+  const reportTable = document.createElement("table");
+  reportTable.classList.add("table-style");
+  reportTable.innerHTML = `
     <thead>
       <tr>
         <th>STT</th>
@@ -419,15 +423,10 @@ function renderReports() {
         <th>Doanh thu</th>
         <th>Số dư cuối kỳ</th>
         <th>Số dư còn lại</th>
-        <th>Sản phẩm xuất</th>
       </tr>
     </thead>
     <tbody>
-      ${updatedReports.map((r, index) => {
-        const productsText = Array.isArray(r.products) && r.products.length > 0 
-          ? r.products.map(p => `${p.name}: ${p.quantity}`).join(", ")
-          : "Không có";
-        return `
+      ${updatedReports.map((r, index) => `
         <tr>
           <td>${index + 1}</td>
           <td>${new Date(r.date).toLocaleTimeString('vi-VN')}</td>
@@ -437,15 +436,13 @@ function renderReports() {
           <td>${r.revenue.toLocaleString('vi-VN')} VND</td>
           <td>${r.closingBalance.toLocaleString('vi-VN')} VND</td>
           <td>${r.remaining.toLocaleString('vi-VN')} VND</td>
-          <td>${productsText}</td>
-        </tr>`;
-      }).join("")}
+        </tr>`).join("")}
     </tbody>`;
-  container.appendChild(table);
+  reportContainer.appendChild(reportTable);
 
-  const totalDiv = document.createElement("div");
-  totalDiv.classList.add("report-total");
-  totalDiv.innerHTML = `
+  const totalReportDiv = document.createElement("div");
+  totalReportDiv.classList.add("report-total");
+  totalReportDiv.innerHTML = `
     <strong>Tổng:</strong><br>
     Số dư đầu kỳ: ${firstOpeningBalance.toLocaleString('vi-VN')} VND<br>
     Doanh thu: ${totalRevenue.toLocaleString('vi-VN')} VND<br>
@@ -453,7 +450,59 @@ function renderReports() {
     Số dư cuối kỳ: ${finalClosingBalance.toLocaleString('vi-VN')} VND<br>
     Còn lại: ${finalBalance.toLocaleString('vi-VN')} VND
   `;
-  container.appendChild(totalDiv);
+  reportContainer.appendChild(totalReportDiv);
+
+  // Bảng báo cáo xuất hàng
+  const productReports = updatedReports.flatMap((r, index) => 
+    Array.isArray(r.products) && r.products.length > 0 
+      ? r.products.map(p => ({
+          index: index + 1,
+          date: r.date,
+          employeeName: r.employeeName,
+          productName: p.name,
+          quantity: p.quantity
+        }))
+      : []
+  );
+
+  const productTable = document.createElement("table");
+  productTable.classList.add("table-style");
+  productTable.innerHTML = `
+    <thead>
+      <tr>
+        <th>STT</th>
+        <th>Giờ</th>
+        <th>Tên NV</th>
+        <th>Tên hàng hóa</th>
+        <th>Số lượng</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${productReports.map(p => `
+        <tr>
+          <td>${p.index}</td>
+          <td>${new Date(p.date).toLocaleTimeString('vi-VN')}</td>
+          <td>${p.employeeName}</td>
+          <td>${p.productName}</td>
+          <td>${p.quantity}</td>
+        </tr>`).join("")}
+    </tbody>`;
+  productContainer.appendChild(productTable);
+
+  const totalProductSummary = productReports.reduce((acc, p) => {
+    acc[p.productName] = (acc[p.productName] || 0) + p.quantity;
+    return acc;
+  }, {});
+  const totalProductText = Object.entries(totalProductSummary)
+    .map(([name, qty]) => `${qty} ${name}`)
+    .join(" - ");
+
+  const totalProductDiv = document.createElement("div");
+  totalProductDiv.classList.add("report-total");
+  totalProductDiv.innerHTML = `
+    <strong>Tổng xuất kho:</strong> ${totalProductText || "Không có"}
+  `;
+  productContainer.appendChild(totalProductDiv);
 }
 
 // Employee Management
