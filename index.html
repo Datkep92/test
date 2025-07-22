@@ -29,7 +29,7 @@
   </script>
 </head>
 <body>
-  <!-- Trang đăng nhập -->
+  <!-- Đăng nhập -->
   <div id="login-page" class="center-screen">
     <h2>Đăng Nhập</h2>
     <input type="email" id="email" placeholder="Email">
@@ -45,35 +45,33 @@
       <button class="logout-btn" onclick="logout()">Đăng Xuất</button>
     </header>
 
-    <!-- Thanh Tab (Desktop/Tablet) -->
+    <!-- Thanh Tab -->
     <div class="top-nav">
       <button class="tablinks" onclick="openTab(event, 'revenue-expense')">Thu Chi</button>
       <button class="tablinks" onclick="openTab(event, 'inventory')">Kho</button>
       <button class="tablinks" onclick="openTab(event, 'profile')">Cá nhân</button>
       <button class="tablinks" onclick="openTab(event, 'business-report')">Báo cáo</button>
-      <button class="tablinks" onclick="openTab(event, 'employee-management')">NV</button>
+      <button class="tablinks" onclick="openTab(event, 'employee-management')">Nhân viên</button>
       <button class="tablinks" onclick="openTab(event, 'chat-section')">Chat</button>
     </div>
 
     <main class="tab-content-wrapper">
-      <!-- Tab Báo cáo thu chi -->
+      <!-- Tab Báo cáo Thu Chi -->
       <section id="revenue-expense" class="tabcontent">
-        <h2>Báo cáo thu chi</h2>
-        <h3>Chọn hàng hóa để xuất</h3>
-        <div id="report-product-list" class="product-list"></div>
+        <h2>Báo cáo Thu Chi</h2>
+        <div id="report-product-list"></div>
         <input type="number" id="report-quantity" placeholder="Số lượng xuất">
-        <h3>Thông tin báo cáo</h3>
         <input type="number" id="revenue" placeholder="Doanh thu">
         <input type="number" id="expense-amount" placeholder="Chi phí">
         <textarea id="expense-info" placeholder="Thông tin chi phí"></textarea>
         <button class="primary-btn" onclick="submitReport()">Gửi Báo Cáo</button>
-        <h3>Bảng báo cáo</h3>
+        <h3>Danh sách Báo cáo</h3>
         <div id="shared-report-table"></div>
       </section>
 
       <!-- Tab Kho -->
       <section id="inventory" class="tabcontent" style="display: none;">
-        <h2>Quản lý kho</h2>
+        <h2>Quản lý Kho</h2>
         <input type="text" id="product-name" placeholder="Tên sản phẩm">
         <input type="number" id="product-quantity" placeholder="Số lượng">
         <input type="number" id="product-price" placeholder="Giá">
@@ -83,12 +81,11 @@
 
       <!-- Tab Cá nhân -->
       <section id="profile" class="tabcontent" style="display: none;">
-        <h2>Thông tin cá nhân</h2>
-        <p><strong>Họ tên:</strong> <span id="profile-name-display">Nguyễn Văn A</span></p>
-        <p><strong>Số điện thoại:</strong> <span id="profile-phone-display">0123456789</span></p>
+        <h2>Thông tin Cá nhân</h2>
+        <div id="profile-info"></div>
         <h3>Yêu cầu tạm ứng</h3>
         <input type="number" id="advance-amount" placeholder="Số tiền tạm ứng">
-        <textarea id="advance-reason" placeholder="Lý do tạm ứng"></textarea>
+        <textarea id="advance-reason" placeholder="Lý do"></textarea>
         <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu</button>
         <div id="advance-history"></div>
         <h3>Lương & Ngày công</h3>
@@ -99,22 +96,21 @@
 
       <!-- Tab Báo cáo kinh doanh -->
       <section id="business-report" class="tabcontent" style="display: none;">
-        <h2>Báo cáo kinh doanh</h2>
+        <h2>Báo cáo Kinh doanh</h2>
         <canvas id="growth-chart"></canvas>
-        <h3>Bảng kê chi phí</h3>
         <div id="expense-summary-table"></div>
       </section>
 
       <!-- Tab Quản lý nhân viên -->
       <section id="employee-management" class="tabcontent" style="display: none;">
-        <h2>Quản lý nhân viên</h2>
-        <input type="text" id="employee-name" placeholder="Họ tên">
+        <h2>Quản lý Nhân viên</h2>
+        <input type="text" id="employee-name" placeholder="Tên nhân viên">
         <input type="number" id="employee-dailywage" placeholder="Lương ngày công">
         <input type="number" id="employee-allowance" placeholder="Phụ cấp">
         <input type="number" id="employee-otherfee" placeholder="Phí khác">
         <button class="primary-btn" onclick="addEmployee()">Thêm nhân viên</button>
         <div id="employee-list"></div>
-        <h3>Danh sách yêu cầu tạm ứng</h3>
+        <h3>Yêu cầu Tạm ứng</h3>
         <div id="advance-approval-list"></div>
       </section>
 
@@ -130,16 +126,6 @@
         <button class="primary-btn" onclick="sendManagerMessage()">Gửi</button>
       </section>
     </main>
-
-    <!-- Bottom navigation (Mobile) -->
-    <nav class="bottom-nav">
-      <button class="tablinks" onclick="openTab(event, 'revenue-expense')">Thu Chi</button>
-      <button class="tablinks" onclick="openTab(event, 'inventory')">Kho</button>
-      <button class="tablinks" onclick="openTab(event, 'profile')">Cá nhân</button>
-      <button class="tablinks" onclick="openTab(event, 'business-report')">Báo cáo</button>
-      <button class="tablinks" onclick="openTab(event, 'employee-management')">NV</button>
-      <button class="tablinks" onclick="openTab(event, 'chat-section')">Chat</button>
-    </nav>
   </div>
   <script src="./app.js"></script>
 </body>
