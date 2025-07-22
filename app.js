@@ -84,7 +84,7 @@ function openTabBubble(tabId) {
   }
 
   toggleMenu();
-  if (tabId === "revenue-expense") {
+  if (tabId === "revenue-expense" && inventoryData.length > 0) {
     console.log("Rendering revenue-expense data");
     renderReportProductList();
     renderReports();
@@ -211,14 +211,12 @@ function renderReportProductList() {
     console.error("Report product list element not found!");
     return;
   }
+  if (inventoryData.length === 0) {
+    console.log("Waiting for inventory data to load");
+    return; // Không render nếu chưa có dữ liệu
+  }
   container.innerHTML = "";
   console.log("Rendering report product list, total items:", inventoryData.length);
-
-  if (inventoryData.length === 0) {
-    container.innerHTML = "<p>Kho trống, không có sản phẩm để xuất.</p>";
-    console.log("No products for report");
-    return;
-  }
 
   const table = document.createElement("table");
   table.classList.add("table-style");
@@ -265,21 +263,17 @@ function submitReport() {
   const revenue = parseFloat(document.getElementById("revenue").value) || 0;
   const closingBalance = parseFloat(document.getElementById("closing-balance").value) || 0;
 
-  // Kiểm tra ít nhất một trường tài chính được nhập
   if (openingBalanceInput === 0 && expenseAmount === 0 && revenue === 0 && closingBalance === 0) {
     console.error("No financial data entered for report");
     return alert("Vui lòng nhập ít nhất một thông tin (số dư đầu kỳ, chi phí, doanh thu, số dư cuối kỳ)!");
   }
 
-  // Sắp xếp báo cáo theo thời gian để lấy báo cáo mới nhất
   const sortedReports = reportData.sort((a, b) => new Date(a.date) - new Date(b.date));
   const latestReport = sortedReports[sortedReports.length - 1];
-  // Nếu không nhập số dư đầu kỳ, lấy số dư cuối kỳ của báo cáo trước
   const openingBalance = openingBalanceInput !== 0 ? openingBalanceInput : (latestReport ? latestReport.closingBalance : 0);
 
   console.log("Submitting report:", { openingBalance, expenseAmount, revenue, closingBalance, productClickCounts });
 
-  // Thu thập sản phẩm xuất
   const productsReported = Object.keys(productClickCounts).map(productId => {
     const product = inventoryData.find(p => p.id === productId);
     const quantity = productClickCounts[productId] || 0;
@@ -291,7 +285,6 @@ function submitReport() {
 
   console.log("Products reported:", productsReported);
 
-  // Cập nhật số lượng sản phẩm trong kho
   Promise.all(productsReported.map(p => {
     const product = inventoryData.find(prod => prod.id === p.productId);
     if (product && p.quantity > 0) {
@@ -309,7 +302,7 @@ function submitReport() {
       expenseAmount,
       revenue,
       closingBalance,
-      products: productsReported,
+      products: productsReported, // Đảm bảo products luôn là mảng
       remaining: openingBalance - expenseAmount + revenue
     };
 
@@ -351,16 +344,14 @@ function renderReports() {
     return;
   }
 
-  // Sắp xếp báo cáo theo thời gian
   const sortedReports = reportData.sort((a, b) => new Date(a.date) - new Date(b.date));
   let currentBalance = sortedReports[0]?.openingBalance || 0;
   const updatedReports = sortedReports.map(r => {
     const remaining = currentBalance - r.expenseAmount + r.revenue;
-    currentBalance = r.closingBalance || remaining; // Cập nhật số dư hiện tại
+    currentBalance = r.closingBalance || remaining;
     return { ...r, remaining };
   });
 
-  // Tính tổng
   const totalRevenue = updatedReports.reduce((sum, r) => sum + r.revenue, 0);
   const totalExpense = updatedReports.reduce((sum, r) => sum + r.expenseAmount, 0);
   const finalBalance = updatedReports[updatedReports.length - 1]?.remaining || 0;
@@ -660,10 +651,10 @@ function renderExpenseSummary() {
   console.log("Rendering expense summary, total items:", reportData.length);
   reportData.filter(r => r.expenseAmount > 0).forEach(r => {
     const row = document.createElement("div");
-    const productsText = Array.isArray(r.products) && r.products.length > 0 
-      ? r.products.map(p => `${p.name}: ${p.quantity}`).join(", ")
-      : r.product ? `Sản phẩm: ${r.product}` : "Không có sản phẩm";
-    row.innerHTML = `${r.date} - ${r.employeeName} - Chi phí: ${r.expenseAmount} - ${productsText}`;
+    const productsText = Array.isArray(r.products) ? 
+      (r.products.length > 0 ? r.products.map(p => `${p.name}: ${p.quantity}`).join(", ") : "Không có sản phẩm") : 
+      (r.product ? `Sản phẩm: ${r.product}` : "Không có sản phẩm");
+    row.innerHTML = `${new Date(r.date).toLocaleString()} - ${r.employeeName} - Chi phí: ${r.expenseAmount} - ${productsText}`;
     container.appendChild(row);
   });
 }
