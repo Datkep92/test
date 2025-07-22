@@ -294,6 +294,16 @@ function submitReport() {
       products: productsReported
     };
 
+    // Log để xác nhận dữ liệu xuất hàng không ảnh hưởng số dư
+    console.log("Gửi báo cáo:", {
+      openingBalance,
+      revenue,
+      expenseAmount,
+      closingBalance,
+      remaining,
+      productsReported
+    });
+
     reportsRef.push(reportData)
       .then(snap => {
         expenseNotes.push({ reportId: snap.key, note: expenseNote || "Không có" });
