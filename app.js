@@ -1,4 +1,8 @@
 
+/*********************************************
+ * app.js - Milano 259 (Full Features - Firebase)
+ *********************************************/
+
 // Firebase References
 const inventoryRef = firebase.database().ref("inventory");
 const reportsRef = firebase.database().ref("reports");
@@ -93,7 +97,7 @@ function loadFirebaseData() {
   });
 }
 
-// Hàm tải các dữ liệu Firebase khác (giữ nguyên nhưng tách ra)
+// Hàm tải các dữ liệu Firebase khác
 function loadOtherFirebaseData() {
   inventoryRef.on(
     "value",
@@ -116,9 +120,8 @@ function loadOtherFirebaseData() {
       expenseNotes = reportData
         .filter((r) => r.expenseNote)
         .map((r) => ({ reportId: r.id, note: r.expenseNote }));
-      renderFilteredReports(reportData);
+      renderReports();
       renderExpenseSummary();
-      renderActivityHistory();
     },
     (err) => console.error("Error fetching reports data:", err)
   );
@@ -131,8 +134,6 @@ function loadOtherFirebaseData() {
         : [];
       renderAdvanceHistory();
       renderAdvanceApprovalList();
-      renderSalarySummary();
-      renderActivityHistory();
     },
     (err) => console.error("Error fetching advances data:", err)
   );
@@ -174,16 +175,13 @@ auth.onAuthStateChanged((user) => {
     console.log("User logged in, ID:", currentEmployeeId);
     loginPage.style.display = "none";
     mainPage.style.display = "block";
-    ensureProfileElements(); // Tạo các phần tử HTML cần thiết
+    ensureProfileElements();
     loadFirebaseData()
       .then(() => {
         console.log("loadFirebaseData completed, rendering profile");
         renderProfile();
-        renderSchedule();
+        renderAdvanceHistory();
         renderSalarySummary();
-        renderSalaryComparison();
-        renderEmployeeList();
-        renderAdvanceApprovalList();
         openTabBubble("profile");
       })
       .catch((error) => {
@@ -220,23 +218,30 @@ function ensureProfileElements() {
   if (!document.getElementById("employee-display-name")) {
     console.warn("Profile elements not found, creating them");
     profileContainer.innerHTML = `
+      <h2>Thông tin Cá nhân</h2>
       <div class="profile-section">
-        <h3>Thông tin cá nhân</h3>
         <img id="profile-image" src="https://placehold.co/100x100" alt="Avatar">
         <input type="file" id="profile-image-upload" accept="image/*" onchange="uploadProfileImage()">
         <input id="employee-display-name" placeholder="Tên hiển thị">
-        <button onclick="updateEmployeeName()">Cập nhật tên</button>
+        <button onclick="updateEmployeeName()">Lưu tên</button>
         <input id="profile-address" placeholder="Địa chỉ">
         <input id="profile-phone" placeholder="Số điện thoại">
         <input id="profile-dob" type="date" placeholder="Ngày sinh">
         <button onclick="updateProfileInfo()">Cập nhật thông tin</button>
+        <h3>Yêu cầu tạm ứng</h3>
+        <input type="number" id="advance-amount" placeholder="Số tiền (VND)">
+        <input type="text" id="advance-reason" placeholder="Lý do">
+        <button onclick="requestAdvance()">Gửi yêu cầu</button>
+        <h3>Lương & Ngày công</h3>
+        <div id="salary-summary"></div>
+        <div id="advance-history"></div>
       </div>
     `;
     console.log("Created profile elements");
   }
 }
 
-// Hàm hiển thị thông tin cá nhân (sửa lỗi 404 và kiểm tra dữ liệu)
+// Hàm hiển thị thông tin cá nhân
 function renderProfile() {
   if (!currentEmployeeId) {
     console.error("No user logged in for profile rendering");
@@ -244,7 +249,7 @@ function renderProfile() {
     return;
   }
 
-  ensureProfileElements(); // Đảm bảo các phần tử HTML tồn tại
+  ensureProfileElements();
 
   const nameInput = document.getElementById("employee-display-name");
   const addressInput = document.getElementById("profile-address");
@@ -265,7 +270,7 @@ function renderProfile() {
     phoneInput.value = emp.phone || "";
     dobInput.value = emp.dob || "";
     const savedImage = localStorage.getItem(`profileImage_${currentEmployeeId}`);
-    profileImage.src = savedImage || "https://placehold.co/100x100"; // Sử dụng placehold.co để tránh 404
+    profileImage.src = savedImage || "https://placehold.co/100x100";
     console.log("Rendered profile for user:", currentEmployeeId, emp);
   } else {
     console.warn("No employee data for user:", currentEmployeeId);
@@ -277,7 +282,7 @@ function renderProfile() {
   }
 }
 
-// Hàm cập nhật thông tin cá nhân (sửa để kiểm tra dữ liệu và thông báo lỗi)
+// Hàm cập nhật thông tin cá nhân
 function updateProfileInfo() {
   const address = document.getElementById("profile-address")?.value.trim();
   const phone = document.getElementById("profile-phone")?.value.trim();
@@ -289,14 +294,12 @@ function updateProfileInfo() {
     return;
   }
 
-  // Kiểm tra định dạng số điện thoại (ví dụ: 10 chữ số)
   if (!/^\d{10}$/.test(phone)) {
     console.error("Invalid phone number:", phone);
     alert("Số điện thoại phải có 10 chữ số!");
     return;
   }
 
-  // Kiểm tra ngày sinh hợp lệ
   const dobDate = new Date(dob);
   if (isNaN(dobDate.getTime()) || dobDate > new Date()) {
     console.error("Invalid date of birth:", dob);
@@ -314,7 +317,6 @@ function updateProfileInfo() {
     .then(() => {
       console.log("Profile info updated successfully:", { address, phone, dob });
       alert("Cập nhật thông tin cá nhân thành công!");
-      // Cập nhật local employeeData
       const empIndex = employeeData.findIndex((e) => e.id === currentEmployeeId);
       if (empIndex !== -1) {
         employeeData[empIndex] = { ...employeeData[empIndex], address, phone, dob };
@@ -331,10 +333,23 @@ function updateProfileInfo() {
 
 // Hàm cập nhật tên nhân viên (sửa để làm mới giao diện)
 function updateEmployeeName() {
-  const newName = document.getElementById("employee-display-name")?.value.trim();
+  const displayNameInput = document.getElementById("employee-display-name");
+  if (!displayNameInput) {
+    console.error("Display name input not found");
+    alert("Lỗi: Không tìm thấy trường nhập tên hiển thị!");
+    return;
+  }
+
+  const newName = displayNameInput.value.trim();
   if (!newName) {
     console.error("Missing display name");
     alert("Vui lòng nhập tên hiển thị!");
+    return;
+  }
+
+  if (!currentEmployeeId) {
+    console.error("No current employee ID");
+    alert("Lỗi: Không tìm thấy ID nhân viên!");
     return;
   }
 
@@ -349,18 +364,18 @@ function updateEmployeeName() {
       } else {
         employeeData.push({ id: currentEmployeeId, name: newName });
       }
-      alert("Đổi tên thành công!");
+      alert("Cập nhật tên hiển thị thành công!");
       renderProfile();
-      renderFilteredReports(reportData); // Cập nhật tên trong báo cáo
-      renderEmployeeList(); // Cập nhật danh sách nhân viên
+      renderReports();
+      renderEmployeeList();
     })
     .catch((err) => {
       console.error("Error updating employee name:", err);
-      alert("Lỗi khi đổi tên: " + err.message);
+      alert("Lỗi khi cập nhật tên: " + err.message);
     });
 }
 
-// Hàm tải ảnh đại diện (sửa để kiểm tra lỗi và thông báo)
+// Hàm tải ảnh đại diện
 function uploadProfileImage() {
   const fileInput = document.getElementById("profile-image-upload");
   const file = fileInput?.files[0];
@@ -370,14 +385,12 @@ function uploadProfileImage() {
     return;
   }
 
-  // Kiểm tra định dạng file
   if (!file.type.startsWith("image/")) {
     console.error("Invalid file type:", file.type);
     alert("Vui lòng chọn file hình ảnh (jpg, png, v.v.)!");
     return;
   }
 
-  // Kiểm tra kích thước file (giới hạn 5MB)
   if (file.size > 5 * 1024 * 1024) {
     console.error("File size too large:", file.size);
     alert("Hình ảnh quá lớn, vui lòng chọn file nhỏ hơn 5MB!");
@@ -410,15 +423,15 @@ function login() {
 
   console.log("Attempting login with email:", email);
   auth.signInWithEmailAndPassword(email, password)
-    .then(user => {
+    .then((user) => {
       currentEmployeeId = user.user.uid;
       console.log("Login successful, user ID:", currentEmployeeId);
       document.getElementById("login-page").style.display = "none";
       document.getElementById("main-page").style.display = "block";
-      openTabBubble('profile');
+      openTabBubble("profile");
       loadFirebaseData();
     })
-    .catch(err => {
+    .catch((err) => {
       console.error("Login error:", err.message);
       alert("Lỗi đăng nhập: " + err.message);
     });
@@ -426,31 +439,33 @@ function login() {
 
 function logout() {
   console.log("Logging out user:", currentEmployeeId);
-  auth.signOut().then(() => {
-    currentEmployeeId = null;
-    console.log("Logout successful");
-    document.getElementById("login-page").style.display = "flex";
-    document.getElementById("main-page").style.display = "none";
-  }).catch(err => {
-    console.error("Logout error:", err.message);
-    alert("Lỗi đăng xuất: " + err.message);
-  });
+  auth.signOut()
+    .then(() => {
+      currentEmployeeId = null;
+      console.log("Logout successful");
+      document.getElementById("login-page").style.display = "flex";
+      document.getElementById("main-page").style.display = "none";
+    })
+    .catch((err) => {
+      console.error("Logout error:", err.message);
+      alert("Lỗi đăng xuất: " + err.message);
+    });
 }
 
 // Floating Button Tabs
 function toggleMenu() {
-  const options = document.getElementById('float-options');
+  const options = document.getElementById("float-options");
   console.log("Toggling menu, current display:", options.style.display);
-  options.style.display = (options.style.display === 'flex') ? 'none' : 'flex';
+  options.style.display = options.style.display === "flex" ? "none" : "flex";
 }
 
 function openTabBubble(tabId) {
   console.log("Opening tab:", tabId);
-  const tabs = document.querySelectorAll('.tabcontent');
-  tabs.forEach(t => t.classList.remove('active'));
+  const tabs = document.querySelectorAll(".tabcontent");
+  tabs.forEach((t) => t.classList.remove("active"));
   const tab = document.getElementById(tabId);
   if (tab) {
-    tab.classList.add('active');
+    tab.classList.add("active");
     console.log("Tab activated:", tabId);
   } else {
     console.error("Tab not found:", tabId);
@@ -460,7 +475,7 @@ function openTabBubble(tabId) {
   if (tabId === "revenue-expense") {
     console.log("Rendering revenue-expense data");
     renderReportProductList();
-    renderFilteredReports(reportData);
+    renderReports();
   } else if (tabId === "inventory") {
     console.log("Rendering inventory data");
     renderInventory();
@@ -469,7 +484,6 @@ function openTabBubble(tabId) {
     renderProfile();
     renderAdvanceHistory();
     renderSalarySummary();
-    renderSchedule();
   } else if (tabId === "employee-management") {
     console.log("Rendering employee management data");
     renderEmployeeList();
@@ -499,7 +513,8 @@ function addInventory() {
     return;
   }
 
-  inventoryRef.push({ name, quantity, price })
+  inventoryRef
+    .push({ name, quantity, price })
     .then(() => {
       console.log("Product added successfully to Firebase:", { name, quantity, price });
       alert("Đã thêm sản phẩm thành công!");
@@ -507,7 +522,7 @@ function addInventory() {
       document.getElementById("product-quantity").value = "";
       document.getElementById("product-price").value = "";
     })
-    .catch(err => {
+    .catch((err) => {
       console.error("Error adding product to Firebase:", err);
       alert("Lỗi khi thêm sản phẩm: " + err.message);
     });
@@ -515,7 +530,7 @@ function addInventory() {
 
 function editInventory(id) {
   console.log("Editing product ID:", id);
-  const product = inventoryData.find(p => p.id === id);
+  const product = inventoryData.find((p) => p.id === id);
   if (!product) {
     console.error("Product not found for ID:", id);
     alert("Sản phẩm không tồn tại!");
@@ -525,9 +540,11 @@ function editInventory(id) {
   const newQty = parseInt(prompt("Số lượng:", product.quantity)) || product.quantity;
   const newPrice = parseFloat(prompt("Đơn giá:", product.price)) || product.price;
   console.log("Updating product:", { id, newName, newQty, newPrice });
-  inventoryRef.child(id).update({ name: newName, quantity: newQty, price: newPrice })
+  inventoryRef
+    .child(id)
+    .update({ name: newName, quantity: newQty, price: newPrice })
     .then(() => alert("Cập nhật sản phẩm thành công!"))
-    .catch(err => {
+    .catch((err) => {
       console.error("Error updating product:", err);
       alert("Lỗi khi cập nhật sản phẩm: " + err.message);
     });
@@ -536,12 +553,14 @@ function editInventory(id) {
 function deleteInventory(id) {
   console.log("Deleting product ID:", id);
   if (!confirm("Xóa sản phẩm này?")) return;
-  inventoryRef.child(id).remove()
+  inventoryRef
+    .child(id)
+    .remove()
     .then(() => {
       console.log("Product deleted:", id);
       alert("Đã xóa sản phẩm thành công!");
     })
-    .catch(err => {
+    .catch((err) => {
       console.error("Error deleting product:", err);
       alert("Lỗi khi xóa sản phẩm: " + err.message);
     });
@@ -569,24 +588,28 @@ function renderInventory() {
       <tr><th>Tên SP</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th><th>Hành động</th></tr>
     </thead>
     <tbody>
-      ${inventoryData.map(item => {
-        console.log("Rendering product:", item);
-        const total = item.quantity * item.price;
-        return `
+      ${inventoryData
+        .map((item) => {
+          console.log("Rendering product:", item);
+          const total = item.quantity * item.price;
+          return `
         <tr>
           <td>${item.name}</td>
           <td>${item.quantity}</td>
-          <td>${item.price.toLocaleString('vi-VN')} VND</td>
-          <td>${total.toLocaleString('vi-VN')} VND</td>
+          <td>${item.price.toLocaleString("vi-VN")} VND</td>
+          <td>${total.toLocaleString("vi-VN")} VND</td>
           <td>
             <button onclick="editInventory('${item.id}')">Sửa</button>
             <button onclick="deleteInventory('${item.id}')">Xóa</button>
           </td>
         </tr>`;
-      }).join("")}
+        })
+        .join("")}
     </tbody>
     <tfoot>
-      <tr><td colspan="3"><strong>Tổng tiền tồn kho:</strong></td><td><strong>${inventoryData.reduce((sum, item) => sum + (item.quantity * item.price), 0).toLocaleString('vi-VN')} VND</strong></td><td></td></tr>
+      <tr><td colspan="3"><strong>Tổng tiền tồn kho:</strong></td><td><strong>${inventoryData
+        .reduce((sum, item) => sum + item.quantity * item.price, 0)
+        .toLocaleString("vi-VN")} VND</strong></td><td></td></tr>
     </tfoot>`;
   list.appendChild(table);
 }
@@ -609,140 +632,181 @@ function submitReport() {
   const closingBalance = closingBalanceEl.value ? parseFloat(closingBalanceEl.value) : null;
   const { money: expenseAmount, note: expenseNote } = parseEntry(expenseInput);
 
-  if (openingBalance === 0 && expenseAmount === 0 && revenue === 0 && closingBalance === null && Object.keys(productClickCounts).length === 0) {
-    alert("Vui lòng nhập ít nhất một thông tin: số dư đầu kỳ, chi phí, doanh thu, số dư cuối kỳ, hoặc xuất hàng!");
+  if (
+    openingBalance === 0 &&
+    expenseAmount === 0 &&
+    revenue === 0 &&
+    closingBalance === null &&
+    Object.keys(productClickCounts).length === 0
+  ) {
+    alert(
+      "Vui lòng nhập ít nhất một thông tin: số dư đầu kỳ, chi phí, doanh thu, số dư cuối kỳ, hoặc xuất hàng!"
+    );
     return;
   }
 
   const remaining = openingBalance + revenue - expenseAmount - (closingBalance || 0);
 
-  const productsReported = Object.keys(productClickCounts).map(productId => {
-    const product = inventoryData.find(p => p.id === productId);
-    const quantity = productClickCounts[productId] || 0;
-    if (quantity > 0 && product) {
-      return { productId, name: product.name, quantity };
-    }
-    return null;
-  }).filter(p => p !== null);
+  const productsReported = Object.keys(productClickCounts)
+    .map((productId) => {
+      const product = inventoryData.find((p) => p.id === productId);
+      const quantity = productClickCounts[productId] || 0;
+      if (quantity > 0 && product) {
+        return { productId, name: product.name, quantity };
+      }
+      return null;
+    })
+    .filter((p) => p !== null);
 
-  Promise.all(productsReported.map(p => {
-    const product = inventoryData.find(prod => prod.id === p.productId);
-    if (product && p.quantity > 0) {
-      return inventoryRef.child(p.productId).update({ quantity: product.quantity - p.quantity });
-    }
-    return Promise.resolve();
-  })).then(() => {
-    const employee = employeeData.find(e => e.id === currentEmployeeId);
-    const employeeName = employee ? employee.name : (auth.currentUser.displayName || auth.currentUser.email.split('@')[0] || 'Nhân viên');
+  Promise.all(
+    productsReported.map((p) => {
+      const product = inventoryData.find((prod) => prod.id === p.productId);
+      if (product && p.quantity > 0) {
+        return inventoryRef.child(p.productId).update({ quantity: product.quantity - p.quantity });
+      }
+      return Promise.resolve();
+    })
+  )
+    .then(() => {
+      const employee = employeeData.find((e) => e.id === currentEmployeeId);
+      const employeeName = employee
+        ? employee.name
+        : auth.currentUser.displayName || auth.currentUser.email.split("@")[0] || "Nhân viên";
 
-    const reportData = {
-      date: new Date().toISOString(),
-      employeeId: currentEmployeeId,
-      employeeName: employeeName,
-      openingBalance,
-      expenseAmount,
-      expenseNote: expenseNote || "Không có",
-      revenue,
-      closingBalance,
-      remaining,
-      products: productsReported
-    };
+      if (!employee) {
+        console.warn("Không tìm thấy nhân viên trong employeeData:", {
+          currentEmployeeId,
+          employeeDataLength: employeeData.length,
+          employeeDataIds: employeeData.map((e) => e.id),
+        });
+      }
 
-    console.log("Gửi báo cáo:", reportData);
+      const reportData = {
+        date: new Date().toISOString(),
+        employeeId: currentEmployeeId,
+        employeeName: employeeName,
+        openingBalance,
+        expenseAmount,
+        expenseNote: expenseNote || "Không có",
+        revenue,
+        closingBalance,
+        remaining,
+        products: productsReported,
+      };
 
-    reportsRef.push(reportData)
-      .then(snap => {
-        expenseNotes.push({ reportId: snap.key, note: expenseNote || "Không có" });
-        alert("Báo cáo thành công!");
-        openingBalanceEl.value = "";
-        expenseInputEl.value = "";
-        revenueEl.value = "";
-        closingBalanceEl.value = "";
-        productClickCounts = {};
-        renderReportProductList();
-        renderFilteredReports(reportData);
-      })
-      .catch(err => alert("Lỗi khi gửi báo cáo: " + err.message));
-  }).catch(err => alert("Lỗi khi cập nhật số lượng sản phẩm: " + err.message));
+      console.log("Gửi báo cáo:", {
+        openingBalance,
+        revenue,
+        expenseAmount,
+        closingBalance,
+        remaining,
+        productsReported,
+      });
+
+      reportsRef
+        .push(reportData)
+        .then((snap) => {
+          expenseNotes.push({ reportId: snap.key, note: expenseNote || "Không có" });
+          alert("Báo cáo thành công!");
+          openingBalanceEl.value = "";
+          expenseInputEl.value = "";
+          revenueEl.value = "";
+          closingBalanceEl.value = "";
+          productClickCounts = {};
+          renderReportProductList();
+          renderReports();
+        })
+        .catch((err) => alert("Lỗi khi gửi báo cáo: " + err.message));
+    })
+    .catch((err) => alert("Lỗi khi cập nhật số lượng sản phẩm: " + err.message));
 }
 
 function editReportExpense(reportId) {
-  const report = reportData.find(r => r.id === reportId);
+  const report = reportData.find((r) => r.id === reportId);
   if (!report) {
     alert("Báo cáo không tồn tại!");
     return;
   }
-  const newInput = prompt("Chỉnh sửa nội dung chi phí (VD: 500k Mua nguyên liệu):", `${report.expenseAmount / 1000}k ${report.expenseNote}`);
+  const newInput = prompt(
+    "Chỉnh sửa nội dung chi phí (VD: 500k Mua nguyên liệu):",
+    `${report.expenseAmount / 1000}k ${report.expenseNote}`
+  );
   if (!newInput) return;
   const { money: newAmount, note: newNote } = parseEntry(newInput);
-  reportsRef.child(reportId).update({
-    expenseAmount: newAmount,
-    expenseNote: newNote || "Không có",
-    remaining: report.openingBalance + report.revenue - newAmount - (report.closingBalance || 0)
-  })
+  reportsRef
+    .child(reportId)
+    .update({
+      expenseAmount: newAmount,
+      expenseNote: newNote || "Không có",
+      remaining: report.openingBalance + report.revenue - newAmount - (report.closingBalance || 0),
+    })
     .then(() => {
-      expenseNotes = expenseNotes.map(note =>
+      expenseNotes = expenseNotes.map((note) =>
         note.reportId === reportId ? { ...note, note: newNote || "Không có" } : note
       );
-      renderFilteredReports(reportData);
+      renderReports();
       alert("Đã cập nhật chi phí!");
     })
-    .catch(err => alert("Lỗi khi cập nhật chi phí: " + err.message));
+    .catch((err) => alert("Lỗi khi cập nhật chi phí: " + err.message));
 }
 
 function deleteReportExpense(reportId) {
   if (!confirm("Xóa nội dung chi phí này?")) return;
-  const report = reportData.find(r => r.id === reportId);
+  const report = reportData.find((r) => r.id === reportId);
   if (!report) {
     alert("Báo cáo không tồn tại!");
     return;
   }
-  reportsRef.child(reportId).update({
-    expenseAmount: 0,
-    expenseNote: "Không có",
-    remaining: report.openingBalance + report.revenue - 0 - (report.closingBalance || 0)
-  })
+  reportsRef
+    .child(reportId)
+    .update({
+      expenseAmount: 0,
+      expenseNote: "Không có",
+      remaining: report.openingBalance + report.revenue - 0 - (report.closingBalance || 0),
+    })
     .then(() => {
-      expenseNotes = expenseNotes.filter(note => note.reportId !== reportId);
-      renderFilteredReports(reportData);
+      expenseNotes = expenseNotes.filter((note) => note.reportId !== reportId);
+      renderReports();
       alert("Đã xóa chi phí!");
     })
-    .catch(err => alert("Lỗi khi xóa chi phí: " + err.message));
+    .catch((err) => alert("Lỗi khi xóa chi phí: " + err.message));
 }
 
 function deleteReportProduct(reportId, productId) {
   if (!confirm("Xóa sản phẩm xuất hàng này?")) return;
-  const report = reportData.find(r => r.id === reportId);
+  const report = reportData.find((r) => r.id === reportId);
   if (!report) {
     alert("Báo cáo không tồn tại!");
     return;
   }
-  const product = report.products.find(p => p.productId === productId);
+  const product = report.products.find((p) => p.productId === productId);
   if (!product) {
     alert("Sản phẩm không tồn tại trong báo cáo!");
     return;
   }
-  const updatedProducts = report.products.filter(p => p.productId !== productId);
-  const inventoryProduct = inventoryData.find(p => p.id === productId);
+  const updatedProducts = report.products.filter((p) => p.productId !== productId);
+  const inventoryProduct = inventoryData.find((p) => p.id === productId);
   Promise.all([
     reportsRef.child(reportId).update({ products: updatedProducts }),
-    inventoryProduct ? inventoryRef.child(productId).update({ quantity: inventoryProduct.quantity + product.quantity }) : Promise.resolve()
+    inventoryProduct
+      ? inventoryRef.child(productId).update({ quantity: inventoryProduct.quantity + product.quantity })
+      : Promise.resolve(),
   ])
     .then(() => {
-      renderFilteredReports(reportData);
+      renderReports();
       renderReportProductList();
       alert("Đã xóa sản phẩm!");
     })
-    .catch(err => alert("Lỗi khi xóa sản phẩm: " + err.message));
+    .catch((err) => alert("Lỗi khi xóa sản phẩm: " + err.message));
 }
 
 function editReportProduct(reportId, productId) {
-  const report = reportData.find(r => r.id === reportId);
+  const report = reportData.find((r) => r.id === reportId);
   if (!report) {
     alert("Báo cáo không tồn tại!");
     return;
   }
-  const product = report.products.find(p => p.productId === productId);
+  const product = report.products.find((p) => p.productId === productId);
   if (!product) {
     alert("Sản phẩm không tồn tại trong báo cáo!");
     return;
@@ -752,7 +816,7 @@ function editReportProduct(reportId, productId) {
     alert("Số lượng không hợp lệ!");
     return;
   }
-  const inventoryProduct = inventoryData.find(p => p.id === productId);
+  const inventoryProduct = inventoryData.find((p) => p.id === productId);
   if (!inventoryProduct) {
     alert("Sản phẩm không tồn tại trong kho!");
     return;
@@ -761,19 +825,19 @@ function editReportProduct(reportId, productId) {
     alert("Số lượng vượt quá tồn kho!");
     return;
   }
-  const updatedProducts = report.products.map(p =>
+  const updatedProducts = report.products.map((p) =>
     p.productId === productId ? { ...p, quantity: newQuantity } : p
   );
   Promise.all([
     reportsRef.child(reportId).update({ products: updatedProducts }),
-    inventoryRef.child(productId).update({ quantity: inventoryProduct.quantity + product.quantity - newQuantity })
+    inventoryRef.child(productId).update({ quantity: inventoryProduct.quantity + product.quantity - newQuantity }),
   ])
     .then(() => {
-      renderFilteredReports(reportData);
+      renderReports();
       renderReportProductList();
       alert("Đã cập nhật sản phẩm!");
     })
-    .catch(err => alert("Lỗi khi cập nhật sản phẩm: " + err.message));
+    .catch((err) => alert("Lỗi khi cập nhật sản phẩm: " + err.message));
 }
 
 function renderReportProductList() {
@@ -787,7 +851,7 @@ function renderReportProductList() {
     container.innerHTML = "<p>Chưa có sản phẩm trong kho.</p>";
     return;
   }
-  inventoryData.forEach(item => {
+  inventoryData.forEach((item) => {
     const clickCount = productClickCounts[item.id] || 0;
     const button = document.createElement("button");
     button.classList.add("product-button");
@@ -798,7 +862,7 @@ function renderReportProductList() {
 }
 
 function incrementProductCount(productId) {
-  const product = inventoryData.find(p => p.id === productId);
+  const product = inventoryData.find((p) => p.id === productId);
   if (!product) return;
   productClickCounts[productId] = (productClickCounts[productId] || 0) + 1;
   if (productClickCounts[productId] > product.quantity) {
@@ -811,7 +875,8 @@ function incrementProductCount(productId) {
 function filterReports() {
   const overlay = document.createElement("div");
   overlay.id = "date-filter-overlay";
-  overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center;";
+  overlay.style.cssText =
+    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center;";
 
   const filterBox = document.createElement("div");
   filterBox.style.cssText = "background: white; padding: 20px; border-radius: 5px; width: 300px; text-align: center;";
@@ -850,12 +915,12 @@ function filterReports() {
     let filteredReports = reportData;
 
     if (singleDate) {
-      const selectedDate = new Date(singleDate).toISOString().split('T')[0];
-      filteredReports = reportData.filter(r => r.date.split('T')[0] === selectedDate);
+      const selectedDate = new Date(singleDate).toISOString().split("T")[0];
+      filteredReports = reportData.filter((r) => r.date.split("T")[0] === selectedDate);
     } else if (startDate && endDate) {
       const start = new Date(startDate).getTime();
       const end = new Date(endDate).getTime() + 24 * 60 * 60 * 1000;
-      filteredReports = reportData.filter(r => {
+      filteredReports = reportData.filter((r) => {
         const reportDate = new Date(r.date).getTime();
         return reportDate >= start && reportDate < end;
       });
@@ -899,8 +964,8 @@ function renderFilteredReports(filteredReports) {
 
   const sortedReports = filteredReports.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  const financeReports = sortedReports.filter(r =>
-    r.openingBalance !== 0 || r.revenue !== 0 || r.expenseAmount !== 0 || r.closingBalance !== null
+  const financeReports = sortedReports.filter(
+    (r) => r.openingBalance !== 0 || r.revenue !== 0 || r.expenseAmount !== 0 || r.closingBalance !== null
   );
 
   const reportTable = document.createElement("table");
@@ -915,16 +980,20 @@ function renderFilteredReports(filteredReports) {
       </tr>
     </thead>
     <tbody>
-      ${financeReports.map((r, index) => `
+      ${financeReports
+        .map(
+          (r, index) => `
         <tr>
           <td>${index + 1}</td>
           <td>${r.employeeName}</td>
-          <td>${r.expenseAmount.toLocaleString('vi-VN')} VND (${r.expenseNote || "Không có"})</td>
+          <td>${r.expenseAmount.toLocaleString("vi-VN")} VND (${r.expenseNote || "Không có"})</td>
           <td>
             <button onclick="editReportExpense('${r.id}')">Sửa</button>
             <button onclick="deleteReportExpense('${r.id}')">Xóa</button>
           </td>
-        </tr>`).join("")}
+        </tr>`
+        )
+        .join("")}
     </tbody>`;
   reportContainer.appendChild(reportTable);
 
@@ -938,23 +1007,23 @@ function renderFilteredReports(filteredReports) {
   totalReportDiv.classList.add("report-total");
   totalReportDiv.innerHTML = `
     <strong>Tổng:</strong><br>
-    Số dư đầu kỳ: ${totalOpeningBalance.toLocaleString('vi-VN')} VND<br>
-    Doanh thu: ${totalRevenue.toLocaleString('vi-VN')} VND<br>
-    Chi phí: ${totalExpense.toLocaleString('vi-VN')} VND<br>
-    Số dư cuối kỳ: ${totalClosingBalance.toLocaleString('vi-VN')} VND<br>
-    Còn lại: ${finalBalance.toLocaleString('vi-VN')} VND
+    Số dư đầu kỳ: ${totalOpeningBalance.toLocaleString("vi-VN")} VND<br>
+    Doanh thu: ${totalRevenue.toLocaleString("vi-VN")} VND<br>
+    Chi phí: ${totalExpense.toLocaleString("vi-VN")} VND<br>
+    Số dư cuối kỳ: ${totalClosingBalance.toLocaleString("vi-VN")} VND<br>
+    Còn lại: ${finalBalance.toLocaleString("vi-VN")} VND
   `;
   reportContainer.appendChild(totalReportDiv);
 
   const productReports = sortedReports.flatMap((r, index) =>
     Array.isArray(r.products) && r.products.length > 0
-      ? r.products.map(p => ({
+      ? r.products.map((p) => ({
           index: index + 1,
           reportId: r.id,
           employeeName: r.employeeName,
           productName: p.name,
           quantity: p.quantity,
-          productId: p.productId
+          productId: p.productId,
         }))
       : []
   );
@@ -966,7 +1035,9 @@ function renderFilteredReports(filteredReports) {
       <tr><th>STT</th><th>Tên NV</th><th>Tên hàng hóa</th><th>Số lượng</th><th>Hành động</th></tr>
     </thead>
     <tbody>
-      ${productReports.map(p => `
+      ${productReports
+        .map(
+          (p) => `
         <tr>
           <td>${p.index}</td>
           <td>${p.employeeName}</td>
@@ -976,7 +1047,9 @@ function renderFilteredReports(filteredReports) {
             <button onclick="editReportProduct('${p.reportId}', '${p.productId}')">Sửa</button>
             <button onclick="deleteReportProduct('${p.reportId}', '${p.productId}')">Xóa</button>
           </td>
-        </tr>`).join("")}
+        </tr>`
+        )
+        .join("")}
     </tbody>`;
   productContainer.appendChild(productTable);
 
@@ -986,7 +1059,7 @@ function renderFilteredReports(filteredReports) {
   }, {});
   const totalProductText = Object.entries(totalProductSummary)
     .map(([name, qty]) => {
-      const inventoryItem = inventoryData.find(item => item.name === name);
+      const inventoryItem = inventoryData.find((item) => item.name === name);
       const remainingQty = inventoryItem ? inventoryItem.quantity : 0;
       return `${name}: ${qty} (Còn: ${remainingQty})`;
     })
@@ -998,6 +1071,10 @@ function renderFilteredReports(filteredReports) {
     <strong>Tổng xuất kho:</strong> ${totalProductText || "Không có"}
   `;
   productContainer.appendChild(totalProductDiv);
+}
+
+function renderReports() {
+  renderFilteredReports(reportData);
 }
 
 // Employee Management
@@ -1014,12 +1091,13 @@ function addEmployee() {
     return alert("Nhập thông tin nhân viên hợp lệ!");
   }
 
-  employeesRef.push({ name, dailyWage, allowance, otherFee, workdays: 26, offdays: 0, address: "", phone: "", dob: "" })
+  employeesRef
+    .push({ name, dailyWage, allowance, otherFee, workdays: 26, offdays: 0, address: "", phone: "", dob: "" })
     .then(() => {
       console.log("Employee added successfully");
       alert("Đã thêm nhân viên!");
     })
-    .catch(err => {
+    .catch((err) => {
       console.error("Error adding employee:", err);
       alert("Lỗi khi thêm nhân viên: " + err.message);
     });
@@ -1047,13 +1125,17 @@ function renderEmployeeList() {
       <tr><th>Tên NV</th><th>Lương/ngày</th><th>Phụ cấp</th><th>Phí khác</th></tr>
     </thead>
     <tbody>
-      ${employeeData.map(emp => `
+      ${employeeData
+        .map(
+          (emp) => `
         <tr>
           <td>${emp.name}</td>
-          <td>${emp.dailyWage.toLocaleString('vi-VN')}</td>
-          <td>${emp.allowance.toLocaleString('vi-VN')}</td>
-          <td>${emp.otherFee.toLocaleString('vi-VN')}</td>
-        </tr>`).join("")}
+          <td>${emp.dailyWage.toLocaleString("vi-VN")}</td>
+          <td>${emp.allowance.toLocaleString("vi-VN")}</td>
+          <td>${emp.otherFee.toLocaleString("vi-VN")}</td>
+        </tr>`
+        )
+        .join("")}
     </tbody>`;
   list.appendChild(table);
 }
@@ -1070,21 +1152,24 @@ function requestAdvance() {
     return alert("Vui lòng nhập số tiền và lý do!");
   }
 
-  advancesRef.push({
-    employeeId: currentEmployeeId,
-    amount,
-    reason,
-    status: "pending",
-    requestTime: new Date().toISOString()
-  }).then(() => {
-    console.log("Advance request submitted successfully");
-    alert("Đã gửi yêu cầu tạm ứng!");
-    document.getElementById("advance-amount").value = "";
-    document.getElementById("advance-reason").value = "";
-  }).catch(err => {
-    console.error("Error submitting advance request:", err);
-    alert("Lỗi khi gửi yêu cầu tạm ứng: " + err.message);
-  });
+  advancesRef
+    .push({
+      employeeId: currentEmployeeId,
+      amount,
+      reason,
+      status: "pending",
+      requestTime: new Date().toISOString(),
+    })
+    .then(() => {
+      console.log("Advance request submitted successfully");
+      alert("Đã gửi yêu cầu tạm ứng!");
+      document.getElementById("advance-amount").value = "";
+      document.getElementById("advance-reason").value = "";
+    })
+    .catch((err) => {
+      console.error("Error submitting advance request:", err);
+      alert("Lỗi khi gửi yêu cầu tạm ứng: " + err.message);
+    });
 }
 
 function renderAdvanceHistory() {
@@ -1094,7 +1179,7 @@ function renderAdvanceHistory() {
     return;
   }
   container.innerHTML = "";
-  const myAdvances = advanceRequests.filter(a => a.employeeId === currentEmployeeId);
+  const myAdvances = advanceRequests.filter((a) => a.employeeId === currentEmployeeId);
   console.log("Rendering advance history, total items:", myAdvances.length);
 
   if (myAdvances.length === 0) {
@@ -1103,9 +1188,9 @@ function renderAdvanceHistory() {
     return;
   }
 
-  myAdvances.forEach(a => {
+  myAdvances.forEach((a) => {
     const div = document.createElement("div");
-    div.innerHTML = `Tạm ứng: ${a.amount.toLocaleString('vi-VN')} VND - ${a.reason} - Trạng thái: ${a.status || "pending"}`;
+    div.innerHTML = `Tạm ứng: ${a.amount.toLocaleString("vi-VN")} VND - ${a.reason} - Trạng thái: ${a.status}`;
     container.appendChild(div);
   });
 }
@@ -1117,7 +1202,9 @@ function renderAdvanceApprovalList() {
     return;
   }
   container.innerHTML = "";
-  const pending = advanceRequests.filter(a => a.status === "pending" && employeeData.some(e => e.id === currentEmployeeId && e.role === "manager"));
+  const pending = advanceRequests.filter(
+    (a) => a.status === "pending" && employeeData.some((e) => e.id === currentEmployeeId && e.role === "manager")
+  );
   console.log("Rendering advance approval list, total items:", pending.length);
 
   if (pending.length === 0) {
@@ -1126,11 +1213,11 @@ function renderAdvanceApprovalList() {
     return;
   }
 
-  pending.forEach(a => {
-    const emp = employeeData.find(e => e.id === a.employeeId) || { name: "Nhân viên" };
+  pending.forEach((a) => {
+    const emp = employeeData.find((e) => e.id === a.employeeId) || { name: "Nhân viên" };
     const div = document.createElement("div");
     div.innerHTML = `
-      ${emp.name}: ${a.amount.toLocaleString('vi-VN')} VND - ${a.reason}
+      ${emp.name}: ${a.amount.toLocaleString("vi-VN")} VND - ${a.reason}
       <button onclick="approveAdvance('${a.id}')">Duyệt</button>
       <button onclick="rejectAdvance('${a.id}')">Từ chối</button>`;
     container.appendChild(div);
@@ -1139,13 +1226,15 @@ function renderAdvanceApprovalList() {
 
 function approveAdvance(id) {
   console.log("Approving advance ID:", id);
-  advancesRef.child(id).update({ status: "approved" })
+  advancesRef
+    .child(id)
+    .update({ status: "approved" })
     .then(() => {
       console.log("Advance approved:", id);
       renderAdvanceApprovalList();
       renderSalarySummary();
     })
-    .catch(err => {
+    .catch((err) => {
       console.error("Error approving advance:", err);
       alert("Lỗi khi duyệt yêu cầu: " + err.message);
     });
@@ -1153,12 +1242,14 @@ function approveAdvance(id) {
 
 function rejectAdvance(id) {
   console.log("Rejecting advance ID:", id);
-  advancesRef.child(id).update({ status: "rejected" })
+  advancesRef
+    .child(id)
+    .update({ status: "rejected" })
     .then(() => {
       console.log("Advance rejected:", id);
       renderAdvanceApprovalList();
     })
-    .catch(err => {
+    .catch((err) => {
       console.error("Error rejecting advance:", err);
       alert("Lỗi khi từ chối yêu cầu: " + err.message);
     });
@@ -1166,20 +1257,16 @@ function rejectAdvance(id) {
 
 // Salary & Workdays
 function calculateSalary(empId) {
-  const emp = employeeData.find(e => e.id === empId);
+  const emp = employeeData.find((e) => e.id === empId);
   if (!emp) {
     console.error("Employee not found for salary calculation:", empId);
     return 0;
   }
-  const now = new Date();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const baseWorkdays = daysInMonth;
-  const schedule = emp.schedule || {};
-  const offDays = Object.values(schedule).filter(s => s === "Off").length;
-  const overtimeDays = Object.values(schedule).filter(s => s === "Tăng ca").length;
-  const totalAdvance = advanceRequests.filter(a => a.employeeId === empId && a.status === "approved")
-    .reduce((sum, a) => sum + (a.amount || 0), 0);
-  const salary = (baseWorkdays + overtimeDays - offDays) * emp.dailyWage + (emp.allowance || 0) - (emp.otherFee || 0) - totalAdvance;
+  const totalAdvance = advanceRequests
+    .filter((a) => a.employeeId === empId && a.status === "approved")
+    .reduce((sum, a) => sum + a.amount, 0);
+  const salary = (emp.workdays - emp.offdays) * emp.dailyWage + emp.allowance - emp.otherFee - totalAdvance;
+  console.log("Calculated salary for employee:", { empId, salary });
   return salary;
 }
 
@@ -1189,60 +1276,21 @@ function renderSalarySummary() {
     console.error("Salary summary element not found!");
     return;
   }
-  const emp = employeeData.find(e => e.id === currentEmployeeId);
+  const emp = employeeData.find((e) => e.id === currentEmployeeId);
   if (!emp) {
     container.innerHTML = "<p>Chưa có dữ liệu nhân viên.</p>";
     console.error("No employee data for user:", currentEmployeeId);
     return;
   }
   const salary = calculateSalary(emp.id);
-  const now = new Date();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   container.innerHTML = `
-    <p>Tháng: ${now.getFullYear()}-${now.getMonth() + 1} (Tổng ${daysInMonth} ngày)</p>
-    <p>Ngày làm: ${daysInMonth}</p>
-    <p>Ngày nghỉ: ${Object.values(emp.schedule || {}).filter(s => s === "Off").length}</p>
-    <p>Ngày tăng ca: ${Object.values(emp.schedule || {}).filter(s => s === "Tăng ca").length}</p>
-    <p>Lương/ngày: ${emp.dailyWage.toLocaleString('vi-VN')} VND</p>
-    <p>Phụ cấp: ${emp.allowance || 0} VND</p>
-    <p>Phí khác: ${emp.otherFee || 0} VND</p>
-    <p>Tạm ứng: ${advanceRequests.filter(a => a.employeeId === emp.id && a.status === "approved").reduce((sum, a) => sum + (a.amount || 0), 0).toLocaleString('vi-VN')} VND</p>
-    <p><strong>Tổng lương: ${salary.toLocaleString('vi-VN')} VND</strong></p>`;
+    <p>Ngày công: ${emp.workdays}</p>
+    <p>Ngày nghỉ: ${emp.offdays}</p>
+    <p>Lương/ngày: ${emp.dailyWage.toLocaleString("vi-VN")} VND</p>
+    <p>Phụ cấp: ${emp.allowance.toLocaleString("vi-VN")} VND</p>
+    <p>Phí khác: ${emp.otherFee.toLocaleString("vi-VN")} VND</p>
+    <p><strong>Tổng lương: ${salary.toLocaleString("vi-VN")} VND</strong></p>`;
   console.log("Rendered salary summary for user:", currentEmployeeId);
-}
-
-function renderSalaryComparison() {
-  const container = document.getElementById("salary-comparison");
-  if (!container) return;
-  const emp = employeeData.find(e => e.id === currentEmployeeId);
-  if (!emp) return;
-  const now = new Date();
-  const currentSalary = calculateSalary(emp.id);
-  const comparison = [];
-  for (let i = 1; i <= 3; i++) {
-    const pastDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const pastSalary = calculatePastSalary(emp.id, pastDate);
-    comparison.push({ month: `${pastDate.getFullYear()}-${pastDate.getMonth() + 1}`, salary: pastSalary });
-  }
-  container.innerHTML = `
-    <table class="table-style">
-      <thead><tr><th>Tháng</th><th>Lương (VND)</th></tr></thead>
-      <tbody>
-        ${comparison.map(c => `<tr><td>${c.month}</td><td>${c.salary.toLocaleString('vi-VN')}</td></tr>`).join("")}
-        <tr><td><strong>Tháng hiện tại</strong></td><td><strong>${currentSalary.toLocaleString('vi-VN')}</strong></td></tr>
-      </tbody>
-    </table>`;
-}
-
-function calculatePastSalary(empId, date) {
-  const emp = employeeData.find(e => e.id === empId);
-  if (!emp) return 0;
-  const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  const baseWorkdays = daysInMonth;
-  const offDays = 0; // Giả lập, cần lịch sử schedule
-  const overtimeDays = 0; // Giả lập
-  const totalAdvance = 0; // Giả lập, cần lịch sử tạm ứng
-  return (baseWorkdays + overtimeDays - offDays) * emp.dailyWage + (emp.allowance || 0) - (emp.otherFee || 0) - totalAdvance;
 }
 
 // Chat
@@ -1253,12 +1301,14 @@ function sendGroupMessage() {
     return;
   }
   console.log("Sending group message:", msg);
-  messagesRef.child("group").push({ text: msg, time: new Date().toISOString(), senderId: currentEmployeeId })
+  messagesRef
+    .child("group")
+    .push({ text: msg, time: new Date().toISOString(), senderId: currentEmployeeId })
     .then(() => {
       console.log("Group message sent successfully");
       document.getElementById("group-message").value = "";
     })
-    .catch(err => console.error("Error sending group message:", err));
+    .catch((err) => console.error("Error sending group message:", err));
 }
 
 function sendManagerMessage() {
@@ -1268,12 +1318,14 @@ function sendManagerMessage() {
     return;
   }
   console.log("Sending manager message:", msg);
-  messagesRef.child("manager").push({ text: msg, time: new Date().toISOString(), senderId: currentEmployeeId })
+  messagesRef
+    .child("manager")
+    .push({ text: msg, time: new Date().toISOString(), senderId: currentEmployeeId })
     .then(() => {
       console.log("Manager message sent successfully");
       document.getElementById("manager-message").value = "";
     })
-    .catch(err => console.error("Error sending manager message:", err));
+    .catch((err) => console.error("Error sending manager message:", err));
 }
 
 function renderChat(type) {
@@ -1284,8 +1336,8 @@ function renderChat(type) {
   }
   box.innerHTML = "";
   console.log(`Rendering ${type} chat, total messages:`, messages[type].length);
-  messages[type].forEach(m => {
-    const sender = employeeData.find(e => e.id === m.senderId) || { name: "Nhân viên" };
+  messages[type].forEach((m) => {
+    const sender = employeeData.find((e) => e.id === m.senderId) || { name: "Nhân viên" };
     const div = document.createElement("div");
     div.classList.add("chat-message");
     div.textContent = `[${new Date(m.time).toLocaleTimeString()}] ${sender.name}: ${m.text}`;
@@ -1302,14 +1354,22 @@ function renderExpenseSummary() {
   }
   container.innerHTML = "";
   console.log("Rendering expense summary, total items:", reportData.length);
-  reportData.filter(r => r.expenseAmount > 0).forEach(r => {
-    const productsText = Array.isArray(r.products)
-      ? (r.products.length > 0 ? r.products.map(p => `${p.name}: ${p.quantity}`).join(", ") : "Không có sản phẩm")
-      : (r.product ? `Sản phẩm: ${r.product}` : "Không có sản phẩm");
-    const row = document.createElement("div");
-    row.innerHTML = `${new Date(r.date).toLocaleString()} - ${r.employeeName} - Chi phí: ${r.expenseAmount.toLocaleString('vi-VN')} VND - ${productsText}`;
-    container.appendChild(row);
-  });
+  reportData
+    .filter((r) => r.expenseAmount > 0)
+    .forEach((r) => {
+      const productsText = Array.isArray(r.products)
+        ? r.products.length > 0
+          ? r.products.map((p) => `${p.name}: ${p.quantity}`).join(", ")
+          : "Không có sản phẩm"
+        : r.product
+        ? `Sản phẩm: ${r.product}`
+        : "Không có sản phẩm";
+      const row = document.createElement("div");
+      row.innerHTML = `${new Date(r.date).toLocaleString()} - ${r.employeeName} - Chi phí: ${r.expenseAmount.toLocaleString(
+        "vi-VN"
+      )} VND - ${productsText}`;
+      container.appendChild(row);
+    });
 }
 
 function generateBusinessChart() {
@@ -1318,11 +1378,13 @@ function generateBusinessChart() {
     console.error("Chart canvas not found!");
     return;
   }
-  const labels = [...new Set(reportData.map(r => r.date.split("T")[0]))];
-  const revenueData = labels.map(d => reportData.filter(r => r.date.split("T")[0] === d)
-    .reduce((sum, r) => sum + (r.revenue || 0), 0));
-  const expenseData = labels.map(d => reportData.filter(r => r.date.split("T")[0] === d)
-    .reduce((sum, r) => sum + (r.expenseAmount || 0), 0));
+  const labels = [...new Set(reportData.map((r) => r.date.split("T")[0]))];
+  const revenueData = labels.map((d) =>
+    reportData.filter((r) => r.date.split("T")[0] === d).reduce((sum, r) => sum + (r.revenue || 0), 0)
+  );
+  const expenseData = labels.map((d) =>
+    reportData.filter((r) => r.date.split("T")[0] === d).reduce((sum, r) => sum + (r.expenseAmount || 0), 0)
+  );
   console.log("Generating business chart:", { labels, revenueData, expenseData });
 
   new Chart(ctx, {
@@ -1333,149 +1395,22 @@ function generateBusinessChart() {
         {
           label: "Doanh thu",
           data: revenueData,
-          backgroundColor: "#28a745"
+          backgroundColor: "#28a745",
         },
         {
           label: "Chi phí",
           data: expenseData,
-          backgroundColor: "#dc3545"
-        }
-      ]
+          backgroundColor: "#dc3545",
+        },
+      ],
     },
     options: {
       responsive: true,
       plugins: {
         legend: {
-          position: "top"
-        }
-      }
-    }
+          position: "top",
+        },
+      },
+    },
   });
-}
-
-// Schedule Management
-function changeMonth(offset) {
-  const now = new Date();
-  let currentMonth = now.getMonth() + offset;
-  let currentYear = now.getFullYear();
-  if (currentMonth < 0) {
-    currentMonth += 12;
-    currentYear -= 1;
-  } else if (currentMonth > 11) {
-    currentMonth -= 12;
-    currentYear += 1;
-  }
-  document.getElementById("current-month").textContent = `${currentYear}-${currentMonth + 1}`;
-  renderSchedule();
-}
-
-function updateScheduleFromDate() {
-  const date = document.getElementById("schedule-date-picker").value;
-  if (date) {
-    const [year, month] = date.split("-");
-    document.getElementById("current-month").textContent = `${year}-${month}`;
-    renderSchedule();
-  }
-}
-
-function renderSchedule() {
-  const [year, month] = document.getElementById("current-month").textContent.split("-");
-  const daysInMonth = new Date(year, month - 1, 0).getDate();
-  const container = document.getElementById("schedule-table");
-  if (!container) return;
-
-  container.innerHTML = "";
-  const table = document.createElement("table");
-  table.classList.add("table-style", "schedule-mobile");
-  table.innerHTML = `
-    <thead><tr><th>Ngày</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
-    <tbody>
-      ${Array.from({ length: daysInMonth }, (_, i) => {
-        const day = i + 1;
-        const emp = employeeData.find(e => e.id === currentEmployeeId);
-        const status = (emp && emp.schedule && emp.schedule[day]) || "Làm";
-        return `
-          <tr>
-            <td>${day}</td>
-            <td>${status}</td>
-            <td><button onclick="handleDayClick(${day}, '${status}')">Chọn</button></td>
-          </tr>`;
-      }).join("")}
-    </tbody>`;
-  container.appendChild(table);
-}
-
-function handleDayClick(day, status) {
-  const options = ["Off", "Tăng ca", "Đổi ca"];
-  const newStatus = prompt("Chọn trạng thái:", options.join(", ")) || status;
-  if (options.includes(newStatus)) {
-    if (newStatus === "Off" && checkOffConflict(day)) {
-      alert("Ngày nghỉ đã bị trùng, vui lòng chọn ngày khác hoặc gửi đề xuất đổi ca!");
-    } else {
-      updateSchedule(day, newStatus);
-      if (newStatus === "Đổi ca") {
-        const targetEmp = prompt("Nhập ID nhân viên muốn đổi ca:");
-        if (targetEmp && employeeData.some(e => e.id === targetEmp)) {
-          sendSwapRequest(targetEmp, day);
-        } else {
-          alert("ID nhân viên không hợp lệ!");
-        }
-      } else {
-        sendApprovalRequest(day, newStatus);
-      }
-    }
-  }
-}
-
-function checkOffConflict(day) {
-  return employeeData.some(emp => emp.id !== currentEmployeeId && emp.schedule && emp.schedule[day] === "Off");
-}
-
-function updateSchedule(day, status) {
-  const empRef = employeesRef.child(currentEmployeeId).child("schedule");
-  empRef.update({ [day]: status })
-    .then(() => console.log("Cập nhật lịch thành công"))
-    .catch(err => alert("Lỗi khi cập nhật lịch: " + err.message));
-}
-
-function sendApprovalRequest(day, status) {
-  advancesRef.push({
-    employeeId: currentEmployeeId,
-    type: "schedule_change",
-    day: day,
-    status: status,
-    requestTime: new Date().toISOString(),
-    approvalStatus: "pending"
-  }).then(() => console.log("Gửi yêu cầu duyệt lịch thành công"))
-    .catch(err => alert("Lỗi khi gửi yêu cầu duyệt: " + err.message));
-}
-
-function sendSwapRequest(targetEmpId, day) {
-  advancesRef.push({
-    employeeId: currentEmployeeId,
-    targetEmpId: targetEmpId,
-    type: "swap_request",
-    day: day,
-    requestTime: new Date().toISOString(),
-    approvalStatus: "pending"
-  }).then(() => console.log("Gửi đề xuất đổi ca thành công"))
-    .catch(err => alert("Lỗi khi gửi đề xuất đổi ca: " + err.message));
-}
-
-function renderActivityHistory() {
-  const container = document.getElementById("activity-history");
-  if (!container) return;
-  const empActivities = reportData.filter(r => r.employeeId === currentEmployeeId)
-    .map(r => `Báo cáo ngày ${new Date(r.date).toLocaleDateString()}`);
-  const advanceActivities = advanceRequests.filter(a => a.employeeId === currentEmployeeId)
-    .map(a => `Yêu cầu tạm ứng ${a.amount.toLocaleString('vi-VN')} VND - ${a.approvalStatus || "pending"}`);
-  const approvalActivities = advanceRequests.filter(a => employeeData.some(e => e.id === a.employeeId && e.role === "manager"))
-    .map(a => `Duyệt yêu cầu của ${employeeData.find(e => e.id === a.employeeId)?.name} - ${a.approvalStatus || "pending"}`);
-  container.innerHTML = `
-    <h4>Hoạt động của bạn:</h4>
-    <ul>${empActivities.map(a => `<li>${a}</li>`).join("")}</ul>
-    <h4>Yêu cầu tạm ứng:</h4>
-    <ul>${advanceActivities.map(a => `<li>${a}</li>`).join("")}</ul>
-    <h4>Hoạt động quản lý (nếu có):</h4>
-    <ul>${approvalActivities.map(a => `<li>${a}</li>`).join("")}</ul>`;
 }
