@@ -2,29 +2,41 @@
  * app.js - Milano 259 (Full Features - Firebase)
  *********************************************/
 
-// ===================== //
-// Firebase References   //
-// ===================== //
+// Firebase References
 const inventoryRef = firebase.database().ref("inventory");
 const reportsRef = firebase.database().ref("reports");
 const employeesRef = firebase.database().ref("employees");
 const advancesRef = firebase.database().ref("advances");
 const messagesRef = firebase.database().ref("messages");
 
-// ===================== //
-// Local Variables       //
-// ===================== //
+// Local Variables
 let inventoryData = [];
 let reportData = [];
 let employeeData = [];
 let advanceRequests = [];
 let messages = { group: [], manager: [] };
 let productClickCounts = {};
+let expenseNotes = []; // Biến lưu nội dung chi phí
 let currentEmployeeId = null;
 
-/**********************
- * 1. Login / Logout
- **********************/
+// Hàm parseEntry (từ bạn cung cấp)
+function parseEntry(text) {
+  const match = text.match(/([\d.,]+)\s*(k|nghìn|tr|triệu)?/i);
+  if (!match) return { money: 0, note: text.trim() };
+
+  let num = parseFloat(match[1].replace(/,/g, ''));
+  const unit = match[2]?.toLowerCase() || '';
+
+  if (unit.includes('tr')) num *= 1_000_000;
+  else if (unit.includes('k') || unit.includes('nghìn')) num *= 1_000;
+
+  return {
+    money: Math.round(num),
+    note: text.replace(match[0], '').trim()
+  };
+}
+
+// Đăng nhập / Đăng xuất
 function login() {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
@@ -62,9 +74,7 @@ function logout() {
   });
 }
 
-/**********************
- * 2. Floating Button Tabs
- **********************/
+// Floating Button Tabs
 function toggleMenu() {
   const options = document.getElementById('float-options');
   console.log("Toggling menu, current display:", options.style.display);
@@ -110,9 +120,7 @@ function openTabBubble(tabId) {
   }
 }
 
-/**********************
- * 3. Inventory Management (CRUD)
- **********************/
+// Inventory Management (CRUD)
 function addInventory() {
   const name = document.getElementById("product-name").value.trim();
   const quantity = parseInt(document.getElementById("product-quantity").value) || 0;
@@ -202,9 +210,7 @@ function renderInventory() {
   list.appendChild(table);
 }
 
-/**********************
- * 4. Revenue-Expense Report
- **********************/
+// Revenue-Expense Report
 function renderReportProductList() {
   const container = document.getElementById("report-product-list");
   if (!container) {
@@ -213,7 +219,7 @@ function renderReportProductList() {
   }
   if (inventoryData.length === 0) {
     console.log("Waiting for inventory data to load");
-    return; // Không render nếu chưa có dữ liệu
+    return;
   }
   container.innerHTML = "";
   console.log("Rendering report product list, total items:", inventoryData.length);
@@ -258,21 +264,38 @@ function incrementProductCount(productId) {
 }
 
 function submitReport() {
-  const openingBalanceInput = parseFloat(document.getElementById("opening-balance").value) || 0;
-  const expenseAmount = parseFloat(document.getElementById("expense-amount").value) || 0;
+  const expenseInput = document.getElementById("expense-input").value.trim();
   const revenue = parseFloat(document.getElementById("revenue").value) || 0;
   const closingBalance = parseFloat(document.getElementById("closing-balance").value) || 0;
 
-  if (openingBalanceInput === 0 && expenseAmount === 0 && revenue === 0 && closingBalance === 0) {
+  const { money: expenseAmount, note: expenseNote } = parseEntry(expenseInput);
+
+  if (expenseAmount === 0 && revenue === 0 && closingBalance === 0) {
     console.error("No financial data entered for report");
-    return alert("Vui lòng nhập ít nhất một thông tin (số dư đầu kỳ, chi phí, doanh thu, số dư cuối kỳ)!");
+    return alert("Vui lòng nhập ít nhất một thông tin (chi phí, doanh thu, số dư cuối kỳ)!");
   }
 
+  // Lấy thời gian hiện tại (giờ Việt Nam)
+  const now = new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+  const currentHour = parseInt(now.split(', ')[1].split(':')[0]);
+  const currentDate = now.split(', ')[0].split('/').reverse().join('-'); // YYYY-MM-DD
   const sortedReports = reportData.sort((a, b) => new Date(a.date) - new Date(b.date));
-  const latestReport = sortedReports[sortedReports.length - 1];
-  const openingBalance = openingBalanceInput !== 0 ? openingBalanceInput : (latestReport ? latestReport.closingBalance : 0);
 
-  console.log("Submitting report:", { openingBalance, expenseAmount, revenue, closingBalance, productClickCounts });
+  let openingBalance = 0;
+  if (currentHour >= 18) {
+    // Sau 18:00, lấy closingBalance của báo cáo cuối ngày trước
+    const previousDay = new Date(currentDate);
+    previousDay.setDate(previousDay.getDate() - 1);
+    const previousDayStr = previousDay.toISOString().split('T')[0];
+    const lastReportPrevDay = sortedReports.filter(r => r.date.startsWith(previousDayStr)).pop();
+    openingBalance = lastReportPrevDay ? lastReportPrevDay.closingBalance : 0;
+  } else {
+    // Trước 18:00, lấy closingBalance của báo cáo cuối cùng cùng ngày
+    const lastReportToday = sortedReports.filter(r => r.date.startsWith(currentDate)).pop();
+    openingBalance = lastReportToday ? lastReportToday.closingBalance : 0;
+  }
+
+  console.log("Submitting report:", { openingBalance, expenseAmount, expenseNote, revenue, closingBalance, productClickCounts });
 
   const productsReported = Object.keys(productClickCounts).map(productId => {
     const product = inventoryData.find(p => p.id === productId);
@@ -300,20 +323,22 @@ function submitReport() {
       employeeName: employee.name,
       openingBalance,
       expenseAmount,
+      expenseNote: expenseNote || "Không có",
       revenue,
       closingBalance,
-      products: productsReported, // Đảm bảo products luôn là mảng
-      remaining: openingBalance - expenseAmount + revenue
+      remaining: openingBalance - expenseAmount + revenue,
+      products: productsReported
     };
 
     console.log("Pushing report to Firebase:", reportData);
 
     reportsRef.push(reportData)
-      .then(() => {
+      .then(snap => {
         console.log("Report submitted successfully");
+        expenseNotes.push({ reportId: snap.key, note: expenseNote || "Không có" });
+        console.log("Added to expenseNotes:", { reportId: snap.key, note: expenseNote });
         alert("Báo cáo thành công!");
-        document.getElementById("opening-balance").value = "";
-        document.getElementById("expense-amount").value = "";
+        document.getElementById("expense-input").value = "";
         document.getElementById("revenue").value = "";
         document.getElementById("closing-balance").value = "";
         productClickCounts = {};
@@ -354,6 +379,8 @@ function renderReports() {
 
   const totalRevenue = updatedReports.reduce((sum, r) => sum + r.revenue, 0);
   const totalExpense = updatedReports.reduce((sum, r) => sum + r.expenseAmount, 0);
+  const firstOpeningBalance = updatedReports[0]?.openingBalance || 0;
+  const finalClosingBalance = updatedReports[updatedReports.length - 1]?.closingBalance || 0;
   const finalBalance = updatedReports[updatedReports.length - 1]?.remaining || 0;
 
   const table = document.createElement("table");
@@ -362,12 +389,10 @@ function renderReports() {
     <thead>
       <tr>
         <th>STT</th>
-        <th>Thời gian</th>
-        <th>Tên nhân viên</th>
-        <th>Số dư đầu kỳ</th>
-        <th>Chi phí</th>
-        <th>Doanh thu</th>
-        <th>Số dư cuối kỳ</th>
+        <th>Giờ</th>
+        <th>Tên NV</th>
+        <th>Nội dung chi phí</th>
+        <th>Số tiền chi</th>
         <th>Còn lại</th>
       </tr>
     </thead>
@@ -377,30 +402,30 @@ function renderReports() {
         return `
         <tr>
           <td>${index + 1}</td>
-          <td>${new Date(r.date).toLocaleString()}</td>
+          <td>${new Date(r.date).toLocaleTimeString('vi-VN')}</td>
           <td>${r.employeeName}</td>
-          <td>${r.openingBalance}</td>
+          <td>${r.expenseNote || "Không có"}</td>
           <td>${r.expenseAmount}</td>
-          <td>${r.revenue}</td>
-          <td>${r.closingBalance}</td>
           <td>${r.remaining}</td>
         </tr>`;
       }).join("")}
-      <tr>
-        <td colspan="3"><strong>Tổng</strong></td>
-        <td>-</td>
-        <td><strong>${totalExpense}</strong></td>
-        <td><strong>${totalRevenue}</strong></td>
-        <td>-</td>
-        <td><strong>${finalBalance}</strong></td>
-      </tr>
     </tbody>`;
   container.appendChild(table);
+
+  const totalDiv = document.createElement("div");
+  totalDiv.classList.add("report-total");
+  totalDiv.innerHTML = `
+    <strong>Tổng:</strong><br>
+    Số dư đầu kỳ: ${firstOpeningBalance}<br>
+    Doanh thu: ${totalRevenue}<br>
+    Chi phí: ${totalExpense}<br>
+    Số dư cuối kỳ: ${finalClosingBalance}<br>
+    Còn lại: ${finalBalance}
+  `;
+  container.appendChild(totalDiv);
 }
 
-/**********************
- * 5. Employee Management
- **********************/
+// Employee Management
 function addEmployee() {
   const name = document.getElementById("employee-name").value.trim();
   const dailyWage = parseFloat(document.getElementById("employee-dailywage").value) || 0;
@@ -458,9 +483,7 @@ function renderEmployeeList() {
   list.appendChild(table);
 }
 
-/**********************
- * 6. Advance Requests
- **********************/
+// Advance Requests
 function requestAdvance() {
   const amount = parseFloat(document.getElementById("advance-amount").value) || 0;
   const reason = document.getElementById("advance-reason").value.trim();
@@ -550,9 +573,7 @@ function rejectAdvance(id) {
     .catch(err => console.error("Error rejecting advance:", err));
 }
 
-/**********************
- * 7. Salary & Workdays
- **********************/
+// Salary & Workdays
 function calculateSalary(empId) {
   const emp = employeeData.find(e => e.id === empId);
   if (!emp) {
@@ -589,9 +610,7 @@ function renderSalarySummary() {
   console.log("Rendered salary summary for user:", currentEmployeeId);
 }
 
-/**********************
- * 8. Chat
- **********************/
+// Chat
 function sendGroupMessage() {
   const msg = document.getElementById("group-message").value.trim();
   if (!msg) {
@@ -638,9 +657,7 @@ function renderChat(type) {
   });
 }
 
-/**********************
- * 9. Business Report
- **********************/
+// Business Report
 function renderExpenseSummary() {
   const container = document.getElementById("expense-summary-table");
   if (!container) {
@@ -702,9 +719,7 @@ function generateBusinessChart() {
   ```
 }
 
-/**********************
- * 10. Initialize Firebase Listeners
- **********************/
+// Initialize Firebase Listeners
 function loadFirebaseData() {
   console.log("Initializing Firebase listeners");
   inventoryRef.on("value", snapshot => {
@@ -727,16 +742,21 @@ function loadFirebaseData() {
 
   reportsRef.on("value", snapshot => {
     reportData = [];
+    expenseNotes = [];
     if (snapshot.exists()) {
       snapshot.forEach(child => {
         const report = { id: child.key, ...child.val() };
         console.log("Fetched report from Firebase:", report);
         reportData.push(report);
+        if (report.expenseNote) {
+          expenseNotes.push({ reportId: child.key, note: report.expenseNote });
+        }
       });
     } else {
       console.log("No data in reports");
     }
     console.log("Updated reportData:", reportData);
+    console.log("Updated expenseNotes:", expenseNotes);
     renderReports();
     renderExpenseSummary();
   }, err => {
