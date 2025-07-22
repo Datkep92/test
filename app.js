@@ -212,45 +212,29 @@ function renderInventory() {
 
 // Revenue-Expense Report
 function submitReport() {
+  const openingBalanceEl = document.getElementById("opening-balance");
   const expenseInputEl = document.getElementById("expense-input");
   const revenueEl = document.getElementById("revenue");
   const closingBalanceEl = document.getElementById("closing-balance");
 
-  if (!expenseInputEl || !revenueEl || !closingBalanceEl) {
+  if (!openingBalanceEl || !expenseInputEl || !revenueEl || !closingBalanceEl) {
     alert("Lỗi: Không tìm thấy các trường nhập liệu!");
     return;
   }
 
+  const openingBalance = parseFloat(openingBalanceEl.value) || 0;
   const expenseInput = expenseInputEl.value.trim();
   const revenue = parseFloat(revenueEl.value) || 0;
-  const closingBalance = parseFloat(closingBalanceEl.value) || 0;
+  const closingBalance = closingBalanceEl.value ? parseFloat(closingBalanceEl.value) : 0;
   const { money: expenseAmount, note: expenseNote } = parseEntry(expenseInput);
 
-  if (expenseAmount === 0 && revenue === 0 && Object.keys(productClickCounts).length === 0) {
-    alert("Vui lòng nhập ít nhất một thông tin: chi phí, doanh thu, hoặc xuất hàng!");
+  if (expenseAmount === 0 && revenue === 0 && closingBalance === 0 && openingBalance === 0 && Object.keys(productClickCounts).length === 0) {
+    alert("Vui lòng nhập ít nhất một thông tin: số dư đầu kỳ, chi phí, doanh thu, số dư cuối kỳ, hoặc xuất hàng!");
     return;
   }
 
-  const now = new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
-  const currentDate = now.split(', ')[0].split('/').reverse().join('-');
-  const sortedReports = reportData.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-  // Tính số dư đầu kỳ
-  let openingBalance = 0;
-  const lastReport = sortedReports[sortedReports.length - 1];
-  if (lastReport) {
-    const lastReportDate = lastReport.date.split('T')[0];
-    if (lastReportDate !== currentDate) {
-      // Sang ngày mới: lấy closingBalance của báo cáo cuối ngày trước
-      openingBalance = lastReport.closingBalance || 0;
-    } else {
-      // Trong ngày: lấy remaining của báo cáo trước
-      openingBalance = lastReport.remaining || 0;
-    }
-  }
-
   // Tính số tiền còn lại, chỉ trừ closingBalance nếu được nhập
-  const remaining = openingBalance + revenue - expenseAmount - (closingBalance || 0);
+  const remaining = openingBalance + revenue - expenseAmount - closingBalance;
 
   const productsReported = Object.keys(productClickCounts).map(productId => {
     const product = inventoryData.find(p => p.id === productId);
@@ -294,7 +278,7 @@ function submitReport() {
       products: productsReported
     };
 
-    // Log để kiểm tra dữ liệu trước khi gửi
+    // Log để kiểm tra dữ liệu
     console.log("Gửi báo cáo:", {
       openingBalance,
       revenue,
@@ -308,9 +292,10 @@ function submitReport() {
       .then(snap => {
         expenseNotes.push({ reportId: snap.key, note: expenseNote || "Không có" });
         alert("Báo cáo thành công!");
+        openingBalanceEl.value = "";
         expenseInputEl.value = "";
         revenueEl.value = "";
-        closingBalanceEl.value = ""; // Xóa input để tránh nhập lại sai
+        closingBalanceEl.value = "";
         productClickCounts = {};
         renderReportProductList();
         renderReports();
@@ -476,9 +461,6 @@ function renderReports() {
 
   const sortedReports = reportData.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  // Sử dụng giá trị openingBalance và remaining từ reportData, không tính lại
-  const updatedReports = sortedReports.map(r => ({ ...r }));
-
   // Revenue-Expense Table
   const reportTable = document.createElement("table");
   reportTable.classList.add("table-style");
@@ -487,7 +469,7 @@ function renderReports() {
       <tr><th>STT</th><th>Tên NV</th><th>Nội dung</th><th>Số tiền</th><th>Hành động</th></tr>
     </thead>
     <tbody>
-      ${updatedReports.map((r, index) => `
+      ${sortedReports.map((r, index) => `
         <tr>
           <td>${index + 1}</td>
           <td>${r.employeeName}</td>
@@ -502,35 +484,35 @@ function renderReports() {
   reportContainer.appendChild(reportTable);
 
   // Revenue-Expense Summary
-  const totalRevenue = updatedReports.reduce((sum, r) => sum + (r.revenue || 0), 0);
-  const totalExpense = updatedReports.reduce((sum, r) => sum + (r.expenseAmount || 0), 0);
-  const firstOpeningBalance = updatedReports[0]?.openingBalance || 0;
-  const finalClosingBalance = updatedReports[updatedReports.length - 1]?.closingBalance || 0;
-  const finalBalance = updatedReports[updatedReports.length - 1]?.remaining || 0;
+  const totalOpeningBalance = sortedReports.reduce((sum, r) => sum + (r.openingBalance || 0), 0);
+  const totalRevenue = sortedReports.reduce((sum, r) => sum + (r.revenue || 0), 0);
+  const totalExpense = sortedReports.reduce((sum, r) => sum + (r.expenseAmount || 0), 0);
+  const totalClosingBalance = sortedReports.reduce((sum, r) => sum + (r.closingBalance || 0), 0);
+  const finalBalance = totalOpeningBalance + totalRevenue - totalExpense - totalClosingBalance;
 
   const totalReportDiv = document.createElement("div");
   totalReportDiv.classList.add("report-total");
   totalReportDiv.innerHTML = `
     <strong>Tổng:</strong><br>
-    Số dư đầu kỳ: ${firstOpeningBalance.toLocaleString('vi-VN')} VND<br>
+    Số dư đầu kỳ: ${totalOpeningBalance.toLocaleString('vi-VN')} VND<br>
     Doanh thu: ${totalRevenue.toLocaleString('vi-VN')} VND<br>
     Chi phí: ${totalExpense.toLocaleString('vi-VN')} VND<br>
-    Số dư cuối kỳ: ${finalClosingBalance.toLocaleString('vi-VN')} VND<br>
+    Số dư cuối kỳ: ${totalClosingBalance.toLocaleString('vi-VN')} VND<br>
     Còn lại: ${finalBalance.toLocaleString('vi-VN')} VND
   `;
   reportContainer.appendChild(totalReportDiv);
 
   // Log để kiểm tra tổng kết
   console.log("Tổng kết báo cáo:", {
-    firstOpeningBalance,
+    totalOpeningBalance,
     totalRevenue,
     totalExpense,
-    finalClosingBalance,
+    totalClosingBalance,
     finalBalance
   });
 
   // Product Report Table
-  const productReports = updatedReports.flatMap((r, index) => 
+  const productReports = sortedReports.flatMap((r, index) => 
     Array.isArray(r.products) && r.products.length > 0 
       ? r.products.map(p => ({
           index: index + 1,
