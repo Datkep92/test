@@ -456,6 +456,7 @@ function renderReports() {
     return { ...r, remaining };
   });
 
+  // Revenue-Expense Table
   const reportTable = document.createElement("table");
   reportTable.classList.add("table-style");
   reportTable.innerHTML = `
@@ -477,6 +478,26 @@ function renderReports() {
     </tbody>`;
   reportContainer.appendChild(reportTable);
 
+  // Revenue-Expense Summary
+  const totalRevenue = updatedReports.reduce((sum, r) => sum + r.revenue, 0);
+  const totalExpense = updatedReports.reduce((sum, r) => sum + r.expenseAmount, 0);
+  const firstOpeningBalance = updatedReports[0]?.openingBalance || 0;
+  const finalClosingBalance = updatedReports[updatedReports.length - 1]?.closingBalance || 0;
+  const finalBalance = updatedReports[updatedReports.length - 1]?.remaining || 0;
+
+  const totalReportDiv = document.createElement("div");
+  totalReportDiv.classList.add("report-total");
+  totalReportDiv.innerHTML = `
+    <strong>Tổng:</strong><br>
+    Số dư đầu kỳ: ${firstOpeningBalance.toLocaleString('vi-VN')} VND<br>
+    Doanh thu: ${totalRevenue.toLocaleString('vi-VN')} VND<br>
+    Chi phí: ${totalExpense.toLocaleString('vi-VN')} VND<br>
+    Số dư cuối kỳ: ${finalClosingBalance.toLocaleString('vi-VN')} VND<br>
+    Còn lại: ${finalBalance.toLocaleString('vi-VN')} VND
+  `;
+  reportContainer.appendChild(totalReportDiv);
+
+  // Product Report Table
   const productReports = updatedReports.flatMap((r, index) => 
     Array.isArray(r.products) && r.products.length > 0 
       ? r.products.map(p => ({
@@ -510,6 +531,26 @@ function renderReports() {
         </tr>`).join("")}
     </tbody>`;
   productContainer.appendChild(productTable);
+
+  // Product Summary with Exported and Remaining Quantities
+  const totalProductSummary = productReports.reduce((acc, p) => {
+    acc[p.productName] = (acc[p.productName] || 0) + p.quantity;
+    return acc;
+  }, {});
+  const totalProductText = Object.entries(totalProductSummary)
+    .map(([name, qty]) => {
+      const inventoryItem = inventoryData.find(item => item.name === name);
+      const remainingQty = inventoryItem ? inventoryItem.quantity : 0;
+      return `${name}: ${qty} (Còn: ${remainingQty})`;
+    })
+    .join(" - ");
+
+  const totalProductDiv = document.createElement("div");
+  totalProductDiv.classList.add("report-total");
+  totalProductDiv.innerHTML = `
+    <strong>Tổng xuất kho:</strong> ${totalProductText || "Không có"}
+  `;
+  productContainer.appendChild(totalProductDiv);
 }
 // Employee Management
 function addEmployee() {
