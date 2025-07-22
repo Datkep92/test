@@ -216,13 +216,7 @@ function submitReport() {
   const revenueEl = document.getElementById("revenue");
   const closingBalanceEl = document.getElementById("closing-balance");
 
-  // Kiểm tra xem các phần tử có tồn tại không
   if (!expenseInputEl || !revenueEl || !closingBalanceEl) {
-    console.error("One or more input elements not found:", {
-      expenseInput: expenseInputEl,
-      revenue: revenueEl,
-      closingBalance: closingBalanceEl
-    });
     alert("Lỗi: Không tìm thấy các trường nhập liệu!");
     return;
   }
@@ -232,40 +226,29 @@ function submitReport() {
   const closingBalance = parseFloat(closingBalanceEl.value) || 0;
   const { money: expenseAmount, note: expenseNote } = parseEntry(expenseInput);
 
-  // Kiểm tra nếu không có doanh thu, chi phí, hoặc xuất hàng
   if (expenseAmount === 0 && revenue === 0 && Object.keys(productClickCounts).length === 0) {
-    console.error("No financial data or products entered for report");
     alert("Vui lòng nhập ít nhất một thông tin: chi phí, doanh thu, hoặc xuất hàng!");
     return;
   }
 
-  // Lấy thời gian hiện tại (giờ Việt Nam)
   const now = new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
   const currentHour = parseInt(now.split(', ')[1].split(':')[0]);
-  const currentDate = now.split(', ')[0].split('/').reverse().join('-'); // YYYY-MM-DD
+  const currentDate = now.split(', ')[0].split('/').reverse().join('-');
   const sortedReports = reportData.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  // Tính số dư đầu kỳ
   let openingBalance = 0;
   if (currentHour >= 18) {
-    // Sau 18:00, lấy closingBalance của báo cáo cuối ngày trước
     const previousDay = new Date(currentDate);
     previousDay.setDate(previousDay.getDate() - 1);
     const previousDayStr = previousDay.toISOString().split('T')[0];
     const lastReportPrevDay = sortedReports.filter(r => r.date.startsWith(previousDayStr)).pop();
     openingBalance = lastReportPrevDay ? lastReportPrevDay.closingBalance : 0;
   } else {
-    // Trước 18:00, lấy closingBalance của báo cáo cuối cùng cùng ngày
     const lastReportToday = sortedReports.filter(r => r.date.startsWith(currentDate)).pop();
     openingBalance = lastReportToday ? lastReportToday.closingBalance : 0;
   }
 
-  // Tính số dư còn lại theo công thức mới
   const remaining = openingBalance + revenue - expenseAmount - closingBalance;
-
-  console.log("Submitting report:", { openingBalance, expenseAmount, expenseNote, revenue, closingBalance, remaining, productClickCounts });
-
-  // Chuẩn bị danh sách sản phẩm xuất hàng
   const productsReported = Object.keys(productClickCounts).map(productId => {
     const product = inventoryData.find(p => p.id === productId);
     const quantity = productClickCounts[productId] || 0;
@@ -275,14 +258,10 @@ function submitReport() {
     return null;
   }).filter(p => p !== null);
 
-  console.log("Products reported:", productsReported);
-
-  // Cập nhật số lượng kho
   Promise.all(productsReported.map(p => {
     const product = inventoryData.find(prod => prod.id === p.productId);
     if (product && p.quantity > 0) {
-      return inventoryRef.child(p.productId).update({ quantity: product.quantity - p.quantity })
-        .then(() => console.log("Updated product quantity:", { productId: p.productId, newQuantity: product.quantity - p.quantity }));
+      return inventoryRef.child(p.productId).update({ quantity: product.quantity - p.quantity });
     }
     return Promise.resolve();
   })).then(() => {
@@ -300,81 +279,156 @@ function submitReport() {
       products: productsReported
     };
 
-    console.log("Pushing report to Firebase:", reportData);
-
     reportsRef.push(reportData)
       .then(snap => {
-        console.log("Report submitted successfully");
         expenseNotes.push({ reportId: snap.key, note: expenseNote || "Không có" });
-        console.log("Added to expenseNotes:", { reportId: snap.key, note: expenseNote });
         alert("Báo cáo thành công!");
         expenseInputEl.value = "";
         revenueEl.value = "";
         closingBalanceEl.value = "";
         productClickCounts = {};
         renderReportProductList();
+        renderReports();
       })
-      .catch(err => {
-        console.error("Error submitting report:", err);
-        alert("Lỗi khi gửi báo cáo: " + err.message);
-      });
-  }).catch(err => {
-    console.error("Error updating product quantities:", err);
-    alert("Lỗi khi cập nhật số lượng sản phẩm: " + err.message);
-  });
+      .catch(err => alert("Lỗi khi gửi báo cáo: " + err.message));
+  }).catch(err => alert("Lỗi khi cập nhật số lượng sản phẩm: " + err.message));
 }
-
+function editReportExpense(reportId) {
+  const report = reportData.find(r => r.id === reportId);
+  if (!report) {
+    alert("Báo cáo không tồn tại!");
+    return;
+  }
+  const newInput = prompt("Chỉnh sửa nội dung chi phí (VD: 500k Mua nguyên liệu):", `${report.expenseAmount / 1000}k ${report.expenseNote}`);
+  if (!newInput) return;
+  const { money: newAmount, note: newNote } = parseEntry(newInput);
+  reportsRef.child(reportId).update({ 
+    expenseAmount: newAmount, 
+    expenseNote: newNote || "Không có",
+    remaining: report.openingBalance + report.revenue - newAmount - report.closingBalance
+  })
+    .then(() => {
+      expenseNotes = expenseNotes.map(note => 
+        note.reportId === reportId ? { ...note, note: newNote || "Không có" } : note
+      );
+      renderReports();
+      alert("Đã cập nhật chi phí!");
+    })
+    .catch(err => alert("Lỗi khi cập nhật chi phí: " + err.message));
+}
+function deleteReportExpense(reportId) {
+  if (!confirm("Xóa nội dung chi phí này?")) return;
+  const report = reportData.find(r => r.id === reportId);
+  if (!report) {
+    alert("Báo cáo không tồn tại!");
+    return;
+  }
+  reportsRef.child(reportId).update({ 
+    expenseAmount: 0, 
+    expenseNote: "Không có",
+    remaining: report.openingBalance + report.revenue - 0 - report.closingBalance
+  })
+    .then(() => {
+      expenseNotes = expenseNotes.filter(note => note.reportId !== reportId);
+      renderReports();
+      alert("Đã xóa chi phí!");
+    })
+    .catch(err => alert("Lỗi khi xóa chi phí: " + err.message));
+}
+function deleteReportProduct(reportId, productId) {
+  if (!confirm("Xóa sản phẩm xuất hàng này?")) return;
+  const report = reportData.find(r => r.id === reportId);
+  if (!report) {
+    alert("Báo cáo không tồn tại!");
+    return;
+  }
+  const product = report.products.find(p => p.productId === productId);
+  if (!product) {
+    alert("Sản phẩm không tồn tại trong báo cáo!");
+    return;
+  }
+  const updatedProducts = report.products.filter(p => p.productId !== productId);
+  const inventoryProduct = inventoryData.find(p => p.id === productId);
+  Promise.all([
+    reportsRef.child(reportId).update({ products: updatedProducts }),
+    inventoryProduct ? inventoryRef.child(productId).update({ quantity: inventoryProduct.quantity + product.quantity }) : Promise.resolve()
+  ])
+    .then(() => {
+      renderReports();
+      renderReportProductList();
+      alert("Đã xóa sản phẩm!");
+    })
+    .catch(err => alert("Lỗi khi xóa sản phẩm: " + err.message));
+}
+function editReportProduct(reportId, productId) {
+  const report = reportData.find(r => r.id === reportId);
+  if (!report) {
+    alert("Báo cáo không tồn tại!");
+    return;
+  }
+  const product = report.products.find(p => p.productId === productId);
+  if (!product) {
+    alert("Sản phẩm không tồn tại trong báo cáo!");
+    return;
+  }
+  const newQuantity = parseInt(prompt("Số lượng mới:", product.quantity));
+  if (!newQuantity || newQuantity < 0) {
+    alert("Số lượng không hợp lệ!");
+    return;
+  }
+  const inventoryProduct = inventoryData.find(p => p.id === productId);
+  if (!inventoryProduct) {
+    alert("Sản phẩm không tồn tại trong kho!");
+    return;
+  }
+  if (newQuantity > inventoryProduct.quantity + product.quantity) {
+    alert("Số lượng vượt quá tồn kho!");
+    return;
+  }
+  const updatedProducts = report.products.map(p => 
+    p.productId === productId ? { ...p, quantity: newQuantity } : p
+  );
+  Promise.all([
+    reportsRef.child(reportId).update({ products: updatedProducts }),
+    inventoryRef.child(productId).update({ quantity: inventoryProduct.quantity + product.quantity - newQuantity })
+  ])
+    .then(() => {
+      renderReports();
+      renderReportProductList();
+      alert("Đã cập nhật sản phẩm!");
+    })
+    .catch(err => alert("Lỗi khi cập nhật sản phẩm: " + err.message));
+}
 function renderReportProductList() {
   const container = document.getElementById("report-product-list");
   if (!container) {
     console.error("Report product list element not found!");
     return;
   }
+  container.innerHTML = "";
   if (inventoryData.length === 0) {
-    console.log("Waiting for inventory data to load");
     container.innerHTML = "<p>Chưa có sản phẩm trong kho.</p>";
     return;
   }
-  container.innerHTML = "";
-  console.log("Rendering report product list, total items:", inventoryData.length);
-
-  const table = document.createElement("table");
-  table.classList.add("table-style");
-  table.innerHTML = `
-    <thead>
-      <tr><th>Tên sản phẩm</th><th>Số lượng trong kho</th><th>Đơn giá</th><th>Số lượng xuất</th></tr>
-    </thead>
-    <tbody>
-      ${inventoryData.map(item => {
-        const clickCount = productClickCounts[item.id] || 0;
-        console.log("Rendering product for report:", { id: item.id, name: item.name, clickCount });
-        return `
-        <tr onclick="incrementProductCount('${item.id}')">
-          <td>${item.name}</td>
-          <td>${item.quantity}</td>
-          <td>${item.price.toLocaleString('vi-VN')} VND</td>
-          <td>
-            <input type="number" id="quantity-${item.id}" value="${clickCount}" min="0" max="${item.quantity}" readonly>
-          </td>
-        </tr>`;
-      }).join("")}
-    </tbody>`;
-  container.appendChild(table);
-  console.log("Current product click counts:", productClickCounts);
+  inventoryData.forEach(item => {
+    const clickCount = productClickCounts[item.id] || 0;
+    const button = document.createElement("button");
+    button.classList.add("product-button");
+    button.textContent = `${item.name}: ${clickCount}`;
+    button.onclick = () => incrementProductCount(item.id);
+    container.appendChild(button);
+  });
 }
 
 function incrementProductCount(productId) {
+  const product = inventoryData.find(p => p.id === productId);
+  if (!product) return;
   productClickCounts[productId] = (productClickCounts[productId] || 0) + 1;
-  const maxQuantity = inventoryData.find(p => p.id === productId)?.quantity || 0;
-  if (productClickCounts[productId] > maxQuantity) {
-    productClickCounts[productId] = maxQuantity;
-    console.warn("Max quantity reached for product:", productId);
+  if (productClickCounts[productId] > product.quantity) {
+    productClickCounts[productId] = product.quantity;
+    alert("Đã đạt số lượng tối đa trong kho!");
   }
-  const input = document.getElementById(`quantity-${productId}`);
-  if (input) {
-    input.value = productClickCounts[productId];
-  }
-  console.log("Incremented count for product:", { productId, count: productClickCounts[productId] });
+  renderReportProductList();
 }
 
 
@@ -382,12 +436,11 @@ function renderReports() {
   const reportContainer = document.getElementById("shared-report-table");
   const productContainer = document.getElementById("report-product-table");
   if (!reportContainer || !productContainer) {
-    console.error("Report table element not found:", { reportContainer, productContainer });
+    console.error("Report table element not found!");
     return;
   }
   reportContainer.innerHTML = "";
   productContainer.innerHTML = "";
-  console.log("Rendering reports, total items:", reportData.length);
 
   if (reportData.length === 0) {
     reportContainer.innerHTML = "<p>Chưa có báo cáo thu chi.</p>";
@@ -403,64 +456,36 @@ function renderReports() {
     return { ...r, remaining };
   });
 
-  const totalRevenue = updatedReports.reduce((sum, r) => sum + r.revenue, 0);
-  const totalExpense = updatedReports.reduce((sum, r) => sum + r.expenseAmount, 0);
-  const firstOpeningBalance = updatedReports[0]?.openingBalance || 0;
-  const finalClosingBalance = updatedReports[updatedReports.length - 1]?.closingBalance || 0;
-  const finalBalance = updatedReports[updatedReports.length - 1]?.remaining || 0;
-
-  // Bảng báo cáo thu chi
   const reportTable = document.createElement("table");
   reportTable.classList.add("table-style");
   reportTable.innerHTML = `
     <thead>
-      <tr>
-        <th>STT</th>
-        <th>Giờ</th>
-        <th>Tên NV</th>
-        <th>Nội dung chi phí</th>
-        <th>Số tiền chi</th>
-        <th>Doanh thu</th>
-        <th>Số dư cuối kỳ</th>
-        <th>Số dư còn lại</th>
-      </tr>
+      <tr><th>STT</th><th>Tên NV</th><th>Nội dung</th><th>Số tiền</th><th>Hành động</th></tr>
     </thead>
     <tbody>
       ${updatedReports.map((r, index) => `
         <tr>
           <td>${index + 1}</td>
-          <td>${new Date(r.date).toLocaleTimeString('vi-VN')}</td>
           <td>${r.employeeName}</td>
           <td>${r.expenseNote || "Không có"}</td>
           <td>${r.expenseAmount.toLocaleString('vi-VN')} VND</td>
-          <td>${r.revenue.toLocaleString('vi-VN')} VND</td>
-          <td>${r.closingBalance.toLocaleString('vi-VN')} VND</td>
-          <td>${r.remaining.toLocaleString('vi-VN')} VND</td>
+          <td>
+            <button onclick="editReportExpense('${r.id}')">Sửa</button>
+            <button onclick="deleteReportExpense('${r.id}')">Xóa</button>
+          </td>
         </tr>`).join("")}
     </tbody>`;
   reportContainer.appendChild(reportTable);
 
-  const totalReportDiv = document.createElement("div");
-  totalReportDiv.classList.add("report-total");
-  totalReportDiv.innerHTML = `
-    <strong>Tổng:</strong><br>
-    Số dư đầu kỳ: ${firstOpeningBalance.toLocaleString('vi-VN')} VND<br>
-    Doanh thu: ${totalRevenue.toLocaleString('vi-VN')} VND<br>
-    Chi phí: ${totalExpense.toLocaleString('vi-VN')} VND<br>
-    Số dư cuối kỳ: ${finalClosingBalance.toLocaleString('vi-VN')} VND<br>
-    Còn lại: ${finalBalance.toLocaleString('vi-VN')} VND
-  `;
-  reportContainer.appendChild(totalReportDiv);
-
-  // Bảng báo cáo xuất hàng
   const productReports = updatedReports.flatMap((r, index) => 
     Array.isArray(r.products) && r.products.length > 0 
       ? r.products.map(p => ({
           index: index + 1,
-          date: r.date,
+          reportId: r.id,
           employeeName: r.employeeName,
           productName: p.name,
-          quantity: p.quantity
+          quantity: p.quantity,
+          productId: p.productId
         }))
       : []
   );
@@ -469,42 +494,23 @@ function renderReports() {
   productTable.classList.add("table-style");
   productTable.innerHTML = `
     <thead>
-      <tr>
-        <th>STT</th>
-        <th>Giờ</th>
-        <th>Tên NV</th>
-        <th>Tên hàng hóa</th>
-        <th>Số lượng</th>
-      </tr>
+      <tr><th>STT</th><th>Tên NV</th><th>Tên hàng hóa</th><th>Số lượng</th><th>Hành động</th></tr>
     </thead>
     <tbody>
       ${productReports.map(p => `
         <tr>
           <td>${p.index}</td>
-          <td>${new Date(p.date).toLocaleTimeString('vi-VN')}</td>
           <td>${p.employeeName}</td>
           <td>${p.productName}</td>
           <td>${p.quantity}</td>
+          <td>
+            <button onclick="editReportProduct('${p.reportId}', '${p.productId}')">Sửa</button>
+            <button onclick="deleteReportProduct('${p.reportId}', '${p.productId}')">Xóa</button>
+          </td>
         </tr>`).join("")}
     </tbody>`;
   productContainer.appendChild(productTable);
-
-  const totalProductSummary = productReports.reduce((acc, p) => {
-    acc[p.productName] = (acc[p.productName] || 0) + p.quantity;
-    return acc;
-  }, {});
-  const totalProductText = Object.entries(totalProductSummary)
-    .map(([name, qty]) => `${qty} ${name}`)
-    .join(" - ");
-
-  const totalProductDiv = document.createElement("div");
-  totalProductDiv.classList.add("report-total");
-  totalProductDiv.innerHTML = `
-    <strong>Tổng xuất kho:</strong> ${totalProductText || "Không có"}
-  `;
-  productContainer.appendChild(totalProductDiv);
 }
-
 // Employee Management
 function addEmployee() {
   const name = document.getElementById("employee-name").value.trim();
