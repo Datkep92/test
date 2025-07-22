@@ -127,6 +127,28 @@
       </section>
     </main>
   </div>
+
+  <!-- ✅ Tự động đăng nhập nếu là máy POS -->
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const isPOS = localStorage.getItem("deviceId") === "posmilano";
+      if (!isPOS) return;
+
+      try {
+        const userCredential = await firebase.auth().signInWithEmailAndPassword("111@gmail.com", "Quoc@123");
+        const user = userCredential.user;
+        if (user) {
+          document.getElementById("login-page").style.display = "none";
+          document.getElementById("main-page").style.display = "block";
+          if (typeof openTab === 'function') openTab(null, 'revenue-expense');
+        }
+      } catch (error) {
+        console.error("Tự động đăng nhập thất bại:", error);
+        alert("Không thể tự động đăng nhập.");
+      }
+    });
+  </script>
+
   <script src="./app.js"></script>
 </body>
 </html>
