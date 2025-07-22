@@ -260,20 +260,26 @@ function incrementProductCount(productId) {
 }
 
 function submitReport() {
-  const openingBalance = parseFloat(document.getElementById("opening-balance").value) || 0;
+  const openingBalanceInput = parseFloat(document.getElementById("opening-balance").value) || 0;
   const expenseAmount = parseFloat(document.getElementById("expense-amount").value) || 0;
   const revenue = parseFloat(document.getElementById("revenue").value) || 0;
   const closingBalance = parseFloat(document.getElementById("closing-balance").value) || 0;
 
-  console.log("Submitting report:", { openingBalance, expenseAmount, revenue, closingBalance, productClickCounts });
-
-  // Check if at least one financial field is filled
-  if (openingBalance === 0 && expenseAmount === 0 && revenue === 0 && closingBalance === 0) {
+  // Kiểm tra ít nhất một trường tài chính được nhập
+  if (openingBalanceInput === 0 && expenseAmount === 0 && revenue === 0 && closingBalance === 0) {
     console.error("No financial data entered for report");
     return alert("Vui lòng nhập ít nhất một thông tin (số dư đầu kỳ, chi phí, doanh thu, số dư cuối kỳ)!");
   }
 
-  // Collect exported products
+  // Sắp xếp báo cáo theo thời gian để lấy báo cáo mới nhất
+  const sortedReports = reportData.sort((a, b) => new Date(a.date) - new Date(b.date));
+  const latestReport = sortedReports[sortedReports.length - 1];
+  // Nếu không nhập số dư đầu kỳ, lấy số dư cuối kỳ của báo cáo trước
+  const openingBalance = openingBalanceInput !== 0 ? openingBalanceInput : (latestReport ? latestReport.closingBalance : 0);
+
+  console.log("Submitting report:", { openingBalance, expenseAmount, revenue, closingBalance, productClickCounts });
+
+  // Thu thập sản phẩm xuất
   const productsReported = Object.keys(productClickCounts).map(productId => {
     const product = inventoryData.find(p => p.id === productId);
     const quantity = productClickCounts[productId] || 0;
@@ -285,7 +291,7 @@ function submitReport() {
 
   console.log("Products reported:", productsReported);
 
-  // Update inventory quantities
+  // Cập nhật số lượng sản phẩm trong kho
   Promise.all(productsReported.map(p => {
     const product = inventoryData.find(prod => prod.id === p.productId);
     if (product && p.quantity > 0) {
@@ -294,7 +300,6 @@ function submitReport() {
     }
     return Promise.resolve();
   })).then(() => {
-    // Get employee name
     const employee = employeeData.find(e => e.id === currentEmployeeId) || { name: "Unknown" };
     const reportData = {
       date: new Date().toISOString(),
@@ -305,7 +310,7 @@ function submitReport() {
       revenue,
       closingBalance,
       products: productsReported,
-      remaining: closingBalance - expenseAmount + revenue
+      remaining: openingBalance - expenseAmount + revenue
     };
 
     console.log("Pushing report to Firebase:", reportData);
@@ -314,7 +319,6 @@ function submitReport() {
       .then(() => {
         console.log("Report submitted successfully");
         alert("Báo cáo thành công!");
-        // Reset inputs and click counts
         document.getElementById("opening-balance").value = "";
         document.getElementById("expense-amount").value = "";
         document.getElementById("revenue").value = "";
@@ -347,6 +351,20 @@ function renderReports() {
     return;
   }
 
+  // Sắp xếp báo cáo theo thời gian
+  const sortedReports = reportData.sort((a, b) => new Date(a.date) - new Date(b.date));
+  let currentBalance = sortedReports[0]?.openingBalance || 0;
+  const updatedReports = sortedReports.map(r => {
+    const remaining = currentBalance - r.expenseAmount + r.revenue;
+    currentBalance = r.closingBalance || remaining; // Cập nhật số dư hiện tại
+    return { ...r, remaining };
+  });
+
+  // Tính tổng
+  const totalRevenue = updatedReports.reduce((sum, r) => sum + r.revenue, 0);
+  const totalExpense = updatedReports.reduce((sum, r) => sum + r.expenseAmount, 0);
+  const finalBalance = updatedReports[updatedReports.length - 1]?.remaining || 0;
+
   const table = document.createElement("table");
   table.classList.add("table-style");
   table.innerHTML = `
@@ -363,7 +381,7 @@ function renderReports() {
       </tr>
     </thead>
     <tbody>
-      ${reportData.map((r, index) => {
+      ${updatedReports.map((r, index) => {
         console.log("Rendering report:", r);
         return `
         <tr>
@@ -377,6 +395,14 @@ function renderReports() {
           <td>${r.remaining}</td>
         </tr>`;
       }).join("")}
+      <tr>
+        <td colspan="3"><strong>Tổng</strong></td>
+        <td>-</td>
+        <td><strong>${totalExpense}</strong></td>
+        <td><strong>${totalRevenue}</strong></td>
+        <td>-</td>
+        <td><strong>${finalBalance}</strong></td>
+      </tr>
     </tbody>`;
   container.appendChild(table);
 }
