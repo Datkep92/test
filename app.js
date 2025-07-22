@@ -1,6 +1,5 @@
 /*********************************************
- * app.js - Milano 259 (Firebase)
- * Quản lý Kho, Báo cáo, Nhân sự, Tạm ứng, Chat
+ * app.js - Milano 259 (Full Features - Firebase)
  *********************************************/
 
 // ===================== //
@@ -20,27 +19,26 @@ let reportData = [];
 let employeeData = [];
 let advanceRequests = [];
 let messages = { group: [], manager: [] };
-let currentEmployeeId = null;
 let selectedProductId = null;
+let currentEmployeeId = null;
 
-// ===================== //
-// 1. Đăng nhập          //
-// ===================== //
+/**********************
+ * 1. Đăng nhập / Đăng xuất
+ **********************/
 function login() {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
-  if (!email || !password) return alert("Vui lòng nhập thông tin đăng nhập!");
+  if (!email || !password) return alert("Vui lòng nhập đầy đủ thông tin!");
 
   auth.signInWithEmailAndPassword(email, password)
-    .then(userCredential => {
-      currentEmployeeId = userCredential.user.uid;
+    .then(user => {
+      currentEmployeeId = user.user.uid;
       document.getElementById("login-page").style.display = "none";
       document.getElementById("main-page").style.display = "block";
-      const firstTab = document.querySelector(".bottom-nav button.tablinks");
-      if (firstTab) firstTab.click();
-      loadDataFromFirebase();
+      document.querySelectorAll(".tablinks")[0].click();
+      loadFirebaseData();
     })
-    .catch(err => alert("Đăng nhập thất bại: " + err.message));
+    .catch(err => alert("Lỗi đăng nhập: " + err.message));
 }
 
 function logout() {
@@ -51,9 +49,9 @@ function logout() {
   });
 }
 
-// ===================== //
-// 2. Tabs               //
-// ===================== //
+/**********************
+ * 2. Tabs
+ **********************/
 function openTab(evt, tabName) {
   const tabcontent = document.getElementsByClassName("tabcontent");
   for (let i = 0; i < tabcontent.length; i++) tabcontent[i].style.display = "none";
@@ -65,93 +63,127 @@ function openTab(evt, tabName) {
   if (tabName === "profile") {
     renderAdvanceHistory();
     renderSalarySummary();
-    renderEmployeeCalendar();
   } else if (tabName === "employee-management") {
-    renderAdvanceApprovalList();
     renderEmployeeList();
+    renderAdvanceApprovalList();
   } else if (tabName === "business-report") {
     renderExpenseSummary();
     generateBusinessChart();
   }
 }
 
-// ===================== //
-// 3. Kho (Firebase)     //
-// ===================== //
+/**********************
+ * 3. Quản lý kho (CRUD)
+ **********************/
 function addInventory() {
   const name = document.getElementById("product-name").value.trim();
   const quantity = parseInt(document.getElementById("product-quantity").value) || 0;
   const price = parseFloat(document.getElementById("product-price").value) || 0;
-  if (!name || quantity <= 0 || price <= 0) return alert("Vui lòng nhập đúng thông tin sản phẩm!");
 
-  inventoryRef.push({ name, quantity, price }).then(() => {
-    alert("Thêm sản phẩm thành công!");
-  });
+  if (!name || quantity <= 0 || price <= 0) return alert("Nhập đúng thông tin sản phẩm!");
+
+  inventoryRef.push({ name, quantity, price })
+    .then(() => {
+      alert("Đã thêm sản phẩm!");
+      document.getElementById("product-name").value = "";
+      document.getElementById("product-quantity").value = "";
+      document.getElementById("product-price").value = "";
+    });
 }
 
 function editInventory(id) {
   const product = inventoryData.find(p => p.id === id);
   if (!product) return;
   const newName = prompt("Tên mới:", product.name) || product.name;
-  const newQty = parseInt(prompt("Số lượng mới:", product.quantity)) || product.quantity;
-  const newPrice = parseFloat(prompt("Giá mới:", product.price)) || product.price;
-  inventoryRef.child(id).set({ name: newName, quantity: newQty, price: newPrice });
+  const newQty = parseInt(prompt("Số lượng:", product.quantity)) || product.quantity;
+  const newPrice = parseFloat(prompt("Đơn giá:", product.price)) || product.price;
+  inventoryRef.child(id).update({ name: newName, quantity: newQty, price: newPrice });
 }
 
 function deleteInventory(id) {
-  inventoryRef.child(id).remove().then(() => alert("Đã xóa sản phẩm!"));
+  if (!confirm("Xóa sản phẩm này?")) return;
+  inventoryRef.child(id).remove();
 }
 
 function renderInventory() {
   const list = document.getElementById("inventory-list");
   if (!list) return;
   list.innerHTML = "";
-  inventoryData.forEach(item => {
-    const div = document.createElement("div");
-    div.classList.add("inventory-item");
-    div.innerHTML = `${item.name} - SL: ${item.quantity} - Giá: ${item.price} 
-      <button onclick="editInventory('${item.id}')">Sửa</button>
-      <button onclick="deleteInventory('${item.id}')">Xóa</button>`;
-    list.appendChild(div);
-  });
-  renderReportProductList();
+
+  if (inventoryData.length === 0) {
+    list.innerHTML = "<p>Kho trống.</p>";
+    return;
+  }
+
+  const table = document.createElement("table");
+  table.classList.add("table-style");
+  table.innerHTML = `
+    <thead>
+      <tr><th>Tên SP</th><th>Số lượng</th><th>Đơn giá</th><th>Hành động</th></tr>
+    </thead>
+    <tbody>
+      ${inventoryData.map(item => `
+        <tr>
+          <td>${item.name}</td>
+          <td>${item.quantity}</td>
+          <td>${item.price}</td>
+          <td>
+            <button onclick="editInventory('${item.id}')">Sửa</button>
+            <button onclick="deleteInventory('${item.id}')">Xóa</button>
+          </td>
+        </tr>`).join("")}
+    </tbody>`;
+  list.appendChild(table);
 }
 
-// ===================== //
-// 4. Báo cáo (Firebase) //
-// ===================== //
+/**********************
+ * 4. Báo cáo Thu Chi
+ **********************/
 function renderReportProductList() {
   const container = document.getElementById("report-product-list");
   if (!container) return;
   container.innerHTML = "";
-  inventoryData.forEach(item => {
-    const btn = document.createElement("button");
-    btn.textContent = `${item.name} (SL: ${item.quantity})`;
-    btn.onclick = () => { selectedProductId = item.id; alert(`Đang chọn: ${item.name}`); };
-    container.appendChild(btn);
-  });
+
+  if (inventoryData.length === 0) {
+    container.innerHTML = "<p>Kho trống, không có sản phẩm để xuất.</p>";
+    return;
+  }
+
+  const table = document.createElement("table");
+  table.classList.add("table-style");
+  table.innerHTML = `
+    <thead>
+      <tr><th>Chọn</th><th>Tên SP</th><th>Số lượng</th><th>Đơn giá</th></tr>
+    </thead>
+    <tbody>
+      ${inventoryData.map(item => `
+        <tr>
+          <td><input type="radio" name="select-product" onclick="selectedProductId='${item.id}'"></td>
+          <td>${item.name}</td>
+          <td>${item.quantity}</td>
+          <td>${item.price}</td>
+        </tr>`).join("")}
+    </tbody>`;
+  container.appendChild(table);
 }
 
 function submitReport() {
-  if (!selectedProductId) return alert("Vui lòng chọn sản phẩm để xuất!");
+  if (!selectedProductId) return alert("Chọn sản phẩm để xuất!");
   const product = inventoryData.find(p => p.id === selectedProductId);
-  if (!product) return;
+  if (!product) return alert("Sản phẩm không tồn tại!");
 
-  const reportQuantity = parseInt(document.getElementById("report-quantity").value) || 0;
-  if (reportQuantity <= 0 || reportQuantity > product.quantity) return alert("Số lượng xuất không hợp lệ!");
+  const qty = parseInt(document.getElementById("report-quantity").value) || 0;
+  if (qty <= 0 || qty > product.quantity) return alert("Số lượng không hợp lệ!");
 
   const revenue = parseFloat(document.getElementById("revenue").value) || 0;
   const expenseAmount = parseFloat(document.getElementById("expense-amount").value) || 0;
   const expenseInfo = document.getElementById("expense-info").value.trim();
 
-  // Update tồn kho
-  inventoryRef.child(product.id).update({ quantity: product.quantity - reportQuantity });
-
-  // Gửi báo cáo
+  inventoryRef.child(product.id).update({ quantity: product.quantity - qty });
   reportsRef.push({
     date: new Date().toISOString().split("T")[0],
     product: product.name,
-    quantity: reportQuantity,
+    quantity: qty,
     revenue,
     expenseAmount,
     expenseInfo
@@ -162,65 +194,132 @@ function renderReports() {
   const container = document.getElementById("shared-report-table");
   if (!container) return;
   container.innerHTML = "";
-  reportData.forEach(r => {
-    const row = document.createElement("div");
-    row.innerHTML = `Ngày: ${r.date} - SP: ${r.product} - SL: ${r.quantity} - DT: ${r.revenue} - CP: ${r.expenseAmount} - ${r.expenseInfo}`;
-    container.appendChild(row);
-  });
+
+  if (reportData.length === 0) {
+    container.innerHTML = "<p>Chưa có báo cáo nào.</p>";
+    return;
+  }
+
+  const table = document.createElement("table");
+  table.classList.add("table-style");
+  table.innerHTML = `
+    <thead>
+      <tr><th>Ngày</th><th>Sản phẩm</th><th>SL</th><th>Doanh thu</th><th>Chi phí</th><th>Ghi chú</th></tr>
+    </thead>
+    <tbody>
+      ${reportData.map(r => `
+        <tr>
+          <td>${r.date}</td>
+          <td>${r.product}</td>
+          <td>${r.quantity}</td>
+          <td>${r.revenue}</td>
+          <td>${r.expenseAmount}</td>
+          <td>${r.expenseInfo}</td>
+        </tr>`).join("")}
+    </tbody>`;
+  container.appendChild(table);
 }
 
-function renderExpenseSummary() {
-  const container = document.getElementById("expense-summary-table");
-  if (!container) return;
-  container.innerHTML = "";
-  reportData.filter(r => r.expenseAmount > 0).forEach(r => {
-    const row = document.createElement("div");
-    row.innerHTML = `${r.date} - ${r.product} - Chi phí: ${r.expenseAmount} - ${r.expenseInfo}`;
-    container.appendChild(row);
-  });
+/**********************
+ * 5. Quản lý Nhân viên
+ **********************/
+function addEmployee() {
+  const name = document.getElementById("employee-name").value.trim();
+  const dailyWage = parseFloat(document.getElementById("employee-dailywage").value) || 0;
+  const allowance = parseFloat(document.getElementById("employee-allowance").value) || 0;
+  const otherFee = parseFloat(document.getElementById("employee-otherfee").value) || 0;
+
+  if (!name || dailyWage <= 0) return alert("Nhập thông tin nhân viên hợp lệ!");
+
+  employeesRef.push({ name, dailyWage, allowance, otherFee, workdays: 26, offdays: 0 })
+    .then(() => alert("Đã thêm nhân viên!"));
 }
 
-// ===================== //
-// 5. Tạm ứng (Firebase) //
-// ===================== //
+function renderEmployeeList() {
+  const list = document.getElementById("employee-list");
+  if (!list) return;
+  list.innerHTML = "";
+
+  if (employeeData.length === 0) {
+    list.innerHTML = "<p>Chưa có nhân viên.</p>";
+    return;
+  }
+
+  const table = document.createElement("table");
+  table.classList.add("table-style");
+  table.innerHTML = `
+    <thead>
+      <tr><th>Tên NV</th><th>Lương/ngày</th><th>Phụ cấp</th><th>Phí khác</th></tr>
+    </thead>
+    <tbody>
+      ${employeeData.map(emp => `
+        <tr>
+          <td>${emp.name}</td>
+          <td>${emp.dailyWage}</td>
+          <td>${emp.allowance}</td>
+          <td>${emp.otherFee}</td>
+        </tr>`).join("")}
+    </tbody>`;
+  list.appendChild(table);
+}
+
+/**********************
+ * 6. Tạm ứng
+ **********************/
 function requestAdvance() {
   const amount = parseFloat(document.getElementById("advance-amount").value) || 0;
   const reason = document.getElementById("advance-reason").value.trim();
-  if (amount <= 0 || !reason) return alert("Vui lòng nhập số tiền và lý do tạm ứng!");
+
+  if (amount <= 0 || !reason) return alert("Vui lòng nhập số tiền và lý do!");
 
   advancesRef.push({
     employeeId: currentEmployeeId,
     amount,
     reason,
     status: "pending"
-  }).then(() => alert("Yêu cầu tạm ứng đã gửi!"));
+  }).then(() => alert("Đã gửi yêu cầu tạm ứng!"));
 }
 
 function renderAdvanceHistory() {
   const container = document.getElementById("advance-history");
   if (!container) return;
   container.innerHTML = "";
-  advanceRequests.filter(a => a.employeeId === currentEmployeeId)
-    .forEach(a => {
-      const div = document.createElement("div");
-      div.innerHTML = `${a.amount} VND - ${a.reason} - Trạng thái: ${a.status}`;
-      container.appendChild(div);
-    });
+
+  const myAdvances = advanceRequests.filter(a => a.employeeId === currentEmployeeId);
+
+  if (myAdvances.length === 0) {
+    container.innerHTML = "<p>Chưa có yêu cầu tạm ứng.</p>";
+    return;
+  }
+
+  myAdvances.forEach(a => {
+    const div = document.createElement("div");
+    div.innerHTML = `Tạm ứng: ${a.amount} VND - ${a.reason} - Trạng thái: ${a.status}`;
+    container.appendChild(div);
+  });
 }
 
 function renderAdvanceApprovalList() {
   const container = document.getElementById("advance-approval-list");
   if (!container) return;
   container.innerHTML = "";
-  advanceRequests.filter(a => a.status === "pending")
-    .forEach(a => {
-      const emp = employeeData.find(e => e.id === a.employeeId) || { name: "Nhân viên" };
-      const div = document.createElement("div");
-      div.innerHTML = `${emp.name}: ${a.amount} - ${a.reason}
-        <button onclick="approveAdvance('${a.id}')">Duyệt</button>
-        <button onclick="rejectAdvance('${a.id}')">Từ chối</button>`;
-      container.appendChild(div);
-    });
+
+  const pending = advanceRequests.filter(a => a.status === "pending");
+
+  if (pending.length === 0) {
+    container.innerHTML = "<p>Không có yêu cầu nào.</p>";
+    return;
+  }
+
+  pending.forEach(a => {
+    const emp = employeeData.find(e => e.id === a.employeeId) || { name: "Nhân viên" };
+    const div = document.createElement("div");
+    div.innerHTML = `
+      ${emp.name}: ${a.amount} - ${a.reason}
+      <button onclick="approveAdvance('${a.id}')">Duyệt</button>
+      <button onclick="rejectAdvance('${a.id}')">Từ chối</button>`;
+    container.appendChild(div);
+  });
 }
 
 function approveAdvance(id) {
@@ -231,31 +330,9 @@ function rejectAdvance(id) {
   advancesRef.child(id).update({ status: "rejected" });
 }
 
-// ===================== //
-// 6. Nhân viên & Lương  //
-// ===================== //
-function addEmployee() {
-  const name = document.getElementById("employee-name").value.trim();
-  const dailyWage = parseFloat(document.getElementById("employee-dailywage").value) || 0;
-  const allowance = parseFloat(document.getElementById("employee-allowance").value) || 0;
-  const otherFee = parseFloat(document.getElementById("employee-otherfee").value) || 0;
-  if (!name || dailyWage <= 0) return alert("Nhập đúng thông tin nhân viên!");
-
-  employeesRef.push({ name, dailyWage, allowance, otherFee, workdays: 26, offdays: 0 })
-    .then(() => alert("Thêm nhân viên thành công!"));
-}
-
-function renderEmployeeList() {
-  const list = document.getElementById("employee-list");
-  if (!list) return;
-  list.innerHTML = "";
-  employeeData.forEach(emp => {
-    const div = document.createElement("div");
-    div.innerHTML = `${emp.name} - Lương ngày: ${emp.dailyWage} - Phụ cấp: ${emp.allowance} - Phí khác: ${emp.otherFee}`;
-    list.appendChild(div);
-  });
-}
-
+/**********************
+ * 7. Lương & Ngày công
+ **********************/
 function calculateSalary(empId) {
   const emp = employeeData.find(e => e.id === empId);
   if (!emp) return 0;
@@ -276,16 +353,15 @@ function renderSalarySummary() {
   container.innerHTML = `
     <p>Ngày công: ${emp.workdays}</p>
     <p>Ngày nghỉ: ${emp.offdays}</p>
-    <p>Lương ngày công: ${emp.dailyWage}</p>
+    <p>Lương/ngày: ${emp.dailyWage}</p>
     <p>Phụ cấp: ${emp.allowance}</p>
     <p>Phí khác: ${emp.otherFee}</p>
-    <p><strong>Tổng lương: ${salary} VND</strong></p>
-  `;
+    <p><strong>Tổng lương: ${salary} VND</strong></p>`;
 }
 
-// ===================== //
-// 7. Chat (Firebase)    //
-// ===================== //
+/**********************
+ * 8. Chat
+ **********************/
 function sendGroupMessage() {
   const msg = document.getElementById("group-message").value.trim();
   if (!msg) return;
@@ -312,9 +388,20 @@ function renderChat(type) {
   });
 }
 
-// ===================== //
-// 8. Biểu đồ KD         //
-// ===================== //
+/**********************
+ * 9. Báo cáo kinh doanh
+ **********************/
+function renderExpenseSummary() {
+  const container = document.getElementById("expense-summary-table");
+  if (!container) return;
+  container.innerHTML = "";
+  reportData.filter(r => r.expenseAmount > 0).forEach(r => {
+    const row = document.createElement("div");
+    row.innerHTML = `${r.date} - ${r.product} - Chi phí: ${r.expenseAmount} - ${r.expenseInfo}`;
+    container.appendChild(row);
+  });
+}
+
 function generateBusinessChart() {
   const ctx = document.getElementById("growth-chart");
   if (!ctx) return;
@@ -336,18 +423,17 @@ function generateBusinessChart() {
   });
 }
 
-// ===================== //
-// 9. Load Firebase Data //
-// ===================== //
-function loadDataFromFirebase() {
-  // Inventory
+/**********************
+ * 10. Khởi tạo Firebase listeners
+ **********************/
+function loadFirebaseData() {
   inventoryRef.on("value", snapshot => {
     inventoryData = [];
     snapshot.forEach(child => inventoryData.push({ id: child.key, ...child.val() }));
     renderInventory();
+    renderReportProductList();
   });
 
-  // Reports
   reportsRef.on("value", snapshot => {
     reportData = [];
     snapshot.forEach(child => reportData.push({ id: child.key, ...child.val() }));
@@ -355,7 +441,6 @@ function loadDataFromFirebase() {
     renderExpenseSummary();
   });
 
-  // Employees
   employeesRef.on("value", snapshot => {
     employeeData = [];
     snapshot.forEach(child => employeeData.push({ id: child.key, ...child.val() }));
@@ -363,7 +448,6 @@ function loadDataFromFirebase() {
     renderSalarySummary();
   });
 
-  // Advances
   advancesRef.on("value", snapshot => {
     advanceRequests = [];
     snapshot.forEach(child => advanceRequests.push({ id: child.key, ...child.val() }));
@@ -371,7 +455,6 @@ function loadDataFromFirebase() {
     renderAdvanceApprovalList();
   });
 
-  // Messages
   messagesRef.child("group").on("value", snapshot => {
     messages.group = [];
     snapshot.forEach(child => messages.group.push(child.val()));
