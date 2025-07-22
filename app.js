@@ -232,23 +232,26 @@ function submitReport() {
   }
 
   const now = new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
-  const currentHour = parseInt(now.split(', ')[1].split(':')[0]);
   const currentDate = now.split(', ')[0].split('/').reverse().join('-');
   const sortedReports = reportData.sort((a, b) => new Date(a.date) - new Date(b.date));
 
+  // Tính số dư đầu kỳ
   let openingBalance = 0;
-  if (currentHour >= 18) {
-    const previousDay = new Date(currentDate);
-    previousDay.setDate(previousDay.getDate() - 1);
-    const previousDayStr = previousDay.toISOString().split('T')[0];
-    const lastReportPrevDay = sortedReports.filter(r => r.date.startsWith(previousDayStr)).pop();
-    openingBalance = lastReportPrevDay ? lastReportPrevDay.closingBalance : 0;
-  } else {
-    const lastReportToday = sortedReports.filter(r => r.date.startsWith(currentDate)).pop();
-    openingBalance = lastReportToday ? lastReportToday.closingBalance : 0;
+  const lastReport = sortedReports[sortedReports.length - 1];
+  if (lastReport) {
+    const lastReportDate = lastReport.date.split('T')[0];
+    if (lastReportDate !== currentDate) {
+      // Sang ngày mới: lấy closingBalance của báo cáo cuối ngày trước
+      openingBalance = lastReport.closingBalance || 0;
+    } else {
+      // Trong ngày: lấy remaining của báo cáo trước
+      openingBalance = lastReport.remaining || 0;
+    }
   }
 
-  const remaining = openingBalance + revenue - expenseAmount - closingBalance;
+  // Tính số tiền còn lại, chỉ trừ closingBalance nếu được nhập
+  const remaining = openingBalance + revenue - expenseAmount - (closingBalance || 0);
+
   const productsReported = Object.keys(productClickCounts).map(productId => {
     const product = inventoryData.find(p => p.id === productId);
     const quantity = productClickCounts[productId] || 0;
@@ -265,12 +268,11 @@ function submitReport() {
     }
     return Promise.resolve();
   })).then(() => {
-    // Ưu tiên lấy tên từ employeeData, sau đó mới lấy từ auth.currentUser
+    // Ưu tiên lấy tên từ employeeData
     const employee = employeeData.find(e => e.id === currentEmployeeId);
-    let employeeName = employee ? employee.name : 
-                      (auth.currentUser.displayName || auth.currentUser.email.split('@')[0] || 'Nhân viên');
-    
-    // Log để debug nếu không tìm thấy nhân viên
+    const employeeName = employee ? employee.name : 
+                        (auth.currentUser.displayName || auth.currentUser.email.split('@')[0] || 'Nhân viên');
+
     if (!employee) {
       console.warn("Không tìm thấy nhân viên trong employeeData:", {
         currentEmployeeId,
@@ -462,11 +464,15 @@ function renderReports() {
   }
 
   const sortedReports = reportData.sort((a, b) => new Date(a.date) - new Date(b.date));
-  let currentBalance = sortedReports[0]?.openingBalance || 0;
-  const updatedReports = sortedReports.map(r => {
-    const remaining = currentBalance + r.revenue - r.expenseAmount - r.closingBalance;
-    currentBalance = r.closingBalance || remaining;
-    return { ...r, remaining };
+  let currentBalance = sortedReports[0].openingBalance || 0;
+
+  // Cập nhật remaining cho từng báo cáo
+  const updatedReports = sortedReports.map((r, index) => {
+    const isNewDay = index === 0 || sortedReports[index].date.split('T')[0] !== sortedReports[index - 1].date.split('T')[0];
+    const openingBalance = isNewDay ? (index > 0 ? sortedReports[index - 1].closingBalance || 0 : 0) : (index > 0 ? sortedReports[index - 1].remaining || 0 : 0);
+    const remaining = openingBalance + r.revenue - r.expenseAmount - (r.closingBalance || 0);
+    currentBalance = remaining;
+    return { ...r, openingBalance, remaining };
   });
 
   // Revenue-Expense Table
