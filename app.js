@@ -1547,18 +1547,14 @@ function renderProfile() {
     phoneInput.value = emp.phone || "";
     dobInput.value = emp.dob || "";
     const savedImage = localStorage.getItem(`profileImage_${currentEmployeeId}`);
-    if (savedImage) {
-      profileImage.src = savedImage;
-    } else {
-      profileImage.src = ""; // Tránh lỗi 404
-    }
+    profileImage.src = savedImage || "/images/fallback-avatar.png"; // Đường dẫn dự phòng
   } else {
     console.warn("No employee data for user:", currentEmployeeId);
-    nameInput.value = "";
+    nameInput.value = auth.currentUser?.displayName || auth.currentUser?.email.split("@")[0] || "";
     addressInput.value = "";
     phoneInput.value = "";
     dobInput.value = "";
-    profileImage.src = "";
+    profileImage.src = "/images/fallback-avatar.png"; // Đường dẫn dự phòng
   }
 }
 
@@ -1822,9 +1818,12 @@ function renderActivityHistory() {
 
 // Initialize Firebase Listeners (đã có từ trước, giữ nguyên)
 function loadFirebaseData() {
-  if (isFirebaseInitialized) return;
-  console.log("Initializing Firebase listeners");
+  if (!isFirebaseInitialized) {
+    console.warn("Firebase not initialized, initializing now...");
+    initializeFirebase();
+  }
 
+  // Lắng nghe inventory
   inventoryRef.on(
     "value",
     (snapshot) => {
@@ -1837,6 +1836,7 @@ function loadFirebaseData() {
     (err) => console.error("Error fetching inventory data:", err)
   );
 
+  // Lắng nghe reports
   reportsRef.on(
     "value",
     (snapshot) => {
@@ -1853,6 +1853,7 @@ function loadFirebaseData() {
     (err) => console.error("Error fetching reports data:", err)
   );
 
+  // Lắng nghe employees
   employeesRef.on(
     "value",
     (snapshot) => {
@@ -1876,7 +1877,10 @@ function loadFirebaseData() {
             phone: "",
             dob: "",
           })
-          .then(() => console.log("Đã thêm nhân viên mới vào Firebase:", currentEmployeeId))
+          .then(() => {
+            console.log("Added new employee to Firebase:", currentEmployeeId);
+            renderProfile(); // Gọi lại renderProfile sau khi thêm nhân viên
+          })
           .catch((err) => console.error("Error adding new employee:", err));
       }
       renderProfile();
@@ -1884,48 +1888,44 @@ function loadFirebaseData() {
       renderSalarySummary();
       renderSalaryComparison();
       renderEmployeeList();
-      renderAdvanceApprovalList();
+      renderAdvanceRequests();
     },
     (err) => console.error("Error fetching employees data:", err)
   );
 
+  // Lắng nghe advances
   advancesRef.on(
     "value",
     (snapshot) => {
       advanceRequests = snapshot.exists()
         ? Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data }))
         : [];
+      renderAdvanceRequests();
       renderAdvanceHistory();
-      renderAdvanceApprovalList();
       renderSalarySummary();
       renderActivityHistory();
     },
     (err) => console.error("Error fetching advances data:", err)
   );
 
-  messagesRef.child("group").on(
+  // Lắng nghe messages
+  messagesRef.on(
     "value",
     (snapshot) => {
-      messages.group = snapshot.exists()
-        ? Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data }))
-        : [];
-      renderChat("group");
+      messages = { group: [], manager: [] };
+      snapshot.forEach((childSnapshot) => {
+        const message = childSnapshot.val();
+        message.id = childSnapshot.key;
+        if (message.recipientId === "manager" && isManager()) {
+          messages.manager.push(message);
+        } else if (!message.recipientId) {
+          messages.group.push(message);
+        }
+      });
+      renderMessages();
     },
-    (err) => console.error("Error fetching group messages:", err)
+    (err) => console.error("Error fetching messages:", err)
   );
-
-  messagesRef.child("manager").on(
-    "value",
-    (snapshot) => {
-      messages.manager = snapshot.exists()
-        ? Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data }))
-        : [];
-      renderChat("manager");
-    },
-    (err) => console.error("Error fetching manager messages:", err)
-  );
-
-  isFirebaseInitialized = true;
 }
 
 // Auth State (đã có từ trước, giữ nguyên)
@@ -1951,10 +1951,11 @@ auth.onAuthStateChanged((user) => {
     isFirebaseInitialized = false;
   }
 });
-// Hàm gửi thông báo (sửa lỗi không gửi alert đến quản lý)
+// Hàm gửi thông báo (sửa lỗi không gửi đến quản lý)
 function sendMessage(type, content, recipientId = null) {
   if (!isFirebaseInitialized) {
     console.error("Firebase not initialized, cannot send message");
+    alert("Lỗi: Firebase chưa được khởi tạo!");
     return;
   }
 
@@ -1962,7 +1963,7 @@ function sendMessage(type, content, recipientId = null) {
     type: type, // "shift_change", "time_off", "overtime", "advance"
     content: content,
     senderId: currentEmployeeId,
-    recipientId: recipientId || "manager", // Gửi đến quản lý nếu không có recipientId
+    recipientId: recipientId || "manager",
     timestamp: new Date().toISOString(),
     read: false,
   };
@@ -1971,18 +1972,18 @@ function sendMessage(type, content, recipientId = null) {
     .push(message)
     .then(() => {
       console.log(`${type} message sent:`, content);
-      // Gửi thông báo qua giao diện (nếu cần)
       const notificationArea = document.getElementById("notification-area");
       if (notificationArea) {
-        notificationArea.innerHTML += `<div class="notification">${type}: ${content}</div>`;
+        notificationArea.innerHTML += `<div class="notification">${type}: ${content} (${new Date().toLocaleString("vi-VN")})</div>`;
       }
     })
     .catch((error) => {
       console.error(`Error sending ${type} message:`, error);
+      alert(`Lỗi khi gửi thông báo ${type}: ${error.message}`);
     });
 }
-
 // Hàm hiển thị yêu cầu (sửa lỗi quản lý không thấy yêu cầu)
+// Hàm hiển thị yêu cầu (sửa để hiển thị cho quản lý)
 function renderAdvanceRequests() {
   const requestContainer = document.getElementById("advance-request-table");
   if (!requestContainer) {
@@ -1997,8 +1998,14 @@ function renderAdvanceRequests() {
     return;
   }
 
-  if (advanceRequests.length === 0) {
-    requestContainer.innerHTML = "<p>Chưa có yêu cầu tạm ứng hoặc lịch sử.</p>";
+  const filteredRequests = isManager()
+    ? advanceRequests.filter((req) => req.status === "Chờ duyệt")
+    : advanceRequests.filter((req) => req.employeeId === currentEmployeeId);
+
+  if (filteredRequests.length === 0) {
+    requestContainer.innerHTML = isManager()
+      ? "<p>Chưa có yêu cầu chờ duyệt.</p>"
+      : "<p>Chưa có yêu cầu của bạn.</p>";
     return;
   }
 
@@ -2047,63 +2054,103 @@ function isManager() {
   return employee && employee.role === "manager";
 }
 
-// Hàm xử lý yêu cầu đổi ca
+// Hàm yêu cầu đổi ca
 function requestShiftChange(shiftId, newTime) {
+  if (!currentEmployeeId) {
+    console.error("No user logged in for shift change request");
+    alert("Lỗi: Vui lòng đăng nhập lại!");
+    return;
+  }
   const content = `Yêu cầu đổi ca ${shiftId} sang ${newTime}`;
   sendMessage("shift_change", content);
   saveRequestToFirebase("shift_change", content);
 }
 
-// Hàm xử lý yêu cầu nghỉ
+// Hàm yêu cầu nghỉ
 function requestTimeOff(date, reason) {
+  if (!currentEmployeeId) {
+    console.error("No user logged in for time off request");
+    alert("Lỗi: Vui lòng đăng nhập lại!");
+    return;
+  }
   const content = `Yêu cầu nghỉ ngày ${date}: ${reason}`;
   sendMessage("time_off", content);
   saveRequestToFirebase("time_off", content);
 }
 
-// Hàm xử lý yêu cầu tăng ca
+// Hàm yêu cầu tăng ca
 function requestOvertime(date, hours) {
+  if (!currentEmployeeId) {
+    console.error("No user logged in for overtime request");
+    alert("Lỗi: Vui lòng đăng nhập lại!");
+    return;
+  }
   const content = `Yêu cầu tăng ca ngày ${date}: ${hours} giờ`;
   sendMessage("overtime", content);
   saveRequestToFirebase("overtime", content);
 }
 
-// Hàm xử lý yêu cầu tạm ứng (tính năng mới)
+// Hàm yêu cầu tạm ứng
 function requestAdvance(amount, reason) {
+  if (!currentEmployeeId) {
+    console.error("No user logged in for advance request");
+    alert("Lỗi: Vui lòng đăng nhập lại!");
+    return;
+  }
   if (!isFirebaseInitialized) {
     console.error("Firebase not initialized, cannot request advance");
+    alert("Lỗi: Firebase chưa được khởi tạo!");
     return;
   }
 
-  const content = `Yêu cầu tạm ứng ${amount.toLocaleString("vi-VN")} VND: ${reason}`;
+  const parsedAmount = parseFloat(amount);
+  if (isNaN(parsedAmount) || parsedAmount <= 0) {
+    console.error("Invalid advance amount:", amount);
+    alert("Vui lòng nhập số tiền hợp lệ!");
+    return;
+  }
+  if (!reason) {
+    console.error("Advance reason is empty");
+    alert("Vui lòng nhập lý do tạm ứng!");
+    return;
+  }
+
+  const content = `Yêu cầu tạm ứng ${parsedAmount.toLocaleString("vi-VN")} VND: ${reason}`;
   const request = {
     employeeId: currentEmployeeId,
-    employeeName: employeeData.find((emp) => emp.id === currentEmployeeId)?.name || "Unknown",
+    employeeName: employeeData.find((emp) => emp.id === currentEmployeeId)?.name || "Nhân viên",
     type: "advance",
     content: content,
-    amount: amount,
+    amount: parsedAmount,
     status: "Chờ duyệt",
     timestamp: new Date().toISOString(),
   };
 
   advancesRef
     .push(request)
-    .then(() => {
+    .then((snap) => {
       console.log("Advance request sent:", content);
       sendMessage("advance", content, "manager");
-      advanceRequests.push({ ...request, id: advancesRef.key });
+      advanceRequests.push({ ...request, id: snap.key });
       renderAdvanceRequests();
+      alert("Đã gửi yêu cầu tạm ứng!");
     })
     .catch((error) => {
       console.error("Error sending advance request:", error);
+      alert("Lỗi khi gửi yêu cầu tạm ứng: " + error.message);
     });
 }
-
+// Hàm lưu yêu cầu vào Firebase
 // Hàm lưu yêu cầu vào Firebase
 function saveRequestToFirebase(type, content) {
+  if (!currentEmployeeId) {
+    console.error("No user logged in for request");
+    alert("Lỗi: Vui lòng đăng nhập lại!");
+    return;
+  }
   const request = {
     employeeId: currentEmployeeId,
-    employeeName: employeeData.find((emp) => emp.id === currentEmployeeId)?.name || "Unknown",
+    employeeName: employeeData.find((emp) => emp.id === currentEmployeeId)?.name || "Nhân viên",
     type: type,
     content: content,
     status: "Chờ duyệt",
@@ -2112,18 +2159,22 @@ function saveRequestToFirebase(type, content) {
 
   advancesRef
     .push(request)
-    .then(() => {
+    .then((snap) => {
       console.log(`${type} request saved:`, content);
-      advanceRequests.push({ ...request, id: advancesRef.key });
+      advanceRequests.push({ ...request, id: snap.key });
       renderAdvanceRequests();
     })
     .catch((error) => {
       console.error(`Error saving ${type} request:`, error);
+      alert(`Lỗi khi lưu yêu cầu ${type}: ${error.message}`);
     });
 }
-
-// Hàm duyệt yêu cầu
 function approveRequest(requestId) {
+  if (!isManager()) {
+    console.error("User not authorized to approve request");
+    alert("Lỗi: Bạn không có quyền duyệt yêu cầu!");
+    return;
+  }
   advancesRef
     .child(requestId)
     .update({ status: "Đã duyệt" })
@@ -2133,15 +2184,25 @@ function approveRequest(requestId) {
         req.id === requestId ? { ...req, status: "Đã duyệt" } : req
       );
       renderAdvanceRequests();
-      sendMessage("request_approved", `Yêu cầu ${requestId} đã được duyệt`, advanceRequests.find((req) => req.id === requestId).employeeId);
+      const req = advanceRequests.find((r) => r.id === requestId);
+      if (req) {
+        sendMessage("request_approved", `Yêu cầu ${req.type} đã được duyệt`, req.employeeId);
+      }
+      alert("Đã duyệt yêu cầu!");
     })
     .catch((error) => {
       console.error("Error approving request:", error);
+      alert("Lỗi khi duyệt yêu cầu: " + error.message);
     });
 }
 
 // Hàm từ chối yêu cầu
 function rejectRequest(requestId) {
+  if (!isManager()) {
+    console.error("User not authorized to reject request");
+    alert("Lỗi: Bạn không có quyền từ chối yêu cầu!");
+    return;
+  }
   advancesRef
     .child(requestId)
     .update({ status: "Đã từ chối" })
@@ -2151,13 +2212,17 @@ function rejectRequest(requestId) {
         req.id === requestId ? { ...req, status: "Đã từ chối" } : req
       );
       renderAdvanceRequests();
-      sendMessage("request_rejected", `Yêu cầu ${requestId} đã bị từ chối`, advanceRequests.find((req) => req.id === requestId).employeeId);
+      const req = advanceRequests.find((r) => r.id === requestId);
+      if (req) {
+        sendMessage("request_rejected", `Yêu cầu ${req.type} đã bị từ chối`, req.employeeId);
+      }
+      alert("Đã từ chối yêu cầu!");
     })
     .catch((error) => {
       console.error("Error rejecting request:", error);
+      alert("Lỗi khi từ chối yêu cầu: " + error.message);
     });
 }
-
 // Lắng nghe dữ liệu từ Firebase (sửa lỗi không nhận thông báo)
 function loadFirebaseData() {
   if (!isFirebaseInitialized) {
@@ -2215,4 +2280,25 @@ function renderMessages() {
     messageDiv.innerHTML = `${msg.type}: ${msg.content} (${new Date(msg.timestamp).toLocaleString("vi-VN")})`;
     notificationArea.appendChild(messageDiv);
   });
+}
+// Hàm khởi tạo Firebase (sửa lỗi khởi tạo)
+function initializeFirebase() {
+  if (isFirebaseInitialized) return;
+  try {
+    firebase.initializeApp({
+      // Thay bằng cấu hình Firebase của bạn
+      apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
+      authDomain: "quanly-d7e54.firebaseapp.com",
+      databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com",
+      projectId: "quanly-d7e54",
+      storageBucket: "quanly-d7e54.firebasestorage.app",
+      messagingSenderId: "482686011267",
+      appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
+    });
+    console.log("Firebase initialized successfully");
+    isFirebaseInitialized = true;
+  } catch (error) {
+    console.error("Error initializing Firebase:", error);
+    alert("Lỗi khởi tạo Firebase: " + error.message);
+  }
 }
