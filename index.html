@@ -54,8 +54,10 @@
     <div class="tabcontent" id="profile">
       <h2>Thông tin Cá nhân</h2>
       <div id="profile-info">
-        <img id="profile-image" src="https://via.placeholder.com/100" alt="Ảnh đại diện" style="width: 100px; height: 100px;">
+        <img id="profile-image" src="/images/default-avatar.png" alt="Ảnh đại diện" style="width: 100px; height: 100px;">
         <input type="file" id="profile-image-upload" accept="image/*" onchange="uploadProfileImage()">
+        <input type="text" id="employee-display-name" placeholder="Tên hiển thị">
+        <button class="primary-btn" onclick="updateEmployeeName()">Đổi tên</button>
         <input type="text" id="profile-address" placeholder="Địa chỉ">
         <input type="tel" id="profile-phone" placeholder="Số điện thoại">
         <input type="date" id="profile-dob" placeholder="Ngày tháng năm sinh">
@@ -67,6 +69,7 @@
         <span id="current-month"></span>
         <button onclick="changeMonth(1)">Tháng sau</button>
       </div>
+      <input type="date" id="schedule-date-picker" onchange="updateScheduleFromDate()">
       <div id="schedule-table"></div>
       <h3>Lương và So sánh</h3>
       <div id="salary-summary"></div>
