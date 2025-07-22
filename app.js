@@ -125,14 +125,19 @@ function deleteInventory(id) {
 
 function renderInventory() {
   const list = document.getElementById("inventory-list");
-  if (!list) return;
+  if (!list) {
+    console.error("Không tìm thấy phần tử inventory-list!");
+    return;
+  }
   list.innerHTML = "";
 
   if (inventoryData.length === 0) {
     list.innerHTML = "<p>Kho trống.</p>";
+    console.log("Không có sản phẩm để hiển thị.");
     return;
   }
 
+  console.log("Hiển thị inventoryData:", inventoryData); // Debug danh sách
   const table = document.createElement("table");
   table.classList.add("table-style");
   table.innerHTML = `
