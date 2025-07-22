@@ -389,14 +389,13 @@ function renderReports() {
 
   if (reportData.length === 0) {
     container.innerHTML = "<p>Chưa có báo cáo nào.</p>";
-    console.log("No reports available");
     return;
   }
 
   const sortedReports = reportData.sort((a, b) => new Date(a.date) - new Date(b.date));
   let currentBalance = sortedReports[0]?.openingBalance || 0;
   const updatedReports = sortedReports.map(r => {
-    const remaining = currentBalance - r.expenseAmount + r.revenue;
+    const remaining = currentBalance + r.revenue - r.expenseAmount - r.closingBalance;
     currentBalance = r.closingBalance || remaining;
     return { ...r, remaining };
   });
@@ -417,20 +416,28 @@ function renderReports() {
         <th>Tên NV</th>
         <th>Nội dung chi phí</th>
         <th>Số tiền chi</th>
-        <th>Còn lại</th>
+        <th>Doanh thu</th>
+        <th>Số dư cuối kỳ</th>
+        <th>Số dư còn lại</th>
+        <th>Sản phẩm xuất</th>
       </tr>
     </thead>
     <tbody>
       ${updatedReports.map((r, index) => {
-        console.log("Rendering report:", r);
+        const productsText = Array.isArray(r.products) && r.products.length > 0 
+          ? r.products.map(p => `${p.name}: ${p.quantity}`).join(", ")
+          : "Không có";
         return `
         <tr>
           <td>${index + 1}</td>
           <td>${new Date(r.date).toLocaleTimeString('vi-VN')}</td>
           <td>${r.employeeName}</td>
           <td>${r.expenseNote || "Không có"}</td>
-          <td>${r.expenseAmount}</td>
-          <td>${r.remaining}</td>
+          <td>${r.expenseAmount.toLocaleString('vi-VN')} VND</td>
+          <td>${r.revenue.toLocaleString('vi-VN')} VND</td>
+          <td>${r.closingBalance.toLocaleString('vi-VN')} VND</td>
+          <td>${r.remaining.toLocaleString('vi-VN')} VND</td>
+          <td>${productsText}</td>
         </tr>`;
       }).join("")}
     </tbody>`;
@@ -440,11 +447,11 @@ function renderReports() {
   totalDiv.classList.add("report-total");
   totalDiv.innerHTML = `
     <strong>Tổng:</strong><br>
-    Số dư đầu kỳ: ${firstOpeningBalance}<br>
-    Doanh thu: ${totalRevenue}<br>
-    Chi phí: ${totalExpense}<br>
-    Số dư cuối kỳ: ${finalClosingBalance}<br>
-    Còn lại: ${finalBalance}
+    Số dư đầu kỳ: ${firstOpeningBalance.toLocaleString('vi-VN')} VND<br>
+    Doanh thu: ${totalRevenue.toLocaleString('vi-VN')} VND<br>
+    Chi phí: ${totalExpense.toLocaleString('vi-VN')} VND<br>
+    Số dư cuối kỳ: ${finalClosingBalance.toLocaleString('vi-VN')} VND<br>
+    Còn lại: ${finalBalance.toLocaleString('vi-VN')} VND
   `;
   container.appendChild(totalDiv);
 }
