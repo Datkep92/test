@@ -29,7 +29,7 @@
   </script>
 </head>
 <body>
-  <!-- Đăng nhập -->
+  <!-- Trang Đăng Nhập -->
   <div id="login-page" class="center-screen">
     <h2>Đăng Nhập</h2>
     <input type="email" id="email" placeholder="Email">
@@ -38,7 +38,7 @@
     <button onclick="login()">Đăng Nhập</button>
   </div>
 
-  <!-- Trang chính -->
+  <!-- Trang Chính -->
   <div id="main-page" style="display: none;">
     <header class="app-header">
       <h1>Milano 259</h1>
@@ -46,17 +46,17 @@
     </header>
 
     <!-- Thanh Tab -->
-    <div class="top-nav">
+    <nav class="top-nav">
       <button class="tablinks" onclick="openTab(event, 'revenue-expense')">Thu Chi</button>
       <button class="tablinks" onclick="openTab(event, 'inventory')">Kho</button>
       <button class="tablinks" onclick="openTab(event, 'profile')">Cá nhân</button>
       <button class="tablinks" onclick="openTab(event, 'business-report')">Báo cáo</button>
       <button class="tablinks" onclick="openTab(event, 'employee-management')">Nhân viên</button>
       <button class="tablinks" onclick="openTab(event, 'chat-section')">Chat</button>
-    </div>
+    </nav>
 
     <main class="tab-content-wrapper">
-      <!-- Tab Báo cáo Thu Chi -->
+      <!-- Báo cáo Thu Chi -->
       <section id="revenue-expense" class="tabcontent">
         <h2>Báo cáo Thu Chi</h2>
         <div id="report-product-list"></div>
@@ -69,17 +69,19 @@
         <div id="shared-report-table"></div>
       </section>
 
-      <!-- Tab Kho -->
+      <!-- Quản lý Kho -->
       <section id="inventory" class="tabcontent" style="display: none;">
-        <h2>Quản lý Kho</h2>
-        <input type="text" id="product-name" placeholder="Tên sản phẩm">
-        <input type="number" id="product-quantity" placeholder="Số lượng">
-        <input type="number" id="product-price" placeholder="Giá">
-        <button class="primary-btn" onclick="addInventory()">Thêm</button>
+        <h2>Kho</h2>
+        <div class="form-section">
+          <input type="text" id="product-name" placeholder="Tên sản phẩm">
+          <input type="number" id="product-quantity" placeholder="Số lượng">
+          <input type="number" id="product-price" placeholder="Giá">
+          <button class="primary-btn" onclick="addInventory()">Thêm sản phẩm</button>
+        </div>
         <div id="inventory-list"></div>
       </section>
 
-      <!-- Tab Cá nhân -->
+      <!-- Cá nhân -->
       <section id="profile" class="tabcontent" style="display: none;">
         <h2>Thông tin Cá nhân</h2>
         <div id="profile-info"></div>
@@ -94,16 +96,17 @@
         <div id="calendar"></div>
       </section>
 
-      <!-- Tab Báo cáo kinh doanh -->
+      <!-- Báo cáo Kinh doanh -->
       <section id="business-report" class="tabcontent" style="display: none;">
         <h2>Báo cáo Kinh doanh</h2>
         <canvas id="growth-chart"></canvas>
+        <h3>Bảng kê Chi phí</h3>
         <div id="expense-summary-table"></div>
       </section>
 
-      <!-- Tab Quản lý nhân viên -->
+      <!-- Quản lý Nhân viên -->
       <section id="employee-management" class="tabcontent" style="display: none;">
-        <h2>Quản lý Nhân viên</h2>
+        <h2>Nhân viên</h2>
         <input type="text" id="employee-name" placeholder="Tên nhân viên">
         <input type="number" id="employee-dailywage" placeholder="Lương ngày công">
         <input type="number" id="employee-allowance" placeholder="Phụ cấp">
@@ -114,7 +117,7 @@
         <div id="advance-approval-list"></div>
       </section>
 
-      <!-- Tab Chat -->
+      <!-- Chat -->
       <section class="tabcontent" id="chat-section" style="display: none;">
         <h3>Chat nhóm</h3>
         <div id="group-chat" class="chat-box"></div>
