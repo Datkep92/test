@@ -634,7 +634,10 @@ function renderExpenseSummary() {
   console.log("Rendering expense summary, total items:", reportData.length);
   reportData.filter(r => r.expenseAmount > 0).forEach(r => {
     const row = document.createElement("div");
-    row.innerHTML = `${r.date} - ${r.employeeName} - Chi phí: ${r.expenseAmount} - ${r.products.map(p => `${p.name}: ${p.quantity}`).join(", ")}`;
+    const productsText = Array.isArray(r.products) && r.products.length > 0 
+      ? r.products.map(p => `${p.name}: ${p.quantity}`).join(", ")
+      : r.product ? `Sản phẩm: ${r.product}` : "Không có sản phẩm";
+    row.innerHTML = `${r.date} - ${r.employeeName} - Chi phí: ${r.expenseAmount} - ${productsText}`;
     container.appendChild(row);
   });
 }
