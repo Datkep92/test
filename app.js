@@ -16,10 +16,10 @@ let employeeData = [];
 let advanceRequests = [];
 let messages = { group: [], manager: [] };
 let productClickCounts = {};
-let expenseNotes = [];
+let expenseNotes = []; // Biến lưu nội dung chi phí
 let currentEmployeeId = null;
 
-// Hàm parseEntry
+// Hàm parseEntry (từ bạn cung cấp)
 function parseEntry(text) {
   const match = text.match(/([\d.,]+)\s*(k|nghìn|tr|triệu)?/i);
   if (!match) return { money: 0, note: text.trim() };
@@ -76,7 +76,7 @@ function logout() {
 
 // Floating Button Tabs
 function toggleMenu() {
-  const options = document.getElementByIdtesting
+  const options = document.getElementById('float-options');
   console.log("Toggling menu, current display:", options.style.display);
   options.style.display = (options.style.display === 'flex') ? 'none' : 'flex';
 }
@@ -105,7 +105,7 @@ function openTabBubble(tabId) {
     console.log("Rendering profile data");
     renderAdvanceHistory();
     renderSalarySummary();
-  } else if (tabId === "employee-government") {
+  } else if (tabId === "employee-management") {
     console.log("Rendering employee management data");
     renderEmployeeList();
     renderAdvanceApprovalList();
@@ -225,7 +225,7 @@ function submitReport() {
   const openingBalance = parseFloat(openingBalanceEl.value) || 0;
   const expenseInput = expenseInputEl.value.trim();
   const revenue = parseFloat(revenueEl.value) || 0;
-  const closingBalance = closingBalanceEl.value ? parseFloat(closingBalanceEl.value) : null;
+  const closingBalance = closingBalanceEl.value ? parseFloat(closingBalanceEl.value) : null; // Lưu null nếu không nhập
   const { money: expenseAmount, note: expenseNote } = parseEntry(expenseInput);
 
   if (openingBalance === 0 && expenseAmount === 0 && revenue === 0 && closingBalance === null && Object.keys(productClickCounts).length === 0) {
@@ -233,6 +233,7 @@ function submitReport() {
     return;
   }
 
+  // Tính số tiền còn lại
   const remaining = openingBalance + revenue - expenseAmount - (closingBalance || 0);
 
   const productsReported = Object.keys(productClickCounts).map(productId => {
@@ -251,6 +252,7 @@ function submitReport() {
     }
     return Promise.resolve();
   })).then(() => {
+    // Ưu tiên lấy tên từ employeeData
     const employee = employeeData.find(e => e.id === currentEmployeeId);
     const employeeName = employee ? employee.name : 
                         (auth.currentUser.displayName || auth.currentUser.email.split('@')[0] || 'Nhân viên');
@@ -271,11 +273,12 @@ function submitReport() {
       expenseAmount,
       expenseNote: expenseNote || "Không có",
       revenue,
-      closingBalance,
+      closingBalance, // Lưu null nếu không nhập
       remaining,
       products: productsReported
     };
 
+    // Log để kiểm tra dữ liệu
     console.log("Gửi báo cáo:", {
       openingBalance,
       revenue,
@@ -489,10 +492,12 @@ function renderFilteredReports(filteredReports) {
 
   const sortedReports = filteredReports.sort((a, b) => new Date(a.date) - new Date(b.date));
 
+  // Lọc báo cáo có thông tin tài chính
   const financeReports = sortedReports.filter(r => 
     r.openingBalance !== 0 || r.revenue !== 0 || r.expenseAmount !== 0 || r.closingBalance !== null
   );
 
+  // Revenue-Expense Table
   const reportTable = document.createElement("table");
   reportTable.classList.add("table-style");
   reportTable.innerHTML = `
@@ -518,6 +523,7 @@ function renderFilteredReports(filteredReports) {
     </tbody>`;
   reportContainer.appendChild(reportTable);
 
+  // Revenue-Expense Summary
   const totalOpeningBalance = sortedReports.reduce((sum, r) => sum + (r.openingBalance || 0), 0);
   const totalRevenue = sortedReports.reduce((sum, r) => sum + (r.revenue || 0), 0);
   const totalExpense = sortedReports.reduce((sum, r) => sum + (r.expenseAmount || 0), 0);
@@ -536,6 +542,7 @@ function renderFilteredReports(filteredReports) {
   `;
   reportContainer.appendChild(totalReportDiv);
 
+  // Log để kiểm tra tổng kết
   console.log("Tổng kết báo cáo:", {
     totalOpeningBalance,
     totalRevenue,
@@ -544,6 +551,7 @@ function renderFilteredReports(filteredReports) {
     finalBalance
   });
 
+  // Product Report Table
   const productReports = sortedReports.flatMap((r, index) => 
     Array.isArray(r.products) && r.products.length > 0 
       ? r.products.map(p => ({
@@ -578,6 +586,7 @@ function renderFilteredReports(filteredReports) {
     </tbody>`;
   productContainer.appendChild(productTable);
 
+  // Product Summary with Exported and Remaining Quantities
   const totalProductSummary = productReports.reduce((acc, p) => {
     acc[p.productName] = (acc[p.productName] || 0) + p.quantity;
     return acc;
@@ -1015,6 +1024,7 @@ function loadFirebaseData() {
 auth.onAuthStateChanged(user => {
   if (user) {
     currentEmployeeId = user.uid;
+    // Kiểm tra employeeData và log nếu không tìm thấy nhân viên
     const employee = employeeData.find(e => e.id === user.uid);
     if (!employee) {
       console.warn("Nhân viên chưa có trong employeeData:", {
@@ -1023,6 +1033,7 @@ auth.onAuthStateChanged(user => {
         displayName: user.displayName,
         employeeDataLength: employeeData.length
       });
+      // Tự động thêm nhân viên vào employees nếu chưa có
       employeesRef.child(user.uid).set({
         name: user.displayName || user.email.split('@')[0] || 'Nhân viên',
         email: user.email,
@@ -1067,8 +1078,10 @@ function updateEmployeeName() {
     return;
   }
 
+  // Update name in Firebase
   employeesRef.child(currentEmployeeId).update({ name: newName })
     .then(() => {
+      // Update local employeeData
       const employee = employeeData.find(e => e.id === currentEmployeeId);
       if (employee) {
         employee.name = newName;
@@ -1077,7 +1090,7 @@ function updateEmployeeName() {
       }
       alert("Cập nhật tên hiển thị thành công!");
       displayNameInput.value = "";
-      renderReports();
+      renderReports(); // Refresh reports to show updated name
     })
     .catch(err => alert("Lỗi khi cập nhật tên: " + err.message));
 }
