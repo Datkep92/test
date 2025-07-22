@@ -1029,47 +1029,7 @@ function updateEmployeeName() {
     })
     .catch(err => alert("Lỗi khi cập nhật tên: " + err.message));
 }
-Cảm ơn bạn đã cung cấp thêm chi tiết! Dựa trên yêu cầu mới, tôi sẽ điều chỉnh kế hoạch và triển khai code. Dưới đây là cập nhật:
 
-Điều chỉnh yêu cầu
-Ảnh đại diện: Lưu dưới dạng base64 trong localStorage thay vì Firebase Storage.
-Ngày làm việc: Tổng ngày làm việc full tháng là 30 (tháng 30 ngày) hoặc 31 (tháng 31 ngày), tùy thuộc vào tháng hiện tại (tháng 7/2025 có 31 ngày).
-Biểu đồ lương: Loại bỏ canvas biểu đồ, chỉ giữ bảng so sánh lương dạng bảng.
-Giao diện LLV:
-Bảng tuần với cột từ T2 đến CN, có thể mở rộng ra cả tháng hoặc sang tháng khác để đăng ký nghỉ.
-Hiển thị lịch sử hoạt động của nhân viên (báo cáo, yêu cầu tạm ứng) và quản lý (phê duyệt).
-Tính lương: Dựa trên 30 hoặc 31 ngày làm việc full, trừ ngày nghỉ, cộng tăng ca, trừ tạm ứng và chi phí khác, cộng phụ cấp.
-Kế hoạch triển khai
-Cập nhật HTML:
-Thêm form cho "Địa chỉ", "SDT", "Ngày tháng năm sinh", nút tải ảnh đại diện.
-Thêm bảng LLV (tuần/mở rộng tháng) và bảng lương/so sánh lương.
-Thêm phần lịch sử hoạt động.
-Cập nhật JavaScript:
-Logic lưu và hiển thị thông tin cá nhân, bao gồm tải ảnh base64.
-Xây dựng hàm quản lý LLV: hiển thị bảng tuần, mở rộng tháng, kiểm tra trùng ngày nghỉ, gửi yêu cầu/đề xuất.
-Cập nhật hàm tính lương dựa trên ngày làm việc 30/31.
-Thêm lịch sử hoạt động từ dữ liệu Firebase.
-Code
-Cập nhật HTML (index.html)
-Dưới đây là toàn bộ file index.html đã được cập nhật:
-
-index.html
-html
-Sửa trong tệp tin
-•
-Hiển thị nội tuyến
-Cập nhật JavaScript (app.js - chỉ các hàm mới/sửa đổi)
-Dưới đây là các hàm mới và cập nhật liên quan đến tab "Profile":
-
-javascript
-
-Thu gọn
-
-Bọc lại
-
-Chạy
-
-Sao chép
 // Thêm các hàm mới cho tab Profile
 function uploadProfileImage() {
   const fileInput = document.getElementById("profile-image-upload");
