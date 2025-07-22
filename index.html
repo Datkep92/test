@@ -5,11 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Đăng Nhập - Milano 259</title>
   <link rel="stylesheet" href="styles.css">
-  <!-- Firebase Compatibility SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-  <!-- Chart.js for business report -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -31,8 +29,7 @@
       <h3>Bảng hàng hóa trong kho</h3>
       <div id="report-product-list"></div>
       <h3>Nhập báo cáo</h3>
-      <input type="number" id="opening-balance" placeholder="Số dư đầu kỳ (VND)">
-      <input type="number" id="expense-amount" placeholder="Chi phí (VND)">
+      <input type="text" id="expense-input" placeholder="Chi phí (VD: 20k mua cà phê)">
       <input type="number" id="revenue" placeholder="Doanh thu (VND)">
       <input type="number" id="closing-balance" placeholder="Số dư cuối kỳ (VND)">
       <button class="primary-btn" onclick="submitReport()">Gửi Báo Cáo</button>
@@ -40,6 +37,7 @@
       <div id="shared-report-table"></div>
     </div>
 
+    <!-- Các tab khác giữ nguyên -->
     <div class="tabcontent" id="inventory">
       <h2>Quản lý Kho</h2>
       <input type="text" id="product-name" placeholder="Tên sản phẩm">
@@ -105,20 +103,17 @@
     </div>
   </div>
 
-  <!-- Firebase Initialization -->
   <script>
-    // Firebase Configuration
     const firebaseConfig = {
-      apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
-      authDomain: "quanly-d7e54.firebaseapp.com",
-      databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com",
-      projectId: "quanly-d7e54",
-      storageBucket: "quanly-d7e54.firebasestorage.app",
-      messagingSenderId: "482686011267",
-      appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      databaseURL: "YOUR_DATABASE_URL",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
 
-    // Initialize Firebase
     try {
       firebase.initializeApp(firebaseConfig);
       console.log("Firebase initialized successfully");
