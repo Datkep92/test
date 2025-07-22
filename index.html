@@ -38,7 +38,17 @@
       <h3>Danh sách Báo cáo Xuất Hàng</h3>
       <div id="report-product-table"></div>
     </div>
-
+<div id="revenue-expense" class="tabcontent">
+    <h3>Báo cáo Thu Chi</h3>
+    <input type="number" id="opening-balance" placeholder="Số dư đầu kỳ (nếu có)">
+    <input type="number" id="revenue" placeholder="Doanh thu">
+    <input type="text" id="expense-input" placeholder="Chi phí (VD: Mua nguyên liệu: 500000)">
+    <input type="number" id="closing-balance" placeholder="Số dư cuối kỳ (nếu có)">
+    <div id="report-product-list"></div>
+    <button onclick="submitReport()">Gửi báo cáo</button>
+    <div id="shared-report-table"></div>
+    <div id="report-product-table"></div>
+</div>
     <div class="tabcontent" id="inventory">
       <h2>Quản lý Kho</h2>
       <input type="text" id="product-name" placeholder="Tên sản phẩm">
