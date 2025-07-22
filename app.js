@@ -22,6 +22,9 @@ let messages = { group: [], manager: [] };
 let selectedProductId = null;
 let currentEmployeeId = null;
 
+// Lưu số lượng click cho từng sản phẩm
+let productClickCounts = {};
+
 /**********************
  * 1. Đăng nhập / Đăng xuất
  **********************/
@@ -96,12 +99,15 @@ function openTabBubble(tabId) {
     console.log("Rendering business report data");
     renderExpenseSummary();
     generateBusinessChart();
+  } else if (tabId === "revenue-expense") {
+    console.log("Rendering revenue-expense data");
+    renderReportProductList();
+    renderReports();
   }
 }
 
 /**********************
  * 3. Quản lý kho (CRUD)
- **************** Franchise**
  **********************/
 function addInventory() {
   const name = document.getElementById("product-name").value.trim();
@@ -214,60 +220,111 @@ function renderReportProductList() {
   table.classList.add("table-style");
   table.innerHTML = `
     <thead>
-      <tr><th>Chọn</th><th>Tên SP</th><th>Số lượng</th><th>Đơn giá</th></tr>
+      <tr><th>Tên SP</th><th>Số lượng</th><th>Đơn giá</th><th>Số lượng xuất</th></tr>
     </thead>
     <tbody>
-      ${inventoryData.map(item => `
-        <tr>
-          <td><input type="radio" name="select-product" onclick="selectedProductId='${item.id}'"></td>
+      ${inventoryData.map(item => {
+        const clickCount = productClickCounts[item.id] || 0;
+        return `
+        <tr onclick="incrementProductCount('${item.id}')">
           <td>${item.name}</td>
           <td>${item.quantity}</td>
           <td>${item.price}</td>
-        </tr>`).join("")}
+          <td>
+            <input type="number" id="quantity-${item.id}" value="${clickCount}" min="0" max="${item.quantity}" readonly>
+          </td>
+        </tr>`;
+      }).join("")}
     </tbody>`;
   container.appendChild(table);
+  console.log("Current product click counts:", productClickCounts);
+}
+
+function incrementProductCount(productId) {
+  productClickCounts[productId] = (productClickCounts[productId] || 0) + 1;
+  const maxQuantity = inventoryData.find(p => p.id === productId)?.quantity || 0;
+  if (productClickCounts[productId] > maxQuantity) {
+    productClickCounts[productId] = maxQuantity;
+    console.warn("Max quantity reached for product:", productId);
+  }
+  const input = document.getElementById(`quantity-${productId}`);
+  if (input) {
+    input.value = productClickCounts[productId];
+  }
+  console.log("Incremented count for product:", { productId, count: productClickCounts[productId] });
 }
 
 function submitReport() {
-  console.log("Submitting report, selected product ID:", selectedProductId);
-  if (!selectedProductId) {
-    console.error("No product selected for report");
-    return alert("Chọn sản phẩm để xuất!");
-  }
-  const product = inventoryData.find(p => p.id === selectedProductId);
-  if (!product) {
-    console.error("Selected product not found:", selectedProductId);
-    return alert("Sản phẩm không tồn tại!");
-  }
-
-  const qty = parseInt(document.getElementById("report-quantity").value) || 0;
-  console.log("Report quantity:", qty);
-  if (qty <= 0 || qty > product.quantity) {
-    console.error("Invalid report quantity:", qty, "Product quantity:", product.quantity);
-    return alert("Số lượng không hợp lệ!");
-  }
-
-  const revenue = parseFloat(document.getElementById("revenue").value) || 0;
+  const openingBalance = parseFloat(document.getElementById("opening-balance").value) || 0;
   const expenseAmount = parseFloat(document.getElementById("expense-amount").value) || 0;
-  const expenseInfo = document.getElementById("expense-info").value.trim();
-  console.log("Report data:", { product: product.name, qty, revenue, expenseAmount, expenseInfo });
+  const revenue = parseFloat(document.getElementById("revenue").value) || 0;
+  const closingBalance = parseFloat(document.getElementById("closing-balance").value) || 0;
 
-  inventoryRef.child(product.id).update({ quantity: product.quantity - qty })
-    .then(() => {
-      console.log("Updated product quantity:", product.id);
-      reportsRef.push({
-        date: new Date().toISOString().split("T")[0],
-        product: product.name,
-        quantity: qty,
-        revenue,
-        expenseAmount,
-        expenseInfo
-      }).then(() => {
+  console.log("Submitting report:", { openingBalance, expenseAmount, revenue, closingBalance, productClickCounts });
+
+  // Kiểm tra ít nhất một trường được nhập
+  if (openingBalance === 0 && expenseAmount === 0 && revenue === 0 && closingBalance === 0) {
+    console.error("No data entered for report");
+    return alert("Vui lòng nhập ít nhất một thông tin (số dư đầu kỳ, chi phí, doanh thu, số dư cuối kỳ)!");
+  }
+
+  // Thu thập dữ liệu sản phẩm xuất
+  const productsReported = Object.keys(productClickCounts).map(productId => {
+    const product = inventoryData.find(p => p.id === productId);
+    const quantity = productClickCounts[productId] || 0;
+    if (quantity > 0 && product) {
+      return { productId, name: product.name, quantity };
+    }
+    return null;
+  }).filter(p => p !== null);
+
+  console.log("Products reported:", productsReported);
+
+  // Cập nhật số lượng sản phẩm trong kho
+  Promise.all(productsReported.map(p => {
+    const product = inventoryData.find(prod => prod.id === p.productId);
+    if (product && p.quantity > 0) {
+      return inventoryRef.child(p.productId).update({ quantity: product.quantity - p.quantity })
+        .then(() => console.log("Updated product quantity:", { productId: p.productId, newQuantity: product.quantity - p.quantity }));
+    }
+    return Promise.resolve();
+  })).then(() => {
+    // Lấy tên nhân viên từ employeeData
+    const employee = employeeData.find(e => e.id === currentEmployeeId) || { name: "Unknown" };
+    const reportData = {
+      date: new Date().toISOString(),
+      employeeId: currentEmployeeId,
+      employeeName: employee.name,
+      openingBalance,
+      expenseAmount,
+      revenue,
+      closingBalance,
+      products: productsReported,
+      remaining: closingBalance - expenseAmount + revenue
+    };
+
+    console.log("Pushing report to Firebase:", reportData);
+
+    reportsRef.push(reportData)
+      .then(() => {
         console.log("Report submitted successfully");
         alert("Báo cáo thành công!");
-      }).catch(err => console.error("Error submitting report:", err));
-    })
-    .catch(err => console.error("Error updating product quantity:", err));
+        // Reset input và click counts
+        document.getElementById("opening-balance").value = "";
+        document.getElementById("expense-amount").value = "";
+        document.getElementById("revenue").value = "";
+        document.getElementById("closing-balance").value = "";
+        productClickCounts = {};
+        renderReportProductList();
+      })
+      .catch(err => {
+        console.error("Error submitting report:", err);
+        alert("Lỗi khi gửi báo cáo: " + err.message);
+      });
+  }).catch(err => {
+    console.error("Error updating product quantities:", err);
+    alert("Lỗi khi cập nhật số lượng sản phẩm: " + err.message);
+  });
 }
 
 function renderReports() {
@@ -289,18 +346,32 @@ function renderReports() {
   table.classList.add("table-style");
   table.innerHTML = `
     <thead>
-      <tr><th>Ngày</th><th>Sản phẩm</th><th>SL</th><th>Doanh thu</th><th>Chi phí</th><th>Ghi chú</th></tr>
+      <tr>
+        <th>STT</th>
+        <th>Thời gian</th>
+        <th>Tên nhân viên</th>
+        <th>Số dư đầu kỳ</th>
+        <th>Chi phí</th>
+        <th>Doanh thu</th>
+        <th>Số dư cuối kỳ</th>
+        <th>Còn lại</th>
+      </tr>
     </thead>
     <tbody>
-      ${reportData.map(r => `
+      ${reportData.map((r, index) => {
+        console.log("Rendering report:", r);
+        return `
         <tr>
-          <td>${r.date}</td>
-          <td>${r.product}</td>
-          <td>${r.quantity}</td>
-          <td>${r.revenue}</td>
+          <td>${index + 1}</td>
+          <td>${new Date(r.date).toLocaleString()}</td>
+          <td>${r.employeeName}</td>
+          <td>${r.openingBalance}</td>
           <td>${r.expenseAmount}</td>
-          <td>${r.expenseInfo}</td>
-        </tr>`).join("")}
+          <td>${r.revenue}</td>
+          <td>${r.closingBalance}</td>
+          <td>${r.remaining}</td>
+        </tr>`;
+      }).join("")}
     </tbody>`;
   container.appendChild(table);
 }
@@ -558,7 +629,7 @@ function renderExpenseSummary() {
   console.log("Rendering expense summary, total items:", reportData.length);
   reportData.filter(r => r.expenseAmount > 0).forEach(r => {
     const row = document.createElement("div");
-    row.innerHTML = `${r.date} - ${r.product} - Chi phí: ${r.expenseAmount} - ${r.expenseInfo}`;
+    row.innerHTML = `${r.date} - ${r.employeeName} - Chi phí: ${r.expenseAmount} - ${r.products.map(p => `${p.name}: ${p.quantity}`).join(", ")}`;
     container.appendChild(row);
   });
 }
@@ -569,10 +640,10 @@ function generateBusinessChart() {
     console.error("Chart canvas not found!");
     return;
   }
-  const labels = [...new Set(reportData.map(r => r.date))];
-  const revenueData = labels.map(d => reportData.filter(r => r.date === d)
+  const labels = [...new Set(reportData.map(r => r.date.split("T")[0]))];
+  const revenueData = labels.map(d => reportData.filter(r => r.date.split("T")[0] === d)
     .reduce((sum, r) => sum + r.revenue, 0));
-  const expenseData = labels.map(d => reportData.filter(r => r.date === d)
+  const expenseData = labels.map(d => reportData.filter(r => r.date.split("T")[0] === d)
     .reduce((sum, r) => sum + r.expenseAmount, 0));
   console.log("Generating business chart:", { labels, revenueData, expenseData });
   new Chart(ctx, {
