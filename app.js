@@ -225,16 +225,16 @@ function submitReport() {
   const openingBalance = parseFloat(openingBalanceEl.value) || 0;
   const expenseInput = expenseInputEl.value.trim();
   const revenue = parseFloat(revenueEl.value) || 0;
-  const closingBalance = closingBalanceEl.value ? parseFloat(closingBalanceEl.value) : 0;
+  const closingBalance = closingBalanceEl.value ? parseFloat(closingBalanceEl.value) : null; // Lưu null nếu không nhập
   const { money: expenseAmount, note: expenseNote } = parseEntry(expenseInput);
 
-  if (expenseAmount === 0 && revenue === 0 && closingBalance === 0 && openingBalance === 0 && Object.keys(productClickCounts).length === 0) {
+  if (openingBalance === 0 && expenseAmount === 0 && revenue === 0 && closingBalance === null && Object.keys(productClickCounts).length === 0) {
     alert("Vui lòng nhập ít nhất một thông tin: số dư đầu kỳ, chi phí, doanh thu, số dư cuối kỳ, hoặc xuất hàng!");
     return;
   }
 
-  // Tính số tiền còn lại, chỉ trừ closingBalance nếu được nhập
-  const remaining = openingBalance + revenue - expenseAmount - closingBalance;
+  // Tính số tiền còn lại
+  const remaining = openingBalance + revenue - expenseAmount - (closingBalance || 0);
 
   const productsReported = Object.keys(productClickCounts).map(productId => {
     const product = inventoryData.find(p => p.id === productId);
@@ -273,7 +273,7 @@ function submitReport() {
       expenseAmount,
       expenseNote: expenseNote || "Không có",
       revenue,
-      closingBalance,
+      closingBalance, // Lưu null nếu không nhập
       remaining,
       products: productsReported
     };
@@ -461,20 +461,37 @@ function renderReports() {
 
   const sortedReports = reportData.sort((a, b) => new Date(a.date) - new Date(b.date));
 
+  // Lọc báo cáo có thông tin tài chính
+  const financeReports = sortedReports.filter(r => 
+    r.openingBalance !== 0 || r.revenue !== 0 || r.expenseAmount !== 0 || r.closingBalance !== null
+  );
+
   // Revenue-Expense Table
   const reportTable = document.createElement("table");
   reportTable.classList.add("table-style");
   reportTable.innerHTML = `
     <thead>
-      <tr><th>STT</th><th>Tên NV</th><th>Nội dung</th><th>Số tiền</th><th>Hành động</th></tr>
+      <tr>
+        <th>STT</th>
+        <th>Tên NV</th>
+        <th>Số dư đầu kỳ</th>
+        <th>Doanh thu</th>
+        <th>Chi phí</th>
+        <th>Số dư cuối kỳ</th>
+        <th>Còn lại</th>
+        <th>Hành động</th>
+      </tr>
     </thead>
     <tbody>
-      ${sortedReports.map((r, index) => `
+      ${financeReports.map((r, index) => `
         <tr>
           <td>${index + 1}</td>
           <td>${r.employeeName}</td>
-          <td>${r.expenseNote || "Không có"}</td>
-          <td>${r.expenseAmount.toLocaleString('vi-VN')} VND</td>
+          <td>${r.openingBalance.toLocaleString('vi-VN')} VND</td>
+          <td>${r.revenue.toLocaleString('vi-VN')} VND</td>
+          <td>${r.expenseAmount.toLocaleString('vi-VN')} VND (Ghi chú: ${r.expenseNote || "Không có"})</td>
+          <td>${(r.closingBalance || 0).toLocaleString('vi-VN')} VND</td>
+          <td>${r.remaining.toLocaleString('vi-VN')} VND</td>
           <td>
             <button onclick="editReportExpense('${r.id}')">Sửa</button>
             <button onclick="deleteReportExpense('${r.id}')">Xóa</button>
