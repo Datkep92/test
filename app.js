@@ -264,9 +264,24 @@ function incrementProductCount(productId) {
 }
 
 function submitReport() {
-  const expenseInput = document.getElementById("expense-input").value.trim();
-  const revenue = parseFloat(document.getElementById("revenue").value) || 0;
-  const closingBalance = parseFloat(document.getElementById("closing-balance").value) || 0;
+  const expenseInputEl = document.getElementById("expense-input");
+  const revenueEl = document.getElementById("revenue");
+  const closingBalanceEl = document.getElementById("closing-balance");
+
+  // Kiểm tra xem các phần tử có tồn tại không
+  if (!expenseInputEl || !revenueEl || !closingBalanceEl) {
+    console.error("One or more input elements not found:", {
+      expenseInput: expenseInputEl,
+      revenue: revenueEl,
+      closingBalance: closingBalanceEl
+    });
+    alert("Lỗi: Không tìm thấy các trường nhập liệu. Vui lòng kiểm tra giao diện!");
+    return;
+  }
+
+  const expenseInput = expenseInputEl.value.trim();
+  const revenue = parseFloat(revenueEl.value) || 0;
+  const closingBalance = parseFloat(closingBalanceEl.value) || 0;
 
   const { money: expenseAmount, note: expenseNote } = parseEntry(expenseInput);
 
@@ -338,9 +353,9 @@ function submitReport() {
         expenseNotes.push({ reportId: snap.key, note: expenseNote || "Không có" });
         console.log("Added to expenseNotes:", { reportId: snap.key, note: expenseNote });
         alert("Báo cáo thành công!");
-        document.getElementById("expense-input").value = "";
-        document.getElementById("revenue").value = "";
-        document.getElementById("closing-balance").value = "";
+        expenseInputEl.value = "";
+        revenueEl.value = "";
+        closingBalanceEl.value = "";
         productClickCounts = {};
         renderReportProductList();
       })
