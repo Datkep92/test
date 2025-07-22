@@ -1,15 +1,16 @@
 /*********************************************
  * app.js - Milano 259 (Full Features - Firebase)
+ * Phần tiếp nối: Thêm bảng chat và tích hợp thông báo
  *********************************************/
 
-// Firebase References
+// Firebase References (đã có từ trước, giữ nguyên)
 const inventoryRef = firebase.database().ref("inventory");
 const reportsRef = firebase.database().ref("reports");
 const employeesRef = firebase.database().ref("employees");
 const advancesRef = firebase.database().ref("advances");
 const messagesRef = firebase.database().ref("messages");
 
-// Local Variables
+// Local Variables (đã có từ trước, giữ nguyên)
 let inventoryData = [];
 let reportData = [];
 let employeeData = [];
@@ -20,7 +21,7 @@ let expenseNotes = [];
 let currentEmployeeId = null;
 let isFirebaseInitialized = false;
 
-// Hàm parseEntry
+// Hàm parseEntry (đã có từ trước, giữ nguyên)
 function parseEntry(text) {
   const match = text.match(/([\d.,]+)\s*(k|nghìn|tr|triệu)?/i);
   if (!match) return { money: 0, note: text.trim() };
@@ -37,7 +38,7 @@ function parseEntry(text) {
   };
 }
 
-// Đăng nhập / Đăng xuất
+// Đăng nhập / Đăng xuất (đã có từ trước, giữ nguyên)
 function login() {
   const emailInput = document.getElementById("email");
   const passwordInput = document.getElementById("password");
@@ -102,7 +103,7 @@ function logout() {
     });
 }
 
-// Floating Button Tabs
+// Floating Button Tabs (đã có từ trước, giữ nguyên)
 function toggleMenu() {
   const options = document.getElementById("float-options");
   if (!options) {
@@ -140,6 +141,8 @@ function openTabBubble(tabId) {
     renderAdvanceHistory();
     renderSalarySummary();
     renderSchedule();
+    renderSalaryComparison();
+    renderActivityHistory();
   } else if (tabId === "employee-management") {
     console.log("Rendering employee management data");
     renderEmployeeList();
@@ -155,7 +158,7 @@ function openTabBubble(tabId) {
   }
 }
 
-// Inventory Management (CRUD)
+// Inventory Management (CRUD) (đã có từ trước, giữ nguyên)
 function addInventory() {
   const nameInput = document.getElementById("product-name");
   const quantityInput = document.getElementById("product-quantity");
@@ -167,7 +170,7 @@ function addInventory() {
   }
 
   const name = nameInput.value.trim();
-  const quantity = parseInt(quantity正确的Input.value) || 0;
+  const quantity = parseInt(quantityInput.value) || 0;
   const price = parseFloat(priceInput.value) || 0;
 
   console.log("Adding product:", { name, quantity, price });
@@ -283,7 +286,7 @@ function renderInventory() {
   list.appendChild(table);
 }
 
-// Revenue-Expense Report
+// Revenue-Expense Report (đã có từ trước, giữ nguyên)
 function submitReport() {
   const openingBalanceEl = document.getElementById("opening-balance");
   const expenseInputEl = document.getElementById("expense-input");
@@ -753,7 +756,7 @@ function renderFilteredReports(filteredReports) {
   productContainer.appendChild(totalProductDiv);
 }
 
-// Employee Management
+// Employee Management (đã có từ trước, giữ nguyên)
 function addEmployee() {
   const nameInput = document.getElementById("employee-name");
   const dailyWageInput = document.getElementById("employee-dailywage");
@@ -842,7 +845,7 @@ function renderEmployeeList() {
   list.appendChild(table);
 }
 
-// Advance Requests
+// Advance Requests (đã có từ trước, giữ nguyên)
 function requestAdvance() {
   const amountInput = document.getElementById("advance-amount");
   const reasonInput = document.getElementById("advance-reason");
@@ -979,7 +982,7 @@ function rejectAdvance(id) {
     });
 }
 
-// Salary & Workdays
+// Salary & Workdays (đã có từ trước, giữ nguyên)
 function calculateSalary(empId) {
   const emp = employeeData.find((e) => e.id === empId);
   if (!emp) {
@@ -1103,7 +1106,7 @@ function calculatePastSalary(empId, date) {
   );
 }
 
-// Chat
+// Chat (Cập nhật với bảng chat mới)
 function sendGroupMessage() {
   const msgInput = document.getElementById("group-message");
   if (!msgInput) {
@@ -1130,7 +1133,10 @@ function sendGroupMessage() {
       console.log("Group message sent successfully");
       msgInput.value = "";
     })
-    .catch((err) => console.error("Error sending group message:", err));
+    .catch((err) => {
+      console.error("Error sending group message:", err);
+      alert("Lỗi khi gửi tin nhắn nhóm: " + err.message);
+    });
 }
 
 function sendManagerMessage() {
@@ -1159,7 +1165,10 @@ function sendManagerMessage() {
       console.log("Manager message sent successfully");
       msgInput.value = "";
     })
-    .catch((err) => console.error("Error sending manager message:", err));
+    .catch((err) => {
+      console.error("Error sending manager message:", err);
+      alert("Lỗi khi gửi tin nhắn quản lý: " + err.message);
+    });
 }
 
 function renderChat(type) {
@@ -1170,16 +1179,114 @@ function renderChat(type) {
   }
   box.innerHTML = "";
   console.log(`Rendering ${type} chat, total messages:`, messages[type].length);
-  messages[type].forEach((m) => {
-    const sender = employeeData.find((e) => e.id === m.senderId) || { name: "Nhân viên" };
-    const div = document.createElement("div");
-    div.classList.add("chat-message");
-    div.textContent = `[${new Date(m.time).toLocaleTimeString()}] ${sender.name}: ${m.text}`;
-    box.appendChild(div);
-  });
+
+  if (messages[type].length === 0) {
+    box.innerHTML = `<p>Chưa có tin nhắn trong ${type === "group" ? "nhóm" : "quản lý"}.</p>`;
+    return;
+  }
+
+  const table = document.createElement("table");
+  table.classList.add("table-style", "chat-table");
+  table.innerHTML = `
+    <thead>
+      <tr><th>Thời gian</th><th>Người gửi</th><th>Tin nhắn</th><th>Hành động</th></tr>
+    </thead>
+    <tbody>
+      ${messages[type]
+        .map((m) => {
+          const sender = employeeData.find((e) => e.id === m.senderId) || { name: "Nhân viên" };
+          const isManager = employeeData.find((e) => e.id === currentEmployeeId)?.role === "manager";
+          const isApprovalRequest = m.relatedRequestId && type === "manager";
+          return `
+            <tr>
+              <td>${new Date(m.time).toLocaleString()}</td>
+              <td>${sender.name}</td>
+              <td>${m.text}</td>
+              <td>
+                ${
+                  isApprovalRequest && isManager
+                    ? `<button onclick="approveScheduleChange('${m.relatedRequestId}')">Duyệt</button>
+                       <button onclick="rejectScheduleChange('${m.relatedRequestId}')">Từ chối</button>`
+                    : ""
+                }
+              </td>
+            </tr>`;
+        })
+        .join("")}
+    </tbody>`;
+  box.appendChild(table);
 }
 
-// Business Report
+// Hàm duyệt/từ chối yêu cầu lịch (mới)
+function approveScheduleChange(requestId) {
+  if (!currentEmployeeId || employeeData.find((e) => e.id === currentEmployeeId)?.role !== "manager") {
+    console.error("User not authorized to approve schedule change");
+    alert("Lỗi: Bạn không có quyền duyệt yêu cầu!");
+    return;
+  }
+
+  advancesRef
+    .child(requestId)
+    .update({ approvalStatus: "approved" })
+    .then(() => {
+      console.log("Schedule change approved:", requestId);
+      advancesRef
+        .child(requestId)
+        .once("value")
+        .then((snapshot) => {
+          const request = snapshot.val();
+          if (request && request.employeeId && request.day && request.status) {
+            employeesRef
+              .child(request.employeeId)
+              .child("schedule")
+              .update({ [request.day]: request.status })
+              .then(() => {
+                console.log("Schedule updated for employee:", request.employeeId);
+                // Cập nhật employeeData cục bộ
+                const empIndex = employeeData.findIndex((e) => e.id === request.employeeId);
+                if (empIndex !== -1) {
+                  employeeData[empIndex].schedule = employeeData[empIndex].schedule || {};
+                  employeeData[empIndex].schedule[request.day] = request.status;
+                }
+                renderSchedule();
+                renderChat("manager");
+                alert("Đã duyệt yêu cầu thay đổi lịch!");
+              });
+          }
+        })
+        .catch((err) => {
+          console.error("Error updating schedule:", err);
+          alert("Lỗi khi cập nhật lịch: " + err.message);
+        });
+    })
+    .catch((err) => {
+      console.error("Error approving schedule change:", err);
+      alert("Lỗi khi duyệt yêu cầu: " + err.message);
+    });
+}
+
+function rejectScheduleChange(requestId) {
+  if (!currentEmployeeId || employeeData.find((e) => e.id === currentEmployeeId)?.role !== "manager") {
+    console.error("User not authorized to reject schedule change");
+    alert("Lỗi: Bạn không có quyền từ chối yêu cầu!");
+    return;
+  }
+
+  advancesRef
+    .child(requestId)
+    .update({ approvalStatus: "rejected" })
+    .then(() => {
+      console.log("Schedule change rejected:", requestId);
+      renderChat("manager");
+      alert("Đã từ chối yêu cầu thay đổi lịch!");
+    })
+    .catch((err) => {
+      console.error("Error rejecting schedule change:", err);
+      alert("Lỗi khi từ chối yêu cầu: " + err.message);
+    });
+}
+
+// Business Report (đã có từ trước, giữ nguyên)
 function renderExpenseSummary() {
   const container = document.getElementById("expense-summary-table");
   if (!container) {
@@ -1249,7 +1356,7 @@ function generateBusinessChart() {
   });
 }
 
-// Profile Management
+// Profile Management (đã có từ trước, giữ nguyên)
 function uploadProfileImage() {
   const fileInput = document.getElementById("profile-image-upload");
   if (!fileInput) {
@@ -1439,23 +1546,34 @@ function renderProfile() {
   }
 }
 
+// Schedule Management (đã có từ trước, giữ nguyên)
 function changeMonth(offset) {
   const currentMonthEl = document.getElementById("current-month");
   if (!currentMonthEl) {
     console.error("Current month element not found");
     return;
   }
-  const now = new Date();
-  let currentMonth = now.getMonth() + offset;
-  let currentYear = now.getFullYear();
-  if (currentMonth < 0) {
+  // Khởi tạo tháng hiện tại nếu chưa có giá trị
+  if (!currentMonthEl.textContent) {
+    const now = new Date();
+    currentMonthEl.textContent = `${now.getFullYear()}-${now.getMonth() + 1}`;
+  }
+  let [currentYear, currentMonth] = currentMonthEl.textContent.split("-").map(Number);
+  if (isNaN(currentYear) || isNaN(currentMonth)) {
+    console.warn("Invalid year or month, resetting to current date");
+    const now = new Date();
+    currentYear = now.getFullYear();
+    currentMonth = now.getMonth() + 1;
+  }
+  currentMonth += offset;
+  if (currentMonth < 1) {
     currentMonth += 12;
     currentYear -= 1;
-  } else if (currentMonth > 11) {
+  } else if (currentMonth > 12) {
     currentMonth -= 12;
     currentYear += 1;
   }
-  currentMonthEl.textContent = `${currentYear}-${currentMonth + 1}`;
+  currentMonthEl.textContent = `${currentYear}-${currentMonth}`;
   renderSchedule();
 }
 
@@ -1468,9 +1586,14 @@ function updateScheduleFromDate() {
   }
   const date = dateInput.value;
   if (date) {
-    const [year, month] = date.split("-");
-    currentMonthEl.textContent = `${year}-${month}`;
-    renderSchedule();
+    const [year, month] = date.split("-").map(Number);
+    if (!isNaN(year) && !isNaN(month)) {
+      currentMonthEl.textContent = `${year}-${month}`;
+      renderSchedule();
+    } else {
+      console.error("Invalid date format from schedule-date-picker:", date);
+      alert("Ngày tháng không hợp lệ!");
+    }
   }
 }
 
@@ -1481,9 +1604,15 @@ function renderSchedule() {
     console.error("Current month or schedule table element not found");
     return;
   }
+  // Khởi tạo tháng hiện tại nếu chưa có giá trị
+  if (!currentMonthEl.textContent) {
+    const now = new Date();
+    currentMonthEl.textContent = `${now.getFullYear()}-${now.getMonth() + 1}`;
+  }
   const [year, month] = currentMonthEl.textContent.split("-").map(Number);
   if (isNaN(year) || isNaN(month)) {
     console.error("Invalid year or month:", currentMonthEl.textContent);
+    alert("Lỗi: Năm hoặc tháng không hợp lệ!");
     return;
   }
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -1546,7 +1675,15 @@ function updateSchedule(day, status) {
   const empRef = employeesRef.child(currentEmployeeId).child("schedule");
   empRef
     .update({ [day]: status })
-    .then(() => console.log("Cập nhật lịch thành công"))
+    .then(() => {
+      console.log("Cập nhật lịch thành công");
+      // Cập nhật employeeData cục bộ
+      const empIndex = employeeData.findIndex((e) => e.id === currentEmployeeId);
+      if (empIndex !== -1) {
+        employeeData[empIndex].schedule = employeeData[empIndex].schedule || {};
+        employeeData[empIndex].schedule[day] = status;
+      }
+    })
     .catch((err) => alert("Lỗi khi cập nhật lịch: " + err.message));
 }
 
@@ -1556,16 +1693,35 @@ function sendApprovalRequest(day, status) {
     alert("Lỗi: Vui lòng đăng nhập lại!");
     return;
   }
+  const emp = employeeData.find((e) => e.id === currentEmployeeId);
+  const employeeName = emp ? emp.name : "Nhân viên";
   advancesRef
     .push({
       employeeId: currentEmployeeId,
+      employeeName: employeeName,
       type: "schedule_change",
       day: day,
       status: status,
       requestTime: new Date().toISOString(),
       approvalStatus: "pending",
     })
-    .then(() => console.log("Gửi yêu cầu duyệt lịch thành công"))
+    .then((snap) => {
+      console.log("Gửi yêu cầu duyệt lịch thành công");
+      // Gửi thông báo đến quản lý nếu là yêu cầu nghỉ (Off)
+      if (status === "Off") {
+        const managerMessage = `Yêu cầu nghỉ ngày ${day} từ ${employeeName} (ID: ${currentEmployeeId})`;
+        messagesRef
+          .child("manager")
+          .push({
+            text: managerMessage,
+            time: new Date().toISOString(),
+            senderId: currentEmployeeId,
+            relatedRequestId: snap.key, // Liên kết với yêu cầu để quản lý theo dõi
+          })
+          .then(() => console.log("Thông báo yêu cầu nghỉ gửi đến quản lý thành công"))
+          .catch((err) => console.error("Lỗi khi gửi thông báo đến quản lý:", err));
+      }
+    })
     .catch((err) => alert("Lỗi khi gửi yêu cầu duyệt: " + err.message));
 }
 
@@ -1575,16 +1731,35 @@ function sendSwapRequest(targetEmpId, day) {
     alert("Lỗi: Vui lòng đăng nhập lại!");
     return;
   }
+  const emp = employeeData.find((e) => e.id === currentEmployeeId);
+  const employeeName = emp ? emp.name : "Nhân viên";
   advancesRef
     .push({
       employeeId: currentEmployeeId,
+      employeeName: employeeName,
       targetEmpId: targetEmpId,
       type: "swap_request",
       day: day,
       requestTime: new Date().toISOString(),
       approvalStatus: "pending",
     })
-    .then(() => console.log("Gửi đề xuất đổi ca thành công"))
+    .then((snap) => {
+      console.log("Gửi đề xuất đổi ca thành công");
+      // Gửi thông báo đến quản lý
+      const targetEmp = employeeData.find((e) => e.id === targetEmpId);
+      const targetName = targetEmp ? targetEmp.name : targetEmpId;
+      const managerMessage = `Yêu cầu đổi ca ngày ${day} từ ${employeeName} (ID: ${currentEmployeeId}) với ${targetName} (ID: ${targetEmpId})`;
+      messagesRef
+        .child("manager")
+        .push({
+          text: managerMessage,
+          time: new Date().toISOString(),
+          senderId: currentEmployeeId,
+          relatedRequestId: snap.key, // Liên kết với yêu cầu để quản lý theo dõi
+        })
+        .then(() => console.log("Thông báo yêu cầu đổi ca gửi đến quản lý thành công"))
+        .catch((err) => console.error("Lỗi khi gửi thông báo đến quản lý:", err));
+    })
     .catch((err) => alert("Lỗi khi gửi đề xuất đổi ca: " + err.message));
 }
 
@@ -1629,7 +1804,7 @@ function renderActivityHistory() {
     <ul>${approvalActivities.map((a) => `<li>${a}</li>`).join("")}</ul>`;
 }
 
-// Initialize Firebase Listeners
+// Initialize Firebase Listeners (đã có từ trước, giữ nguyên)
 function loadFirebaseData() {
   if (isFirebaseInitialized) return;
   console.log("Initializing Firebase listeners");
@@ -1737,7 +1912,7 @@ function loadFirebaseData() {
   isFirebaseInitialized = true;
 }
 
-// Auth State
+// Auth State (đã có từ trước, giữ nguyên)
 auth.onAuthStateChanged((user) => {
   const loginPage = document.getElementById("login-page");
   const mainPage = document.getElementById("main-page");
@@ -1745,15 +1920,18 @@ auth.onAuthStateChanged((user) => {
     console.error("Login or main page element not found");
     return;
   }
-  if (user) {
+ if (user) {
     currentEmployeeId = user.uid;
+    console.log("User logged in, ID:", currentEmployeeId);
     loginPage.style.display = "none";
     mainPage.style.display = "block";
-    openTabBubble("profile");
     loadFirebaseData();
+    renderProfile();
   } else {
     currentEmployeeId = null;
+    console.log("No user logged in, showing login page");
     loginPage.style.display = "flex";
     mainPage.style.display = "none";
+    isFirebaseInitialized = false;
   }
 });
