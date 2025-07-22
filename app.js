@@ -625,6 +625,14 @@ function renderFilteredReports(filteredReports) {
   reportContainer.innerHTML = "";
   productContainer.innerHTML = "";
 
+  // Kiểm tra nếu filteredReports không phải mảng
+  if (!Array.isArray(filteredReports)) {
+    console.error("filteredReports is not an array:", filteredReports);
+    reportContainer.innerHTML = "<p>Lỗi: Dữ liệu báo cáo không hợp lệ.</p>";
+    productContainer.innerHTML = "<p>Lỗi: Dữ liệu báo cáo không hợp lệ.</p>";
+    return;
+  }
+
   if (filteredReports.length === 0) {
     reportContainer.innerHTML =
       "<p>Chưa có báo cáo thu chi trong khoảng thời gian được chọn.</p>";
@@ -633,8 +641,10 @@ function renderFilteredReports(filteredReports) {
     return;
   }
 
+  // Sắp xếp báo cáo theo ngày
   const sortedReports = filteredReports.sort((a, b) => new Date(a.date) - new Date(b.date));
 
+  // Lọc các báo cáo có dữ liệu tài chính
   const financeReports = sortedReports.filter(
     (r) =>
       r.openingBalance !== 0 ||
@@ -643,6 +653,7 @@ function renderFilteredReports(filteredReports) {
       r.closingBalance !== null
   );
 
+  // Hiển thị bảng báo cáo thu chi
   const reportTable = document.createElement("table");
   reportTable.classList.add("table-style");
   reportTable.innerHTML = `
@@ -674,6 +685,7 @@ function renderFilteredReports(filteredReports) {
     </tbody>`;
   reportContainer.appendChild(reportTable);
 
+  // Tính tổng các giá trị tài chính
   const totalOpeningBalance = sortedReports.reduce(
     (sum, r) => sum + (r.openingBalance || 0),
     0
@@ -686,6 +698,7 @@ function renderFilteredReports(filteredReports) {
   );
   const finalBalance = totalOpeningBalance + totalRevenue - totalExpense - totalClosingBalance;
 
+  // Hiển thị tổng kết tài chính
   const totalReportDiv = document.createElement("div");
   totalReportDiv.classList.add("report-total");
   totalReportDiv.innerHTML = `
@@ -698,6 +711,7 @@ function renderFilteredReports(filteredReports) {
   `;
   reportContainer.appendChild(totalReportDiv);
 
+  // Xử lý báo cáo sản phẩm
   const productReports = sortedReports.flatMap((r, index) =>
     Array.isArray(r.products) && r.products.length > 0
       ? r.products.map((p) => ({
@@ -711,6 +725,7 @@ function renderFilteredReports(filteredReports) {
       : []
   );
 
+  // Hiển thị bảng sản phẩm
   const productTable = document.createElement("table");
   productTable.classList.add("table-style");
   productTable.innerHTML = `
@@ -736,6 +751,7 @@ function renderFilteredReports(filteredReports) {
     </tbody>`;
   productContainer.appendChild(productTable);
 
+  // Tính tổng kết sản phẩm
   const totalProductSummary = productReports.reduce((acc, p) => {
     acc[p.productName] = (acc[p.productName] || 0) + p.quantity;
     return acc;
@@ -748,6 +764,7 @@ function renderFilteredReports(filteredReports) {
     })
     .join(" - ");
 
+  // Hiển thị tổng kết sản phẩm
   const totalProductDiv = document.createElement("div");
   totalProductDiv.classList.add("report-total");
   totalProductDiv.innerHTML = `
@@ -755,7 +772,6 @@ function renderFilteredReports(filteredReports) {
   `;
   productContainer.appendChild(totalProductDiv);
 }
-
 // Employee Management (đã có từ trước, giữ nguyên)
 function addEmployee() {
   const nameInput = document.getElementById("employee-name");
