@@ -84,14 +84,28 @@ function addInventory() {
   const quantity = parseInt(document.getElementById("product-quantity").value) || 0;
   const price = parseFloat(document.getElementById("product-price").value) || 0;
 
-  if (!name || quantity <= 0 || price <= 0) return alert("Nhập đúng thông tin sản phẩm!");
+  // Kiểm tra dữ liệu đầu vào
+  if (!name || quantity <= 0 || price <= 0) {
+    alert("Vui lòng nhập đầy đủ và đúng thông tin sản phẩm!");
+    return;
+  }
 
+  // Log dữ liệu để debug
+  console.log("Thêm sản phẩm:", { name, quantity, price });
+
+  // Đẩy dữ liệu lên Firebase
   inventoryRef.push({ name, quantity, price })
     .then(() => {
-      alert("Đã thêm sản phẩm!");
+      console.log("Đã thêm sản phẩm vào Firebase!");
+      alert("Đã thêm sản phẩm thành công!");
+      // Xóa input
       document.getElementById("product-name").value = "";
       document.getElementById("product-quantity").value = "";
       document.getElementById("product-price").value = "";
+    })
+    .catch(err => {
+      console.error("Lỗi khi thêm sản phẩm:", err);
+      alert("Lỗi khi thêm sản phẩm: " + err.message);
     });
 }
 
@@ -433,11 +447,21 @@ function generateBusinessChart() {
 function loadFirebaseData() {
   inventoryRef.on("value", snapshot => {
     inventoryData = [];
-    snapshot.forEach(child => inventoryData.push({ id: child.key, ...child.val() }));
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        const product = { id: child.key, ...child.val() };
+        inventoryData.push(product);
+        console.log("Sản phẩm từ Firebase:", product); // Debug mỗi sản phẩm
+      });
+    } else {
+      console.log("Không có dữ liệu trong inventory!");
+    }
+    console.log("Danh sách inventoryData:", inventoryData); // Debug danh sách
     renderInventory();
     renderReportProductList();
   });
 
+  // Các listener khác giữ nguyên
   reportsRef.on("value", snapshot => {
     reportData = [];
     snapshot.forEach(child => reportData.push({ id: child.key, ...child.val() }));
@@ -470,16 +494,3 @@ function loadFirebaseData() {
     renderChat("manager");
   });
 }
-//
-auth.onAuthStateChanged(user => {
-  if (user) {
-    currentEmployeeId = user.uid;
-    document.getElementById("login-page").style.display = "none";
-    document.getElementById("main-page").style.display = "block";
-    openTabBubble('revenue-expense'); // mở tab mặc định
-    loadFirebaseData();
-  } else {
-    document.getElementById("login-page").style.display = "flex";
-    document.getElementById("main-page").style.display = "none";
-  }
-});
