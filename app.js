@@ -294,7 +294,7 @@ function submitReport() {
       products: productsReported
     };
 
-    // Log để xác nhận dữ liệu xuất hàng không ảnh hưởng số dư
+    // Log để kiểm tra dữ liệu trước khi gửi
     console.log("Gửi báo cáo:", {
       openingBalance,
       revenue,
@@ -310,7 +310,7 @@ function submitReport() {
         alert("Báo cáo thành công!");
         expenseInputEl.value = "";
         revenueEl.value = "";
-        closingBalanceEl.value = "";
+        closingBalanceEl.value = ""; // Xóa input để tránh nhập lại sai
         productClickCounts = {};
         renderReportProductList();
         renderReports();
@@ -318,6 +318,7 @@ function submitReport() {
       .catch(err => alert("Lỗi khi gửi báo cáo: " + err.message));
   }).catch(err => alert("Lỗi khi cập nhật số lượng sản phẩm: " + err.message));
 }
+
 function editReportExpense(reportId) {
   const report = reportData.find(r => r.id === reportId);
   if (!report) {
@@ -474,16 +475,9 @@ function renderReports() {
   }
 
   const sortedReports = reportData.sort((a, b) => new Date(a.date) - new Date(b.date));
-  let currentBalance = sortedReports[0].openingBalance || 0;
 
-  // Cập nhật remaining cho từng báo cáo
-  const updatedReports = sortedReports.map((r, index) => {
-    const isNewDay = index === 0 || sortedReports[index].date.split('T')[0] !== sortedReports[index - 1].date.split('T')[0];
-    const openingBalance = isNewDay ? (index > 0 ? sortedReports[index - 1].closingBalance || 0 : 0) : (index > 0 ? sortedReports[index - 1].remaining || 0 : 0);
-    const remaining = openingBalance + r.revenue - r.expenseAmount - (r.closingBalance || 0);
-    currentBalance = remaining;
-    return { ...r, openingBalance, remaining };
-  });
+  // Sử dụng giá trị openingBalance và remaining từ reportData, không tính lại
+  const updatedReports = sortedReports.map(r => ({ ...r }));
 
   // Revenue-Expense Table
   const reportTable = document.createElement("table");
@@ -508,8 +502,8 @@ function renderReports() {
   reportContainer.appendChild(reportTable);
 
   // Revenue-Expense Summary
-  const totalRevenue = updatedReports.reduce((sum, r) => sum + r.revenue, 0);
-  const totalExpense = updatedReports.reduce((sum, r) => sum + r.expenseAmount, 0);
+  const totalRevenue = updatedReports.reduce((sum, r) => sum + (r.revenue || 0), 0);
+  const totalExpense = updatedReports.reduce((sum, r) => sum + (r.expenseAmount || 0), 0);
   const firstOpeningBalance = updatedReports[0]?.openingBalance || 0;
   const finalClosingBalance = updatedReports[updatedReports.length - 1]?.closingBalance || 0;
   const finalBalance = updatedReports[updatedReports.length - 1]?.remaining || 0;
@@ -525,6 +519,15 @@ function renderReports() {
     Còn lại: ${finalBalance.toLocaleString('vi-VN')} VND
   `;
   reportContainer.appendChild(totalReportDiv);
+
+  // Log để kiểm tra tổng kết
+  console.log("Tổng kết báo cáo:", {
+    firstOpeningBalance,
+    totalRevenue,
+    totalExpense,
+    finalClosingBalance,
+    finalBalance
+  });
 
   // Product Report Table
   const productReports = updatedReports.flatMap((r, index) => 
