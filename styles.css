@@ -1,36 +1,12 @@
 body {
-  font-family: Arial, sans-serif;
   margin: 0;
-  padding: 0;
-  background-color: #f7f7f7;
+  font-family: Arial, sans-serif;
+  background: #f7f7f7;
   color: #333;
 }
 
 h1, h2, h3 {
   margin: 10px 0;
-}
-
-input, textarea, button {
-  width: 100%;
-  padding: 10px;
-  margin: 5px 0;
-  font-size: 16px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  box-sizing: border-box;
-}
-
-button.primary-btn {
-  background-color: #4CAF50;
-  color: #fff;
-  font-weight: bold;
-  border: none;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-button.primary-btn:hover {
-  background-color: #45a049;
 }
 
 .center-screen {
@@ -42,33 +18,48 @@ button.primary-btn:hover {
   padding: 20px;
 }
 
-.app-header {
-  background-color: #4CAF50;
-  color: #fff;
-  padding: 10px 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+input, textarea, button {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
 }
 
-.logout-btn {
-  background-color: #e74c3c;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 4px;
+button.primary-btn {
+  background: #4CAF50;
   color: #fff;
-  font-size: 14px;
+  font-weight: bold;
   cursor: pointer;
 }
 
-.logout-btn:hover {
-  background-color: #c0392b;
+button.primary-btn:hover {
+  background: #45a049;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #4CAF50;
+  color: #fff;
+  padding: 10px;
+}
+
+.logout-btn {
+  background: #e74c3c;
+  border: none;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 .top-nav {
   display: flex;
+  overflow-x: auto;
   background: #ddd;
-  border-bottom: 1px solid #ccc;
 }
 
 .top-nav button {
@@ -76,12 +67,6 @@ button.primary-btn:hover {
   border: none;
   padding: 10px;
   background: #ddd;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.top-nav button:hover {
-  background: #ccc;
 }
 
 .top-nav button.active {
@@ -91,97 +76,39 @@ button.primary-btn:hover {
 
 .tab-content-wrapper {
   padding: 10px;
-  padding-bottom: 80px; /* Để chừa chỗ cho bottom-nav */
 }
 
 .tabcontent {
   display: none;
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from {opacity: 0;}
-  to {opacity: 1;}
 }
 
 .chat-box {
+  background: #fff;
+  border: 1px solid #ccc;
   height: 150px;
   overflow-y: auto;
-  background: #fff;
   padding: 10px;
   margin-bottom: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
 }
 
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
+.table-style {
   width: 100%;
-  background-color: #4CAF50;
-  display: none;
-  justify-content: space-around;
-  padding: 5px 0;
-  z-index: 20;
-}
-
-.bottom-nav button {
-  flex: 1;
-  border: none;
-  background: none;
-  color: white;
+  border-collapse: collapse;
+  margin: 10px 0;
   font-size: 14px;
-  padding: 8px 0;
-  cursor: pointer;
 }
 
-.bottom-nav button.active {
-  background-color: #45a049;
+.table-style th, .table-style td {
+  border: 1px solid #ccc;
+  padding: 6px;
+  text-align: left;
+}
+
+.table-style th {
+  background: #eee;
 }
 
 @media (max-width: 768px) {
-  .top-nav {
-    display: none;
-  }
-  .bottom-nav {
-    display: flex;
-  }
-}
-
-.product-list button {
-  display: block;
-  width: 100%;
-  padding: 8px;
-  margin: 5px 0;
-  text-align: left;
-  border: 1px solid #ccc;
-  background: #fff;
-  border-radius: 4px;
-}
-
-.inventory-item {
-  padding: 8px;
-  margin: 5px 0;
-  border: 1px solid #ccc;
-  background: #fff;
-  border-radius: 4px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.inventory-item button {
-  margin-left: 5px;
-  padding: 5px 8px;
-  font-size: 12px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  background: #888;
-  color: #fff;
-}
-
-.inventory-item button:hover {
-  background: #555;
+  .top-nav { font-size: 14px; }
+  input, textarea, button { font-size: 14px; }
 }
