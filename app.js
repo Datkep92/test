@@ -1951,3 +1951,268 @@ auth.onAuthStateChanged((user) => {
     isFirebaseInitialized = false;
   }
 });
+// Hàm gửi thông báo (sửa lỗi không gửi alert đến quản lý)
+function sendMessage(type, content, recipientId = null) {
+  if (!isFirebaseInitialized) {
+    console.error("Firebase not initialized, cannot send message");
+    return;
+  }
+
+  const message = {
+    type: type, // "shift_change", "time_off", "overtime", "advance"
+    content: content,
+    senderId: currentEmployeeId,
+    recipientId: recipientId || "manager", // Gửi đến quản lý nếu không có recipientId
+    timestamp: new Date().toISOString(),
+    read: false,
+  };
+
+  messagesRef
+    .push(message)
+    .then(() => {
+      console.log(`${type} message sent:`, content);
+      // Gửi thông báo qua giao diện (nếu cần)
+      const notificationArea = document.getElementById("notification-area");
+      if (notificationArea) {
+        notificationArea.innerHTML += `<div class="notification">${type}: ${content}</div>`;
+      }
+    })
+    .catch((error) => {
+      console.error(`Error sending ${type} message:`, error);
+    });
+}
+
+// Hàm hiển thị yêu cầu (sửa lỗi quản lý không thấy yêu cầu)
+function renderAdvanceRequests() {
+  const requestContainer = document.getElementById("advance-request-table");
+  if (!requestContainer) {
+    console.error("Advance request table element not found!");
+    return;
+  }
+  requestContainer.innerHTML = "";
+
+  if (!Array.isArray(advanceRequests)) {
+    console.error("advanceRequests is not an array:", advanceRequests);
+    requestContainer.innerHTML = "<p>Lỗi: Dữ liệu yêu cầu không hợp lệ.</p>";
+    return;
+  }
+
+  if (advanceRequests.length === 0) {
+    requestContainer.innerHTML = "<p>Chưa có yêu cầu tạm ứng hoặc lịch sử.</p>";
+    return;
+  }
+
+  const requestTable = document.createElement("table");
+  requestTable.classList.add("table-style");
+  requestTable.innerHTML = `
+    <thead>
+      <tr>
+        <th>STT</th>
+        <th>Tên NV</th>
+        <th>Loại yêu cầu</th>
+        <th>Nội dung</th>
+        <th>Trạng thái</th>
+        <th>Hành động</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${advanceRequests
+        .map(
+          (req, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${req.employeeName}</td>
+          <td>${req.type}</td>
+          <td>${req.content}</td>
+          <td>${req.status || "Chờ duyệt"}</td>
+          <td>
+            ${
+              req.status === "Chờ duyệt" && isManager()
+                ? `
+                <button onclick="approveRequest('${req.id}')">Duyệt</button>
+                <button onclick="rejectRequest('${req.id}')">Từ chối</button>
+              `
+                : ""
+            }
+          </td>
+        </tr>`
+        )
+        .join("")}
+    </tbody>`;
+  requestContainer.appendChild(requestTable);
+}
+// Hàm kiểm tra quyền quản lý
+function isManager() {
+  const employee = employeeData.find((emp) => emp.id === currentEmployeeId);
+  return employee && employee.role === "manager";
+}
+
+// Hàm xử lý yêu cầu đổi ca
+function requestShiftChange(shiftId, newTime) {
+  const content = `Yêu cầu đổi ca ${shiftId} sang ${newTime}`;
+  sendMessage("shift_change", content);
+  saveRequestToFirebase("shift_change", content);
+}
+
+// Hàm xử lý yêu cầu nghỉ
+function requestTimeOff(date, reason) {
+  const content = `Yêu cầu nghỉ ngày ${date}: ${reason}`;
+  sendMessage("time_off", content);
+  saveRequestToFirebase("time_off", content);
+}
+
+// Hàm xử lý yêu cầu tăng ca
+function requestOvertime(date, hours) {
+  const content = `Yêu cầu tăng ca ngày ${date}: ${hours} giờ`;
+  sendMessage("overtime", content);
+  saveRequestToFirebase("overtime", content);
+}
+
+// Hàm xử lý yêu cầu tạm ứng (tính năng mới)
+function requestAdvance(amount, reason) {
+  if (!isFirebaseInitialized) {
+    console.error("Firebase not initialized, cannot request advance");
+    return;
+  }
+
+  const content = `Yêu cầu tạm ứng ${amount.toLocaleString("vi-VN")} VND: ${reason}`;
+  const request = {
+    employeeId: currentEmployeeId,
+    employeeName: employeeData.find((emp) => emp.id === currentEmployeeId)?.name || "Unknown",
+    type: "advance",
+    content: content,
+    amount: amount,
+    status: "Chờ duyệt",
+    timestamp: new Date().toISOString(),
+  };
+
+  advancesRef
+    .push(request)
+    .then(() => {
+      console.log("Advance request sent:", content);
+      sendMessage("advance", content, "manager");
+      advanceRequests.push({ ...request, id: advancesRef.key });
+      renderAdvanceRequests();
+    })
+    .catch((error) => {
+      console.error("Error sending advance request:", error);
+    });
+}
+
+// Hàm lưu yêu cầu vào Firebase
+function saveRequestToFirebase(type, content) {
+  const request = {
+    employeeId: currentEmployeeId,
+    employeeName: employeeData.find((emp) => emp.id === currentEmployeeId)?.name || "Unknown",
+    type: type,
+    content: content,
+    status: "Chờ duyệt",
+    timestamp: new Date().toISOString(),
+  };
+
+  advancesRef
+    .push(request)
+    .then(() => {
+      console.log(`${type} request saved:`, content);
+      advanceRequests.push({ ...request, id: advancesRef.key });
+      renderAdvanceRequests();
+    })
+    .catch((error) => {
+      console.error(`Error saving ${type} request:`, error);
+    });
+}
+
+// Hàm duyệt yêu cầu
+function approveRequest(requestId) {
+  advancesRef
+    .child(requestId)
+    .update({ status: "Đã duyệt" })
+    .then(() => {
+      console.log("Request approved:", requestId);
+      advanceRequests = advanceRequests.map((req) =>
+        req.id === requestId ? { ...req, status: "Đã duyệt" } : req
+      );
+      renderAdvanceRequests();
+      sendMessage("request_approved", `Yêu cầu ${requestId} đã được duyệt`, advanceRequests.find((req) => req.id === requestId).employeeId);
+    })
+    .catch((error) => {
+      console.error("Error approving request:", error);
+    });
+}
+
+// Hàm từ chối yêu cầu
+function rejectRequest(requestId) {
+  advancesRef
+    .child(requestId)
+    .update({ status: "Đã từ chối" })
+    .then(() => {
+      console.log("Request rejected:", requestId);
+      advanceRequests = advanceRequests.map((req) =>
+        req.id === requestId ? { ...req, status: "Đã từ chối" } : req
+      );
+      renderAdvanceRequests();
+      sendMessage("request_rejected", `Yêu cầu ${requestId} đã bị từ chối`, advanceRequests.find((req) => req.id === requestId).employeeId);
+    })
+    .catch((error) => {
+      console.error("Error rejecting request:", error);
+    });
+}
+
+// Lắng nghe dữ liệu từ Firebase (sửa lỗi không nhận thông báo)
+function loadFirebaseData() {
+  if (!isFirebaseInitialized) {
+    console.error("Firebase not initialized, cannot load data");
+    return;
+  }
+
+  // Lắng nghe yêu cầu
+  advancesRef.on("value", (snapshot) => {
+    advanceRequests = [];
+    snapshot.forEach((childSnapshot) => {
+      const request = childSnapshot.val();
+      request.id = childSnapshot.key;
+      advanceRequests.push(request);
+    });
+    renderAdvanceRequests();
+  });
+
+  // Lắng nghe thông báo
+  messagesRef.on("value", (snapshot) => {
+    messages = { group: [], manager: [] };
+    snapshot.forEach((childSnapshot) => {
+      const message = childSnapshot.val();
+      message.id = childSnapshot.key;
+      if (message.recipientId === "manager" && isManager()) {
+        messages.manager.push(message);
+      } else if (!message.recipientId) {
+        messages.group.push(message);
+      }
+    });
+    renderMessages();
+  });
+}
+
+// Hàm hiển thị thông báo
+function renderMessages() {
+  const notificationArea = document.getElementById("notification-area");
+  if (!notificationArea) {
+    console.error("Notification area element not found!");
+    return;
+  }
+  notificationArea.innerHTML = "";
+
+  const managerMessages = isManager() ? messages.manager : [];
+  const allMessages = [...messages.group, ...managerMessages];
+
+  if (allMessages.length === 0) {
+    notificationArea.innerHTML = "<p>Chưa có thông báo.</p>";
+    return;
+  }
+
+  allMessages.forEach((msg) => {
+    const messageDiv = document.createElement("div");
+    messageDiv.classList.add("notification");
+    messageDiv.innerHTML = `${msg.type}: ${msg.content} (${new Date(msg.timestamp).toLocaleString("vi-VN")})`;
+    notificationArea.appendChild(messageDiv);
+  });
+}
