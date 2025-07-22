@@ -12,7 +12,7 @@ const advancesRef = firebase.database().ref("advances");
 const messagesRef = firebase.database().ref("messages");
 
 // ===================== //
-// Biến cục bộ           //
+// Local Variables       //
 // ===================== //
 let inventoryData = [];
 let reportData = [];
@@ -23,7 +23,7 @@ let productClickCounts = {};
 let currentEmployeeId = null;
 
 /**********************
- * 1. Đăng nhập / Đăng xuất
+ * 1. Login / Logout
  **********************/
 function login() {
   const email = document.getElementById("email").value.trim();
@@ -111,7 +111,7 @@ function openTabBubble(tabId) {
 }
 
 /**********************
- * 3. Quản lý kho (CRUD)
+ * 3. Inventory Management (CRUD)
  **********************/
 function addInventory() {
   const name = document.getElementById("product-name").value.trim();
@@ -203,7 +203,7 @@ function renderInventory() {
 }
 
 /**********************
- * 4. Báo cáo Thu Chi
+ * 4. Revenue-Expense Report
  **********************/
 function renderReportProductList() {
   const container = document.getElementById("report-product-list");
@@ -267,13 +267,13 @@ function submitReport() {
 
   console.log("Submitting report:", { openingBalance, expenseAmount, revenue, closingBalance, productClickCounts });
 
-  // Kiểm tra ít nhất một trường được nhập
+  // Check if at least one financial field is filled
   if (openingBalance === 0 && expenseAmount === 0 && revenue === 0 && closingBalance === 0) {
-    console.error("No data entered for report");
+    console.error("No financial data entered for report");
     return alert("Vui lòng nhập ít nhất một thông tin (số dư đầu kỳ, chi phí, doanh thu, số dư cuối kỳ)!");
   }
 
-  // Thu thập dữ liệu sản phẩm xuất
+  // Collect exported products
   const productsReported = Object.keys(productClickCounts).map(productId => {
     const product = inventoryData.find(p => p.id === productId);
     const quantity = productClickCounts[productId] || 0;
@@ -285,7 +285,7 @@ function submitReport() {
 
   console.log("Products reported:", productsReported);
 
-  // Cập nhật số lượng sản phẩm trong kho
+  // Update inventory quantities
   Promise.all(productsReported.map(p => {
     const product = inventoryData.find(prod => prod.id === p.productId);
     if (product && p.quantity > 0) {
@@ -294,7 +294,7 @@ function submitReport() {
     }
     return Promise.resolve();
   })).then(() => {
-    // Lấy tên nhân viên từ employeeData
+    // Get employee name
     const employee = employeeData.find(e => e.id === currentEmployeeId) || { name: "Unknown" };
     const reportData = {
       date: new Date().toISOString(),
@@ -314,7 +314,7 @@ function submitReport() {
       .then(() => {
         console.log("Report submitted successfully");
         alert("Báo cáo thành công!");
-        // Reset input và click counts
+        // Reset inputs and click counts
         document.getElementById("opening-balance").value = "";
         document.getElementById("expense-amount").value = "";
         document.getElementById("revenue").value = "";
@@ -382,7 +382,7 @@ function renderReports() {
 }
 
 /**********************
- * 5. Quản lý Nhân viên
+ * 5. Employee Management
  **********************/
 function addEmployee() {
   const name = document.getElementById("employee-name").value.trim();
@@ -442,7 +442,7 @@ function renderEmployeeList() {
 }
 
 /**********************
- * 6. Tạm ứng
+ * 6. Advance Requests
  **********************/
 function requestAdvance() {
   const amount = parseFloat(document.getElementById("advance-amount").value) || 0;
@@ -534,7 +534,7 @@ function rejectAdvance(id) {
 }
 
 /**********************
- * 7. Lương & Ngày công
+ * 7. Salary & Workdays
  **********************/
 function calculateSalary(empId) {
   const emp = employeeData.find(e => e.id === empId);
@@ -622,7 +622,7 @@ function renderChat(type) {
 }
 
 /**********************
- * 9. Báo cáo kinh doanh
+ * 9. Business Report
  **********************/
 function renderExpenseSummary() {
   const container = document.getElementById("expense-summary-table");
@@ -683,7 +683,7 @@ function generateBusinessChart() {
 }
 
 /**********************
- * 10. Khởi tạo Firebase listeners
+ * 10. Initialize Firebase Listeners
  **********************/
 function loadFirebaseData() {
   console.log("Initializing Firebase listeners");
