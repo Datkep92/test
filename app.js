@@ -1526,97 +1526,10 @@ function updateEmployeeName() {
 
 
 // Hàm xử lý trạng thái xác thực (sửa lỗi gọi loadFirebaseData sớm)
-auth.onAuthStateChanged((user) => {
-  const loginPage = document.getElementById("login-page");
-  const mainPage = document.getElementById("main-page");
-  if (!loginPage || !mainPage) {
-    console.error("Login or main page element not found");
-    return;
-  }
-  if (user) {
-    currentEmployeeId = user.uid;
-    console.log("User logged in, ID:", currentEmployeeId);
-    loginPage.style.display = "none";
-    mainPage.style.display = "block";
-    // Đảm bảo Firebase đã khởi tạo
-    try {
-      firebase.database();
-      isFirebaseInitialized = true;
-      console.log("Firebase is ready");
-      loadFirebaseData().then(() => {
-        renderProfile(); // Chỉ gọi renderProfile sau khi loadFirebaseData hoàn tất
-      });
-    } catch (error) {
-      console.error("Firebase not ready:", error);
-      alert("Lỗi: Firebase chưa sẵn sàng! " + error.message);
-      isFirebaseInitialized = false;
-    }
-  } else {
-    currentEmployeeId = null;
-    console.log("No user logged in, showing login page");
-    loginPage.style.display = "flex";
-    mainPage.style.display = "none";
-    isFirebaseInitialized = false;
-  }
-});
+
 
 // Hàm tải dữ liệu từ Firebase (sửa lỗi gọi sớm và chờ employeeData)
-function loadFirebaseData() {
-  if (!isFirebaseInitialized) {
-    console.error("Firebase not initialized, cannot load data");
-    alert("Lỗi: Firebase chưa được khởi tạo!");
-    return Promise.reject("Firebase not initialized");
-  }
 
-  return new Promise((resolve, reject) => {
-    // Lắng nghe employees trước để đảm bảo có dữ liệu nhân viên
-    employeesRef.once(
-      "value",
-      (snapshot) => {
-        employeeData = snapshot.exists()
-          ? Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data }))
-          : [];
-        if (employeeData.length === 0 && currentEmployeeId && auth.currentUser) {
-          const newEmployee = {
-            name: auth.currentUser.displayName || auth.currentUser.email.split("@")[0] || "Nhân viên",
-            email: auth.currentUser.email,
-            active: true,
-            role: "employee",
-            dailyWage: 0,
-            allowance: 0,
-            otherFee: 0,
-            workdays: 26,
-            offdays: 0,
-            address: "",
-            phone: "",
-            dob: "",
-          };
-          employeesRef
-            .child(currentEmployeeId)
-            .set(newEmployee)
-            .then(() => {
-              console.log("Added new employee to Firebase:", currentEmployeeId);
-              employeeData.push({ id: currentEmployeeId, ...newEmployee });
-              // Tiếp tục tải các dữ liệu khác
-              loadOtherFirebaseData();
-              resolve();
-            })
-            .catch((err) => {
-              console.error("Error adding new employee:", err);
-              reject(err);
-            });
-        } else {
-          loadOtherFirebaseData();
-          resolve();
-        }
-      },
-      (err) => {
-        console.error("Error fetching employees data:", err);
-        reject(err);
-      }
-    );
-  });
-}
 
 // Hàm tải các dữ liệu Firebase khác (tách riêng để tái sử dụng)
 function loadOtherFirebaseData() {
@@ -1685,7 +1598,7 @@ function loadOtherFirebaseData() {
   );
 }
 
-// Hàm hiển thị hồ sơ (sửa lỗi thiếu dữ liệu và hình ảnh 404)
+// Hàm hiển thị hồ sơ (sửa lỗi hình ảnh 404)
 function renderProfile() {
   if (!currentEmployeeId) {
     console.error("No user logged in for profile rendering");
@@ -1978,141 +1891,9 @@ function renderActivityHistory() {
     <ul>${approvalActivities.map((a) => `<li>${a}</li>`).join("")}</ul>`;
 }
 
-// Initialize Firebase Listeners (đã có từ trước, giữ nguyên)
-function loadFirebaseData() {
-  if (!isFirebaseInitialized) {
-    console.warn("Firebase not initialized, initializing now...");
-    initializeFirebase();
-  }
 
-  // Lắng nghe inventory
-  inventoryRef.on(
-    "value",
-    (snapshot) => {
-      inventoryData = snapshot.exists()
-        ? Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data }))
-        : [];
-      renderInventory();
-      renderReportProductList();
-    },
-    (err) => console.error("Error fetching inventory data:", err)
-  );
 
-  // Lắng nghe reports
-  reportsRef.on(
-    "value",
-    (snapshot) => {
-      reportData = snapshot.exists()
-        ? Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data }))
-        : [];
-      expenseNotes = reportData
-        .filter((r) => r.expenseNote)
-        .map((r) => ({ reportId: r.id, note: r.expenseNote }));
-      renderFilteredReports(reportData);
-      renderExpenseSummary();
-      renderActivityHistory();
-    },
-    (err) => console.error("Error fetching reports data:", err)
-  );
 
-  // Lắng nghe employees
-  employeesRef.on(
-    "value",
-    (snapshot) => {
-      employeeData = snapshot.exists()
-        ? Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data }))
-        : [];
-      if (employeeData.length === 0 && currentEmployeeId && auth.currentUser) {
-        employeesRef
-          .child(currentEmployeeId)
-          .set({
-            name: auth.currentUser.displayName || auth.currentUser.email.split("@")[0] || "Nhân viên",
-            email: auth.currentUser.email,
-            active: true,
-            role: "employee",
-            dailyWage: 0,
-            allowance: 0,
-            otherFee: 0,
-            workdays: 26,
-            offdays: 0,
-            address: "",
-            phone: "",
-            dob: "",
-          })
-          .then(() => {
-            console.log("Added new employee to Firebase:", currentEmployeeId);
-            renderProfile(); // Gọi lại renderProfile sau khi thêm nhân viên
-          })
-          .catch((err) => console.error("Error adding new employee:", err));
-      }
-      renderProfile();
-      renderSchedule();
-      renderSalarySummary();
-      renderSalaryComparison();
-      renderEmployeeList();
-      renderAdvanceRequests();
-    },
-    (err) => console.error("Error fetching employees data:", err)
-  );
-
-  // Lắng nghe advances
-  advancesRef.on(
-    "value",
-    (snapshot) => {
-      advanceRequests = snapshot.exists()
-        ? Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data }))
-        : [];
-      renderAdvanceRequests();
-      renderAdvanceHistory();
-      renderSalarySummary();
-      renderActivityHistory();
-    },
-    (err) => console.error("Error fetching advances data:", err)
-  );
-
-  // Lắng nghe messages
-  messagesRef.on(
-    "value",
-    (snapshot) => {
-      messages = { group: [], manager: [] };
-      snapshot.forEach((childSnapshot) => {
-        const message = childSnapshot.val();
-        message.id = childSnapshot.key;
-        if (message.recipientId === "manager" && isManager()) {
-          messages.manager.push(message);
-        } else if (!message.recipientId) {
-          messages.group.push(message);
-        }
-      });
-      renderMessages();
-    },
-    (err) => console.error("Error fetching messages:", err)
-  );
-}
-
-// Auth State (đã có từ trước, giữ nguyên)
-auth.onAuthStateChanged((user) => {
-  const loginPage = document.getElementById("login-page");
-  const mainPage = document.getElementById("main-page");
-  if (!loginPage || !mainPage) {
-    console.error("Login or main page element not found");
-    return;
-  }
- if (user) {
-    currentEmployeeId = user.uid;
-    console.log("User logged in, ID:", currentEmployeeId);
-    loginPage.style.display = "none";
-    mainPage.style.display = "block";
-    loadFirebaseData();
-    renderProfile();
-  } else {
-    currentEmployeeId = null;
-    console.log("No user logged in, showing login page");
-    loginPage.style.display = "flex";
-    mainPage.style.display = "none";
-    isFirebaseInitialized = false;
-  }
-});
 // Hàm gửi thông báo (sửa lỗi không gửi đến quản lý)
 function sendMessage(type, content, recipientId = null) {
   if (!isFirebaseInitialized) {
@@ -2144,8 +1925,44 @@ function sendMessage(type, content, recipientId = null) {
       alert(`Lỗi khi gửi thông báo ${type}: ${error.message}`);
     });
 }
-// Hàm hiển thị yêu cầu (sửa lỗi quản lý không thấy yêu cầu)
-// Hàm hiển thị yêu cầu (sửa để hiển thị cho quản lý)
+// Hàm xử lý trạng thái xác thực (sửa để chờ loadFirebaseData)
+auth.onAuthStateChanged((user) => {
+  const loginPage = document.getElementById("login-page");
+  const mainPage = document.getElementById("main-page");
+  if (!loginPage || !mainPage) {
+    console.error("Login or main page element not found");
+    return;
+  }
+  if (user) {
+    currentEmployeeId = user.uid;
+    console.log("User logged in, ID:", currentEmployeeId);
+    loginPage.style.display = "none";
+    mainPage.style.display = "block";
+    initializeFirebase(); // Gọi để đảm bảo Firebase sẵn sàng
+    if (isFirebaseInitialized) {
+      loadFirebaseData()
+        .then(() => {
+          console.log("loadFirebaseData completed, rendering profile");
+          renderProfile();
+          openTabBubble("profile");
+        })
+        .catch((error) => {
+          console.error("Error loading Firebase data:", error);
+          alert("Lỗi tải dữ liệu: " + error.message);
+        });
+    } else {
+      console.error("Firebase not initialized, cannot proceed");
+      alert("Lỗi: Firebase chưa sẵn sàng!");
+    }
+  } else {
+    currentEmployeeId = null;
+    console.log("No user logged in, showing login page");
+    loginPage.style.display = "flex";
+    mainPage.style.display = "none";
+    isFirebaseInitialized = false;
+  }
+});
+// Hàm hiển thị yêu cầu (sửa để quản lý thấy tất cả yêu cầu)
 function renderAdvanceRequests() {
   const requestContainer = document.getElementById("advance-request-table");
   if (!requestContainer) {
@@ -2160,6 +1977,7 @@ function renderAdvanceRequests() {
     return;
   }
 
+  // Lọc yêu cầu: quản lý thấy tất cả yêu cầu "Chờ duyệt", nhân viên thấy yêu cầu của mình
   const filteredRequests = isManager()
     ? advanceRequests.filter((req) => req.status === "Chờ duyệt")
     : advanceRequests.filter((req) => req.employeeId === currentEmployeeId);
@@ -2185,27 +2003,28 @@ function renderAdvanceRequests() {
       </tr>
     </thead>
     <tbody>
-      ${advanceRequests
-        .map(
-          (req, index) => `
-        <tr>
-          <td>${index + 1}</td>
-          <td>${req.employeeName}</td>
-          <td>${req.type}</td>
-          <td>${req.content}</td>
-          <td>${req.status || "Chờ duyệt"}</td>
-          <td>
-            ${
-              req.status === "Chờ duyệt" && isManager()
-                ? `
-                <button onclick="approveRequest('${req.id}')">Duyệt</button>
-                <button onclick="rejectRequest('${req.id}')">Từ chối</button>
-              `
-                : ""
-            }
-          </td>
-        </tr>`
-        )
+      ${filteredRequests
+        .map((req, index) => {
+          const emp = employeeData.find((e) => e.id === req.employeeId) || { name: "Nhân viên" };
+          return `
+            <tr>
+              <td>${index + 1}</td>
+              <td>${emp.name}</td>
+              <td>${req.type}</td>
+              <td>${req.content}</td>
+              <td>${req.status || "Chờ duyệt"}</td>
+              <td>
+                ${
+                  req.status === "Chờ duyệt" && isManager()
+                    ? `
+                      <button onclick="approveRequest('${req.id}')">Duyệt</button>
+                      <button onclick="rejectRequest('${req.id}')">Từ chối</button>
+                    `
+                    : ""
+                }
+              </td>
+            </tr>`;
+        })
         .join("")}
     </tbody>`;
   requestContainer.appendChild(requestTable);
@@ -2385,41 +2204,10 @@ function rejectRequest(requestId) {
       alert("Lỗi khi từ chối yêu cầu: " + error.message);
     });
 }
-// Lắng nghe dữ liệu từ Firebase (sửa lỗi không nhận thông báo)
-function loadFirebaseData() {
-  if (!isFirebaseInitialized) {
-    console.error("Firebase not initialized, cannot load data");
-    return;
-  }
 
-  // Lắng nghe yêu cầu
-  advancesRef.on("value", (snapshot) => {
-    advanceRequests = [];
-    snapshot.forEach((childSnapshot) => {
-      const request = childSnapshot.val();
-      request.id = childSnapshot.key;
-      advanceRequests.push(request);
-    });
-    renderAdvanceRequests();
-  });
-
-  // Lắng nghe thông báo
-  messagesRef.on("value", (snapshot) => {
-    messages = { group: [], manager: [] };
-    snapshot.forEach((childSnapshot) => {
-      const message = childSnapshot.val();
-      message.id = childSnapshot.key;
-      if (message.recipientId === "manager" && isManager()) {
-        messages.manager.push(message);
-      } else if (!message.recipientId) {
-        messages.group.push(message);
-      }
-    });
-    renderMessages();
-  });
-}
 
 // Hàm hiển thị thông báo
+// Hàm hiển thị thông báo (sửa để hiển thị đúng cho quản lý và nhân viên)
 function renderMessages() {
   const notificationArea = document.getElementById("notification-area");
   if (!notificationArea) {
@@ -2428,8 +2216,18 @@ function renderMessages() {
   }
   notificationArea.innerHTML = "";
 
+  if (!Array.isArray(messages.group) || !Array.isArray(messages.manager)) {
+    console.error("Messages data is not valid:", messages);
+    notificationArea.innerHTML = "<p>Lỗi: Dữ liệu thông báo không hợp lệ.</p>";
+    return;
+  }
+
+  // Hiển thị thông báo nhóm và thông báo quản lý (nếu là quản lý)
   const managerMessages = isManager() ? messages.manager : [];
-  const allMessages = [...messages.group, ...managerMessages];
+  const allMessages = [
+    ...messages.group.map((msg) => ({ ...msg, type: msg.type || "group" })),
+    ...managerMessages.map((msg) => ({ ...msg, type: msg.type || "manager" })),
+  ];
 
   if (allMessages.length === 0) {
     notificationArea.innerHTML = "<p>Chưa có thông báo.</p>";
@@ -2437,30 +2235,96 @@ function renderMessages() {
   }
 
   allMessages.forEach((msg) => {
+    const emp = employeeData.find((e) => e.id === msg.senderId) || { name: "Nhân viên" };
     const messageDiv = document.createElement("div");
     messageDiv.classList.add("notification");
-    messageDiv.innerHTML = `${msg.type}: ${msg.content} (${new Date(msg.timestamp).toLocaleString("vi-VN")})`;
+    messageDiv.innerHTML = `${msg.type}: ${msg.content} - ${emp.name} (${new Date(
+      msg.timestamp
+    ).toLocaleString("vi-VN")})`;
     notificationArea.appendChild(messageDiv);
   });
 }
-// Hàm khởi tạo Firebase (sửa lỗi khởi tạo)
+// Hàm tải dữ liệu từ Firebase (sửa để chờ employeeData)
+function loadFirebaseData() {
+  if (!isFirebaseInitialized) {
+    console.error("Firebase not initialized, cannot load data");
+    alert("Lỗi: Firebase chưa được khởi tạo!");
+    return Promise.reject("Firebase not initialized");
+  }
+
+  return new Promise((resolve, reject) => {
+    // Lắng nghe employees trước để đảm bảo có dữ liệu nhân viên
+    employeesRef.once(
+      "value",
+      (snapshot) => {
+        employeeData = snapshot.exists()
+          ? Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data }))
+          : [];
+        if (employeeData.length === 0 && currentEmployeeId && auth.currentUser) {
+          const newEmployee = {
+            name: auth.currentUser.displayName || auth.currentUser.email.split("@")[0] || "Nhân viên",
+            email: auth.currentUser.email,
+            active: true,
+            role: "employee",
+            dailyWage: 0,
+            allowance: 0,
+            otherFee: 0,
+            workdays: 26,
+            offdays: 0,
+            address: "",
+            phone: "",
+            dob: "",
+          };
+          employeesRef
+            .child(currentEmployeeId)
+            .set(newEmployee)
+            .then(() => {
+              console.log("Added new employee to Firebase:", currentEmployeeId);
+              employeeData.push({ id: currentEmployeeId, ...newEmployee });
+              loadOtherFirebaseData();
+              resolve();
+            })
+            .catch((err) => {
+              console.error("Error adding new employee:", err);
+              reject(err);
+            });
+        } else {
+          loadOtherFirebaseData();
+          resolve();
+        }
+      },
+      (err) => {
+        console.error("Error fetching employees data:", err);
+        reject(err);
+      }
+    );
+  });
+}
+// Hàm khởi tạo Firebase (sửa để đồng bộ với HTML)
 function initializeFirebase() {
   if (isFirebaseInitialized) return;
   try {
-    firebase.initializeApp({
-      // Thay bằng cấu hình Firebase của bạn
-      apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
-      authDomain: "quanly-d7e54.firebaseapp.com",
-      databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com",
-      projectId: "quanly-d7e54",
-      storageBucket: "quanly-d7e54.firebasestorage.app",
-      messagingSenderId: "482686011267",
-      appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
-    });
-    console.log("Firebase initialized successfully");
+    firebase.database(); // Kiểm tra Firebase đã sẵn sàng từ HTML
+    console.log("Firebase already initialized from HTML");
     isFirebaseInitialized = true;
   } catch (error) {
-    console.error("Error initializing Firebase:", error);
-    alert("Lỗi khởi tạo Firebase: " + error.message);
+    console.error("Firebase initialization check failed:", error);
+    try {
+      firebase.initializeApp({
+        apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
+        authDomain: "quanly-d7e54.firebaseapp.com",
+        databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com",
+        projectId: "quanly-d7e54",
+        storageBucket: "quanly-d7e54.firebasestorage.app",
+        messagingSenderId: "482686011267",
+        appId: "1:482686011267:web:f2fe9d400fe618487a98b6",
+      });
+      console.log("Firebase initialized successfully in app.js");
+      isFirebaseInitialized = true;
+    } catch (initError) {
+      console.error("Error initializing Firebase in app.js:", initError);
+      alert("Lỗi khởi tạo Firebase: " + initError.message);
+      isFirebaseInitialized = false;
+    }
   }
 }
