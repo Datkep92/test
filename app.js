@@ -265,11 +265,24 @@ function submitReport() {
     }
     return Promise.resolve();
   })).then(() => {
-    const employee = employeeData.find(e => e.id === currentEmployeeId) || { name: "Unknown" };
+    // Ưu tiên lấy tên từ employeeData, sau đó mới lấy từ auth.currentUser
+    const employee = employeeData.find(e => e.id === currentEmployeeId);
+    let employeeName = employee ? employee.name : 
+                      (auth.currentUser.displayName || auth.currentUser.email.split('@')[0] || 'Nhân viên');
+    
+    // Log để debug nếu không tìm thấy nhân viên
+    if (!employee) {
+      console.warn("Không tìm thấy nhân viên trong employeeData:", {
+        currentEmployeeId,
+        employeeDataLength: employeeData.length,
+        employeeDataIds: employeeData.map(e => e.id)
+      });
+    }
+
     const reportData = {
       date: new Date().toISOString(),
       employeeId: currentEmployeeId,
-      employeeName: employee.name,
+      employeeName: employeeName,
       openingBalance,
       expenseAmount,
       expenseNote: expenseNote || "Không có",
@@ -961,18 +974,40 @@ function loadFirebaseData() {
   });
 }
 
+// Initialize Firebase Listeners and Auth State
 auth.onAuthStateChanged(user => {
-  console.log("Auth state changed:", user ? user.uid : "No user");
   if (user) {
     currentEmployeeId = user.uid;
-    console.log("User logged in, ID:", currentEmployeeId);
+    // Kiểm tra employeeData và log nếu không tìm thấy nhân viên
+    const employee = employeeData.find(e => e.id === user.uid);
+    if (!employee) {
+      console.warn("Nhân viên chưa có trong employeeData:", {
+        userId: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        employeeDataLength: employeeData.length
+      });
+      // Tự động thêm nhân viên vào employees nếu chưa có
+      employeesRef.child(user.uid).set({
+        name: user.displayName || user.email.split('@')[0] || 'Nhân viên',
+        email: user.email,
+        active: true,
+        role: 'employee',
+        dailyWage: 0,
+        allowance: 0,
+        otherFee: 0,
+        workdays: 26,
+        offdays: 0
+      })
+        .then(() => console.log("Đã thêm nhân viên mới vào Firebase:", user.uid))
+        .catch(err => console.error("Lỗi khi thêm nhân viên:", err));
+    }
     document.getElementById("login-page").style.display = "none";
     document.getElementById("main-page").style.display = "block";
     openTabBubble('revenue-expense');
     loadFirebaseData();
   } else {
     currentEmployeeId = null;
-    console.log("User logged out");
     document.getElementById("login-page").style.display = "flex";
     document.getElementById("main-page").style.display = "none";
   }
