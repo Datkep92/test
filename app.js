@@ -485,7 +485,7 @@ function renderReports() {
           <td>${r.employeeName}</td>
           <td>${r.openingBalance.toLocaleString('vi-VN')} VND</td>
           <td>${r.revenue.toLocaleString('vi-VN')} VND</td>
-          <td>${r.expenseAmount.toLocaleString('vi-VN')} VND (Ghi chú: ${r.expenseNote || "Không có"})</td>
+          <td>${r.expenseAmount.toLocaleString('vi-VN')} VND ( ${r.expenseNote || "Không có"})</td>
           <td>${(r.closingBalance || 0).toLocaleString('vi-VN')} VND</td>
           <td>${r.remaining.toLocaleString('vi-VN')} VND</td>
           <td>
