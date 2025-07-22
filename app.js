@@ -84,16 +84,29 @@ function addInventory() {
   const quantity = parseInt(document.getElementById("product-quantity").value) || 0;
   const price = parseFloat(document.getElementById("product-price").value) || 0;
 
-  if (!name || quantity <= 0 || price <= 0) return alert("Nhập đúng thông tin sản phẩm!");
+  if (!name || quantity <= 0 || price <= 0) {
+    alert("Nhập đúng thông tin sản phẩm!");
+    return;
+  }
 
   inventoryRef.push({ name, quantity, price })
     .then(() => {
       alert("Đã thêm sản phẩm!");
+
+      // Xóa nội dung nhập
       document.getElementById("product-name").value = "";
       document.getElementById("product-quantity").value = "";
       document.getElementById("product-price").value = "";
+
+      // Hiển thị tab Kho để người dùng thấy sản phẩm mới
+      openTabBubble('inventory');
+    })
+    .catch(err => {
+      console.error("Lỗi khi thêm sản phẩm:", err);
+      alert("Không thể thêm sản phẩm. Kiểm tra kết nối hoặc quyền Firebase.");
     });
 }
+
 
 function editInventory(id) {
   const product = inventoryData.find(p => p.id === id);
