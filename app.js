@@ -5,11 +5,11 @@
 // ===================== //
 // Firebase References   //
 // ===================== //
-const inventoryRef = db.ref("inventory");
-const reportsRef = db.ref("reports");
-const employeesRef = db.ref("employees");
-const advancesRef = db.ref("advances");
-const messagesRef = db.ref("messages");
+const inventoryRef = firebase.database().ref("inventory");
+const reportsRef = firebase.database().ref("reports");
+const employeesRef = firebase.database().ref("employees");
+const advancesRef = firebase.database().ref("advances");
+const messagesRef = firebase.database().ref("messages");
 
 // ===================== //
 // Biến cục bộ           //
@@ -19,11 +19,8 @@ let reportData = [];
 let employeeData = [];
 let advanceRequests = [];
 let messages = { group: [], manager: [] };
-let selectedProductId = null;
-let currentEmployeeId = null;
-
-// Lưu số lượng click cho từng sản phẩm
 let productClickCounts = {};
+let currentEmployeeId = null;
 
 /**********************
  * 1. Đăng nhập / Đăng xuất
@@ -87,7 +84,14 @@ function openTabBubble(tabId) {
   }
 
   toggleMenu();
-  if (tabId === "profile") {
+  if (tabId === "revenue-expense") {
+    console.log("Rendering revenue-expense data");
+    renderReportProductList();
+    renderReports();
+  } else if (tabId === "inventory") {
+    console.log("Rendering inventory data");
+    renderInventory();
+  } else if (tabId === "profile") {
     console.log("Rendering profile data");
     renderAdvanceHistory();
     renderSalarySummary();
@@ -99,10 +103,10 @@ function openTabBubble(tabId) {
     console.log("Rendering business report data");
     renderExpenseSummary();
     generateBusinessChart();
-  } else if (tabId === "revenue-expense") {
-    console.log("Rendering revenue-expense data");
-    renderReportProductList();
-    renderReports();
+  } else if (tabId === "chat") {
+    console.log("Rendering chat data");
+    renderChat("group");
+    renderChat("manager");
   }
 }
 
@@ -225,6 +229,7 @@ function renderReportProductList() {
     <tbody>
       ${inventoryData.map(item => {
         const clickCount = productClickCounts[item.id] || 0;
+        console.log("Rendering product for report:", { id: item.id, name: item.name, clickCount });
         return `
         <tr onclick="incrementProductCount('${item.id}')">
           <td>${item.name}</td>
@@ -646,23 +651,42 @@ function generateBusinessChart() {
   const expenseData = labels.map(d => reportData.filter(r => r.date.split("T")[0] === d)
     .reduce((sum, r) => sum + r.expenseAmount, 0));
   console.log("Generating business chart:", { labels, revenueData, expenseData });
-  new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: labels,
-      datasets: [
-        { label: "Doanh thu", data: revenueData, backgroundColor: "green" },
-        { label: "Chi phí", data: expenseData, backgroundColor: "red" }
+
+  ```chartjs
+  {
+    "type": "bar",
+    "data": {
+      "labels": ${JSON.stringify(labels)},
+      "datasets": [
+        {
+          "label": "Doanh thu",
+          "data": ${JSON.stringify(revenueData)},
+          "backgroundColor": "#28a745"
+        },
+        {
+          "label": "Chi phí",
+          "data": ${JSON.stringify(expenseData)},
+          "backgroundColor": "#dc3545"
+        }
       ]
     },
-    options: { responsive: true, plugins: { legend: { position: "top" } } }
-  });
+    "options": {
+      "responsive": true,
+      "plugins": {
+        "legend": {
+          "position": "top"
+        }
+      }
+    }
+  }
+  ```
 }
 
 /**********************
  * 10. Khởi tạo Firebase listeners
  **********************/
 function loadFirebaseData() {
+  console.log("Initializing Firebase listeners");
   inventoryRef.on("value", snapshot => {
     inventoryData = [];
     if (snapshot.exists()) {
@@ -677,6 +701,8 @@ function loadFirebaseData() {
     console.log("Updated inventoryData:", inventoryData);
     renderInventory();
     renderReportProductList();
+  }, err => {
+    console.error("Error fetching inventory data:", err);
   });
 
   reportsRef.on("value", snapshot => {
@@ -693,6 +719,8 @@ function loadFirebaseData() {
     console.log("Updated reportData:", reportData);
     renderReports();
     renderExpenseSummary();
+  }, err => {
+    console.error("Error fetching reports data:", err);
   });
 
   employeesRef.on("value", snapshot => {
@@ -709,6 +737,8 @@ function loadFirebaseData() {
     console.log("Updated employeeData:", employeeData);
     renderEmployeeList();
     renderSalarySummary();
+  }, err => {
+    console.error("Error fetching employees data:", err);
   });
 
   advancesRef.on("value", snapshot => {
@@ -725,6 +755,8 @@ function loadFirebaseData() {
     console.log("Updated advanceRequests:", advanceRequests);
     renderAdvanceHistory();
     renderAdvanceApprovalList();
+  }, err => {
+    console.error("Error fetching advances data:", err);
   });
 
   messagesRef.child("group").on("value", snapshot => {
@@ -740,6 +772,8 @@ function loadFirebaseData() {
     }
     console.log("Updated group messages:", messages.group);
     renderChat("group");
+  }, err => {
+    console.error("Error fetching group messages:", err);
   });
 
   messagesRef.child("manager").on("value", snapshot => {
@@ -755,6 +789,8 @@ function loadFirebaseData() {
     }
     console.log("Updated manager messages:", messages.manager);
     renderChat("manager");
+  }, err => {
+    console.error("Error fetching manager messages:", err);
   });
 }
 
