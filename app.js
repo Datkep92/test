@@ -1524,6 +1524,168 @@ function updateEmployeeName() {
     });
 }
 
+
+// Hàm xử lý trạng thái xác thực (sửa lỗi gọi loadFirebaseData sớm)
+auth.onAuthStateChanged((user) => {
+  const loginPage = document.getElementById("login-page");
+  const mainPage = document.getElementById("main-page");
+  if (!loginPage || !mainPage) {
+    console.error("Login or main page element not found");
+    return;
+  }
+  if (user) {
+    currentEmployeeId = user.uid;
+    console.log("User logged in, ID:", currentEmployeeId);
+    loginPage.style.display = "none";
+    mainPage.style.display = "block";
+    // Đảm bảo Firebase đã khởi tạo
+    try {
+      firebase.database();
+      isFirebaseInitialized = true;
+      console.log("Firebase is ready");
+      loadFirebaseData().then(() => {
+        renderProfile(); // Chỉ gọi renderProfile sau khi loadFirebaseData hoàn tất
+      });
+    } catch (error) {
+      console.error("Firebase not ready:", error);
+      alert("Lỗi: Firebase chưa sẵn sàng! " + error.message);
+      isFirebaseInitialized = false;
+    }
+  } else {
+    currentEmployeeId = null;
+    console.log("No user logged in, showing login page");
+    loginPage.style.display = "flex";
+    mainPage.style.display = "none";
+    isFirebaseInitialized = false;
+  }
+});
+
+// Hàm tải dữ liệu từ Firebase (sửa lỗi gọi sớm và chờ employeeData)
+function loadFirebaseData() {
+  if (!isFirebaseInitialized) {
+    console.error("Firebase not initialized, cannot load data");
+    alert("Lỗi: Firebase chưa được khởi tạo!");
+    return Promise.reject("Firebase not initialized");
+  }
+
+  return new Promise((resolve, reject) => {
+    // Lắng nghe employees trước để đảm bảo có dữ liệu nhân viên
+    employeesRef.once(
+      "value",
+      (snapshot) => {
+        employeeData = snapshot.exists()
+          ? Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data }))
+          : [];
+        if (employeeData.length === 0 && currentEmployeeId && auth.currentUser) {
+          const newEmployee = {
+            name: auth.currentUser.displayName || auth.currentUser.email.split("@")[0] || "Nhân viên",
+            email: auth.currentUser.email,
+            active: true,
+            role: "employee",
+            dailyWage: 0,
+            allowance: 0,
+            otherFee: 0,
+            workdays: 26,
+            offdays: 0,
+            address: "",
+            phone: "",
+            dob: "",
+          };
+          employeesRef
+            .child(currentEmployeeId)
+            .set(newEmployee)
+            .then(() => {
+              console.log("Added new employee to Firebase:", currentEmployeeId);
+              employeeData.push({ id: currentEmployeeId, ...newEmployee });
+              // Tiếp tục tải các dữ liệu khác
+              loadOtherFirebaseData();
+              resolve();
+            })
+            .catch((err) => {
+              console.error("Error adding new employee:", err);
+              reject(err);
+            });
+        } else {
+          loadOtherFirebaseData();
+          resolve();
+        }
+      },
+      (err) => {
+        console.error("Error fetching employees data:", err);
+        reject(err);
+      }
+    );
+  });
+}
+
+// Hàm tải các dữ liệu Firebase khác (tách riêng để tái sử dụng)
+function loadOtherFirebaseData() {
+  // Lắng nghe inventory
+  inventoryRef.on(
+    "value",
+    (snapshot) => {
+      inventoryData = snapshot.exists()
+        ? Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data }))
+        : [];
+      renderInventory();
+      renderReportProductList();
+    },
+    (err) => console.error("Error fetching inventory data:", err)
+  );
+
+  // Lắng nghe reports
+  reportsRef.on(
+    "value",
+    (snapshot) => {
+      reportData = snapshot.exists()
+        ? Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data }))
+        : [];
+      expenseNotes = reportData
+        .filter((r) => r.expenseNote)
+        .map((r) => ({ reportId: r.id, note: r.expenseNote }));
+      renderFilteredReports(reportData);
+      renderExpenseSummary();
+      renderActivityHistory();
+    },
+    (err) => console.error("Error fetching reports data:", err)
+  );
+
+  // Lắng nghe advances
+  advancesRef.on(
+    "value",
+    (snapshot) => {
+      advanceRequests = snapshot.exists()
+        ? Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data }))
+        : [];
+      renderAdvanceRequests();
+      renderAdvanceHistory();
+      renderSalarySummary();
+      renderActivityHistory();
+    },
+    (err) => console.error("Error fetching advances data:", err)
+  );
+
+  // Lắng nghe messages
+  messagesRef.on(
+    "value",
+    (snapshot) => {
+      messages = { group: [], manager: [] };
+      snapshot.forEach((childSnapshot) => {
+        const message = childSnapshot.val();
+        message.id = childSnapshot.key;
+        if (message.recipientId === "manager" && isManager()) {
+          messages.manager.push(message);
+        } else if (!message.recipientId) {
+          messages.group.push(message);
+        }
+      });
+      renderMessages();
+    },
+    (err) => console.error("Error fetching messages:", err)
+  );
+}
+
+// Hàm hiển thị hồ sơ (sửa lỗi thiếu dữ liệu và hình ảnh 404)
 function renderProfile() {
   if (!currentEmployeeId) {
     console.error("No user logged in for profile rendering");
@@ -1547,14 +1709,14 @@ function renderProfile() {
     phoneInput.value = emp.phone || "";
     dobInput.value = emp.dob || "";
     const savedImage = localStorage.getItem(`profileImage_${currentEmployeeId}`);
-    profileImage.src = savedImage || "/images/fallback-avatar.png"; // Đường dẫn dự phòng
+    profileImage.src = savedImage || "https://via.placeholder.com/100"; // Dùng placeholder để tránh 404
   } else {
     console.warn("No employee data for user:", currentEmployeeId);
     nameInput.value = auth.currentUser?.displayName || auth.currentUser?.email.split("@")[0] || "";
     addressInput.value = "";
     phoneInput.value = "";
     dobInput.value = "";
-    profileImage.src = "/images/fallback-avatar.png"; // Đường dẫn dự phòng
+    profileImage.src = "https://via.placeholder.com/100"; // Dùng placeholder để tránh 404
   }
 }
 
