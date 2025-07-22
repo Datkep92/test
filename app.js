@@ -98,7 +98,7 @@ function openTabBubble(tabId) {
   if (tabId === "revenue-expense") {
     console.log("Rendering revenue-expense data");
     renderReportProductList();
-    renderReports();
+    renderFilteredReports(reportData);
   } else if (tabId === "inventory") {
     console.log("Rendering inventory data");
     renderInventory();
@@ -156,6 +156,7 @@ function editInventory(id) {
   const product = inventoryData.find(p => p.id === id);
   if (!product) {
     console.error("Product not found for ID:", id);
+    alert("Sản phẩm không tồn tại!");
     return;
   }
   const newName = prompt("Tên mới:", product.name) || product.name;
@@ -163,15 +164,25 @@ function editInventory(id) {
   const newPrice = parseFloat(prompt("Đơn giá:", product.price)) || product.price;
   console.log("Updating product:", { id, newName, newQty, newPrice });
   inventoryRef.child(id).update({ name: newName, quantity: newQty, price: newPrice })
-    .catch(err => console.error("Error updating product:", err));
+    .then(() => alert("Cập nhật sản phẩm thành công!"))
+    .catch(err => {
+      console.error("Error updating product:", err);
+      alert("Lỗi khi cập nhật sản phẩm: " + err.message);
+    });
 }
 
 function deleteInventory(id) {
   console.log("Deleting product ID:", id);
   if (!confirm("Xóa sản phẩm này?")) return;
   inventoryRef.child(id).remove()
-    .then(() => console.log("Product deleted:", id))
-    .catch(err => console.error("Error deleting product:", err));
+    .then(() => {
+      console.log("Product deleted:", id);
+      alert("Đã xóa sản phẩm thành công!");
+    })
+    .catch(err => {
+      console.error("Error deleting product:", err);
+      alert("Lỗi khi xóa sản phẩm: " + err.message);
+    });
 }
 
 function renderInventory() {
@@ -287,7 +298,7 @@ function submitReport() {
         closingBalanceEl.value = "";
         productClickCounts = {};
         renderReportProductList();
-        renderReports();
+        renderFilteredReports(reportData);
       })
       .catch(err => alert("Lỗi khi gửi báo cáo: " + err.message));
   }).catch(err => alert("Lỗi khi cập nhật số lượng sản phẩm: " + err.message));
@@ -311,7 +322,7 @@ function editReportExpense(reportId) {
       expenseNotes = expenseNotes.map(note =>
         note.reportId === reportId ? { ...note, note: newNote || "Không có" } : note
       );
-      renderReports();
+      renderFilteredReports(reportData);
       alert("Đã cập nhật chi phí!");
     })
     .catch(err => alert("Lỗi khi cập nhật chi phí: " + err.message));
@@ -331,7 +342,7 @@ function deleteReportExpense(reportId) {
   })
     .then(() => {
       expenseNotes = expenseNotes.filter(note => note.reportId !== reportId);
-      renderReports();
+      renderFilteredReports(reportData);
       alert("Đã xóa chi phí!");
     })
     .catch(err => alert("Lỗi khi xóa chi phí: " + err.message));
@@ -356,7 +367,7 @@ function deleteReportProduct(reportId, productId) {
     inventoryProduct ? inventoryRef.child(productId).update({ quantity: inventoryProduct.quantity + product.quantity }) : Promise.resolve()
   ])
     .then(() => {
-      renderReports();
+      renderFilteredReports(reportData);
       renderReportProductList();
       alert("Đã xóa sản phẩm!");
     })
@@ -396,7 +407,7 @@ function editReportProduct(reportId, productId) {
     inventoryRef.child(productId).update({ quantity: inventoryProduct.quantity + product.quantity - newQuantity })
   ])
     .then(() => {
-      renderReports();
+      renderFilteredReports(reportData);
       renderReportProductList();
       alert("Đã cập nhật sản phẩm!");
     })
@@ -677,9 +688,9 @@ function renderEmployeeList() {
       ${employeeData.map(emp => `
         <tr>
           <td>${emp.name}</td>
-          <td>${emp.dailyWage}</td>
-          <td>${emp.allowance}</td>
-          <td>${emp.otherFee}</td>
+          <td>${emp.dailyWage.toLocaleString('vi-VN')}</td>
+          <td>${emp.allowance.toLocaleString('vi-VN')}</td>
+          <td>${emp.otherFee.toLocaleString('vi-VN')}</td>
         </tr>`).join("")}
     </tbody>`;
   list.appendChild(table);
@@ -769,16 +780,26 @@ function approveAdvance(id) {
   advancesRef.child(id).update({ status: "approved" })
     .then(() => {
       console.log("Advance approved:", id);
-      renderSalarySummary(); // Cập nhật lại lương
+      renderAdvanceApprovalList();
+      renderSalarySummary();
     })
-    .catch(err => console.error("Error approving advance:", err));
+    .catch(err => {
+      console.error("Error approving advance:", err);
+      alert("Lỗi khi duyệt yêu cầu: " + err.message);
+    });
 }
 
 function rejectAdvance(id) {
   console.log("Rejecting advance ID:", id);
   advancesRef.child(id).update({ status: "rejected" })
-    .then(() => console.log("Advance rejected:", id))
-    .catch(err => console.error("Error rejecting advance:", err));
+    .then(() => {
+      console.log("Advance rejected:", id);
+      renderAdvanceApprovalList();
+    })
+    .catch(err => {
+      console.error("Error rejecting advance:", err);
+      alert("Lỗi khi từ chối yêu cầu: " + err.message);
+    });
 }
 
 // Salary & Workdays
@@ -1021,7 +1042,7 @@ function updateEmployeeName() {
       alert("Đổi tên thành công!");
       document.getElementById("employee-display-name").value = "";
       renderProfile();
-      renderReports(); // Cập nhật tên trong báo cáo
+      renderFilteredReports(reportData); // Cập nhật tên trong báo cáo
     })
     .catch(err => alert("Lỗi khi đổi tên: " + err.message));
 }
@@ -1119,7 +1140,9 @@ function checkOffConflict(day) {
 
 function updateSchedule(day, status) {
   const empRef = employeesRef.child(currentEmployeeId).child("schedule");
-  empRef.update({ [day]: status });
+  empRef.update({ [day]: status })
+    .then(() => console.log("Cập nhật lịch thành công"))
+    .catch(err => alert("Lỗi khi cập nhật lịch: " + err.message));
 }
 
 function sendApprovalRequest(day, status) {
@@ -1130,7 +1153,8 @@ function sendApprovalRequest(day, status) {
     status: status,
     requestTime: new Date().toISOString(),
     approvalStatus: "pending"
-  }).then(() => console.log("Gửi yêu cầu duyệt lịch thành công"));
+  }).then(() => console.log("Gửi yêu cầu duyệt lịch thành công"))
+    .catch(err => alert("Lỗi khi gửi yêu cầu duyệt: " + err.message));
 }
 
 function sendSwapRequest(targetEmpId, day) {
@@ -1141,7 +1165,8 @@ function sendSwapRequest(targetEmpId, day) {
     day: day,
     requestTime: new Date().toISOString(),
     approvalStatus: "pending"
-  }).then(() => console.log("Gửi đề xuất đổi ca thành công"));
+  }).then(() => console.log("Gửi đề xuất đổi ca thành công"))
+    .catch(err => alert("Lỗi khi gửi đề xuất đổi ca: " + err.message));
 }
 
 function renderActivityHistory() {
@@ -1176,7 +1201,7 @@ function loadFirebaseData() {
   reportsRef.on("value", snapshot => {
     reportData = snapshot.exists() ? Object.values(snapshot.val()) : [];
     expenseNotes = reportData.filter(r => r.expenseNote).map(r => ({ reportId: r.id, note: r.expenseNote }));
-    renderReports();
+    renderFilteredReports(reportData);
     renderExpenseSummary();
     renderActivityHistory();
   }, err => console.error("Error fetching reports data:", err));
