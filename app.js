@@ -94,7 +94,7 @@ function openTabBubble(tabId) {
   }
 
   toggleMenu();
-  if (tabId === "revenue-expense" && inventoryData.length > 0) {
+  if (tabId === "revenue-expense") {
     console.log("Rendering revenue-expense data");
     renderReportProductList();
     renderReports();
