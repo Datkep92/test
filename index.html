@@ -8,108 +8,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-  <!-- CSS cơ bản -->
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f4f4f4;
-    }
-    #login-page, #main-page {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
-    #login-page {
-      display: flex;
-    }
-    #main-page {
-      display: none;
-    }
-    .tabcontent {
-      display: none;
-      padding: 20px;
-      width: 100%;
-      max-width: 800px;
-      margin: 0 auto;
-    }
-    .tabcontent.active {
-      display: block;
-    }
-    input, button {
-      padding: 8px;
-      margin: 5px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 16px;
-    }
-    button {
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-    .table-style {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    .table-style th, .table-style td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: left;
-    }
-    .table-style th {
-      background-color: #f2f2f2;
-    }
-    #float-button {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background-color: #007BFF;
-      color: white;
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-    #float-options {
-      display: none;
-      position: fixed;
-      bottom: 80px;
-      right: 20px;
-      flex-direction: column;
-      gap: 10px;
-    }
-    #float-options button {
-      background-color: #007BFF;
-      color: white;
-    }
-    .report-total {
-      margin-top: 10px;
-      padding: 10px;
-      background-color: #fff;
-      border: 1px solid #ddd;
-    }
-    .chat-message {
-      margin: 5px 0;
-      padding: 5px;
-      background-color: #f9f9f9;
-      border-radius: 4px;
-    }
-  </style>
+  <!-- Liên kết file CSS riêng -->
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Trang đăng nhập -->
   <div id="login-page">
     <h2>Đăng Nhập</h2>
     <input id="email" type="email" placeholder="Email">
@@ -117,12 +19,10 @@
     <button onclick="login()">Đăng Nhập</button>
   </div>
 
-  <!-- Trang chính -->
-  <div id="main-page">
+  <div id="main-page" style="display: none;">
     <h2>Milano 259</h2>
     <button onclick="logout()">Đăng Xuất</button>
 
-    <!-- Tab Thu Chi -->
     <div id="revenue-expense" class="tabcontent">
       <h3>Nhập báo cáo</h3>
       <div>
@@ -132,11 +32,10 @@
       </div>
       <div id="report-product-list"></div>
       <button onclick="submitReport()">Gửi Báo Cáo</button>
-      <h3>Danh sách Báo cáo</h3>
       <div id="shared-report-table"></div>
+      <h3>Danh sách Báo cáo</h3>
     </div>
 
-    <!-- Tab Quản lý Kho -->
     <div id="inventory" class="tabcontent">
       <h3>Quản lý Kho</h3>
       <input id="product-name" type="text" placeholder="Tên sản phẩm">
@@ -147,7 +46,6 @@
       <div id="inventory-list"></div>
     </div>
 
-    <!-- Tab Thông tin Cá nhân -->
     <div id="profile" class="tabcontent">
       <h3>Thông tin Cá nhân</h3>
       <h4>Yêu cầu tạm ứng</h4>
@@ -156,20 +54,16 @@
       <button onclick="requestAdvance()">Gửi yêu cầu</button>
       <h4>Lương & Ngày công</h4>
       <div id="salary-summary"></div>
-      <h4>Lịch sử tạm ứng</h4>
       <div id="advance-history"></div>
     </div>
 
-    <!-- Tab Báo cáo Kinh doanh -->
     <div id="business-report" class="tabcontent">
       <h3>Báo cáo Kinh doanh</h3>
       <h4>Chi phí</h4>
       <div id="expense-summary-table"></div>
-      <h4>Biểu đồ</h4>
       <canvas id="growth-chart"></canvas>
     </div>
 
-    <!-- Tab Quản lý Nhân viên -->
     <div id="employee-management" class="tabcontent">
       <h3>Quản lý Nhân viên</h3>
       <input id="employee-name" type="text" placeholder="Tên nhân viên">
@@ -183,7 +77,6 @@
       <div id="advance-approval-list"></div>
     </div>
 
-    <!-- Tab Chat -->
     <div id="chat" class="tabcontent">
       <h3>Chat nhóm</h3>
       <div id="group-chat"></div>
@@ -195,9 +88,8 @@
       <button onclick="sendManagerMessage()">Gửi</button>
     </div>
 
-    <!-- Nút nổi -->
     <div id="float-button" onclick="toggleMenu()">☰</div>
-    <div id="float-options">
+    <div id="float-options" style="display: none;">
       <button onclick="openTabBubble('revenue-expense')">Thu Chi</button>
       <button onclick="openTabBubble('inventory')">Kho</button>
       <button onclick="openTabBubble('profile')">Cá nhân</button>
@@ -207,16 +99,16 @@
     </div>
   </div>
 
-  <!-- Script Firebase Config -->
+  <!-- Firebase Config -->
   <script>
     var firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      databaseURL: "YOUR_DATABASE_URL",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
+      authDomain: "quanly-d7e54.firebaseapp.com",
+      databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com",
+      projectId: "quanly-d7e54",
+      storageBucket: "quanly-d7e54.firebasestorage.app",
+      messagingSenderId: "482686011267",
+      appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
