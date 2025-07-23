@@ -2,19 +2,6 @@
  * app.js - Milano 259 (Full Features - Firebase)
  *********************************************/
 
-// Cấu hình Firebase (THAY THẾ bằng thông tin từ Firebase Console)
-const firebaseConfig = {
-   apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
-      authDomain: "quanly-d7e54.firebaseapp.com",
-      databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com",
-      projectId: "quanly-d7e54",
-      storageBucket: "quanly-d7e54.firebasestorage.app",
-      messagingSenderId: "482686011267",
-      appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
-    };
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-
 // Firebase References
 const inventoryRef = firebase.database().ref("inventory");
 const reportsRef = firebase.database().ref("reports");
@@ -23,6 +10,7 @@ const advancesRef = firebase.database().ref("advances");
 const messagesRef = firebase.database().ref("messages");
 const schedulesRef = firebase.database().ref("schedules");
 const swapRequestsRef = firebase.database().ref("swapRequests");
+
 
 // Local Variables
 let inventoryData = [];
@@ -36,9 +24,7 @@ let currentEmployeeId = null;
 let scheduleData = [];
 let payrollData = JSON.parse(localStorage.getItem("payrollData")) || [];
 let currentMonth = new Date().getMonth() + 1; // Tháng hiện tại
-let currentYear = new Date().getFullYear(); // Năm hiện tại
-
-// Hàm parseEntry (từ bạn cung cấp)
+let currentYear = new Date().getFullYear(); // Năm hiện tại// Hàm parseEntry (từ bạn cung cấp)
 function parseEntry(text) {
   const match = text.match(/([\d.,]+)\s*(k|nghìn|tr|triệu)?/i);
   if (!match) return { money: 0, note: text.trim() };
@@ -54,6 +40,13 @@ function parseEntry(text) {
     note: text.replace(match[0], '').trim()
   };
 }
+function openCalendar() {
+  const now = new Date();
+  currentMonth = now.getMonth();
+  currentYear = now.getFullYear();
+  generateCalendar(currentMonth, currentYear);
+}
+
 function updateEmployeeInfo() {
   const user = auth.currentUser;
   if (!user) {
@@ -110,176 +103,6 @@ function updateEmployeeInfo() {
     alert("Có lỗi xảy ra khi cập nhật thông tin!");
   });
 }
-
-
-// Tạo lịch
-function generateCalendar(month, year) {
-  const calendarModal = document.getElementById("calendar-modal");
-  if (!calendarModal) {
-    console.error("Calendar modal not found!");
-    return;
-  }
-  calendarModal.style.display = "block"; // Đảm bảo hiển thị
-  calendarModal.innerHTML = `
-    <div class="calendar-header">
-      <button onclick="changeMonth(-1)">Trước</button>
-      <h3>Tháng ${month}/${year}</h3>
-      <button onclick="changeMonth(1)">Sau</button>
-    </div>
-    <div class="calendar" id="calendar"></div>
-    <button onclick="closeCalendar()">Đóng</button>
-  `;
-  
-  const calendar = document.getElementById("calendar");
-  const daysInMonth = new Date(year, month, 0).getDate();
-  const firstDay = new Date(year, month - 1, 1).getDay() || 7; // Bắt đầu từ thứ 2
-
-  // Thêm ô trống
-  for (let i = 1; i < firstDay; i++) {
-    const emptyDiv = document.createElement("div");
-    emptyDiv.classList.add("day");
-    calendar.appendChild(emptyDiv);
-  }
-
-  // Tạo các ô ngày
-  for (let i = 1; i <= daysInMonth; i++) {
-    const date = `${year}-${month < 10 ? "0" + month : month}-${i < 10 ? "0" + i : i}`;
-    const dayDiv = document.createElement("div");
-    dayDiv.classList.add("day");
-    dayDiv.dataset.date = date;
-    
-    const schedule = scheduleData.find(s => s.date === date && s.employeeId === currentEmployeeId);
-    dayDiv.classList.add(schedule ? schedule.status : "normal");
-    dayDiv.textContent = i;
-    
-    dayDiv.onclick = () => showActionModal(date);
-    calendar.appendChild(dayDiv);
-  }
-  console.log("Generated calendar for:", month, year);
-}
-
-// Đóng lịch
-function closeCalendar() {
-  const calendarModal = document.getElementById("calendar-modal");
-  if (calendarModal) {
-    calendarModal.style.display = "none";
-    console.log("Closed calendar");
-  }
-}
-
-// Chuyển tháng
-function changeMonth(offset) {
-  currentMonth += offset;
-  if (currentMonth < 1) {
-    currentMonth = 12;
-    currentYear--;
-  } else if (currentMonth > 12) {
-    currentMonth = 1;
-    currentYear++;
-  }
-  generateCalendar(currentMonth, currentYear);
-}
-
-// Hiển thị modal hành động
-function showActionModal(date) {
-  const actionModal = document.getElementById("action-modal");
-  if (!actionModal) {
-    console.error("Action modal not found!");
-    return;
-  }
-  actionModal.innerHTML = `
-    <h3>Ngày: ${date}</h3>
-    <button onclick="setStatus('${date}', 'off')">Off</button>
-    <button onclick="setStatus('${date}', 'overtime')">Tăng ca</button>
-    <button onclick="setStatus('${date}', 'swap')">Đổi ca</button>
-    <button onclick="closeActionModal()">Đóng</button>
-  `;
-  actionModal.style.display = "block";
-  console.log("Opened action modal for date:", date);
-}
-
-// Đóng modal hành động
-function closeActionModal() {
-  const actionModal = document.getElementById("action-modal");
-  if (actionModal) {
-    actionModal.style.display = "none";
-    console.log("Closed action modal");
-  }
-}
-
-// Xử lý trạng thái ngày
-function setStatus(date, status) {
-  const dayDiv = document.querySelector(`.day[data-date="${date}"]`);
-  if (!dayDiv) {
-    console.error("Day element not found for date:", date);
-    return;
-  }
-  const currentSchedule = scheduleData.find(s => s.date === date && s.employeeId === currentEmployeeId);
-  const employee = employeeData.find(e => e.id === currentEmployeeId);
-  const employeeName = employee ? employee.name : (auth.currentUser.displayName || auth.currentUser.email.split('@')[0]);
-
-  if (currentSchedule && currentSchedule.status === status) {
-    // Reset về trạng thái bình thường
-    dayDiv.classList.remove(status);
-    dayDiv.classList.add("normal");
-    schedulesRef.child(date + "_" + currentEmployeeId).remove();
-    scheduleData = scheduleData.filter(s => s.date !== date || s.employeeId !== currentEmployeeId);
-    payrollData = payrollData.filter(p => p.date !== date || p.employeeId !== currentEmployeeId);
-    localStorage.setItem("payrollData", JSON.stringify(payrollData));
-    console.log(`Ngày ${date} trở về bình thường`);
-  } else {
-    // Cập nhật trạng thái mới
-    dayDiv.classList.remove("normal", "off", "overtime");
-    dayDiv.classList.add(status);
-    
-    if (currentSchedule) {
-      currentSchedule.status = status;
-    } else {
-      scheduleData.push({ date, employeeId: currentEmployeeId, employeeName, status });
-    }
-    
-    payrollData.push({ date, employeeId: currentEmployeeId, employeeName, status });
-    localStorage.setItem("payrollData", JSON.stringify(payrollData));
-    
-    schedulesRef.child(date + "_" + currentEmployeeId).set({
-      date,
-      employeeId: currentEmployeeId,
-      employeeName,
-      status
-    });
-
-    if (status === "off" || status === "overtime") {
-      advancesRef.push({
-        employeeId: currentEmployeeId,
-        employeeName,
-        type: status,
-        date,
-        status: "pending"
-      }).then(() => {
-        console.log(`Gửi yêu cầu ${status} cho ngày ${date} tới quản lý`);
-      });
-    } else if (status === "swap") {
-      const conflictingSchedule = scheduleData.find(s => s.date === date && s.employeeId !== currentEmployeeId);
-      if (conflictingSchedule) {
-        swapRequestsRef.push({
-          fromEmployeeId: currentEmployeeId,
-          fromEmployeeName: employeeName,
-          toEmployeeId: conflictingSchedule.employeeId,
-          toEmployeeName: conflictingSchedule.employeeName,
-          date,
-          status: "pending"
-        }).then(() => {
-          console.log(`Gửi yêu cầu đổi ca ngày ${date} tới ${conflictingSchedule.employeeName}`);
-        });
-      } else {
-        alert("Không tìm thấy nhân viên có ca trùng để đổi!");
-      }
-    }
-  }
-  closeActionModal();
-  renderSalarySummary();
-}
-
 // Đăng nhập / Đăng xuất
 function login() {
   const email = document.getElementById("email").value.trim();
@@ -966,31 +789,38 @@ function renderEmployeeList() {
   }
 }
 
-// Advance Requests
-function requestAdvance() {
-  const amount = parseFloat(document.getElementById("advance-amount").value) || 0;
-  const reason = document.getElementById("advance-reason").value.trim();
+function requestSchedule() {
+  const nameInput = document.getElementById("personal-employee-name");
+  const name = nameInput ? nameInput.value.trim() : "";
 
-  console.log("Requesting advance:", { amount, reason, employeeId: currentEmployeeId });
-
-  if (amount <= 0 || !reason) {
-    console.error("Invalid advance request:", { amount, reason });
-    return alert("Vui lòng nhập số tiền và lý do!");
+  if (!currentEmployeeId) {
+    alert("Không xác định được ID nhân viên!");
+    return;
   }
 
-  advancesRef.push({
+  if (!selectedScheduleDate || !selectedScheduleType || !name) {
+    alert("Vui lòng chọn ngày, loại (off/tăng ca) và nhập tên!");
+    return;
+  }
+
+  const key = `${selectedScheduleDate}_${currentEmployeeId}`;
+
+  schedulesRef.child(key).set({
     employeeId: currentEmployeeId,
-    amount,
-    reason,
-    status: "pending"
+    employeeName: name,
+    date: selectedScheduleDate,
+    status: selectedScheduleType, // off, overtime, present...
+    timestamp: Date.now()
   }).then(() => {
-    console.log("Advance request submitted successfully");
-    alert("Đã gửi yêu cầu tạm ứng!");
+    alert(`✅ Đã gửi yêu cầu "${selectedScheduleType}" cho ngày ${selectedScheduleDate}`);
+    selectedScheduleDate = "";
+    selectedScheduleType = "";
   }).catch(err => {
-    console.error("Error submitting advance request:", err);
-    alert("Lỗi khi gửi yêu cầu tạm ứng: " + err.message);
+    console.error("Lỗi gửi yêu cầu LLV:", err);
+    alert("❌ Lỗi: " + err.message);
   });
 }
+
 function renderAdvanceHistory() {
   const container = document.getElementById("advance-history");
   if (!container) {
@@ -1014,32 +844,6 @@ function renderAdvanceHistory() {
   });
 }
 
-function renderAdvanceApprovalList() {
-  const container = document.getElementById("advance-approval-list");
-  if (!container) {
-    console.error("Advance approval list element not found!");
-    return;
-  }
-  container.innerHTML = "";
-  const pending = advanceRequests.filter(a => a.status === "pending");
-  console.log("Rendering advance approval list, total items:", pending.length);
-
-  if (pending.length === 0) {
-    container.innerHTML = "<p>Không có yêu cầu nào.</p>";
-    console.log("No pending advance requests");
-    return;
-  }
-
-  pending.forEach(a => {
-    const emp = employeeData.find(e => e.id === a.employeeId) || { name: "Nhân viên" };
-    const div = document.createElement("div");
-    div.innerHTML = `
-      ${emp.name}: ${a.amount} - ${a.reason}
-      <button onclick="approveAdvance('${a.id}')">Duyệt</button>
-      <button onclick="rejectAdvance('${a.id}')">Từ chối</button>`;
-    container.appendChild(div);
-  });
-}
 
 function approveAdvance(id) {
   console.log("Approving advance ID:", id);
@@ -1054,8 +858,101 @@ function rejectAdvance(id) {
     .then(() => console.log("Advance rejected:", id))
     .catch(err => console.error("Error rejecting advance:", err));
 }
+// Tạo lịch
+function generateCalendar(month, year) {
+  const calendarModal = document.getElementById("calendar-modal");
+  if (!calendarModal) {
+    console.error("Calendar modal not found!");
+    return;
+  }
+  calendarModal.style.display = "block"; // Đảm bảo hiển thị
+  calendarModal.innerHTML = `
+    <div class="calendar-header">
+      <button onclick="changeMonth(-1)">Trước</button>
+      <h3>Tháng ${month}/${year}</h3>
+      <button onclick="changeMonth(1)">Sau</button>
+    </div>
+    <div class="calendar" id="calendar"></div>
+    <button onclick="closeCalendar()">Đóng</button>
+  `;
+  
+  const calendar = document.getElementById("calendar");
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const firstDay = new Date(year, month - 1, 1).getDay() || 7; // Bắt đầu từ thứ 2
 
-// Salary & Workdays
+  // Thêm ô trống
+  for (let i = 1; i < firstDay; i++) {
+    const emptyDiv = document.createElement("div");
+    emptyDiv.classList.add("day");
+    calendar.appendChild(emptyDiv);
+  }
+
+  // Tạo các ô ngày
+  for (let i = 1; i <= daysInMonth; i++) {
+    const date = `${year}-${month < 10 ? "0" + month : month}-${i < 10 ? "0" + i : i}`;
+    const dayDiv = document.createElement("div");
+    dayDiv.classList.add("day");
+    dayDiv.dataset.date = date;
+    
+    const schedule = scheduleData.find(s => s.date === date && s.employeeId === currentEmployeeId);
+    dayDiv.classList.add(schedule ? schedule.status : "normal");
+    dayDiv.textContent = i;
+    
+    dayDiv.onclick = () => showActionModal(date);
+    calendar.appendChild(dayDiv);
+  }
+  console.log("Generated calendar for:", month, year);
+}
+
+// Đóng lịch
+function closeCalendar() {
+  const calendarModal = document.getElementById("calendar-modal");
+  if (calendarModal) {
+    calendarModal.style.display = "none";
+    console.log("Closed calendar");
+  }
+}
+
+// Chuyển tháng
+function changeMonth(offset) {
+  currentMonth += offset;
+  if (currentMonth < 1) {
+    currentMonth = 12;
+    currentYear--;
+  } else if (currentMonth > 12) {
+    currentMonth = 1;
+    currentYear++;
+  }
+  generateCalendar(currentMonth, currentYear);
+}
+
+// Hiển thị modal hành động
+function showActionModal(date) {
+  const actionModal = document.getElementById("action-modal");
+  if (!actionModal) {
+    console.error("Action modal not found!");
+    return;
+  }
+  actionModal.innerHTML = `
+    <h3>Ngày: ${date}</h3>
+    <button onclick="setStatus('${date}', 'off')">Off</button>
+    <button onclick="setStatus('${date}', 'overtime')">Tăng ca</button>
+    <button onclick="setStatus('${date}', 'swap')">Đổi ca</button>
+    <button onclick="closeActionModal()">Đóng</button>
+  `;
+  actionModal.style.display = "block";
+  console.log("Opened action modal for date:", date);
+}
+
+// Đóng modal hành động
+function closeActionModal() {
+  const actionModal = document.getElementById("action-modal");
+  if (actionModal) {
+    actionModal.style.display = "none";
+    console.log("Closed action modal");
+  }
+}
+
 function calculateSalary(empId) {
   const emp = employeeData.find(e => e.id === empId);
   if (!emp) {
@@ -1074,6 +971,7 @@ function calculateSalary(empId) {
   console.log("Calculated salary for employee:", { empId, workDays, offDays, overtimeDays, salary });
   return salary;
 }
+
 function renderSalarySummary() {
   const container = document.getElementById("salary-summary");
   if (!container) {
@@ -1100,7 +998,6 @@ function renderSalarySummary() {
     <p><strong>Tổng lương: ${salary.toLocaleString('vi-VN')} VND</strong></p>`;
   console.log("Rendered salary summary for user:", currentEmployeeId);
 }
-
 // Chat
 function sendGroupMessage() {
   const msg = document.getElementById("group-message").value.trim();
@@ -1303,7 +1200,9 @@ function renderInventory() {
   list.appendChild(table);
 }
 
-// Initialize Firebase Listeners (phần inventoryRef được cập nhật)
+
+// Thêm hàm renderScheduleApprovalList
+// Sửa hàm loadFirebaseData (xóa listener workStatusRef, thêm listener cho schedulesRef)
 function loadFirebaseData() {
   console.log("Initializing Firebase listeners");
 
@@ -1322,52 +1221,7 @@ function loadFirebaseData() {
   }, err => {
     console.error("Error fetching inventory data:", err);
   });
-  
-schedulesRef.on("value", snapshot => {
-  scheduleData = [];
-  if (snapshot.exists()) {
-    snapshot.forEach(child => {
-      const schedule = { id: child.key, ...child.val() };
-      console.log("Fetched schedule from Firebase:", schedule);
-      scheduleData.push(schedule);
-    });
-  }
-  console.log("Updated scheduleData:", scheduleData);
-  if (document.getElementById("profile").classList.contains("active")) {
-    generateCalendar(currentMonth, currentYear); // Cập nhật lịch nếu tab profile đang mở
-  }
-  renderSalarySummary();
-}, err => {
-  console.error("Error fetching schedules data:", err);
-});
 
-swapRequestsRef.on("value", snapshot => {
-  const swapRequests = [];
-  if (snapshot.exists()) {
-    snapshot.forEach(child => {
-      const swap = { id: child.key, ...child.val() };
-      console.log("Fetched swap request from Firebase:", swap);
-      swapRequests.push(swap);
-    });
-  }
-  console.log("Updated swapRequests:", swapRequests);
-}, err => {
-  console.error("Error fetching swap requests data:", err);
-});
-
-swapRequestsRef.on("value", snapshot => {
-  const swapRequests = [];
-  if (snapshot.exists()) {
-    snapshot.forEach(child => {
-      const swap = { id: child.key, ...child.val() };
-      console.log("Fetched swap request from Firebase:", swap);
-      swapRequests.push(swap);
-    });
-  }
-  console.log("Updated swapRequests:", swapRequests);
-}, err => {
-  console.error("Error fetching swap requests data:", err);
-});
   reportsRef.on("value", snapshot => {
     reportData = [];
     expenseNotes = [];
@@ -1411,14 +1265,31 @@ swapRequestsRef.on("value", snapshot => {
     if (snapshot.exists()) {
       snapshot.forEach(child => {
         const advance = { id: child.key, ...child.val() };
-        console.log("Fetched advance from Firebase:", advance);
+        console.log("Fetched advance request from Firebase:", advance);
         advanceRequests.push(advance);
       });
     }
     console.log("Updated advanceRequests:", advanceRequests);
     renderAdvanceApprovalList();
+    renderAdvanceHistory();
   }, err => {
     console.error("Error fetching advances data:", err);
+  });
+
+  schedulesRef.on("value", snapshot => {
+    scheduleData = [];
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        const schedule = { id: child.key, ...child.val() };
+        console.log("Fetched schedule from Firebase:", schedule);
+        scheduleData.push(schedule);
+      });
+    }
+    console.log("Updated scheduleData:", scheduleData);
+    renderScheduleApprovalList();
+    renderSalarySummary();
+  }, err => {
+    console.error("Error fetching schedules data:", err);
   });
 
   messagesRef.child("group").on("value", snapshot => {
@@ -1450,46 +1321,30 @@ swapRequestsRef.on("value", snapshot => {
   }, err => {
     console.error("Error fetching manager messages:", err);
   });
-
-  auth.onAuthStateChanged(user => {
-    if (user) {
-      const employeeRef = employeesRef.child(user.uid);
-      employeeRef.once("value").then(snapshot => {
-        if (!snapshot.exists()) {
-          const newEmployee = {
-            name: user.displayName || user.email.split('@')[0],
-            email: user.email,
-            active: true,
-            dailyWage: 0,
-            allowance: 0,
-            otherFee: 0,
-            workdays: 26,
-            offdays: 0,
-            address: "",
-            phone: "",
-            note: "",
-            createdAt: new Date().toISOString()
-          };
-          employeeRef.set(newEmployee).then(() => {
-            console.log("Đã thêm nhân viên mới vào Firebase:", user.uid);
-            employeeData.push({ id: user.uid, ...newEmployee });
-            renderEmployeeList();
-          }).catch(err => {
-            console.error("Lỗi khi thêm nhân viên:", err);
-          });
-        } else {
-          const employee = snapshot.val();
-          if (!employeeData.find(emp => emp.id === user.uid)) {
-            employeeData.push({ id: user.uid, ...employee });
-            renderEmployeeList();
-          }
-        }
-      });
-    }
-  });
 }
 
-// Update employee display name
+function approveAdvance(requestKey) {
+  advancesRef.child(requestKey).update({ status: "approved" })
+    .then(() => {
+      alert("Đã duyệt yêu cầu!");
+    })
+    .catch(err => {
+      console.error("Lỗi khi duyệt yêu cầu:", err);
+      alert("Lỗi khi duyệt yêu cầu: " + err.message);
+    });
+}
+
+function denyAdvance(requestKey) {
+  advancesRef.child(requestKey).update({ status: "denied" })
+    .then(() => {
+      alert("Đã từ chối yêu cầu!");
+    })
+    .catch(err => {
+      console.error("Lỗi khi từ chối yêu cầu:", err);
+      alert("Lỗi khi từ chối yêu cầu: " + err.message);
+    });
+}
+
 function updateEmployeeName() {
   const displayNameInput = document.getElementById("employee-display-name");
   if (!displayNameInput) {
@@ -1508,49 +1363,177 @@ function updateEmployeeName() {
     return;
   }
 
-  // Update name in Firebase
+  // Cập nhật tên trong Firebase
   employeesRef.child(currentEmployeeId).update({ name: newName })
     .then(() => {
-      // Update local employeeData
+      // Cập nhật trong mảng employeeData local
       const employee = employeeData.find(e => e.id === currentEmployeeId);
       if (employee) {
         employee.name = newName;
       } else {
         employeeData.push({ id: currentEmployeeId, name: newName });
       }
+
+      // Đồng bộ sang input "personal-employee-name"
+      const personalNameInput = document.getElementById("personal-employee-name");
+      if (personalNameInput) {
+        personalNameInput.value = newName;
+      }
+
       alert("Cập nhật tên hiển thị thành công!");
       displayNameInput.value = "";
-      renderReports(); // Refresh reports to show updated name
+      renderReports(); // Làm mới các báo cáo để hiển thị tên mới
     })
-    .catch(err => alert("Lỗi khi cập nhật tên: " + err.message));
+    .catch(err => {
+      console.error("Lỗi khi cập nhật tên:", err);
+      alert("Lỗi khi cập nhật tên: " + err.message);
+    });
 }
+
+
+
+function loadEmployeeInfo() {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const ref = firebase.database().ref(`employees/${user.uid}`);
+  ref.once("value").then((snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      document.getElementById("personal-employee-name").value = data.name || "";
+      document.getElementById("employee-address").value = data.address || "";
+      document.getElementById("employee-phone").value = data.phone || "";
+      document.getElementById("employee-note").value = data.note || "";
+    }
+  }).catch((err) => {
+    console.error("Lỗi khi load thông tin nhân viên:", err);
+  });
+}
+
+
+// Sửa hàm requestAdvance để đảm bảo amount luôn hợp lệ
+function requestAdvance() {
+  const amountInput = document.getElementById("advance-amount");
+  const reasonInput = document.getElementById("advance-reason");
+  const nameInput = document.getElementById("personal-employee-name");
+
+  const amount = parseFloat(amountInput.value) || 0;
+  const reason = reasonInput.value.trim();
+  const name = nameInput ? nameInput.value.trim() : "";
+  const today = new Date().toISOString().split("T")[0];
+
+  if (!currentEmployeeId) {
+    alert("Không xác định được ID nhân viên!");
+    return;
+  }
+
+  if (!name || amount <= 0 || !reason) {
+    console.error("Thiếu thông tin yêu cầu tạm ứng:", { amount, reason, name });
+    alert("Vui lòng nhập đầy đủ: Họ tên, số tiền và lý do!");
+    return;
+  }
+
+  const advanceData = {
+    employeeId: currentEmployeeId,
+    name,
+    amount: Math.round(amount), // Đảm bảo amount là số nguyên
+    reason,
+    date: today,
+    status: "pending",
+    timestamp: Date.now()
+  };
+
+  console.log("Gửi yêu cầu tạm ứng:", advanceData);
+
+  advancesRef.push(advanceData).then(() => {
+    console.log("Advance request submitted successfully");
+    alert("✅ Đã gửi yêu cầu tạm ứng!");
+    amountInput.value = "";
+    reasonInput.value = "";
+  }).catch(err => {
+    console.error("Error submitting advance request:", err);
+    alert("❌ Lỗi khi gửi yêu cầu tạm ứng: " + err.message);
+  });
+}
+
+// Sửa hàm renderAdvanceApprovalList để xử lý trường hợp amount undefined
+function renderAdvanceApprovalList() {
+  const container = document.getElementById("advance-approval-list");
+  if (!container) {
+    console.error("Advance approval list element not found!");
+    return;
+  }
+  container.innerHTML = "";
+  const pending = advanceRequests.filter(a => a.status === "pending");
+  console.log("Rendering advance approval list, total items:", pending.length);
+
+  if (pending.length === 0) {
+    container.innerHTML = "<p>Không có yêu cầu tạm ứng nào.</p>";
+    return;
+  }
+
+  pending.forEach(a => {
+    const amount = typeof a.amount === "number" ? a.amount.toLocaleString('vi-VN') : "0";
+    const div = document.createElement("div");
+    div.innerHTML = `
+      ${a.name}: ${amount} VND - ${a.reason} - Ngày: ${a.date}
+      <button onclick="approveAdvance('${a.id}')">Duyệt</button>
+      <button onclick="denyAdvance('${a.id}')">Từ chối</button>
+      <hr>`;
+    container.appendChild(div);
+  });
+}
+
+// Sửa auth.onAuthStateChanged để đồng bộ tên nhân viên
 auth.onAuthStateChanged(user => {
   if (user) {
     currentEmployeeId = user.uid;
-    // Kiểm tra employeeData và log nếu không tìm thấy nhân viên
-    const employee = employeeData.find(e => e.id === user.uid);
-    if (!employee) {
-      console.warn("Nhân viên chưa có trong employeeData:", {
-        userId: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        employeeDataLength: employeeData.length
-      });
-      // Tự động thêm nhân viên vào employees nếu chưa có
-      employeesRef.child(user.uid).set({
-        name: user.displayName || user.email.split('@')[0] || 'Nhân viên',
-        email: user.email,
-        active: true,
-        role: 'employee',
-        dailyWage: 0,
-        allowance: 0,
-        otherFee: 0,
-        workdays: 26,
-        offdays: 0
-      })
-        .then(() => console.log("Đã thêm nhân viên mới vào Firebase:", user.uid))
-        .catch(err => console.error("Lỗi khi thêm nhân viên:", err));
-    }
+
+    const employeeRef = employeesRef.child(user.uid);
+    employeeRef.once("value").then(snapshot => {
+      if (!snapshot.exists()) {
+        const newEmployee = {
+          name: user.displayName || user.email.split('@')[0] || 'Nhân viên',
+          email: user.email,
+          active: true,
+          role: 'employee',
+          dailyWage: 0,
+          allowance: 0,
+          otherFee: 0,
+          workdays: 26,
+          offdays: 0,
+          address: "",
+          phone: "",
+          note: "",
+          createdAt: new Date().toISOString()
+        };
+        employeeRef.set(newEmployee).then(() => {
+          console.log("Đã thêm nhân viên mới vào Firebase:", user.uid);
+          employeeData.push({ id: user.uid, ...newEmployee });
+          renderEmployeeList();
+          loadEmployeeInfo();
+        }).catch(err => {
+          console.error("Lỗi khi thêm nhân viên:", err);
+        });
+      } else {
+        const employee = snapshot.val();
+        if (!employeeData.find(emp => emp.id === user.uid)) {
+          employeeData.push({ id: user.uid, ...employee });
+        }
+        // Đồng bộ tên nhân viên vào các input
+        loadEmployeeInfo();
+        // Cập nhật tên nhân viên trong báo cáo nếu cần
+        reportsRef.once("value").then(snapshot => {
+          snapshot.forEach(child => {
+            const report = child.val();
+            if (report.employeeId === user.uid && report.employeeName !== employee.name) {
+              reportsRef.child(child.key).update({ employeeName: employee.name });
+            }
+          });
+        });
+      }
+    });
+
     document.getElementById("login-page").style.display = "none";
     document.getElementById("main-page").style.display = "block";
     openTabBubble('revenue-expense');
@@ -1561,3 +1544,224 @@ auth.onAuthStateChanged(user => {
     document.getElementById("main-page").style.display = "none";
   }
 });
+
+// Sửa hàm renderCalendar (xóa text trạng thái)
+function renderCalendar() {
+  const calendarModal = document.getElementById("calendar-modal");
+  if (!calendarModal) {
+    console.error("Calendar modal element not found!");
+    return;
+  }
+
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  let calendarHTML = `
+    <h3>Lịch Tháng ${currentMonth + 1}/${currentYear}</h3>
+    <div class="calendar">
+      <div class="calendar-header">CN</div>
+      <div class="calendar-header">T2</div>
+      <div class="calendar-header">T3</div>
+      <div class="calendar-header">T4</div>
+      <div class="calendar-header">T5</div>
+      <div class="calendar-header">T6</div>
+      <div class="calendar-header">T7</div>
+  `;
+
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+  for (let i = 0; i < firstDay; i++) {
+    calendarHTML += `<div class="day empty"></div>`;
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const schedule = scheduleData.find(s => s.date === date && s.employeeId === currentEmployeeId);
+    const statusClass = schedule && schedule.approvalStatus === "approved" ? schedule.status : "normal";
+    
+    calendarHTML += `
+      <div class="day ${statusClass}" data-date="${date}" onclick="showActionModal('${date}')">
+        ${day}
+      </div>`;
+  }
+
+  calendarHTML += `</div>`;
+  calendarModal.innerHTML = calendarHTML;
+  renderScheduleStatusList(); // Hiển thị danh sách trạng thái
+}
+
+// Thêm hàm renderScheduleStatusList
+function renderScheduleStatusList() {
+  const container = document.getElementById("schedule-status-list");
+  if (!container) {
+    console.error("Schedule status list element not found!");
+    return;
+  }
+  container.innerHTML = "";
+  const schedules = scheduleData.filter(s => s.employeeId === currentEmployeeId);
+  console.log("Rendering schedule status list, total items:", schedules.length);
+
+  if (schedules.length === 0) {
+    container.innerHTML = "<p>Không có yêu cầu lịch làm việc nào.</p>";
+    return;
+  }
+
+  schedules.forEach(s => {
+    const statusText = s.status === "off" ? "Nghỉ" : s.status === "overtime" ? "Tăng ca" : "Đổi ca";
+    const approvalText = s.approvalStatus === "approved" ? "Đã duyệt" : s.approvalStatus === "denied" ? "Bị từ chối" : "Chờ duyệt";
+    const div = document.createElement("div");
+    div.innerHTML = `${s.date}: ${statusText} - ${approvalText}<hr>`;
+    container.appendChild(div);
+  });
+}
+
+// Sửa hàm setStatus để xử lý trạng thái và cập nhật danh sách
+function setStatus(date, status) {
+  const dayDiv = document.querySelector(`.day[data-date="${date}"]`);
+  if (!dayDiv) {
+    console.error("Day element not found for date:", date);
+    return;
+  }
+  const currentSchedule = scheduleData.find(s => s.date === date && s.employeeId === currentEmployeeId);
+  const employee = employeeData.find(e => e.id === currentEmployeeId);
+  const employeeName = employee ? employee.name : (auth.currentUser.displayName || auth.currentUser.email.split('@')[0]);
+
+  if (!employeeName) {
+    alert("Vui lòng cập nhật tên hiển thị trước!");
+    return;
+  }
+
+  const key = `${date}_${currentEmployeeId}`;
+  if (currentSchedule && currentSchedule.status === status && currentSchedule.approvalStatus === "pending") {
+    // Reset về trạng thái bình thường
+    dayDiv.classList.remove(status);
+    dayDiv.classList.add("normal");
+    schedulesRef.child(key).remove();
+    scheduleData = scheduleData.filter(s => s.date !== date || s.employeeId !== currentEmployeeId);
+    payrollData = payrollData.filter(p => p.date !== date || p.employeeId !== currentEmployeeId);
+    localStorage.setItem("payrollData", JSON.stringify(payrollData));
+    console.log(`Ngày ${date} trở về bình thường`);
+  } else {
+    // Cập nhật trạng thái mới
+    dayDiv.classList.remove("normal", "off", "overtime", "swap");
+    dayDiv.classList.add("normal"); // Chỉ áp dụng trạng thái khi được duyệt
+
+    const scheduleEntry = {
+      date,
+      employeeId: currentEmployeeId,
+      employeeName,
+      status,
+      approvalStatus: "pending", // Thêm trạng thái phê duyệt
+      timestamp: Date.now()
+    };
+
+    if (currentSchedule) {
+      currentSchedule.status = status;
+      currentSchedule.approvalStatus = "pending";
+    } else {
+      scheduleData.push(scheduleEntry);
+    }
+
+    payrollData.push({ date, employeeId: currentEmployeeId, employeeName, status });
+    localStorage.setItem("payrollData", JSON.stringify(payrollData));
+
+    schedulesRef.child(key).set(scheduleEntry).then(() => {
+      console.log(`Đã gửi yêu cầu ${status} cho ngày ${date}`);
+      if (status === "swap") {
+        const conflictingSchedule = scheduleData.find(s => s.date === date && s.employeeId !== currentEmployeeId);
+        if (conflictingSchedule) {
+          swapRequestsRef.push({
+            fromEmployeeId: currentEmployeeId,
+            fromEmployeeName: employeeName,
+            toEmployeeId: conflictingSchedule.employeeId,
+            toEmployeeName: conflictingSchedule.employeeName,
+            date,
+            status: "pending",
+            timestamp: Date.now()
+          }).then(() => {
+            console.log(`Gửi yêu cầu đổi ca ngày ${date} tới ${conflictingSchedule.employeeName}`);
+          });
+        } else {
+          alert("Không tìm thấy nhân viên có ca trùng để đổi!");
+        }
+      }
+    }).catch(err => {
+      console.error("Lỗi gửi yêu cầu lịch làm việc:", err);
+      alert("Lỗi: " + err.message);
+    });
+  }
+  closeActionModal();
+  renderCalendar();
+  renderScheduleStatusList(); // Cập nhật danh sách trạng thái
+  renderSalarySummary();
+}
+
+// Sửa hàm approveSchedule để cập nhật trạng thái approved
+function approveSchedule(key) {
+  const schedule = scheduleData.find(s => s.id === key);
+  if (!schedule) {
+    console.error("Schedule not found for key:", key);
+    return;
+  }
+  schedulesRef.child(key).update({ approvalStatus: "approved" }).then(() => {
+    schedule.approvalStatus = "approved";
+    console.log(`Đã duyệt yêu cầu ${schedule.status} cho ngày ${schedule.date}`);
+    renderCalendar();
+    renderScheduleStatusList();
+    renderScheduleApprovalList();
+  }).catch(err => {
+    console.error("Lỗi duyệt yêu cầu:", err);
+    alert("Lỗi: " + err.message);
+  });
+}
+
+// Sửa hàm denySchedule để cập nhật trạng thái denied
+function denySchedule(key) {
+  const schedule = scheduleData.find(s => s.id === key);
+  if (!schedule) {
+    console.error("Schedule not found for key:", key);
+    return;
+  }
+  schedulesRef.child(key).update({ approvalStatus: "denied" }).then(() => {
+    schedule.approvalStatus = "denied";
+    console.log(`Đã từ chối yêu cầu ${schedule.status} cho ngày ${schedule.date}`);
+    renderCalendar();
+    renderScheduleStatusList();
+    renderScheduleApprovalList();
+  }).catch(err => {
+    console.error("Lỗi từ chối yêu cầu:", err);
+    alert("Lỗi: " + err.message);
+  });
+}
+
+// Sửa hàm renderScheduleApprovalList để hiển thị trạng thái denied
+function renderScheduleApprovalList() {
+  const container = document.getElementById("work-requests");
+  if (!container) {
+    console.error("Work requests element not found!");
+    return;
+  }
+  container.innerHTML = "";
+  const pending = scheduleData.filter(s => s.status === "off" || s.status === "overtime" || s.status === "swap");
+  console.log("Rendering schedule approval list, total items:", pending.length);
+
+  if (pending.length === 0) {
+    container.innerHTML = "<p>Không có yêu cầu lịch làm việc nào.</p>";
+    return;
+  }
+
+  pending.forEach(s => {
+    const statusText = s.status === "off" ? "Nghỉ" : s.status === "overtime" ? "Tăng ca" : "Đổi ca";
+    const approvalText = s.approvalStatus === "approved" ? "Đã duyệt" : s.approvalStatus === "denied" ? "Bị từ chối" : "Chờ duyệt";
+    const div = document.createElement("div");
+    div.innerHTML = `
+      <strong>${s.employeeName}</strong>: ${statusText} - Ngày: ${s.date} - ${approvalText}
+      ${approvalText === "Chờ duyệt" ? `
+        <button onclick="approveSchedule('${s.date}_${s.employeeId}')">Duyệt</button>
+        <button onclick="denySchedule('${s.date}_${s.employeeId}')">Từ chối</button>
+      ` : ""}
+      <hr>`;
+    container.appendChild(div);
+  });
+}
