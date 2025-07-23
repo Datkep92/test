@@ -440,61 +440,6 @@ function filterReports() {
   document.body.appendChild(overlay);
 }
 
-Cảm ơn bạn đã phản hồi! Lỗi Tổng xuất kho (2025-07-23): undefined: 3 (Còn: 0) vẫn xuất hiện, nghĩa là phần tổng hợp xuất hàng trong hàm renderFilteredReports vẫn gặp vấn đề với productName bị undefined. Bạn cũng đề cập rằng mã cũ gốc hiển thị đúng, điều này gợi ý rằng sửa đổi trong hàm renderFilteredReports có thể đã gây ra lỗi hoặc không xử lý đúng dữ liệu từ Firebase.
-
-Tôi sẽ phân tích lại nguyên nhân, tập trung vào phần tổng hợp xuất hàng, và sửa lại chỉ hàm renderFilteredReports (theo yêu cầu của bạn: chỉ gửi hàm cần sửa). Mục tiêu là khắc phục lỗi undefined và đảm bảo hiển thị đúng như mã gốc, đồng thời giữ các cải tiến trước đó (3 giao dịch gần nhất, nút "Xem thêm", tổng hợp theo ngày).
-
-Phân tích lỗi
-Nguyên nhân
-Lỗi hiện tại: Trong phần tổng hợp xuất hàng, productName trong productReports bị undefined, dẫn đến hiển thị undefined: 3 (Còn: 0).
-So sánh với mã gốc:
-Mã gốc của bạn (trong app.js ban đầu) tạo productReports bằng cách lấy p.name từ r.products. Nếu mã gốc hiển thị đúng, có thể dữ liệu trong reportsRef có trường name hợp lệ, nhưng sửa đổi trong renderFilteredReports đã thay đổi cách xử lý products, gây ra lỗi.
-Cụ thể, đoạn mã sửa đổi:
-javascript
-
-Thu gọn
-
-Bọc lại
-
-Chạy
-
-Sao chép
-const productReports = sortedReports.flatMap(r => 
-  Array.isArray(r.products) ? r.products.map(p => ({
-    productName: p.name || "Sản phẩm không xác định",
-    quantity: p.quantity
-  })) : []
-);
-có thể không lấy đúng name từ r.products do cấu trúc dữ liệu không đồng bộ hoặc p.name không tồn tại trong một số báo cáo.
-Kiểm tra dữ liệu Firebase:
-Lỗi undefined cho thấy một số báo cáo trong reportData có products thiếu trường name, hoặc name bị gán sai (ví dụ: null hoặc undefined).
-Mã gốc có thể đã xử lý khác, ví dụ: sử dụng inventoryData để lấy tên sản phẩm dựa trên productId thay vì dựa vào p.name.
-Nguyên nhân cụ thể:
-Trong mã sửa đổi, tôi giả định p.name luôn tồn tại hoặc dùng "Sản phẩm không xác định" nếu thiếu. Tuy nhiên, nếu mã gốc dùng inventoryData.find() để lấy tên sản phẩm từ productId, sửa đổi này đã bỏ qua bước đó, dẫn đến undefined.
-Phương án sửa
-Cách khắc phục:
-Trong phần tổng hợp xuất hàng, thay vì dùng p.name trực tiếp từ r.products, sử dụng inventoryData.find() để lấy tên sản phẩm dựa trên p.productId, giống cách mã gốc có thể đã làm.
-Giữ nguyên logic hiển thị 3 giao dịch gần nhất, nút "Xem thêm", và tổng hợp theo ngày.
-Đảm bảo kiểm tra trường hợp inventoryData không tìm thấy sản phẩm tương ứng (tránh undefined).
-Ví dụ thực tế:
-Trước: Tổng xuất kho (2025-07-23): undefined: 3 (Còn: 0).
-Sau: Tổng xuất kho (2025-07-23): Cà phê phin: 3 (Còn: 97) (nếu productId khớp với sản phẩm trong inventoryData).
-Lý do chọn phương án:
-Phù hợp với cách mã gốc hoạt động (dựa vào inventoryData để lấy tên sản phẩm).
-Chỉ sửa phần tổng hợp xuất hàng trong renderFilteredReports, không ảnh hưởng các tính năng khác.
-Đảm bảo không hiển thị undefined bằng cách kiểm tra kỹ dữ liệu.
-Mã sửa đổi
-Chỉ sửa hàm renderFilteredReports:
-
-javascript
-
-Thu gọn
-
-Bọc lại
-
-Chạy
-
-Sao chép
 function renderFilteredReports(filteredReports, selectedDate = null, startDate = null, endDate = null) {
   const reportContainer = document.getElementById("shared-report-table");
   const productContainer = document.getElementById("report-product-table");
