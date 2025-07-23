@@ -52,19 +52,17 @@
       <div id="inventory-list"></div>
     </div>
 
-    <div class="tabcontent" id="profile">
-      <h2>Thông tin Cá nhân</h2>
-      <h3>Cập nhật tên hiển thị</h3>
-      <input type="text" id="employee-display-name" placeholder="Nhập tên hiển thị">
-      <button onclick="updateEmployeeName()">Lưu tên</button>
-      <h3>Yêu cầu tạm ứng</h3>
-      <input type="number" id="advance-amount" placeholder="Số tiền (VND)">
-      <textarea id="advance-reason" placeholder="Lý do"></textarea>
-      <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu</button>
-      <h3>Lương & Ngày công</h3>
-      <div id="salary-summary"></div>
-      <div id="advance-history"></div>
-    </div>
+    <div class="tabcontent" id="personal-info">
+  <h2>Thông tin Cá nhân</h2>
+  <input type="text" id="employee-name" placeholder="Nhập tên hiển thị">
+  <input type="text" id="employee-address" placeholder="Nhập địa chỉ">
+  <input type="text" id="employee-phone" placeholder="Nhập số điện thoại">
+  <input type="text" id="employee-note" placeholder="Nhập ghi chú">
+  <button class="primary-btn" onclick="updateEmployeeInfo()">Lưu</button>
+  <h3>Yêu cầu tạm ứng</h3>
+  <input type="number" id="advance-amount" placeholder="Số tiền (VND)">
+  <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu tạm ứng</button>
+</div>
 
     <div class="tabcontent" id="business-report">
       <h2>Báo cáo Kinh doanh</h2>
