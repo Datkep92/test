@@ -512,6 +512,7 @@ function renderFilteredReports(filteredReports, selectedDate = null, startDate =
       reportContainer.appendChild(expandBtn);
     }
   };
+
   // Hàm render bảng xuất hàng
   const renderProductTable = () => {
     const productReports = sortedReports.flatMap((r, index) => 
@@ -605,101 +606,6 @@ function renderFilteredReports(filteredReports, selectedDate = null, startDate =
     return acc;
   }, {});
   
-  const totalProductText = Object.entries(totalProductSummary)
-    .map(([name, qty]) => {
-      const inventoryItem = inventoryData.find(item => item.name === name);
-      const remainingQty = inventoryItem ? inventoryItem.quantity : 0;
-      return `${name}: ${qty} (Còn: ${remainingQty})`;
-    })
-    .join(" - ");
-
-  const totalProductDiv = document.createElement("div");
-  totalProductDiv.classList.add("report-total");
-  totalProductDiv.innerHTML = `
-    <strong>Tổng xuất kho (${displayDate}):</strong> ${totalProductText || "Không có"}
-  `;
-  productContainer.appendChild(totalProductDiv);
-}
-  // Hàm render bảng xuất hàng
-  function renderProductTable() {
-    const productReports = sortedReports.flatMap((r, index) => 
-      Array.isArray(r.products) && r.products.length > 0 
-        ? r.products.map(p => ({
-            index: index + 1,
-            reportId: r.id,
-            employeeName: r.employeeName,
-            productName: p.name || "Sản phẩm không xác định", // Xử lý lỗi undefined
-            quantity: p.quantity,
-            productId: p.productId
-          }))
-        : []
-    );
-
-    const displayProducts = isExpandedProduct ? productReports : productReports.slice(0, 3);
-    const productTable = document.createElement("table");
-    productTable.classList.add("table-style");
-    productTable.innerHTML = `
-      <thead>
-        <tr><th>STT</th><th>Tên NV</th><th>Tên hàng hóa</th><th>Số lượng</th><th>Hành động</th></tr>
-      </thead>
-      <tbody>
-        ${displayProducts.map(p => `
-          <tr>
-            <td>${p.index}</td>
-            <td>${p.employeeName}</td>
-            <td>${p.productName}</td>
-            <td>${p.quantity}</td>
-            <td>
-              <button onclick="editReportProduct('${p.reportId}', '${p.productId}')">Sửa</button>
-              <button onclick="deleteReportProduct('${p.reportId}', '${p.productId}')">Xóa</button>
-            </td>
-          </tr>`).join("")}
-      </tbody>`;
-    productContainer.innerHTML = `<h3>Danh sách Báo cáo Xuất Hàng (${displayDate})</h3>`;
-    productContainer.appendChild(productTable);
-
-    // Nút Xem thêm (chỉ hiển thị nếu có hơn 3 giao dịch)
-    if (productReports.length > 3) {
-      const expandBtn = document.createElement("button");
-      expandBtn.textContent = isExpandedProduct ? "Thu gọn" : "Xem thêm";
-      expandBtn.className = "expand-btn";
-      expandBtn.onclick = () => {
-        isExpandedProduct = !isExpandedProduct;
-        renderProductTable();
-      };
-      productContainer.appendChild(expandBtn);
-    }
-  }
-
-  // Render bảng
-  renderFinanceTable();
-  renderProductTable();
-
-  // Tổng hợp
-  const totalOpeningBalance = sortedReports.reduce((sum, r) => sum + (r.openingBalance || 0), 0);
-  const totalRevenue = sortedReports.reduce((sum, r) => sum + (r.revenue || 0), 0);
-  const totalExpense = sortedReports.reduce((sum, r) => sum + (r.expenseAmount || 0), 0);
-  const totalClosingBalance = sortedReports.reduce((sum, r) => sum + (r.closingBalance || 0), 0);
-  const finalBalance = totalOpeningBalance + totalRevenue - totalExpense - totalClosingBalance;
-
-  const totalReportDiv = document.createElement("div");
-  totalReportDiv.classList.add("report-total");
-  totalReportDiv.innerHTML = `
-    <strong>Tổng (${displayDate}):</strong><br>
-    Số dư đầu kỳ: ${totalOpeningBalance.toLocaleString('vi-VN')} VND<br>
-    Doanh thu: ${totalRevenue.toLocaleString('vi-VN')} VND<br>
-    Chi phí: ${totalExpense.toLocaleString('vi-VN')} VND<br>
-    Số dư cuối kỳ: ${totalClosingBalance.toLocaleString('vi-VN')} VND<br>
-    Còn lại: ${finalBalance.toLocaleString('vi-VN')} VND
-  `;
-  reportContainer.appendChild(totalReportDiv);
-
-  // Tổng hợp xuất hàng
-  const productReports = sortedReports.flatMap(r => r.products || []);
-  const totalProductSummary = productReports.reduce((acc, p) => {
-    acc[p.productName] = (acc[p.productName] || 0) + p.quantity;
-    return acc;
-  }, {});
   const totalProductText = Object.entries(totalProductSummary)
     .map(([name, qty]) => {
       const inventoryItem = inventoryData.find(item => item.name === name);
