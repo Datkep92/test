@@ -69,22 +69,6 @@ function updateEmployeeInfo() {
   });
 }
 
-  const employeeRef = employeesRef.child(user.uid);
-  employeeRef.update({
-    name: nameInput,
-    address: addressInput || "",
-    phone: phoneInput || "",
-    note: noteInput || "",
-    updatedAt: new Date().toISOString()
-  })
-  .then(() => {
-    alert("Cập nhật thông tin thành công!");
-  })
-  .catch(error => {
-    console.error("Lỗi khi cập nhật thông tin:", error);
-    alert("Có lỗi xảy ra khi cập nhật thông tin!");
-  });
-}
 // Đăng nhập / Đăng xuất
 function login() {
   const email = document.getElementById("email").value.trim();
