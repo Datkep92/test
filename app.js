@@ -1182,44 +1182,7 @@ function loadFirebaseData() {
     }
   });
 }
-// Initialize Firebase Listeners and Auth State
-auth.onAuthStateChanged(user => {
-  if (user) {
-    currentEmployeeId = user.uid;
-    // Kiểm tra employeeData và log nếu không tìm thấy nhân viên
-    const employee = employeeData.find(e => e.id === user.uid);
-    if (!employee) {
-      console.warn("Nhân viên chưa có trong employeeData:", {
-        userId: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        employeeDataLength: employeeData.length
-      });
-      // Tự động thêm nhân viên vào employees nếu chưa có
-      employeesRef.child(user.uid).set({
-        name: user.displayName || user.email.split('@')[0] || 'Nhân viên',
-        email: user.email,
-        active: true,
-        role: 'employee',
-        dailyWage: 0,
-        allowance: 0,
-        otherFee: 0,
-        workdays: 26,
-        offdays: 0
-      })
-        .then(() => console.log("Đã thêm nhân viên mới vào Firebase:", user.uid))
-        .catch(err => console.error("Lỗi khi thêm nhân viên:", err));
-    }
-    document.getElementById("login-page").style.display = "none";
-    document.getElementById("main-page").style.display = "block";
-    openTabBubble('revenue-expense');
-    loadFirebaseData();
-  } else {
-    currentEmployeeId = null;
-    document.getElementById("login-page").style.display = "flex";
-    document.getElementById("main-page").style.display = "none";
-  }
-});
+
 
 // Update employee display name
 function updateEmployeeName() {
