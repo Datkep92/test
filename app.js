@@ -777,37 +777,26 @@ function renderEmployeeList() {
   }
 }
 
+// Advance Requests
 function requestAdvance() {
-  const amountEl = document.getElementById("advance-amount");
-  const reasonEl = document.getElementById("advance-reason");
-
-  if (!amountEl || !reasonEl) {
-    console.error("Không tìm thấy ô nhập số tiền hoặc lý do!");
-    alert("Lỗi: Không tìm thấy ô nhập số tiền hoặc lý do!");
-    return;
-  }
-
-  const amount = parseFloat(amountEl.value) || 0;
-  const reason = reasonEl.value.trim();
+  const amount = parseFloat(document.getElementById("advance-amount").value) || 0;
+  const reason = document.getElementById("advance-reason").value.trim();
 
   console.log("Requesting advance:", { amount, reason, employeeId: currentEmployeeId });
 
   if (amount <= 0 || !reason) {
     console.error("Invalid advance request:", { amount, reason });
-    return alert("Vui lòng nhập số tiền và lý do hợp lệ!");
+    return alert("Vui lòng nhập số tiền và lý do!");
   }
 
   advancesRef.push({
     employeeId: currentEmployeeId,
     amount,
     reason,
-    status: "pending",
-    requestTime: new Date().toISOString()
+    status: "pending"
   }).then(() => {
     console.log("Advance request submitted successfully");
     alert("Đã gửi yêu cầu tạm ứng!");
-    amountEl.value = "";
-    reasonEl.value = "";
   }).catch(err => {
     console.error("Error submitting advance request:", err);
     alert("Lỗi khi gửi yêu cầu tạm ứng: " + err.message);
