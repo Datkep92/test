@@ -42,10 +42,21 @@ function updateEmployeeInfo() {
     return;
   }
 
-  const nameInput = document.getElementById("personal-employee-name").value.trim();
-  const addressInput = document.getElementById("employee-address").value.trim();
-  const phoneInput = document.getElementById("employee-phone").value.trim();
-  const noteInput = document.getElementById("employee-note").value.trim();
+  const nameInputEl = document.getElementById("personal-employee-name");
+  const addressInputEl = document.getElementById("employee-address");
+  const phoneInputEl = document.getElementById("employee-phone");
+  const noteInputEl = document.getElementById("employee-note");
+
+  if (!nameInputEl || !addressInputEl || !phoneInputEl || !noteInputEl) {
+    console.error("Không tìm thấy các trường nhập liệu trong tab profile!");
+    alert("Lỗi: Không tìm thấy các trường nhập liệu!");
+    return;
+  }
+
+  const nameInput = nameInputEl.value.trim();
+  const addressInput = addressInputEl.value.trim();
+  const phoneInput = phoneInputEl.value.trim();
+  const noteInput = noteInputEl.value.trim();
 
   if (!nameInput) {
     alert("Vui lòng nhập tên hiển thị!");
@@ -755,26 +766,32 @@ function renderEmployeeList() {
   }
 }
 
-// Advance Requests
 function requestAdvance() {
-  const amount = parseFloat(document.getElementById("advance-amount").value) || 0;
-  const reason = document.getElementById("advance-reason").value.trim();
+  const amountEl = document.getElementById("advance-amount");
+  if (!amountEl) {
+    console.error("Không tìm thấy ô nhập số tiền tạm ứng!");
+    alert("Lỗi: Không tìm thấy ô nhập số tiền!");
+    return;
+  }
 
-  console.log("Requesting advance:", { amount, reason, employeeId: currentEmployeeId });
+  const amount = parseFloat(amountEl.value) || 0;
 
-  if (amount <= 0 || !reason) {
-    console.error("Invalid advance request:", { amount, reason });
-    return alert("Vui lòng nhập số tiền và lý do!");
+  console.log("Requesting advance:", { amount, employeeId: currentEmployeeId });
+
+  if (amount <= 0) {
+    console.error("Invalid advance request:", { amount });
+    return alert("Vui lòng nhập số tiền hợp lệ!");
   }
 
   advancesRef.push({
     employeeId: currentEmployeeId,
     amount,
-    reason,
-    status: "pending"
+    status: "pending",
+    requestTime: new Date().toISOString()
   }).then(() => {
     console.log("Advance request submitted successfully");
     alert("Đã gửi yêu cầu tạm ứng!");
+    amountEl.value = "";
   }).catch(err => {
     console.error("Error submitting advance request:", err);
     alert("Lỗi khi gửi yêu cầu tạm ứng: " + err.message);
@@ -1216,7 +1233,16 @@ function loadFirebaseData() {
             console.log("Đã thêm nhân viên mới vào Firebase:", user.uid);
             employeeData.push({ id: user.uid, ...newEmployee });
             renderEmployeeList();
+          }).catch(err => {
+            console.error("Lỗi khi thêm nhân viên:", err);
           });
+        } else {
+          // Cập nhật employeeData nếu nhân viên đã tồn tại
+          const employee = snapshot.val();
+          if (!employeeData.find(emp => emp.id === user.uid)) {
+            employeeData.push({ id: user.uid, ...employee });
+            renderEmployeeList();
+          }
         }
       });
     }
