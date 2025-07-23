@@ -52,18 +52,24 @@
       <div id="inventory-list"></div>
     </div>
 
-    <div class="tabcontent" id="profile">
+    <div id="profile" class="tabcontent">
       <h2>Thông tin Cá nhân</h2>
-      <input type="text" id="personal-employee-name" placeholder="Nhập tên hiển thị">
-      <input type="text" id="employee-address" placeholder="Nhập địa chỉ">
-      <input type="text" id="employee-phone" placeholder="Nhập số điện thoại">
-      <input type="text" id="employee-note" placeholder="Nhập ghi chú">
-      <button class="primary-btn" onclick="updateEmployeeInfo()">Lưu</button>
+      <input type="text" id="personal-employee-name" placeholder="Tên hiển thị"><br>
+      <input type="text" id="employee-address" placeholder="Địa chỉ"><br>
+      <input type="text" id="employee-phone" placeholder="Số điện thoại"><br>
+      <input type="text" id="employee-note" placeholder="Ghi chú"><br>
+      <button onclick="updateEmployeeInfo()">Lưu</button>
       <h3>Yêu cầu tạm ứng</h3>
-      <input type="number" id="advance-amount" placeholder="Số tiền (VND)">
-      <textarea id="advance-reason" placeholder="Lý do tạm ứng"></textarea>
-      <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu tạm ứng</button>
-      
+      <input type="number" id="advance-amount" placeholder="Số tiền"><br>
+      <input type="text" id="advance-reason" placeholder="Lý do"><br>
+      <button onclick="requestAdvance()">Gửi yêu cầu tạm ứng</button>
+      <div id="advance-history"></div>
+      <h3>Lịch làm việc</h3>
+      <button onclick="openCalendar()">Mở lịch</button>
+      <div id="calendar-modal" style="display: none;"></div>
+      <div id="action-modal" style="display: none;"></div>
+      <h3>Tổng lương</h3>
+      <div id="salary-summary"></div>
     </div>
 
     <div class="tabcontent" id="business-report">
