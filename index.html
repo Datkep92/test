@@ -52,42 +52,81 @@
       <div id="inventory-list"></div>
     </div>
 
-    <div id="profile" class="tabcontent">
-      <h2>Thông tin Cá nhân</h2>
-      <input type="text" id="personal-employee-name" placeholder="Tên hiển thị"><br>
-      <input type="text" id="employee-address" placeholder="Địa chỉ"><br>
-      <input type="text" id="employee-phone" placeholder="Số điện thoại"><br>
-      <input type="text" id="employee-note" placeholder="Ghi chú"><br>
-      <button onclick="updateEmployeeInfo()">Lưu</button>
-      <h3>Yêu cầu tạm ứng</h3>
-      <input type="number" id="advance-amount" placeholder="Số tiền"><br>
-      <input type="text" id="advance-reason" placeholder="Lý do"><br>
-      <button onclick="requestAdvance()">Gửi yêu cầu tạm ứng</button>
-      <div id="advance-history"></div>
-      <h3>Lịch làm việc</h3>
-      <button onclick="openCalendar()">Xem lịch</button>
-      <div id="calendar-modal"></div>
-      <div id="schedule-status-list"></div>
-      <div id="action-modal" style="display: none;"></div>
-      <h3>Tổng lương</h3>
-      <div id="salary-summary"></div>
+   <div id="profile" class="tabcontent">
+  <h2>Thông tin Cá nhân</h2>
+  <div class="input-group">
+    <input type="text" id="personal-employee-name" placeholder="Họ tên">
+    <input type="text" id="employee-address" placeholder="Địa chỉ">
+    <input type="text" id="employee-phone" placeholder="Số điện thoại">
+    <input type="text" id="employee-note" placeholder="Ghi chú">
+  </div>
+  <div class="button-group">
+    <button class="primary-btn" onclick="updateEmployeeInfo()">Lưu</button>
+  </div>
+  <h3>Yêu cầu tạm ứng</h3>
+  <div class="input-group">
+    <input type="number" id="advance-amount" placeholder="Số tiền (VND)">
+    <input type="text" id="advance-reason" placeholder="Lý do">
+  </div>
+  <div class="button-group">
+    <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu tạm ứng</button>
+  </div>
+  <h3>Lịch sử yêu cầu tạm ứng</h3>
+  <div id="advance-history"></div>
+  <h3>Lịch làm việc</h3>
+  <div id="schedule-status-list"></div>
+  <h3>Lịch</h3>
+  <div id="calendar"></div>
+  <h3>Thông báo Cá nhân</h3> <!-- Thêm tiêu đề -->
+  <div id="notification-list"></div> <!-- Thêm container cho thông báo cá nhân -->
+  <div id="action-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div id="action-modal-content" style="background: white; padding: 20px; margin: 100px auto; width: 300px; border-radius: 5px; text-align: center;">
+      <!-- Nội dung modal sẽ được thêm bởi JavaScript -->
     </div>
+  </div>
+  <h3>Tổng lương</h3>
+  <div id="salary-summary"></div>
+</div>
 
     <div class="tabcontent" id="business-report">
-      <h2>Báo cáo Kinh doanh</h2>
-      <h3>Chi phí</h3>
-      <div id="expense-summary-table"></div>
-      <canvas id="growth-chart"></canvas>
-    </div>
+  <h2>Báo cáo Kinh doanh</h2>
+  <div class="summary">
+    <h3>Tổng quan tài chính</h3>
+    <p>Tổng doanh thu: <span id="total-revenue">0</span> VND</p>
+    <p>Tổng chi phí: <span id="total-expense">0</span> VND</p>
+    <p>Lợi nhuận: <span id="total-profit">0</span> VND</p>
+  </div>
+  <div class="filter">
+    <h3>Lọc báo cáo</h3>
+    <input type="date" id="start-date">
+    <input type="date" id="end-date">
+    <select id="filter-type">
+      <option value="all">Tất cả</option>
+      <option value="week">Tuần</option>
+      <option value="month">Tháng</option>
+      <option value="quarter">Quý</option>
+    </select>
+    <button class="primary-btn" onclick="filterBusinessReports()">Lọc</button>
+  </div>
+  <h3>Biểu đồ Doanh thu và Chi phí</h3>
+  <canvas id="growth-chart" style="max-height: 300px;"></canvas>
+  <h3>Tổng hợp Chi phí theo Danh mục</h3>
+  <div id="expense-category-summary"></div>
+  <h3>Tổng Chi phí trừ Hàng Xuất Kho</h3>
+  <div id="expense-minus-inventory"></div>
+  <h3>Danh sách Chi phí</h3>
+  <div id="expense-summary-table"></div>
+  <button class="primary-btn" onclick="exportReportsToCSV()">Xuất CSV</button>
+</div>
 
         <div class="tabcontent" id="employee-management">
       <h2>Quản lý Nhân viên</h2>
-<div id="tab-llv-requests" class="tab-content">
-  <h3>Yêu cầu Lịch Làm Việc</h3>
-  <div id="work-requests" style="padding: 10px;"></div>
-<h3>Yêu cầu Tạm ứng</h3>
+	<div id="tab-llv-requests" class="tab-content">
+  	<h3>Yêu cầu Lịch Làm Việc</h3>
+  	<div id="work-requests" style="padding: 10px;"></div>
+	<h3>Yêu cầu Tạm ứng</h3>
       <div id="advance-approval-list"></div>
-</div>
+	</div>
 
       <input type="text" id="manage-employee-name" placeholder="Tên nhân viên">
       <input type="number" id="employee-dailywage" placeholder="Lương ngày">
@@ -120,6 +159,18 @@
         <button onclick="openTabBubble('employee-management')">Nhân viên</button>
         <button onclick="openTabBubble('chat')">Chat</button>
       </div>
+<!-- Modal cho thông báo chung -->
+<div id="general-notification-modal" class="modal">
+  <div id="general-notification-modal-content" class="modal-content">
+    <h3>Thông báo quan trọng</h3>
+    <div id="general-notification-modal-list"></div>
+    <button onclick="markGeneralNotificationsAsRead()">Đã đọc</button>
+    <button onclick="closeModal('general-notification-modal')">Tắt</button>
+  </div>
+</div>
+
+<!-- Container cho toast -->
+<div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 2000;"></div>
     </div>
   </div>
 
@@ -146,5 +197,4 @@
   <script src="app.js"></script>
 </body>
 </html>
-
 

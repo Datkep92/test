@@ -589,5 +589,109 @@ button {
 #calendar-modal button:hover {
   background-color: #1976d2;
 }
+/* styles.css */
+.tabcontent {
+  padding: 10px;
+  box-sizing: border-box;
+}
 
+.input-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
 
+.input-group input {
+  flex: 1;
+  min-width: 120px;
+  padding: 8px;
+  font-size: 14px;
+}
+
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.button-group button {
+  flex: 1;
+  min-width: 100px;
+  padding: 8px;
+  font-size: 14px;
+}
+
+#work-requests, #advance-approval-list, #employee-list, #advance-history, #schedule-status-list {
+  margin-top: 10px;
+  padding: 10px;
+  font-size: 14px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+#calendar {
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+
+.calendar-header {
+  text-align: center;
+  font-weight: bold;
+  padding: 5px;
+  background: #f0f0f0;
+}
+
+.day {
+  text-align: center;
+  padding: 10px;
+  border: 1px solid #ddd;
+  cursor: pointer;
+}
+
+.day.empty {
+  background: #f9f9f9;
+}
+
+.day.normal { background: #ffffff; }
+.day.off { background: #ffcccc; }
+.day.overtime { background: #ccffcc; }
+.day.swap { background: #ccccff; }
+
+.expand-btn {
+  margin-top: 10px;
+  padding: 5px 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Tối ưu cho mobile */
+@media screen and (max-width: 600px) {
+  .tabcontent {
+    padding: 5px;
+  }
+  .input-group input {
+    min-width: 100%;
+  }
+  .button-group button {
+    min-width: 48%;
+  }
+  #work-requests, #advance-approval-list, #employee-list, #advance-history, #schedule-status-list {
+    font-size: 12px;
+    padding: 5px;
+  }
+  .calendar {
+    gap: 3px;
+  }
+  .day {
+    padding: 8px;
+    font-size: 12px;
+  }
+}
