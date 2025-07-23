@@ -42,7 +42,7 @@ function updateEmployeeInfo() {
     return;
   }
 
-  const nameInput = document.getElementById("employee-name").value.trim();
+  const nameInput = document.getElementById("personal-employee-name").value.trim();
   const addressInput = document.getElementById("employee-address").value.trim();
   const phoneInput = document.getElementById("employee-phone").value.trim();
   const noteInput = document.getElementById("employee-note").value.trim();
@@ -51,6 +51,23 @@ function updateEmployeeInfo() {
     alert("Vui lòng nhập tên hiển thị!");
     return;
   }
+
+  const employeeRef = employeesRef.child(user.uid);
+  employeeRef.update({
+    name: nameInput,
+    address: addressInput || "",
+    phone: phoneInput || "",
+    note: noteInput || "",
+    updatedAt: new Date().toISOString()
+  })
+  .then(() => {
+    alert("Cập nhật thông tin thành công!");
+  })
+  .catch(error => {
+    console.error("Lỗi khi cập nhật thông tin:", error);
+    alert("Có lỗi xảy ra khi cập nhật thông tin!");
+  });
+}
 
   const employeeRef = employeesRef.child(user.uid);
   employeeRef.update({
