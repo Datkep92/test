@@ -1047,6 +1047,8 @@ function renderInventory() {
 // Initialize Firebase Listeners (phần inventoryRef được cập nhật)
 function loadFirebaseData() {
   console.log("Initializing Firebase listeners");
+
+  // Lắng nghe inventory
   inventoryRef.on("value", snapshot => {
     inventoryData = [];
     if (snapshot.exists()) {
@@ -1063,6 +1065,7 @@ function loadFirebaseData() {
     console.error("Error fetching inventory data:", err);
   });
 
+  // Lắng nghe reports
   reportsRef.on("value", snapshot => {
     reportData = [];
     expenseNotes = [];
@@ -1078,7 +1081,6 @@ function loadFirebaseData() {
     }
     console.log("Updated reportData:", reportData);
     console.log("Updated expenseNotes:", expenseNotes);
-    // Hiển thị báo cáo của ngày hiện tại
     const today = new Date().toISOString().split("T")[0];
     const todayReports = reportData.filter(r => r.date.split('T')[0] === today);
     renderFilteredReports(todayReports, today);
@@ -1087,7 +1089,7 @@ function loadFirebaseData() {
     console.error("Error fetching reports data:", err);
   });
 
-  // Các phần khác giữ nguyên
+  // Lắng nghe employees
   employeesRef.on("value", snapshot => {
     employeeData = [];
     if (snapshot.exists()) {
@@ -1104,6 +1106,7 @@ function loadFirebaseData() {
     console.error("Error fetching employees data:", err);
   });
 
+  // Lắng nghe advances
   advancesRef.on("value", snapshot => {
     advanceRequests = [];
     if (snapshot.exists()) {
@@ -1120,6 +1123,7 @@ function loadFirebaseData() {
     console.error("Error fetching advances data:", err);
   });
 
+  // Lắng nghe messages
   messagesRef.child("group").on("value", snapshot => {
     messages.group = [];
     if (snapshot.exists()) {
@@ -1148,6 +1152,34 @@ function loadFirebaseData() {
     renderChat("manager");
   }, err => {
     console.error("Error fetching manager messages:", err);
+  });
+
+  // Đảm bảo nhân viên mới được thêm và cập nhật employeeData
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      const employeeRef = employeesRef.child(user.uid);
+      employeeRef.once("value").then(snapshot => {
+        if (!snapshot.exists()) {
+          const newEmployee = {
+            name: user.displayName || user.email.split('@')[0],
+            email: user.email,
+            active: true,
+            dailyWage: 0,
+            allowance: 0,
+            otherFees: 0,
+            address: "",
+            phone: "",
+            note: "",
+            createdAt: new Date().toISOString()
+          };
+          employeeRef.set(newEmployee).then(() => {
+            console.log("Đã thêm nhân viên mới vào Firebase:", user.uid);
+            employeeData.push({ id: user.uid, ...newEmployee });
+            renderEmployeeList();
+          });
+        }
+      });
+    }
   });
 }
 // Initialize Firebase Listeners and Auth State
