@@ -437,3 +437,157 @@ button {
 .pulse {
   animation: pulse 2s infinite;
 }
+/* ==== LỊCH LÀM VIỆC (LLV) ==== */
+
+/* Modal full màn hình nền trắng */
+#calendar-modal {
+  position: relative;
+  width: 100%;
+  background: white;
+  padding: 16px;
+  box-sizing: border-box;
+  font-family: sans-serif;
+  margin-top: 10px;
+}
+
+/* Header của lịch: chuyển tháng và tiêu đề */
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.calendar-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+/* Grid 7 cột tương ứng 7 ngày */
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+/* Ô ngày vuông đều nhau */
+.calendar .day {
+  aspect-ratio: 1 / 1;
+  background: #f8f8f8;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Trạng thái ngày */
+.day.normal {
+  background-color: #e0e0e0;
+}
+.day.off {
+  background-color: #ffcdd2;
+}
+.day.overtime {
+  background-color: #c8e6c9;
+}
+.day.swap {
+  background-color: #bbdefb;
+}
+
+.calendar .day:hover {
+  opacity: 0.9;
+  transform: scale(1.03);
+}
+
+#calendar-modal button {
+  padding: 8px 14px;
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-top: 12px;
+}
+
+#calendar-modal button:hover {
+  background-color: #1976d2;
+}
+
+/* Header của lịch: chuyển tháng và tiêu đề */
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.calendar-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+/* Grid 7 cột tương ứng 7 ngày */
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+/* Ô ngày vuông đều nhau */
+.calendar .day {
+  aspect-ratio: 1 / 1;
+  background: #f8f8f8;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Trạng thái ngày */
+.day.normal {
+  background-color: #e0e0e0;
+}
+.day.off {
+  background-color: #ffcdd2; /* đỏ nhạt */
+}
+.day.overtime {
+  background-color: #c8e6c9; /* xanh lá nhạt */
+}
+.day.swap {
+  background-color: #bbdefb; /* xanh lam nhạt */
+}
+
+/* Hover đẹp hơn */
+.calendar .day:hover {
+  opacity: 0.9;
+  transform: scale(1.03);
+}
+
+/* Nút thao tác lịch */
+#calendar-modal button {
+  padding: 8px 14px;
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-top: 12px;
+}
+
+#calendar-modal button:hover {
+  background-color: #1976d2;
+}
+
+
