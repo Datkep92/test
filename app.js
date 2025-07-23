@@ -136,8 +136,7 @@ function openTabBubble(tabId) {
     renderInventory();
   } else if (tabId === "profile") {
     console.log("Rendering profile data");
-    renderAdvanceHistory();
-    renderSalarySummary();
+    renderEmployeeList();
   } else if (tabId === "employee-management") {
     console.log("Rendering employee management data");
     renderEmployeeList();
@@ -700,8 +699,11 @@ function addEmployee() {
 }
 function renderEmployeeList() {
   const user = auth.currentUser;
-  const personalInfoDiv = document.getElementById("personal-info");
-  if (!personalInfoDiv || !user) return;
+  const personalInfoDiv = document.getElementById("profile");
+  if (!personalInfoDiv || !user) {
+    console.error("Profile tab or user not found:", { user, personalInfoDiv });
+    return;
+  }
 
   const employee = employeeData.find(emp => emp.id === user.uid);
   if (employee) {
@@ -710,6 +712,46 @@ function renderEmployeeList() {
     document.getElementById("employee-phone").value = employee.phone || "";
     document.getElementById("employee-note").value = employee.note || "";
     document.getElementById("advance-amount").value = "";
+  } else {
+    console.warn("Employee not found in employeeData for user:", user.uid);
+  }
+
+  // Hiển thị danh sách nhân viên trong tab employee-management
+  const employeeListDiv = document.getElementById("employee-list");
+  if (employeeListDiv) {
+    employeeListDiv.innerHTML = "";
+    if (employeeData.length === 0) {
+      employeeListDiv.innerHTML = "<p>Chưa có nhân viên.</p>";
+      return;
+    }
+    const table = document.createElement("table");
+    table.classList.add("table-style");
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>Tên</th>
+          <th>Địa chỉ</th>
+          <th>Số điện thoại</th>
+          <th>Ghi chú</th>
+          <th>Lương ngày</th>
+          <th>Phụ cấp</th>
+          <th>Phí khác</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${employeeData.map(emp => `
+          <tr>
+            <td>${emp.name}</td>
+            <td>${emp.address || "Chưa cập nhật"}</td>
+            <td>${emp.phone || "Chưa cập nhật"}</td>
+            <td>${emp.note || "Không có"}</td>
+            <td>${emp.dailyWage?.toLocaleString('vi-VN') || 0} VND</td>
+            <td>${emp.allowance?.toLocaleString('vi-VN') || 0} VND</td>
+            <td>${emp.otherFee?.toLocaleString('vi-VN') || 0} VND</td>
+          </tr>
+        `).join("")}
+      </tbody>`;
+    employeeListDiv.appendChild(table);
   }
 }
 
