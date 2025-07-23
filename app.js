@@ -661,7 +661,7 @@ function renderReports() {
 
 // Employee Management
 function addEmployee() {
-  const name = document.getElementById("employee-name").value.trim();
+  const name = document.getElementById("manage-employee-name").value.trim();
   const dailyWage = parseFloat(document.getElementById("employee-dailywage").value) || 0;
   const allowance = parseFloat(document.getElementById("employee-allowance").value) || 0;
   const otherFee = parseFloat(document.getElementById("employee-otherfee").value) || 0;
@@ -673,17 +673,31 @@ function addEmployee() {
     return alert("Nhập thông tin nhân viên hợp lệ!");
   }
 
-  employeesRef.push({ name, dailyWage, allowance, otherFee, workdays: 26, offdays: 0 })
+  employeesRef.push({ 
+    name, 
+    dailyWage, 
+    allowance, 
+    otherFee, 
+    workdays: 26, 
+    offdays: 0,
+    address: "",
+    phone: "",
+    note: "",
+    createdAt: new Date().toISOString()
+  })
     .then(() => {
       console.log("Employee added successfully");
       alert("Đã thêm nhân viên!");
+      document.getElementById("manage-employee-name").value = "";
+      document.getElementById("employee-dailywage").value = "";
+      document.getElementById("employee-allowance").value = "";
+      document.getElementById("employee-otherfee").value = "";
     })
     .catch(err => {
       console.error("Error adding employee:", err);
       alert("Lỗi khi thêm nhân viên: " + err.message);
     });
 }
-
 function renderEmployeeList() {
   const user = auth.currentUser;
   const personalInfoDiv = document.getElementById("personal-info");
