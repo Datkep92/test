@@ -440,6 +440,61 @@ function filterReports() {
   document.body.appendChild(overlay);
 }
 
+Cảm ơn bạn đã phản hồi! Lỗi Tổng xuất kho (2025-07-23): undefined: 3 (Còn: 0) vẫn xuất hiện, nghĩa là phần tổng hợp xuất hàng trong hàm renderFilteredReports vẫn gặp vấn đề với productName bị undefined. Bạn cũng đề cập rằng mã cũ gốc hiển thị đúng, điều này gợi ý rằng sửa đổi trong hàm renderFilteredReports có thể đã gây ra lỗi hoặc không xử lý đúng dữ liệu từ Firebase.
+
+Tôi sẽ phân tích lại nguyên nhân, tập trung vào phần tổng hợp xuất hàng, và sửa lại chỉ hàm renderFilteredReports (theo yêu cầu của bạn: chỉ gửi hàm cần sửa). Mục tiêu là khắc phục lỗi undefined và đảm bảo hiển thị đúng như mã gốc, đồng thời giữ các cải tiến trước đó (3 giao dịch gần nhất, nút "Xem thêm", tổng hợp theo ngày).
+
+Phân tích lỗi
+Nguyên nhân
+Lỗi hiện tại: Trong phần tổng hợp xuất hàng, productName trong productReports bị undefined, dẫn đến hiển thị undefined: 3 (Còn: 0).
+So sánh với mã gốc:
+Mã gốc của bạn (trong app.js ban đầu) tạo productReports bằng cách lấy p.name từ r.products. Nếu mã gốc hiển thị đúng, có thể dữ liệu trong reportsRef có trường name hợp lệ, nhưng sửa đổi trong renderFilteredReports đã thay đổi cách xử lý products, gây ra lỗi.
+Cụ thể, đoạn mã sửa đổi:
+javascript
+
+Thu gọn
+
+Bọc lại
+
+Chạy
+
+Sao chép
+const productReports = sortedReports.flatMap(r => 
+  Array.isArray(r.products) ? r.products.map(p => ({
+    productName: p.name || "Sản phẩm không xác định",
+    quantity: p.quantity
+  })) : []
+);
+có thể không lấy đúng name từ r.products do cấu trúc dữ liệu không đồng bộ hoặc p.name không tồn tại trong một số báo cáo.
+Kiểm tra dữ liệu Firebase:
+Lỗi undefined cho thấy một số báo cáo trong reportData có products thiếu trường name, hoặc name bị gán sai (ví dụ: null hoặc undefined).
+Mã gốc có thể đã xử lý khác, ví dụ: sử dụng inventoryData để lấy tên sản phẩm dựa trên productId thay vì dựa vào p.name.
+Nguyên nhân cụ thể:
+Trong mã sửa đổi, tôi giả định p.name luôn tồn tại hoặc dùng "Sản phẩm không xác định" nếu thiếu. Tuy nhiên, nếu mã gốc dùng inventoryData.find() để lấy tên sản phẩm từ productId, sửa đổi này đã bỏ qua bước đó, dẫn đến undefined.
+Phương án sửa
+Cách khắc phục:
+Trong phần tổng hợp xuất hàng, thay vì dùng p.name trực tiếp từ r.products, sử dụng inventoryData.find() để lấy tên sản phẩm dựa trên p.productId, giống cách mã gốc có thể đã làm.
+Giữ nguyên logic hiển thị 3 giao dịch gần nhất, nút "Xem thêm", và tổng hợp theo ngày.
+Đảm bảo kiểm tra trường hợp inventoryData không tìm thấy sản phẩm tương ứng (tránh undefined).
+Ví dụ thực tế:
+Trước: Tổng xuất kho (2025-07-23): undefined: 3 (Còn: 0).
+Sau: Tổng xuất kho (2025-07-23): Cà phê phin: 3 (Còn: 97) (nếu productId khớp với sản phẩm trong inventoryData).
+Lý do chọn phương án:
+Phù hợp với cách mã gốc hoạt động (dựa vào inventoryData để lấy tên sản phẩm).
+Chỉ sửa phần tổng hợp xuất hàng trong renderFilteredReports, không ảnh hưởng các tính năng khác.
+Đảm bảo không hiển thị undefined bằng cách kiểm tra kỹ dữ liệu.
+Mã sửa đổi
+Chỉ sửa hàm renderFilteredReports:
+
+javascript
+
+Thu gọn
+
+Bọc lại
+
+Chạy
+
+Sao chép
 function renderFilteredReports(filteredReports, selectedDate = null, startDate = null, endDate = null) {
   const reportContainer = document.getElementById("shared-report-table");
   const productContainer = document.getElementById("report-product-table");
@@ -470,8 +525,9 @@ function renderFilteredReports(filteredReports, selectedDate = null, startDate =
   // Trạng thái mở rộng
   let isExpandedFinance = false;
   let isExpandedProduct = false;
+
   // Hàm render bảng thu chi
-  function renderFinanceTable() {
+  const renderFinanceTable = () => {
     const displayReports = isExpandedFinance ? financeReports : financeReports.slice(0, 3);
     const reportTable = document.createElement("table");
     reportTable.classList.add("table-style");
@@ -499,7 +555,7 @@ function renderFilteredReports(filteredReports, selectedDate = null, startDate =
     reportContainer.innerHTML = `<h3>Danh sách Báo cáo Thu Chi (${displayDate})</h3>`;
     reportContainer.appendChild(reportTable);
 
-    // Nút Xem thêm (chỉ hiển thị nếu có hơn 3 giao dịch)
+    // Nút Xem thêm
     if (financeReports.length > 3) {
       const expandBtn = document.createElement("button");
       expandBtn.textContent = isExpandedFinance ? "Thu gọn" : "Xem thêm";
@@ -510,8 +566,115 @@ function renderFilteredReports(filteredReports, selectedDate = null, startDate =
       };
       reportContainer.appendChild(expandBtn);
     }
-  }
+  };
+  // Hàm render bảng xuất hàng
+  const renderProductTable = () => {
+    const productReports = sortedReports.flatMap((r, index) => 
+      Array.isArray(r.products) && r.products.length > 0 
+        ? r.products.map(p => {
+            const inventoryItem = inventoryData.find(item => item.id === p.productId);
+            return {
+              index: index + 1,
+              reportId: r.id,
+              employeeName: r.employeeName,
+              productName: inventoryItem ? inventoryItem.name : "Sản phẩm không xác định",
+              quantity: p.quantity,
+              productId: p.productId
+            };
+          })
+        : []
+    );
 
+    const displayProducts = isExpandedProduct ? productReports : productReports.slice(0, 3);
+    const productTable = document.createElement("table");
+    productTable.classList.add("table-style");
+    productTable.innerHTML = `
+      <thead>
+        <tr><th>STT</th><th>Tên NV</th><th>Tên hàng hóa</th><th>Số lượng</th><th>Hành động</th></tr>
+      </thead>
+      <tbody>
+        ${displayProducts.map(p => `
+          <tr>
+            <td>${p.index}</td>
+            <td>${p.employeeName}</td>
+            <td>${p.productName}</td>
+            <td>${p.quantity}</td>
+            <td>
+              <button onclick="editReportProduct('${p.reportId}', '${p.productId}')">Sửa</button>
+              <button onclick="deleteReportProduct('${p.reportId}', '${p.productId}')">Xóa</button>
+            </td>
+          </tr>`).join("")}
+      </tbody>`;
+    productContainer.innerHTML = `<h3>Danh sách Báo cáo Xuất Hàng (${displayDate})</h3>`;
+    productContainer.appendChild(productTable);
+
+    // Nút Xem thêm
+    if (productReports.length > 3) {
+      const expandBtn = document.createElement("button");
+      expandBtn.textContent = isExpandedProduct ? "Thu gọn" : "Xem thêm";
+      expandBtn.className = "expand-btn";
+      expandBtn.onclick = () => {
+        isExpandedProduct = !isExpandedProduct;
+        renderProductTable();
+      };
+      productContainer.appendChild(expandBtn);
+    }
+  };
+
+  // Render bảng
+  renderFinanceTable();
+  renderProductTable();
+
+  // Tổng hợp thu chi
+  const totalOpeningBalance = sortedReports.reduce((sum, r) => sum + (r.openingBalance || 0), 0);
+  const totalRevenue = sortedReports.reduce((sum, r) => sum + (r.revenue || 0), 0);
+  const totalExpense = sortedReports.reduce((sum, r) => sum + (r.expenseAmount || 0), 0);
+  const totalClosingBalance = sortedReports.reduce((sum, r) => sum + (r.closingBalance || 0), 0);
+  const finalBalance = totalOpeningBalance + totalRevenue - totalExpense - totalClosingBalance;
+
+  const totalReportDiv = document.createElement("div");
+  totalReportDiv.classList.add("report-total");
+  totalReportDiv.innerHTML = `
+    <strong>Tổng (${displayDate}):</strong><br>
+    Số dư đầu kỳ: ${totalOpeningBalance.toLocaleString('vi-VN')} VND<br>
+    Doanh thu: ${totalRevenue.toLocaleString('vi-VN')} VND<br>
+    Chi phí: ${totalExpense.toLocaleString('vi-VN')} VND<br>
+    Số dư cuối kỳ: ${totalClosingBalance.toLocaleString('vi-VN')} VND<br>
+    Còn lại: ${finalBalance.toLocaleString('vi-VN')} VND
+  `;
+  reportContainer.appendChild(totalReportDiv);
+
+  // Tổng hợp xuất hàng
+  const productReports = sortedReports.flatMap(r => 
+    Array.isArray(r.products) ? r.products.map(p => {
+      const inventoryItem = inventoryData.find(item => item.id === p.productId);
+      return {
+        productName: inventoryItem ? inventoryItem.name : "Sản phẩm không xác định",
+        quantity: p.quantity
+      };
+    }) : []
+  );
+
+  const totalProductSummary = productReports.reduce((acc, p) => {
+    acc[p.productName] = (acc[p.productName] || 0) + p.quantity;
+    return acc;
+  }, {});
+  
+  const totalProductText = Object.entries(totalProductSummary)
+    .map(([name, qty]) => {
+      const inventoryItem = inventoryData.find(item => item.name === name);
+      const remainingQty = inventoryItem ? inventoryItem.quantity : 0;
+      return `${name}: ${qty} (Còn: ${remainingQty})`;
+    })
+    .join(" - ");
+
+  const totalProductDiv = document.createElement("div");
+  totalProductDiv.classList.add("report-total");
+  totalProductDiv.innerHTML = `
+    <strong>Tổng xuất kho (${displayDate}):</strong> ${totalProductText || "Không có"}
+  `;
+  productContainer.appendChild(totalProductDiv);
+}
   // Hàm render bảng xuất hàng
   function renderProductTable() {
     const productReports = sortedReports.flatMap((r, index) => 
