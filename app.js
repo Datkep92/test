@@ -72,11 +72,19 @@ function updateEmployeeInfo() {
     updatedAt: new Date().toISOString()
   })
   .then(() => {
+    console.log("Cập nhật thông tin thành công:", { nameInput, addressInput, phoneInput, noteInput });
     alert("Cập nhật thông tin thành công!");
-    nameInputEl.value = "";
-    addressInputEl.value = "";
-    phoneInputEl.value = "";
-    noteInputEl.value = "";
+    // Không xóa giá trị ô nhập liệu để giữ hiển thị
+    // Tải lại thông tin từ Firebase để đảm bảo đồng bộ
+    employeeRef.once("value").then(snapshot => {
+      if (snapshot.exists()) {
+        const employee = snapshot.val();
+        nameInputEl.value = employee.name || "";
+        addressInputEl.value = employee.address || "";
+        phoneInputEl.value = employee.phone || "";
+        noteInputEl.value = employee.note || "";
+      }
+    });
   })
   .catch(error => {
     console.error("Lỗi khi cập nhật thông tin:", error);
@@ -771,30 +779,35 @@ function renderEmployeeList() {
 
 function requestAdvance() {
   const amountEl = document.getElementById("advance-amount");
-  if (!amountEl) {
-    console.error("Không tìm thấy ô nhập số tiền tạm ứng!");
-    alert("Lỗi: Không tìm thấy ô nhập số tiền!");
+  const reasonEl = document.getElementById("advance-reason");
+
+  if (!amountEl || !reasonEl) {
+    console.error("Không tìm thấy ô nhập số tiền hoặc lý do!");
+    alert("Lỗi: Không tìm thấy ô nhập số tiền hoặc lý do!");
     return;
   }
 
   const amount = parseFloat(amountEl.value) || 0;
+  const reason = reasonEl.value.trim();
 
-  console.log("Requesting advance:", { amount, employeeId: currentEmployeeId });
+  console.log("Requesting advance:", { amount, reason, employeeId: currentEmployeeId });
 
-  if (amount <= 0) {
-    console.error("Invalid advance request:", { amount });
-    return alert("Vui lòng nhập số tiền hợp lệ!");
+  if (amount <= 0 || !reason) {
+    console.error("Invalid advance request:", { amount, reason });
+    return alert("Vui lòng nhập số tiền và lý do hợp lệ!");
   }
 
   advancesRef.push({
     employeeId: currentEmployeeId,
     amount,
+    reason,
     status: "pending",
     requestTime: new Date().toISOString()
   }).then(() => {
     console.log("Advance request submitted successfully");
     alert("Đã gửi yêu cầu tạm ứng!");
     amountEl.value = "";
+    reasonEl.value = "";
   }).catch(err => {
     console.error("Error submitting advance request:", err);
     alert("Lỗi khi gửi yêu cầu tạm ứng: " + err.message);
