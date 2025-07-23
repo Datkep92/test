@@ -99,65 +99,7 @@ function updateEmployeeInfo() {
     alert("Có lỗi xảy ra khi cập nhật thông tin!");
   });
 }
-// Tạo CSS động cho lịch
-function createCalendarStyles() {
-  const style = document.createElement("style");
-  style.textContent = `
-    .calendar-modal {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: white;
-      padding: 20px;
-      border: 1px solid #ccc;
-      box-shadow: 0 0 10px rgba(0,0,0,0.3);
-      z-index: 1000;
-      max-width: 90%;
-    }
-    .calendar-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .calendar {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 5px;
-    }
-    .day {
-      padding: 10px;
-      text-align: center;
-      border: 1px solid #ccc;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    .off { background-color: red; color: white; }
-    .normal { background-color: green; color: white; }
-    .overtime { background-color: yellow; color: black; }
-    .action-modal {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: white;
-      padding: 20px;
-      border: 1px solid #ccc;
-      box-shadow: 0 0 10px rgba(0,0,0,0.3);
-      z-index: 1001;
-    }
-    .action-modal button {
-      margin: 5px;
-      padding: 5px 10px;
-    }
-    @media (max-width: 600px) {
-      .day { padding: 8px; font-size: 12px; }
-      .calendar-modal { max-width: 95%; }
-    }
-  `;
-  document.head.appendChild(style);
-}
+
 
 // Tạo lịch
 function generateCalendar(month, year) {
@@ -200,14 +142,7 @@ function generateCalendar(month, year) {
   }
 }
 
-// Mở lịch
-function openCalendar() {
-  document.getElementById("calendar-modal").style.display = "block";
-  generateCalendar(currentMonth, currentYear);
-  renderSalarySummary(); // Cập nhật tổng lương
-}
-
-// Đóng lịch
+// Đóng lịch (ẩn calendar-modal)
 function closeCalendar() {
   document.getElementById("calendar-modal").style.display = "none";
 }
@@ -284,7 +219,7 @@ function setStatus(date, status) {
     });
 
     if (status === "off" || status === "overtime") {
-      // Gửi yêu cầu tới quản lý (tương tự tạm ứng)
+      // Gửi yêu cầu tới quản lý
       advancesRef.push({
         employeeId: currentEmployeeId,
         employeeName,
@@ -316,6 +251,7 @@ function setStatus(date, status) {
   closeActionModal();
   renderSalarySummary(); // Cập nhật tổng lương
 }
+
 // Đăng nhập / Đăng xuất
 function login() {
   const email = document.getElementById("email").value.trim();
@@ -1124,14 +1060,18 @@ function renderSalarySummary() {
     console.error("No employee data for user:", currentEmployeeId);
     return;
   }
+  const employeeSchedules = scheduleData.filter(s => s.employeeId === currentEmployeeId);
+  const offDays = employeeSchedules.filter(s => s.status === "off").length;
+  const overtimeDays = employeeSchedules.filter(s => s.status === "overtime").length;
   const salary = calculateSalary(emp.id);
   container.innerHTML = `
-    <p>Ngày công: ${emp.workdays}</p>
-    <p>Ngày nghỉ: ${emp.offdays}</p>
-    <p>Lương/ngày: ${emp.dailyWage}</p>
-    <p>Phụ cấp: ${emp.allowance}</p>
-    <p>Phí khác: ${emp.otherFee}</p>
-    <p><strong>Tổng lương: ${salary} VND</strong></p>`;
+    <p>Ngày công: ${emp.workdays - offDays}</p>
+    <p>Ngày nghỉ: ${offDays}</p>
+    <p>Ngày tăng ca: ${overtimeDays}</p>
+    <p>Lương/ngày: ${emp.dailyWage.toLocaleString('vi-VN')} VND</p>
+    <p>Phụ cấp: ${emp.allowance.toLocaleString('vi-VN')} VND</p>
+    <p>Phí khác: ${emp.otherFee.toLocaleString('vi-VN')} VND</p>
+    <p><strong>Tổng lương: ${salary.toLocaleString('vi-VN')} VND</strong></p>`;
   console.log("Rendered salary summary for user:", currentEmployeeId);
 }
 
@@ -1356,6 +1296,7 @@ function loadFirebaseData() {
   }, err => {
     console.error("Error fetching inventory data:", err);
   });
+  
 schedulesRef.on("value", snapshot => {
   scheduleData = [];
   if (snapshot.exists()) {
@@ -1366,12 +1307,26 @@ schedulesRef.on("value", snapshot => {
     });
   }
   console.log("Updated scheduleData:", scheduleData);
-  if (document.getElementById("calendar-modal").style.display === "block") {
-    generateCalendar(currentMonth, currentYear);
+  if (document.getElementById("profile").classList.contains("active")) {
+    generateCalendar(currentMonth, currentYear); // Cập nhật lịch nếu tab profile đang mở
   }
   renderSalarySummary();
 }, err => {
   console.error("Error fetching schedules data:", err);
+});
+
+swapRequestsRef.on("value", snapshot => {
+  const swapRequests = [];
+  if (snapshot.exists()) {
+    snapshot.forEach(child => {
+      const swap = { id: child.key, ...child.val() };
+      console.log("Fetched swap request from Firebase:", swap);
+      swapRequests.push(swap);
+    });
+  }
+  console.log("Updated swapRequests:", swapRequests);
+}, err => {
+  console.error("Error fetching swap requests data:", err);
 });
 
 swapRequestsRef.on("value", snapshot => {
