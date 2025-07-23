@@ -2,12 +2,27 @@
  * app.js - Milano 259 (Full Features - Firebase)
  *********************************************/
 
+// Cấu hình Firebase (THAY THẾ bằng thông tin từ Firebase Console)
+const firebaseConfig = {
+   apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
+      authDomain: "quanly-d7e54.firebaseapp.com",
+      databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com",
+      projectId: "quanly-d7e54",
+      storageBucket: "quanly-d7e54.firebasestorage.app",
+      messagingSenderId: "482686011267",
+      appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
+    };
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
 // Firebase References
 const inventoryRef = firebase.database().ref("inventory");
 const reportsRef = firebase.database().ref("reports");
 const employeesRef = firebase.database().ref("employees");
 const advancesRef = firebase.database().ref("advances");
 const messagesRef = firebase.database().ref("messages");
+const schedulesRef = firebase.database().ref("schedules");
+const swapRequestsRef = firebase.database().ref("swapRequests");
 
 // Local Variables
 let inventoryData = [];
@@ -16,13 +31,8 @@ let employeeData = [];
 let advanceRequests = [];
 let messages = { group: [], manager: [] };
 let productClickCounts = {};
-let expenseNotes = []; // Biến lưu nội dung chi phí
+let expenseNotes = [];
 let currentEmployeeId = null;
-// Firebase References (thêm schedulesRef và swapRequestsRef)
-const schedulesRef = firebase.database().ref("schedules");
-const swapRequestsRef = firebase.database().ref("swapRequests");
-
-// Local Variables (thêm scheduleData và payrollData)
 let scheduleData = [];
 let payrollData = JSON.parse(localStorage.getItem("payrollData")) || [];
 let currentMonth = new Date().getMonth() + 1; // Tháng hiện tại
