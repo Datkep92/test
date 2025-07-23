@@ -440,7 +440,36 @@ function filterReports() {
   document.body.appendChild(overlay);
 }
 
-function renderFilteredRepor
+function renderFilteredReports(filteredReports, selectedDate = null, startDate = null, endDate = null) {
+  const reportContainer = document.getElementById("shared-report-table");
+  const productContainer = document.getElementById("report-product-table");
+  if (!reportContainer || !productContainer) {
+    console.error("Report table element not found!");
+    return;
+  }
+  reportContainer.innerHTML = "";
+  productContainer.innerHTML = "";
+
+  // Xác định ngày hiện tại hoặc ngày được chọn
+  const today = new Date().toISOString().split("T")[0];
+  const displayDate = selectedDate || (startDate && endDate ? `${startDate} - ${endDate}` : today);
+
+  if (filteredReports.length === 0) {
+    reportContainer.innerHTML = `<p>Chưa có báo cáo thu chi trong ${displayDate}.</p>`;
+    productContainer.innerHTML = `<p>Chưa có báo cáo xuất hàng trong ${displayDate}.</p>`;
+    return;
+  }
+
+  const sortedReports = filteredReports.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  // Lọc báo cáo có thông tin tài chính
+  const financeReports = sortedReports.filter(r => 
+    r.openingBalance !== 0 || r.revenue !== 0 || r.expenseAmount !== 0 || r.closingBalance !== null
+  );
+
+  // Trạng thái mở rộng
+  let isExpandedFinance = false;
+  let isExpandedProduct = false;
   // Hàm render bảng thu chi
   function renderFinanceTable() {
     const displayReports = isExpandedFinance ? financeReports : financeReports.slice(0, 3);
