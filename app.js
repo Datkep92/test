@@ -18,7 +18,15 @@ let messages = { group: [], manager: [] };
 let productClickCounts = {};
 let expenseNotes = []; // Biến lưu nội dung chi phí
 let currentEmployeeId = null;
+// Firebase References (thêm schedulesRef và swapRequestsRef)
+const schedulesRef = firebase.database().ref("schedules");
+const swapRequestsRef = firebase.database().ref("swapRequests");
 
+// Local Variables (thêm scheduleData và payrollData)
+let scheduleData = [];
+let payrollData = JSON.parse(localStorage.getItem("payrollData")) || [];
+let currentMonth = new Date().getMonth() + 1; // Tháng hiện tại
+let currentYear = new Date().getFullYear(); // Năm hiện tại
 // Hàm parseEntry (từ bạn cung cấp)
 function parseEntry(text) {
   const match = text.match(/([\d.,]+)\s*(k|nghìn|tr|triệu)?/i);
@@ -90,6 +98,223 @@ function updateEmployeeInfo() {
     console.error("Lỗi khi cập nhật thông tin:", error);
     alert("Có lỗi xảy ra khi cập nhật thông tin!");
   });
+}
+// Tạo CSS động cho lịch
+function createCalendarStyles() {
+  const style = document.createElement("style");
+  style.textContent = `
+    .calendar-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border: 1px solid #ccc;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      z-index: 1000;
+      max-width: 90%;
+    }
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+    .day {
+      padding: 10px;
+      text-align: center;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .off { background-color: red; color: white; }
+    .normal { background-color: green; color: white; }
+    .overtime { background-color: yellow; color: black; }
+    .action-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border: 1px solid #ccc;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      z-index: 1001;
+    }
+    .action-modal button {
+      margin: 5px;
+      padding: 5px 10px;
+    }
+    @media (max-width: 600px) {
+      .day { padding: 8px; font-size: 12px; }
+      .calendar-modal { max-width: 95%; }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+// Tạo lịch
+function generateCalendar(month, year) {
+  const calendarModal = document.getElementById("calendar-modal");
+  calendarModal.innerHTML = `
+    <div class="calendar-header">
+      <button onclick="changeMonth(-1)">Trước</button>
+      <h3>Tháng ${month}/${year}</h3>
+      <button onclick="changeMonth(1)">Sau</button>
+    </div>
+    <div class="calendar" id="calendar"></div>
+    <button onclick="closeCalendar()">Đóng</button>
+  `;
+  
+  const calendar = document.getElementById("calendar");
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const firstDay = new Date(year, month - 1, 1).getDay() || 7; // Bắt đầu từ thứ 2
+
+  // Thêm ô trống cho các ngày trước ngày đầu tháng
+  for (let i = 1; i < firstDay; i++) {
+    const emptyDiv = document.createElement("div");
+    emptyDiv.classList.add("day");
+    calendar.appendChild(emptyDiv);
+  }
+
+  // Tạo các ô ngày
+  for (let i = 1; i <= daysInMonth; i++) {
+    const date = `${year}-${month < 10 ? "0" + month : month}-${i < 10 ? "0" + i : i}`;
+    const dayDiv = document.createElement("div");
+    dayDiv.classList.add("day");
+    dayDiv.dataset.date = date;
+    
+    // Kiểm tra trạng thái ngày
+    const schedule = scheduleData.find(s => s.date === date && s.employeeId === currentEmployeeId);
+    dayDiv.classList.add(schedule ? schedule.status : "normal");
+    dayDiv.textContent = i;
+    
+    dayDiv.onclick = () => showActionModal(date);
+    calendar.appendChild(dayDiv);
+  }
+}
+
+// Mở lịch
+function openCalendar() {
+  document.getElementById("calendar-modal").style.display = "block";
+  generateCalendar(currentMonth, currentYear);
+  renderSalarySummary(); // Cập nhật tổng lương
+}
+
+// Đóng lịch
+function closeCalendar() {
+  document.getElementById("calendar-modal").style.display = "none";
+}
+
+// Chuyển tháng
+function changeMonth(offset) {
+  currentMonth += offset;
+  if (currentMonth < 1) {
+    currentMonth = 12;
+    currentYear--;
+  } else if (currentMonth > 12) {
+    currentMonth = 1;
+    currentYear++;
+  }
+  generateCalendar(currentMonth, currentYear);
+}
+
+// Hiển thị modal hành động
+function showActionModal(date) {
+  const actionModal = document.getElementById("action-modal");
+  actionModal.innerHTML = `
+    <h3>Ngày: ${date}</h3>
+    <button onclick="setStatus('${date}', 'off')">Off</button>
+    <button onclick="setStatus('${date}', 'overtime')">Tăng ca</button>
+    <button onclick="setStatus('${date}', 'swap')">Đổi ca</button>
+    <button onclick="closeActionModal()">Đóng</button>
+  `;
+  actionModal.style.display = "block";
+}
+
+// Đóng modal hành động
+function closeActionModal() {
+  document.getElementById("action-modal").style.display = "none";
+}
+
+// Xử lý trạng thái ngày
+function setStatus(date, status) {
+  const dayDiv = document.querySelector(`.day[data-date="${date}"]`);
+  const currentSchedule = scheduleData.find(s => s.date === date && s.employeeId === currentEmployeeId);
+  const employee = employeeData.find(e => e.id === currentEmployeeId);
+  const employeeName = employee ? employee.name : (auth.currentUser.displayName || auth.currentUser.email.split('@')[0]);
+
+  if (currentSchedule && currentSchedule.status === status) {
+    // Reset về trạng thái bình thường
+    dayDiv.classList.remove(status);
+    dayDiv.classList.add("normal");
+    schedulesRef.child(date + "_" + currentEmployeeId).remove();
+    scheduleData = scheduleData.filter(s => s.date !== date || s.employeeId !== currentEmployeeId);
+    payrollData = payrollData.filter(p => p.date !== date || p.employeeId !== currentEmployeeId);
+    localStorage.setItem("payrollData", JSON.stringify(payrollData));
+    console.log(`Ngày ${date} trở về bình thường`);
+  } else {
+    // Cập nhật trạng thái mới
+    dayDiv.classList.remove("normal", "off", "overtime");
+    dayDiv.classList.add(status);
+    
+    // Lưu vào scheduleData
+    if (currentSchedule) {
+      currentSchedule.status = status;
+    } else {
+      scheduleData.push({ date, employeeId: currentEmployeeId, employeeName, status });
+    }
+    
+    // Lưu vào payrollData để tính lương
+    payrollData.push({ date, employeeId: currentEmployeeId, employeeName, status });
+    localStorage.setItem("payrollData", JSON.stringify(payrollData));
+    
+    // Lưu vào Firebase
+    schedulesRef.child(date + "_" + currentEmployeeId).set({
+      date,
+      employeeId: currentEmployeeId,
+      employeeName,
+      status
+    });
+
+    if (status === "off" || status === "overtime") {
+      // Gửi yêu cầu tới quản lý (tương tự tạm ứng)
+      advancesRef.push({
+        employeeId: currentEmployeeId,
+        employeeName,
+        type: status,
+        date,
+        status: "pending"
+      }).then(() => {
+        console.log(`Gửi yêu cầu ${status} cho ngày ${date} tới quản lý`);
+      });
+    } else if (status === "swap") {
+      // Tìm nhân viên có ca trùng
+      const conflictingSchedule = scheduleData.find(s => s.date === date && s.employeeId !== currentEmployeeId);
+      if (conflictingSchedule) {
+        swapRequestsRef.push({
+          fromEmployeeId: currentEmployeeId,
+          fromEmployeeName: employeeName,
+          toEmployeeId: conflictingSchedule.employeeId,
+          toEmployeeName: conflictingSchedule.employeeName,
+          date,
+          status: "pending"
+        }).then(() => {
+          console.log(`Gửi yêu cầu đổi ca ngày ${date} tới ${conflictingSchedule.employeeName}`);
+        });
+      } else {
+        alert("Không tìm thấy nhân viên có ca trùng để đổi!");
+      }
+    }
+  }
+  closeActionModal();
+  renderSalarySummary(); // Cập nhật tổng lương
 }
 // Đăng nhập / Đăng xuất
 function login() {
@@ -875,8 +1100,15 @@ function calculateSalary(empId) {
   }
   const totalAdvance = advanceRequests.filter(a => a.employeeId === empId && a.status === "approved")
     .reduce((sum, a) => sum + a.amount, 0);
-  const salary = (emp.workdays - emp.offdays) * emp.dailyWage + emp.allowance - emp.otherFee - totalAdvance;
-  console.log("Calculated salary for employee:", { empId, salary });
+  
+  // Tính số ngày làm, ngày nghỉ, ngày tăng ca từ scheduleData
+  const employeeSchedules = scheduleData.filter(s => s.employeeId === empId);
+  const offDays = employeeSchedules.filter(s => s.status === "off").length;
+  const overtimeDays = employeeSchedules.filter(s => s.status === "overtime").length;
+  const workDays = emp.workdays - offDays; // Ngày làm = ngày công mặc định - ngày nghỉ
+  const salary = (workDays * emp.dailyWage) + (overtimeDays * emp.dailyWage * 1.5) + emp.allowance - emp.otherFee - totalAdvance;
+  
+  console.log("Calculated salary for employee:", { empId, workDays, offDays, overtimeDays, salary });
   return salary;
 }
 
@@ -1124,7 +1356,37 @@ function loadFirebaseData() {
   }, err => {
     console.error("Error fetching inventory data:", err);
   });
+schedulesRef.on("value", snapshot => {
+  scheduleData = [];
+  if (snapshot.exists()) {
+    snapshot.forEach(child => {
+      const schedule = { id: child.key, ...child.val() };
+      console.log("Fetched schedule from Firebase:", schedule);
+      scheduleData.push(schedule);
+    });
+  }
+  console.log("Updated scheduleData:", scheduleData);
+  if (document.getElementById("calendar-modal").style.display === "block") {
+    generateCalendar(currentMonth, currentYear);
+  }
+  renderSalarySummary();
+}, err => {
+  console.error("Error fetching schedules data:", err);
+});
 
+swapRequestsRef.on("value", snapshot => {
+  const swapRequests = [];
+  if (snapshot.exists()) {
+    snapshot.forEach(child => {
+      const swap = { id: child.key, ...child.val() };
+      console.log("Fetched swap request from Firebase:", swap);
+      swapRequests.push(swap);
+    });
+  }
+  console.log("Updated swapRequests:", swapRequests);
+}, err => {
+  console.error("Error fetching swap requests data:", err);
+});
   reportsRef.on("value", snapshot => {
     reportData = [];
     expenseNotes = [];
