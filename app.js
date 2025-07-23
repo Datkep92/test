@@ -37,6 +37,7 @@ let scheduleData = [];
 let payrollData = JSON.parse(localStorage.getItem("payrollData")) || [];
 let currentMonth = new Date().getMonth() + 1; // Tháng hiện tại
 let currentYear = new Date().getFullYear(); // Năm hiện tại
+
 // Hàm parseEntry (từ bạn cung cấp)
 function parseEntry(text) {
   const match = text.match(/([\d.,]+)\s*(k|nghìn|tr|triệu)?/i);
@@ -114,6 +115,11 @@ function updateEmployeeInfo() {
 // Tạo lịch
 function generateCalendar(month, year) {
   const calendarModal = document.getElementById("calendar-modal");
+  if (!calendarModal) {
+    console.error("Calendar modal not found!");
+    return;
+  }
+  calendarModal.style.display = "block"; // Đảm bảo hiển thị
   calendarModal.innerHTML = `
     <div class="calendar-header">
       <button onclick="changeMonth(-1)">Trước</button>
@@ -128,7 +134,7 @@ function generateCalendar(month, year) {
   const daysInMonth = new Date(year, month, 0).getDate();
   const firstDay = new Date(year, month - 1, 1).getDay() || 7; // Bắt đầu từ thứ 2
 
-  // Thêm ô trống cho các ngày trước ngày đầu tháng
+  // Thêm ô trống
   for (let i = 1; i < firstDay; i++) {
     const emptyDiv = document.createElement("div");
     emptyDiv.classList.add("day");
@@ -142,7 +148,6 @@ function generateCalendar(month, year) {
     dayDiv.classList.add("day");
     dayDiv.dataset.date = date;
     
-    // Kiểm tra trạng thái ngày
     const schedule = scheduleData.find(s => s.date === date && s.employeeId === currentEmployeeId);
     dayDiv.classList.add(schedule ? schedule.status : "normal");
     dayDiv.textContent = i;
@@ -150,11 +155,16 @@ function generateCalendar(month, year) {
     dayDiv.onclick = () => showActionModal(date);
     calendar.appendChild(dayDiv);
   }
+  console.log("Generated calendar for:", month, year);
 }
 
-// Đóng lịch (ẩn calendar-modal)
+// Đóng lịch
 function closeCalendar() {
-  document.getElementById("calendar-modal").style.display = "none";
+  const calendarModal = document.getElementById("calendar-modal");
+  if (calendarModal) {
+    calendarModal.style.display = "none";
+    console.log("Closed calendar");
+  }
 }
 
 // Chuyển tháng
@@ -173,6 +183,10 @@ function changeMonth(offset) {
 // Hiển thị modal hành động
 function showActionModal(date) {
   const actionModal = document.getElementById("action-modal");
+  if (!actionModal) {
+    console.error("Action modal not found!");
+    return;
+  }
   actionModal.innerHTML = `
     <h3>Ngày: ${date}</h3>
     <button onclick="setStatus('${date}', 'off')">Off</button>
@@ -181,16 +195,25 @@ function showActionModal(date) {
     <button onclick="closeActionModal()">Đóng</button>
   `;
   actionModal.style.display = "block";
+  console.log("Opened action modal for date:", date);
 }
 
 // Đóng modal hành động
 function closeActionModal() {
-  document.getElementById("action-modal").style.display = "none";
+  const actionModal = document.getElementById("action-modal");
+  if (actionModal) {
+    actionModal.style.display = "none";
+    console.log("Closed action modal");
+  }
 }
 
 // Xử lý trạng thái ngày
 function setStatus(date, status) {
   const dayDiv = document.querySelector(`.day[data-date="${date}"]`);
+  if (!dayDiv) {
+    console.error("Day element not found for date:", date);
+    return;
+  }
   const currentSchedule = scheduleData.find(s => s.date === date && s.employeeId === currentEmployeeId);
   const employee = employeeData.find(e => e.id === currentEmployeeId);
   const employeeName = employee ? employee.name : (auth.currentUser.displayName || auth.currentUser.email.split('@')[0]);
@@ -209,18 +232,15 @@ function setStatus(date, status) {
     dayDiv.classList.remove("normal", "off", "overtime");
     dayDiv.classList.add(status);
     
-    // Lưu vào scheduleData
     if (currentSchedule) {
       currentSchedule.status = status;
     } else {
       scheduleData.push({ date, employeeId: currentEmployeeId, employeeName, status });
     }
     
-    // Lưu vào payrollData để tính lương
     payrollData.push({ date, employeeId: currentEmployeeId, employeeName, status });
     localStorage.setItem("payrollData", JSON.stringify(payrollData));
     
-    // Lưu vào Firebase
     schedulesRef.child(date + "_" + currentEmployeeId).set({
       date,
       employeeId: currentEmployeeId,
@@ -229,7 +249,6 @@ function setStatus(date, status) {
     });
 
     if (status === "off" || status === "overtime") {
-      // Gửi yêu cầu tới quản lý
       advancesRef.push({
         employeeId: currentEmployeeId,
         employeeName,
@@ -240,7 +259,6 @@ function setStatus(date, status) {
         console.log(`Gửi yêu cầu ${status} cho ngày ${date} tới quản lý`);
       });
     } else if (status === "swap") {
-      // Tìm nhân viên có ca trùng
       const conflictingSchedule = scheduleData.find(s => s.date === date && s.employeeId !== currentEmployeeId);
       if (conflictingSchedule) {
         swapRequestsRef.push({
@@ -259,7 +277,7 @@ function setStatus(date, status) {
     }
   }
   closeActionModal();
-  renderSalarySummary(); // Cập nhật tổng lương
+  renderSalarySummary();
 }
 
 // Đăng nhập / Đăng xuất
@@ -1047,17 +1065,15 @@ function calculateSalary(empId) {
   const totalAdvance = advanceRequests.filter(a => a.employeeId === empId && a.status === "approved")
     .reduce((sum, a) => sum + a.amount, 0);
   
-  // Tính số ngày làm, ngày nghỉ, ngày tăng ca từ scheduleData
   const employeeSchedules = scheduleData.filter(s => s.employeeId === empId);
   const offDays = employeeSchedules.filter(s => s.status === "off").length;
   const overtimeDays = employeeSchedules.filter(s => s.status === "overtime").length;
-  const workDays = emp.workdays - offDays; // Ngày làm = ngày công mặc định - ngày nghỉ
+  const workDays = emp.workdays - offDays;
   const salary = (workDays * emp.dailyWage) + (overtimeDays * emp.dailyWage * 1.5) + emp.allowance - emp.otherFee - totalAdvance;
   
   console.log("Calculated salary for employee:", { empId, workDays, offDays, overtimeDays, salary });
   return salary;
 }
-
 function renderSalarySummary() {
   const container = document.getElementById("salary-summary");
   if (!container) {
