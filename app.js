@@ -73,13 +73,16 @@ function updateEmployeeInfo() {
   })
   .then(() => {
     alert("Cập nhật thông tin thành công!");
+    nameInputEl.value = "";
+    addressInputEl.value = "";
+    phoneInputEl.value = "";
+    noteInputEl.value = "";
   })
   .catch(error => {
     console.error("Lỗi khi cập nhật thông tin:", error);
     alert("Có lỗi xảy ra khi cập nhật thông tin!");
   });
 }
-
 // Đăng nhập / Đăng xuất
 function login() {
   const email = document.getElementById("email").value.trim();
@@ -683,30 +686,30 @@ function addEmployee() {
     return alert("Nhập thông tin nhân viên hợp lệ!");
   }
 
-  employeesRef.push({ 
-    name, 
-    dailyWage, 
-    allowance, 
-    otherFee, 
-    workdays: 26, 
+  employeesRef.push({
+    name,
+    dailyWage,
+    allowance,
+    otherFee,
+    workdays: 26,
     offdays: 0,
     address: "",
     phone: "",
     note: "",
     createdAt: new Date().toISOString()
   })
-    .then(() => {
-      console.log("Employee added successfully");
-      alert("Đã thêm nhân viên!");
-      document.getElementById("manage-employee-name").value = "";
-      document.getElementById("employee-dailywage").value = "";
-      document.getElementById("employee-allowance").value = "";
-      document.getElementById("employee-otherfee").value = "";
-    })
-    .catch(err => {
-      console.error("Error adding employee:", err);
-      alert("Lỗi khi thêm nhân viên: " + err.message);
-    });
+  .then(() => {
+    console.log("Employee added successfully");
+    alert("Đã thêm nhân viên!");
+    document.getElementById("manage-employee-name").value = "";
+    document.getElementById("employee-dailywage").value = "";
+    document.getElementById("employee-allowance").value = "";
+    document.getElementById("employee-otherfee").value = "";
+  })
+  .catch(err => {
+    console.error("Error adding employee:", err);
+    alert("Lỗi khi thêm nhân viên: " + err.message);
+  });
 }
 function renderEmployeeList() {
   const user = auth.currentUser;
@@ -797,7 +800,6 @@ function requestAdvance() {
     alert("Lỗi khi gửi yêu cầu tạm ứng: " + err.message);
   });
 }
-
 function renderAdvanceHistory() {
   const container = document.getElementById("advance-history");
   if (!container) {
@@ -1105,7 +1107,6 @@ function renderInventory() {
 function loadFirebaseData() {
   console.log("Initializing Firebase listeners");
 
-  // Lắng nghe inventory
   inventoryRef.on("value", snapshot => {
     inventoryData = [];
     if (snapshot.exists()) {
@@ -1122,7 +1123,6 @@ function loadFirebaseData() {
     console.error("Error fetching inventory data:", err);
   });
 
-  // Lắng nghe reports
   reportsRef.on("value", snapshot => {
     reportData = [];
     expenseNotes = [];
@@ -1146,7 +1146,6 @@ function loadFirebaseData() {
     console.error("Error fetching reports data:", err);
   });
 
-  // Lắng nghe employees
   employeesRef.on("value", snapshot => {
     employeeData = [];
     if (snapshot.exists()) {
@@ -1158,12 +1157,10 @@ function loadFirebaseData() {
     }
     console.log("Updated employeeData:", employeeData);
     renderEmployeeList();
-    renderSalarySummary();
   }, err => {
     console.error("Error fetching employees data:", err);
   });
 
-  // Lắng nghe advances
   advancesRef.on("value", snapshot => {
     advanceRequests = [];
     if (snapshot.exists()) {
@@ -1174,13 +1171,11 @@ function loadFirebaseData() {
       });
     }
     console.log("Updated advanceRequests:", advanceRequests);
-    renderAdvanceHistory();
     renderAdvanceApprovalList();
   }, err => {
     console.error("Error fetching advances data:", err);
   });
 
-  // Lắng nghe messages
   messagesRef.child("group").on("value", snapshot => {
     messages.group = [];
     if (snapshot.exists()) {
@@ -1211,7 +1206,6 @@ function loadFirebaseData() {
     console.error("Error fetching manager messages:", err);
   });
 
-  // Đảm bảo nhân viên mới được thêm và cập nhật employeeData
   auth.onAuthStateChanged(user => {
     if (user) {
       const employeeRef = employeesRef.child(user.uid);
@@ -1223,7 +1217,9 @@ function loadFirebaseData() {
             active: true,
             dailyWage: 0,
             allowance: 0,
-            otherFees: 0,
+            otherFee: 0,
+            workdays: 26,
+            offdays: 0,
             address: "",
             phone: "",
             note: "",
@@ -1237,7 +1233,6 @@ function loadFirebaseData() {
             console.error("Lỗi khi thêm nhân viên:", err);
           });
         } else {
-          // Cập nhật employeeData nếu nhân viên đã tồn tại
           const employee = snapshot.val();
           if (!employeeData.find(emp => emp.id === user.uid)) {
             employeeData.push({ id: user.uid, ...employee });
@@ -1248,7 +1243,6 @@ function loadFirebaseData() {
     }
   });
 }
-
 
 // Update employee display name
 function updateEmployeeName() {
