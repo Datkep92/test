@@ -363,7 +363,6 @@ function incrementProductCount(productId) {
 
 
 function filterReports() {
-  // Tạo overlay và lịch chọn
   const overlay = document.createElement("div");
   overlay.id = "date-filter-overlay";
   overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center;";
@@ -381,7 +380,7 @@ function filterReports() {
   const singleDateInput = document.createElement("input");
   singleDateInput.type = "date";
   singleDateInput.id = "single-filter-date";
-  singleDateInput.max = new Date().toISOString().split("T")[0]; // Giới hạn ngày tối đa là hôm nay
+  singleDateInput.max = new Date().toISOString().split("T")[0];
 
   const rangeDateLabel = document.createElement("label");
   rangeDateLabel.textContent = "Chọn khoảng thời gian: ";
@@ -407,19 +406,24 @@ function filterReports() {
     if (singleDate) {
       const selectedDate = new Date(singleDate).toISOString().split('T')[0];
       filteredReports = reportData.filter(r => r.date.split('T')[0] === selectedDate);
+      // Cập nhật nút lọc
+      document.getElementById("filter-report-btn").textContent = `Lọc: ${new Date(singleDate).toLocaleDateString('vi-VN')}`;
+      renderFilteredReports(filteredReports, selectedDate);
     } else if (startDate && endDate) {
       const start = new Date(startDate).getTime();
-      const end = new Date(endDate).getTime() + 24 * 60 * 60 * 1000; // Bao gồm ngày kết thúc
+      const end = new Date(endDate).getTime() + 24 * 60 * 60 * 1000;
       filteredReports = reportData.filter(r => {
         const reportDate = new Date(r.date).getTime();
         return reportDate >= start && reportDate < end;
       });
+      // Cập nhật nút lọc
+      document.getElementById("filter-report-btn").textContent = `Lọc: ${new Date(startDate).toLocaleDateString('vi-VN')} - ${new Date(endDate).toLocaleDateString('vi-VN')}`;
+      renderFilteredReports(filteredReports, null, startDate, endDate);
     } else {
       alert("Vui lòng chọn một ngày hoặc khoảng thời gian!");
       return;
     }
 
-    renderFilteredReports(filteredReports);
     document.body.removeChild(overlay);
   };
 
@@ -1007,8 +1011,6 @@ function loadFirebaseData() {
         console.log("Fetched product from Firebase:", product);
         inventoryData.push(product);
       });
-    } else {
-      console.log("No data in inventory");
     }
     console.log("Updated inventoryData:", inventoryData);
     renderInventory();
@@ -1029,17 +1031,19 @@ function loadFirebaseData() {
           expenseNotes.push({ reportId: child.key, note: report.expenseNote });
         }
       });
-    } else {
-      console.log("No data in reports");
     }
     console.log("Updated reportData:", reportData);
     console.log("Updated expenseNotes:", expenseNotes);
-    renderReports();
+    // Hiển thị báo cáo của ngày hiện tại
+    const today = new Date().toISOString().split("T")[0];
+    const todayReports = reportData.filter(r => r.date.split('T')[0] === today);
+    renderFilteredReports(todayReports, today);
     renderExpenseSummary();
   }, err => {
     console.error("Error fetching reports data:", err);
   });
 
+  // Các phần khác giữ nguyên
   employeesRef.on("value", snapshot => {
     employeeData = [];
     if (snapshot.exists()) {
@@ -1048,8 +1052,6 @@ function loadFirebaseData() {
         console.log("Fetched employee from Firebase:", employee);
         employeeData.push(employee);
       });
-    } else {
-      console.log("No data in employees");
     }
     console.log("Updated employeeData:", employeeData);
     renderEmployeeList();
@@ -1066,8 +1068,6 @@ function loadFirebaseData() {
         console.log("Fetched advance from Firebase:", advance);
         advanceRequests.push(advance);
       });
-    } else {
-      console.log("No data in advances");
     }
     console.log("Updated advanceRequests:", advanceRequests);
     renderAdvanceHistory();
@@ -1084,8 +1084,6 @@ function loadFirebaseData() {
         console.log("Fetched group message:", message);
         messages.group.push(message);
       });
-    } else {
-      console.log("No group messages");
     }
     console.log("Updated group messages:", messages.group);
     renderChat("group");
@@ -1101,8 +1099,6 @@ function loadFirebaseData() {
         console.log("Fetched manager message:", message);
         messages.manager.push(message);
       });
-    } else {
-      console.log("No manager messages");
     }
     console.log("Updated manager messages:", messages.manager);
     renderChat("manager");
@@ -1110,7 +1106,6 @@ function loadFirebaseData() {
     console.error("Error fetching manager messages:", err);
   });
 }
-
 // Initialize Firebase Listeners and Auth State
 auth.onAuthStateChanged(user => {
   if (user) {
