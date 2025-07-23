@@ -707,7 +707,7 @@ function renderEmployeeList() {
 
   const employee = employeeData.find(emp => emp.id === user.uid);
   if (employee) {
-    document.getElementById("employee-name").value = employee.name || "";
+    document.getElementById("personal-employee-name").value = employee.name || "";
     document.getElementById("employee-address").value = employee.address || "";
     document.getElementById("employee-phone").value = employee.phone || "";
     document.getElementById("employee-note").value = employee.note || "";
