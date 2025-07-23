@@ -521,7 +521,7 @@ function renderFilteredReports(filteredReports, selectedDate = null, startDate =
             index: index + 1,
             reportId: r.id,
             employeeName: r.employeeName,
-            productName: p.name,
+            productName: p.name || "Sản phẩm không xác định", // Xử lý lỗi undefined
             quantity: p.quantity,
             productId: p.productId
           }))
