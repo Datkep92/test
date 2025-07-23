@@ -35,7 +35,39 @@ function parseEntry(text) {
     note: text.replace(match[0], '').trim()
   };
 }
+function updateEmployeeInfo() {
+  const user = auth.currentUser;
+  if (!user) {
+    alert("Vui lòng đăng nhập để cập nhật thông tin!");
+    return;
+  }
 
+  const nameInput = document.getElementById("employee-name").value.trim();
+  const addressInput = document.getElementById("employee-address").value.trim();
+  const phoneInput = document.getElementById("employee-phone").value.trim();
+  const noteInput = document.getElementById("employee-note").value.trim();
+
+  if (!nameInput) {
+    alert("Vui lòng nhập tên hiển thị!");
+    return;
+  }
+
+  const employeeRef = employeesRef.child(user.uid);
+  employeeRef.update({
+    name: nameInput,
+    address: addressInput || "",
+    phone: phoneInput || "",
+    note: noteInput || "",
+    updatedAt: new Date().toISOString()
+  })
+  .then(() => {
+    alert("Cập nhật thông tin thành công!");
+  })
+  .catch(error => {
+    console.error("Lỗi khi cập nhật thông tin:", error);
+    alert("Có lỗi xảy ra khi cập nhật thông tin!");
+  });
+}
 // Đăng nhập / Đăng xuất
 function login() {
   const email = document.getElementById("email").value.trim();
@@ -652,36 +684,18 @@ function addEmployee() {
 }
 
 function renderEmployeeList() {
-  const list = document.getElementById("employee-list");
-  if (!list) {
-    console.error("Employee list element not found!");
-    return;
-  }
-  list.innerHTML = "";
-  console.log("Rendering employee list, total items:", employeeData.length);
+  const user = auth.currentUser;
+  const personalInfoDiv = document.getElementById("personal-info");
+  if (!personalInfoDiv || !user) return;
 
-  if (employeeData.length === 0) {
-    list.innerHTML = "<p>Chưa có nhân viên.</p>";
-    console.log("No employees available");
-    return;
+  const employee = employeeData.find(emp => emp.id === user.uid);
+  if (employee) {
+    document.getElementById("employee-name").value = employee.name || "";
+    document.getElementById("employee-address").value = employee.address || "";
+    document.getElementById("employee-phone").value = employee.phone || "";
+    document.getElementById("employee-note").value = employee.note || "";
+    document.getElementById("advance-amount").value = "";
   }
-
-  const table = document.createElement("table");
-  table.classList.add("table-style");
-  table.innerHTML = `
-    <thead>
-      <tr><th>Tên NV</th><th>Lương/ngày</th><th>Phụ cấp</th><th>Phí khác</th></tr>
-    </thead>
-    <tbody>
-      ${employeeData.map(emp => `
-        <tr>
-          <td>${emp.name}</td>
-          <td>${emp.dailyWage}</td>
-          <td>${emp.allowance}</td>
-          <td>${emp.otherFee}</td>
-        </tr>`).join("")}
-    </tbody>`;
-  list.appendChild(table);
 }
 
 // Advance Requests
