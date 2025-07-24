@@ -38,9 +38,11 @@ function initApp() {
         renderAdvanceHistory();
         renderScheduleStatusList();
         renderCalendar();
+renderScheduleApprovalList();
         renderBusinessReport(globalReportData);
         renderEmployeeList();
         renderSchedule();
+renderScheduleHistory();
         renderAllSchedule();
         renderEmployeeDetails();
         renderAdvanceApprovalList();
@@ -99,47 +101,47 @@ function loadFirebaseData(callback) {
         db.ref("inventory").on("value", snapshot => {
           globalInventoryData = snapshot.val() ? Object.keys(snapshot.val()).map(key => ({ id: key, ...snapshot.val()[key] })) : [];
           console.log("Loaded inventory data:", globalInventoryData);
-          renderInventory();
-          renderReportProductList();
+          if (window.renderInventory) renderInventory();
+          if (window.renderReportProductList) renderReportProductList();
           globalInventoryData.forEach(item => checkLowStock(item));
         }),
         db.ref("reports").on("value", snapshot => {
           globalReportData = snapshot.val() ? Object.keys(snapshot.val()).map(key => ({ id: key, ...snapshot.val()[key] })) : [];
           console.log("Loaded report data:", globalReportData);
-          renderBusinessReport(globalReportData);
-          renderFilteredReports(getReportData());
+          if (window.renderBusinessReport) renderBusinessReport(globalReportData);
+          if (window.renderFilteredReports) renderFilteredReports(getReportData());
         }),
         db.ref("employees").on("value", snapshot => {
-  const employees = snapshot.val() || {};
-  globalEmployeeData = Object.keys(employees).map(id => ({
-    id,
-    dailyWage: employees[id].dailyWage != null ? employees[id].dailyWage : 0,
-    allowance: employees[id].allowance != null ? employees[id].allowance : 0,
-    otherFee: employees[id].otherFee != null ? employees[id].otherFee : 0,
-    ...employees[id]
-  }));
-  console.log("Loaded employee data:", globalEmployeeData);
-  renderEmployeeList();
-  renderSchedule();
-  renderAllSchedule();
-  renderEmployeeDetails();
-}),
+          const employees = snapshot.val() || {};
+          globalEmployeeData = Object.keys(employees).map(id => ({
+            id,
+            dailyWage: employees[id].dailyWage != null ? employees[id].dailyWage : 0,
+            allowance: employees[id].allowance != null ? employees[id].allowance : 0,
+            otherFee: employees[id].otherFee != null ? employees[id].otherFee : 0,
+            ...employees[id]
+          }));
+          console.log("Loaded employee data:", globalEmployeeData);
+          if (window.renderEmployeeList) renderEmployeeList();
+          if (window.renderSchedule) renderSchedule();
+          if (window.renderAllSchedule) renderAllSchedule();
+          if (window.renderEmployeeDetails) renderEmployeeDetails();
+        }),
         db.ref("advances").on("value", snapshot => {
           globalAdvanceRequests = snapshot.val() ? Object.values(snapshot.val()) : [];
           console.log("Loaded advance requests:", globalAdvanceRequests);
-          renderAdvanceHistory();
-          renderAdvanceApprovalList();
-          renderEmployeeDetails();
+          if (window.renderAdvanceHistory) renderAdvanceHistory();
+          if (window.renderAdvanceApprovalList) renderAdvanceApprovalList();
+          if (window.renderEmployeeDetails) renderEmployeeDetails();
         }),
         db.ref("messages/group").on("value", snapshot => {
           globalMessages.group = snapshot.val() ? Object.values(snapshot.val()) : [];
           console.log("Loaded group messages:", globalMessages.group);
-          renderChat("group");
+          if (window.renderChat) renderChat("group");
         }),
         db.ref("messages/manager").on("value", snapshot => {
           globalMessages.manager = snapshot.val() ? Object.values(snapshot.val()) : [];
           console.log("Loaded manager messages:", globalMessages.manager);
-          renderChat("manager");
+          if (window.renderChat) renderChat("manager");
         }),
         db.ref("schedules").on("value", snapshot => {
           globalScheduleData = snapshot.val() ? Object.keys(snapshot.val()).map(key => ({
@@ -147,28 +149,28 @@ function loadFirebaseData(callback) {
             ...snapshot.val()[key]
           })) : [];
           console.log("Loaded schedule data:", globalScheduleData);
-          renderSchedule();
-          renderAllSchedule();
-          renderScheduleStatusList();
-          renderOffAndOvertime();
-          renderCalendar();
-          renderSalarySummary();
-          renderEmployeeDetails();
+          if (window.renderSchedule) renderSchedule();
+          if (window.renderAllSchedule) renderAllSchedule();
+          if (window.renderScheduleStatusList) renderScheduleStatusList();
+          if (window.renderOffAndOvertime) renderOffAndOvertime();
+          if (window.renderCalendar) renderCalendar();
+          if (window.renderSalarySummary) renderSalarySummary();
+          if (window.renderEmployeeDetails) renderEmployeeDetails();
         }),
         db.ref("notifications/" + currentEmployeeId).on("value", snapshot => {
           globalNotifications = snapshot.val() ? Object.values(snapshot.val()).map(n => ({ id: n.id || snapshot.key, ...n })) : [];
           console.log("Loaded notifications:", globalNotifications);
-          renderNotifications();
+          if (window.renderNotifications) renderNotifications();
         }),
         db.ref("notifications/general").on("value", snapshot => {
           globalGeneralNotifications = snapshot.val() ? Object.values(snapshot.val()) : [];
           console.log("Loaded general notifications:", globalGeneralNotifications);
-          renderNotifications();
+          if (window.renderNotifications) renderNotifications();
         }),
         db.ref("messages/" + currentEmployeeId).on("value", snapshot => {
           globalMessages[currentEmployeeId] = snapshot.val() ? Object.values(snapshot.val()) : [];
           console.log("Loaded messages for employee:", globalMessages[currentEmployeeId]);
-          renderEmployeeChat(currentEmployeeId);
+          if (window.renderEmployeeChat) renderEmployeeChat(currentEmployeeId);
         })
       ]).then(() => {
         if (callback) callback();
@@ -183,30 +185,29 @@ function loadFirebaseData(callback) {
       globalScheduleData = [];
       globalNotifications = [];
       globalGeneralNotifications = [];
-      renderProfile();
-      renderEmployeeList();
-      renderSchedule();
-      renderAllSchedule();
-      renderEmployeeDetails();
-      renderAdvanceApprovalList();
-      renderGeneralNotifications();
-      renderEmployeeChat(null);
-      renderReportProductList();
-      renderRevenueExpenseData();
-      renderRevenueExpenseSummary();
-      renderInventory();
-      renderAdvanceHistory();
-      renderScheduleStatusList();
-      renderCalendar();
-      renderBusinessReport([]);
-      renderChat("group");
-      renderChat("manager");
-      renderNotifications(); // Thay loadNotifications bằng renderNotifications
-      renderFilteredReports([]);
+      if (window.renderProfile) renderProfile();
+      if (window.renderEmployeeList) renderEmployeeList();
+      if (window.renderSchedule) renderSchedule();
+      if (window.renderAllSchedule) renderAllSchedule();
+      if (window.renderEmployeeDetails) renderEmployeeDetails();
+      if (window.renderAdvanceApprovalList) renderAdvanceApprovalList();
+      if (window.renderGeneralNotifications) renderGeneralNotifications();
+      if (window.renderEmployeeChat) renderEmployeeChat(null);
+      if (window.renderReportProductList) renderReportProductList();
+      if (window.renderRevenueExpenseData) renderRevenueExpenseData();
+      if (window.renderRevenueExpenseSummary) renderRevenueExpenseSummary();
+      if (window.renderInventory) renderInventory();
+      if (window.renderAdvanceHistory) renderAdvanceHistory();
+      if (window.renderScheduleStatusList) renderScheduleStatusList();
+      if (window.renderCalendar) renderCalendar();
+      if (window.renderBusinessReport) renderBusinessReport([]);
+      if (window.renderChat) renderChat("group");
+      if (window.renderChat) renderChat("manager");
+      if (window.renderNotifications) renderNotifications();
+      if (window.renderFilteredReports) renderFilteredReports([]);
     }
   });
 }
-
 // Thêm hàm renderNotifications
 function renderNotifications() {
   const container = document.getElementById("notification-list");
@@ -369,5 +370,10 @@ function getMessages() { return globalMessages; }
 function getScheduleData() { return globalScheduleData; }
 function getNotifications() { return globalNotifications; }
 function getGeneralNotifications() { return globalGeneralNotifications; }
+function checkLowStock(item) {
+  if (item.quantity !== undefined && item.quantity < 10) {
+    showToastNotification(`Cảnh báo: ${item.name} chỉ còn ${item.quantity} đơn vị!`);
+  }
+}
 
 initApp();

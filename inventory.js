@@ -35,6 +35,32 @@ function addInventory() {
     .catch(err => alert("Lỗi khi thêm sản phẩm: " + err.message));
 }
 
+function calculateStockPercentageAndRestockDate(item) {
+  // Lấy lịch sử xuất hàng từ globalReportData (trong 30 ngày gần nhất)
+  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const productReports = globalReportData
+    .filter(report => report.type === "export" && report.products && report.timestamp >= thirtyDaysAgo)
+    .flatMap(report => report.products.filter(p => p.name === item.name));
+
+  // Tính tổng số lượng xuất và tỷ lệ xuất trung bình mỗi ngày
+  const totalExported = productReports.reduce((sum, p) => sum + (p.quantity || 0), 0);
+  const avgDailyExport = totalExported / 30;
+
+  // Tính số ngày còn lại trước khi hết hàng
+  const daysUntilRestock = avgDailyExport > 0 ? Math.floor((item.quantity - item.lowStockThreshold) / avgDailyExport) : Infinity;
+
+  // Tính tỷ lệ % so với ngưỡng thấp
+  const percentage = item.lowStockThreshold > 0 ? (item.quantity / item.lowStockThreshold) * 100 : 0;
+
+  // Dự đoán ngày nhập hàng
+  const restockDate = avgDailyExport > 0 ? new Date(Date.now() + daysUntilRestock * 24 * 60 * 60 * 1000) : null;
+
+  return {
+    percentage: percentage.toFixed(2),
+    restockDate: restockDate ? restockDate.toLocaleDateString('vi-VN') : 'Không xác định'
+  };
+}
+
 function renderInventory() {
   const container = document.getElementById("inventory-list");
   if (!container) {
@@ -51,32 +77,41 @@ function renderInventory() {
   const displayItems = isExpanded ? globalInventoryData : globalInventoryData.slice(0, 5);
 
   const table = document.createElement("table");
-  table.classList.add("table-style");
+  table.classList.add("table-style", "inventory-table");
   table.innerHTML = `
     <thead>
       <tr>
         <th>STT</th>
-        <th>Thời gian</th>
+        <th>Ngày</th>
         <th>Tên</th>
         <th>Số lượng</th>
         <th>Thành tiền</th>
+        <th>Tỷ lệ (%)</th>
+        <th>Ngày nhập hàng</th>
         <th>Hành động</th>
       </tr>
     </thead>
     <tbody>
-      ${displayItems.map((item, index) => `
+      ${displayItems.map((item, index) => {
+        const { percentage, restockDate } = calculateStockPercentageAndRestockDate(item);
+        return `
         <tr class="${item.quantity < item.lowStockThreshold ? 'low-stock' : ''}">
           <td>${index + 1}</td>
-          <td>${new Date(item.timestamp).toLocaleString('vi-VN')}</td>
+          <td>${new Date(item.timestamp).toLocaleDateString('vi-VN')}</td>
           <td>${item.name}</td>
           <td>${item.quantity}</td>
           <td>${(item.quantity * item.price).toLocaleString('vi-VN')} VND</td>
+          <td>${percentage}%</td>
+          <td>${restockDate}</td>
           <td>
-            <button onclick="openEditInventoryModal('${item.id}')">Sửa</button>
-            <button onclick="deleteInventory('${item.id}')">Xóa</button>
+            <div class="action-buttons">
+              <button class="edit-btn" onclick="openEditInventoryModal('${item.id}')">Sửa</button>
+              <button class="delete-btn" onclick="deleteInventory('${item.id}')">Xóa</button>
+            </div>
           </td>
         </tr>
-      `).join("")}
+      `;
+      }).join("")}
     </tbody>
   `;
   container.appendChild(table);

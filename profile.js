@@ -237,18 +237,6 @@ function submitScheduleRequest(date, status) {
     return;
   }
 
-  const weekStart = new Date(date);
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 6);
-  const weekOffs = globalScheduleData.filter(s => 
-    s.employeeId === user.uid && 
-    s.status === "off" && 
-    s.approvalStatus === "approved" && 
-    new Date(s.date) >= weekStart && 
-    new Date(s.date) <= weekEnd
-  );
-
   const scheduleId = `${date}_${user.uid}`;
   const scheduleData = {
     id: scheduleId,
@@ -256,7 +244,7 @@ function submitScheduleRequest(date, status) {
     employeeName: employee.name,
     date,
     status,
-    approvalStatus: weekOffs.length >= 1 && status === "off" ? "pending" : "approved",
+    approvalStatus: "pending", // Luôn đặt trạng thái là pending
     timestamp: Date.now()
   };
 
@@ -264,18 +252,17 @@ function submitScheduleRequest(date, status) {
     .then(() => {
       globalScheduleData.push(scheduleData);
       const statusText = status === "off" ? "Nghỉ" : status === "overtime" ? "Tăng ca" : "Đổi ca";
-      const notificationMessage = `Yêu cầu ${statusText} ngày ${date} đã được gửi.`;
-      if (weekOffs.length >= 1 && status === "off") {
-        db.ref("messages/manager").push({
-          message: `Yêu cầu ${statusText} ngày ${date} từ ${employee.name}`,
-          senderId: user.uid,
-          senderName: employee.name,
-          scheduleId,
-          timestamp: Date.now()
-        });
-      }
+      // Gửi thông báo cho quản lý
+      db.ref("messages/manager").push({
+        message: `Yêu cầu ${statusText} ngày ${date} từ ${employee.name}`,
+        senderId: user.uid,
+        senderName: employee.name,
+        scheduleId,
+        timestamp: Date.now()
+      });
+      // Gửi thông báo xác nhận cho nhân viên
       db.ref("notifications/" + user.uid).push({
-        message: notificationMessage,
+        message: `Yêu cầu ${statusText} ngày ${date} đã được gửi.`,
         timestamp: Date.now(),
         type: "confirmation",
         date,
@@ -287,11 +274,11 @@ function submitScheduleRequest(date, status) {
         renderScheduleStatusList();
         renderOffAndOvertime();
         renderSalarySummary();
+        renderAllSchedule(); // Cập nhật lịch toàn thể
       });
     })
     .catch(err => alert("Lỗi khi gửi yêu cầu: " + err.message));
 }
-
 function renderOffAndOvertime() {
   const container = document.getElementById("off-and-overtime");
   if (!container) return;

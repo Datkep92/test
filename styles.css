@@ -886,8 +886,873 @@ button {
   .table-style {
     font-size: 10px;
   }
+/* Trong styles.css, thêm hoặc sửa phần sau */
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin: 10% auto;
+  max-width: 80%; /* Chiếm 80% chiều rộng */
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+/* Responsive cho điện thoại */
+@media (max-width: 600px) {
+  .modal-content {
+    max-width: 90%;
+    margin: 5% auto;
+  }
+}
+
+/* Trong styles.css, thêm phần sau */
+
+.employee-select {
+  margin-bottom: 1rem;
+}
+
+.employee-select select {
+  padding: 0.5rem;
+  font-size: 1rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.chat-message {
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: var(--radius);
+}
+
+.chat-message.sent {
+  background-color: var(--primary);
+  color: white;
+  margin-left: 20%;
+}
+
+.chat-message.received {
+  background-color: #f5f5f5;
+  margin-right: 20%;
+}
+
+.chat-message p {
+  margin: 0;
+}
+
+.chat-message small {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+
   .table-style th, .table-style td {
     padding: 6px;
     min-width: 50px;
+  }
+}
+
+/* Trong styles.css, thay thế phần CSS của .schedule-table */
+
+.schedule-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow-x: auto;
+  display: block;
+  max-width: 100%;
+}
+
+.schedule-table th, .schedule-table td {
+  border: 1px solid #ddd;
+  padding: 0.3rem;
+  text-align: center;
+  min-width: 60px;
+}
+
+.schedule-table th {
+  background-color: var(--primary);
+  color: white;
+  font-size: 0.85rem;
+}
+
+.schedule-table th div {
+  line-height: 1.2;
+}
+
+.schedule-table .employee-name {
+  position: sticky;
+  left: 0;
+  background-color: var(--card-bg);
+  z-index: 1;
+  min-width: 90px;
+  font-weight: bold;
+}
+
+.schedule-table tbody tr:nth-child(even) {
+  background-color: #f5f5f5;
+}
+
+/* Màu sắc đồng bộ với tab Cá nhân */
+.day-off {
+  background-color: #ff4d4d; /* Đỏ */
+  color: white;
+}
+
+.day-overtime {
+  background-color: #4caf50; /* Xanh lá */
+  color: white;
+}
+
+.day-swap {
+  background-color: #2196f3; /* Xanh dương */
+  color: white;
+}
+
+.day-pending {
+  background-color: #ffeb3b; /* Vàng */
+  color: black;
+}
+
+.day-normal {
+  background-color: #fff; /* Trắng */
+  color: black;
+}
+
+.schedule-actions {
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+}
+
+.approve-btn, .reject-btn {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.approve-btn {
+  background-color: #4caf50;
+  color: white;
+}
+
+.reject-btn {
+  background-color: #ff4d4d;
+  color: white;
+}
+
+/* Responsive cho điện thoại */
+@media (max-width: 600px) {
+  .schedule-table {
+    font-size: 0.75rem;
+  }
+  .schedule-table th, .schedule-table td {
+    padding: 0.2rem;
+    min-width: 50px;
+  }
+  .schedule-table .employee-name {
+    min-width: 80px;
+  }
+  .schedule-controls {
+    font-size: 0.85rem;
+  }
+  .schedule-controls button {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+  }
+  .approve-btn, .reject-btn {
+    padding: 0.15rem 0.4rem;
+    font-size: 0.7rem;
+  }
+}
+
+//tab thu chi
+/* ===== Tab Báo cáo Thu Chi ===== */
+#revenue-expense .input-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+
+#revenue-expense .input-group input {
+  flex: 1;
+  min-width: 100%;
+  padding: 0.6rem;
+  font-size: 0.95rem;
+  border: 1px solid #ddd;
+  border-radius: var(--radius);
+}
+
+#revenue-expense .button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#revenue-expense .button-group button {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.6rem;
+  font-size: 0.95rem;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+}
+
+#revenue-expense .button-group button:hover {
+  background-color: var(--primary-dark);
+}
+
+#report-product-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+#report-product-list .product-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+#report-product-list .product-name {
+  flex: 1;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+#report-product-list .minus,
+#report-product-list .quantity {
+  min-width: 40px;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+#report-product-list .minus {
+  background-color: var(--danger);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+}
+
+#report-product-list .minus:hover {
+  background-color: #c0392b;
+}
+
+/* ===== Tab Báo cáo Thu Chi ===== */
+#revenue-expense .input-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+
+#revenue-expense .input-group input {
+  flex: 1;
+  min-width: 100%;
+  padding: 0.6rem;
+  font-size: 0.95rem;
+  border: 1px solid #ddd;
+  border-radius: var(--radius);
+}
+
+#revenue-expense .button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#revenue-expense .button-group button {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.6rem;
+  font-size: 0.95rem;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+}
+
+#revenue-expense .button-group button:hover {
+  background-color: var(--primary-dark);
+}
+
+#report-product-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+#report-product-list .product-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+#report-product-list .product-name {
+  flex: 1;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+#report-product-list .minus,
+#report-product-list .quantity {
+  min-width: 40px;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+#report-product-list .minus {
+  background-color: var(--danger);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+}
+
+#report-product-list .minus:hover {
+  background-color: #c0392b;
+}
+
+#shared-report-table,
+#report-product-table,
+#transfer-details {
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+#shared-report-table table,
+#report-product-table table,
+#transfer-details table {
+  width: 100%;
+  table-layout: auto;
+  border-collapse: collapse;
+  background-color: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+#shared-report-table th,
+#shared-report-table td,
+#report-product-table th,
+#report-product-table td,
+#transfer-details th,
+#transfer-details td {
+  padding: 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  min-width: 60px;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+#shared-report-table th,
+#report-product-table th,
+#transfer-details th {
+  background-color: var(--primary);
+  color: white;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+#shared-report-table th:first-child,
+#shared-report-table td:first-child,
+#report-product-table th:first-child,
+#report-product-table td:first-child,
+#transfer-details th:first-child,
+#transfer-details td:first-child {
+  position: sticky;
+  left: 0;
+  background-color: var(--primary);
+  color: white;
+  z-index: 1;
+}
+
+#shared-report-table td:first-child,
+#report-product-table td:first-child,
+#transfer-details td:first-child {
+  background-color: var(--card-bg);
+  color: var(--text);
+  font-weight: 500;
+}
+
+#shared-report-table tbody tr:nth-child(even),
+#report-product-table tbody tr:nth-child(even),
+#transfer-details tbody tr:nth-child(even) {
+  background-color: #f5f5f5;
+}
+
+#transfer-details tfoot td {
+  background-color: var(--primary-light);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.action-buttons button {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  min-width: 70px;
+  transition: var(--transition);
+}
+
+.action-buttons button:first-child {
+  background-color: var(--primary);
+  color: white;
+}
+
+.action-buttons button:first-child:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.action-buttons button:last-child {
+  background-color: var(--danger);
+  color: white;
+}
+
+.action-buttons button:last-child:hover {
+  background-color: #c0392b;
+  transform: translateY(-1px);
+}
+
+#revenue-expense-summary {
+  font-size: 0.95rem;
+  line-height: 1.4;
+  padding: 0.5rem;
+  background-color: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+#revenue-expense-summary p {
+  margin: 0.3rem 0;
+}
+
+#filter-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+
+#range-date-input {
+  flex: 1;
+  min-width: 150px;
+  padding: 0.6rem;
+  font-size: 0.95rem;
+}
+
+#filter-section button {
+  padding: 0.6rem 1rem;
+  font-size: 0.95rem;
+  background-color: var(--success);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+}
+
+#filter-section button:hover {
+  background-color: #45a049;
+}
+
+.expand-btn {
+  display: block;
+  margin: 0.5rem auto;
+  padding: 0.6rem 1rem;
+  font-size: 0.95rem;
+  background-color: var(--secondary);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.expand-btn:hover {
+  background-color: var(--primary-light);
+}
+
+.report-total ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  font-size: 0.95rem;
+}
+
+/* Responsive cho mobile */
+@media (max-width: 600px) {
+  #revenue-expense .input-group input {
+    font-size: 0.85rem;
+    padding: 0.5rem;
+  }
+
+  #revenue-expense .button-group button {
+    min-width: 100%;
+    font-size: 0.85rem;
+    padding: 0.5rem;
+  }
+
+  #report-product-list .product-item {
+    padding: 0.4rem;
+  }
+
+  #report-product-list .product-name,
+  #report-product-list .quantity {
+    font-size: 0.85rem;
+  }
+
+  #report-product-list .minus {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  #shared-report-table th,
+  #shared-report-table td,
+  #report-product-table th,
+  #report-product-table td,
+  #transfer-details th,
+  #transfer-details td {
+    padding: 0.3rem;
+    font-size: 0.75rem;
+    min-width: 40px;
+  }
+
+  #shared-report-table th:first-child,
+  #report-product-table th:first-child,
+  #transfer-details th:first-child {
+    min-width: 50px;
+  }
+
+  .action-buttons {
+    gap: 0.3rem;
+  }
+
+  .action-buttons button {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+    min-width: 60px;
+  }
+
+  #revenue-expense-summary {
+    font-size: 0.85rem;
+  }
+
+  #filter-section {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  #range-date-input {
+    min-width: 100%;
+    font-size: 0.85rem;
+    padding: 0.5rem;
+  }
+
+  #filter-section button {
+    font-size: 0.85rem;
+    padding: 0.5rem;
+    width: 100%;
+  }
+
+  .expand-btn {
+    font-size: 0.85rem;
+    padding: 0.5rem;
+  }
+
+  .report-total ul {
+    font-size: 0.85rem;
+    padding-left: 1rem;
+  }
+}
+
+/* ===== Tab Quản lý Kho ===== */
+#inventory .card {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background-color: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+#inventory .input-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+
+#inventory .input-group input {
+  flex: 1;
+  min-width: 100%;
+  padding: 0.6rem;
+  font-size: 0.95rem;
+  border: 1px solid #ddd;
+  border-radius: var(--radius);
+}
+
+#inventory .button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#inventory .button-group button {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.6rem;
+  font-size: 0.95rem;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+}
+
+#inventory .button-group button:hover {
+  background-color: var(--primary-dark);
+}
+
+#inventory-list, #restock-schedule, #export-analysis {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.inventory-table, .restock-table, .export-analysis-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  table-layout: auto;
+  overflow-x: auto;
+  display: block;
+}
+
+.inventory-table th, .restock-table th, .export-analysis-table th,
+.inventory-table td, .restock-table td, .export-analysis-table td {
+  border: 1px solid #ddd;
+  padding: 0.6rem;
+  text-align: center;
+  min-width: 60px;
+  white-space: nowrap;
+}
+
+.inventory-table th, .restock-table th, .export-analysis-table th {
+  background-color: var(--primary-dark);
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.inventory-table td, .restock-table td, .export-analysis-table td {
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.inventory-table th:first-child, .restock-table th:first-child, .export-analysis-table th:first-child,
+.inventory-table td:first-child, .restock-table td:first-child, .export-analysis-table td:first-child {
+  position: sticky;
+  left: 0;
+  background-color: var(--primary-dark);
+  color: white;
+  z-index: 1;
+}
+
+.inventory-table td:first-child, .restock-table td:first-child, .export-analysis-table td:first-child {
+  background-color: var(--card-bg);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.inventory-table tbody tr:nth-child(even), .restock-table tbody tr:nth-child(even), .export-analysis-table tbody tr:nth-child(even) {
+  background-color: #f5f5f5;
+}
+
+.inventory-table .action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.inventory-table .edit-btn, .inventory-table .delete-btn {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  min-width: 70px;
+  transition: var(--transition);
+}
+
+.inventory-table .edit-btn {
+  background-color: var(--primary);
+  color: white;
+}
+
+.inventory-table .edit-btn:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.inventory-table .delete-btn {
+  background-color: var(--danger);
+  color: white;
+}
+
+.inventory-table .delete-btn:hover {
+  background-color: #c0392b;
+  transform: translateY(-1px);
+}
+
+.inventory-table .low-stock, .restock-table .low-stock {
+  background-color: #ffcdd2;
+}
+
+.quantity-cell {
+  position: relative;
+  cursor: pointer;
+}
+
+/* Biểu đồ */
+#export-chart {
+  max-height: 300px;
+  margin: 1rem 0;
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* Modal chỉnh sửa sản phẩm */
+#edit-inventory-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+#edit-inventory-modal .modal-content {
+  background-color: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+}
+
+#edit-inventory-modal .close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text);
+}
+
+#edit-inventory-modal .close:hover {
+  color: var(--primary);
+}
+
+/* Responsive cho mobile */
+@media (max-width: 600px) {
+  #inventory .input-group input {
+    font-size: 0.85rem;
+    padding: 0.5rem;
+  }
+
+  #inventory .button-group button {
+    min-width: 100%;
+    font-size: 0.85rem;
+    padding: 0.5rem;
+  }
+
+  .inventory-table, .restock-table, .export-analysis-table {
+    font-size: 0.75rem;
+  }
+
+  .inventory-table th, .restock-table th, .export-analysis-table th,
+  .inventory-table td, .restock-table td, .export-analysis-table td {
+    padding: 0.3rem;
+    min-width: 50px;
+  }
+
+  .inventory-table th:first-child, .restock-table th:first-child, .export-analysis-table th:first-child,
+  .inventory-table td:first-child, .restock-table td:first-child, .export-analysis-table td:first-child {
+    min-width: 40px;
+  }
+
+  .inventory-table .edit-btn, .inventory-table .delete-btn {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+    min-width: 60px;
+  }
+
+  #edit-inventory-modal .modal-content {
+    max-width: 90%;
+    padding: 1rem;
+  }
+
+  #export-chart {
+    max-height: 250px;
   }
 }
