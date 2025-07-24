@@ -696,3 +696,198 @@ button {
   }
 }
 //
+
+#filter-section button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  margin: 0 5px;
+  cursor: pointer;
+}
+#filter-section button:hover {
+  background-color: #45a049;
+}
+#range-date-input {
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+//kho
+/* Trong styles.css, thêm vào cuối file */
+
+/* Modal chỉnh sửa sản phẩm */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+}
+
+.close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.close:hover {
+  color: var(--primary);
+}
+
+/* Cảnh báo tồn kho thấp */
+.low-stock {
+  background-color: #ffcdd2; /* Màu đỏ nhạt, tương tự .day.off */
+}
+
+/* Trong styles.css */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+.modal-content {
+  background: white;
+  padding: 20px;
+  margin: 100px auto;
+  width: 90%;
+  max-width: 300px;
+  border-radius: 5px;
+  text-align: center;
+  position: relative;
+}
+.close {
+  float: right;
+  cursor: pointer;
+  font-size: 20px;
+  color: #333;
+}
+.day.off {
+  background-color: #ffcdd2; /* Đỏ nhạt cho ngày nghỉ */
+}
+.day.overtime {
+  background-color: #c8e6c9; /* Xanh lá cho tăng ca */
+}
+.day.swap {
+  background-color: #fff9c4; /* Vàng cho đổi ca */
+}
+.day.pending {
+  background-color: #fff9c4; /* Vàng cho chờ duyệt */
+}
+.table-style {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  table-layout: auto;
+}
+.table-style th, .table-style td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+  min-width: 60px;
+  white-space: nowrap;
+}
+.table-style th:first-child, .table-style td:first-child {
+  position: sticky;
+  left: 0;
+  background-color: #f9f9f9;
+  z-index: 1;
+}
+.table-style th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+.table-style td {
+  cursor: pointer;
+}
+@media (max-width: 600px) {
+  .table-style {
+    font-size: 10px;
+  }
+  .table-style th, .table-style td {
+    padding: 6px;
+    min-width: 50px;
+  }
+}
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.calendar-header {
+  background-color: #f2f2f2;
+  text-align: center;
+  padding: 8px;
+  font-weight: bold;
+}
+.day {
+  padding: 8px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+.day.empty {
+  background-color: #f9f9f9;
+}
+
+/* Trong styles.css */
+.table-style {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  table-layout: auto;
+}
+.table-style th, .table-style td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+  min-width: 60px;
+  white-space: nowrap;
+}
+.table-style th:first-child, .table-style td:first-child {
+  position: sticky;
+  left: 0;
+  background-color: #f9f9f9;
+  z-index: 1;
+}
+.table-style th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+.table-style td {
+  cursor: default; /* Loại bỏ cursor pointer cho #all-schedule-list */
+}
+.table-style td.pending {
+  cursor: pointer; /* Chỉ áp dụng cho #schedule-list trong tab Quản lý */
+}
+@media (max-width: 600px) {
+  .table-style {
+    font-size: 10px;
+  }
+  .table-style th, .table-style td {
+    padding: 6px;
+    min-width: 50px;
+  }
+}
