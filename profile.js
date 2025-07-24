@@ -237,6 +237,30 @@ function submitScheduleRequest(date, status) {
     return;
   }
 
+  const weekStart = new Date(date);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  const weekOffs = globalScheduleData.filter(s => 
+    s.employeeId === user.uid && 
+    s.status === "off" && 
+    s.approvalStatus === "approved" && 
+    new Date(s.date) >= weekStart && 
+    new Date(s.date) <= weekEnd
+  );
+
+  // Kiểm tra lịch trùng lặp
+  const existingSchedule = globalScheduleData.find(s => s.employeeId === user.uid && s.date === date);
+  if (existingSchedule) {
+    // Xóa lịch cũ trước khi thêm mới
+    db.ref("schedules/" + existingSchedule.id).remove()
+      .then(() => {
+        globalScheduleData = globalScheduleData.filter(s => s.id !== existingSchedule.id);
+        console.log(`Removed duplicate schedule for ${user.uid} on ${date}`);
+      })
+      .catch(err => console.error(`Error removing duplicate schedule: ${err.message}`));
+  }
+
   const scheduleId = `${date}_${user.uid}`;
   const scheduleData = {
     id: scheduleId,
@@ -244,7 +268,7 @@ function submitScheduleRequest(date, status) {
     employeeName: employee.name,
     date,
     status,
-    approvalStatus: "pending", // Luôn đặt trạng thái là pending
+    approvalStatus: weekOffs.length >= 1 && status === "off" ? "pending" : "approved",
     timestamp: Date.now()
   };
 
@@ -252,17 +276,18 @@ function submitScheduleRequest(date, status) {
     .then(() => {
       globalScheduleData.push(scheduleData);
       const statusText = status === "off" ? "Nghỉ" : status === "overtime" ? "Tăng ca" : "Đổi ca";
-      // Gửi thông báo cho quản lý
-      db.ref("messages/manager").push({
-        message: `Yêu cầu ${statusText} ngày ${date} từ ${employee.name}`,
-        senderId: user.uid,
-        senderName: employee.name,
-        scheduleId,
-        timestamp: Date.now()
-      });
-      // Gửi thông báo xác nhận cho nhân viên
+      const notificationMessage = `Yêu cầu ${statusText} ngày ${date} đã được gửi.`;
+      if (weekOffs.length >= 1 && status === "off") {
+        db.ref("messages/manager").push({
+          message: `Yêu cầu ${statusText} ngày ${date} từ ${employee.name}`,
+          senderId: user.uid,
+          senderName: employee.name,
+          scheduleId,
+          timestamp: Date.now()
+        });
+      }
       db.ref("notifications/" + user.uid).push({
-        message: `Yêu cầu ${statusText} ngày ${date} đã được gửi.`,
+        message: notificationMessage,
         timestamp: Date.now(),
         type: "confirmation",
         date,
@@ -274,7 +299,6 @@ function submitScheduleRequest(date, status) {
         renderScheduleStatusList();
         renderOffAndOvertime();
         renderSalarySummary();
-        renderAllSchedule(); // Cập nhật lịch toàn thể
       });
     })
     .catch(err => alert("Lỗi khi gửi yêu cầu: " + err.message));

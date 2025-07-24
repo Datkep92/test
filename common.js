@@ -102,7 +102,7 @@ function loadFirebaseData(callback) {
           globalInventoryData = snapshot.val() ? Object.keys(snapshot.val()).map(key => ({ id: key, ...snapshot.val()[key] })) : [];
           console.log("Loaded inventory data:", globalInventoryData);
           if (window.renderInventory) renderInventory();
-          if (window.renderReportProductList) renderReportProductList();
+          if (window.renderReportProductList) renderReportProductList(); // Kiểm tra trước khi gọi
           globalInventoryData.forEach(item => checkLowStock(item));
         }),
         db.ref("reports").on("value", snapshot => {
@@ -156,6 +156,8 @@ function loadFirebaseData(callback) {
           if (window.renderCalendar) renderCalendar();
           if (window.renderSalarySummary) renderSalarySummary();
           if (window.renderEmployeeDetails) renderEmployeeDetails();
+          if (window.renderScheduleApprovalList) renderScheduleApprovalList();
+          if (window.renderScheduleHistory) renderScheduleHistory();
         }),
         db.ref("notifications/" + currentEmployeeId).on("value", snapshot => {
           globalNotifications = snapshot.val() ? Object.values(snapshot.val()).map(n => ({ id: n.id || snapshot.key, ...n })) : [];
@@ -205,6 +207,8 @@ function loadFirebaseData(callback) {
       if (window.renderChat) renderChat("manager");
       if (window.renderNotifications) renderNotifications();
       if (window.renderFilteredReports) renderFilteredReports([]);
+      if (window.renderScheduleApprovalList) renderScheduleApprovalList();
+      if (window.renderScheduleHistory) renderScheduleHistory();
     }
   });
 }
@@ -375,5 +379,17 @@ function checkLowStock(item) {
     showToastNotification(`Cảnh báo: ${item.name} chỉ còn ${item.quantity} đơn vị!`);
   }
 }
+// File: employee-management.js (cuối file)
+function initEmployeeManagement() {
+  renderEmployeeList();
+  renderEmployeeDetails();
+  renderSchedule();
+  renderScheduleApprovalList(); // Thêm để render danh sách yêu cầu lịch
+  renderScheduleHistory();
+  renderAdvanceApprovalList();
+  renderGeneralNotifications();
+}
 
+// Gọi khi tải xong dữ liệu
+document.addEventListener("DOMContentLoaded", initEmployeeManagement);
 initApp();

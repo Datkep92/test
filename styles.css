@@ -1756,3 +1756,605 @@ button {
     max-height: 250px;
   }
 }
+
+#export-chart {
+  max-height: 300px;
+  margin: 1rem 0;
+  width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 600px) {
+  #export-chart {
+    max-height: 250px;
+  }
+}
+
+.export-analysis-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  table-layout: auto;
+  overflow-x: auto;
+  display: block;
+}
+
+.export-analysis-table th,
+.export-analysis-table td {
+  border: 1px solid #ddd;
+  padding: 0.6rem;
+  text-align: center;
+  min-width: 60px;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .export-analysis-table {
+    font-size: 0.75rem;
+  }
+  .export-analysis-table th,
+  .export-analysis-table td {
+    padding: 0.3rem;
+    min-width: 50px;
+  }
+}
+
+\\\\\
+/* ===== Tab Cá nhân (#profile) ===== */
+/* Mobile-first approach */
+#profile {
+  padding: 8px;
+  box-sizing: border-box;
+  background-color: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Profile Information */
+#profile .card {
+  padding: 12px;
+  margin-bottom: 12px;
+  background-color: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+#profile h3 {
+  font-size: 1.2rem;
+  color: var(--primary);
+  margin-bottom: 12px;
+  border-bottom: 2px solid var(--secondary);
+  padding-bottom: 6px;
+}
+
+#profile p {
+  font-size: 0.9rem;
+  color: var(--text);
+  margin: 6px 0;
+}
+
+/* Form Elements */
+#profile .input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+#profile .input-group label {
+  font-size: 0.9rem;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+#profile .input-group input,
+#profile .input-group textarea,
+#profile .input-group select {
+  padding: 8px;
+  font-size: 0.9rem;
+  border: 1px solid #ddd;
+  border-radius: var(--radius);
+  width: 100%;
+  box-sizing: border-box;
+  background-color: var(--card-bg);
+}
+
+#profile .input-group input:focus,
+#profile .input-group textarea:focus,
+#profile .input-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(111, 78, 55, 0.2);
+}
+
+#profile .input-group textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+#profile .button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+#profile .button-group button {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: var(--radius);
+  background-color: var(--primary);
+  color: white;
+  cursor: pointer;
+  flex: 1;
+  min-width: 100px;
+  transition: var(--transition);
+}
+
+#profile .button-group button:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+}
+
+/* Calendar */
+#profile .calendar-container {
+  margin-bottom: 12px;
+}
+
+#profile .calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  background-color: var(--primary);
+  color: white;
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+}
+
+#profile .calendar-header h3 {
+  font-size: 1rem;
+  margin: 0;
+  border: none;
+}
+
+#profile .calendar-header button {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  background-color: var(--secondary);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  min-width: 44px; /* Touch-friendly */
+}
+
+#profile .calendar-header button:hover {
+  background-color: var(--primary-light);
+}
+
+#profile .calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+#profile .calendar .day {
+  aspect-ratio: 1 / 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: var(--radius);
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: var(--transition);
+}
+
+#profile .calendar .day.empty {
+  background-color: #f9f9f9;
+  cursor: default;
+}
+
+#profile .calendar .day.normal {
+  background-color: #fff;
+  color: var(--text);
+}
+
+#profile .calendar .day.off {
+  background-color: #ff4d4d; /* Red, synced with schedule-table */
+  color: white;
+}
+
+#profile .calendar .day.overtime {
+  background-color: #4caf50; /* Green, synced */
+  color: white;
+}
+
+#profile .calendar .day.swap {
+  background-color: #2196f3; /* Blue, synced */
+  color: white;
+}
+
+#profile .calendar .day.pending {
+  background-color: #ffeb3b; /* Yellow, synced */
+  color: black;
+}
+
+#profile .calendar .day:hover:not(.empty) {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+/* Schedule Table (#all-schedule-list) */
+#profile .schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  table-layout: auto;
+  overflow-x: auto;
+  display: block;
+  margin-bottom: 12px;
+}
+
+#profile .schedule-table th,
+#profile .schedule-table td {
+  border: 1px solid #ddd;
+  padding: 6px;
+  text-align: center;
+  min-width: 50px;
+  white-space: nowrap;
+}
+
+#profile .schedule-table th {
+  background-color: var(--primary);
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+#profile .schedule-table th:first-child,
+#profile .schedule-table td:first-child {
+  position: sticky;
+  left: 0;
+  background-color: var(--primary);
+  color: white;
+  z-index: 2;
+}
+
+#profile .schedule-table td:first-child {
+  background-color: var(--card-bg);
+  color: var(--text);
+  font-weight: 500;
+}
+
+#profile .schedule-table tbody tr:nth-child(even) {
+  background-color: #f5f5f5;
+}
+
+#profile .schedule-table .day-normal {
+  background-color: #fff;
+  color: var(--text);
+}
+
+#profile .schedule-table .day-off {
+  background-color: #ff4d4d;
+  color: white;
+}
+
+#profile .schedule-table .day-overtime {
+  background-color: #4caf50;
+  color: white;
+}
+
+#profile .schedule-table .day-swap {
+  background-color: #2196f3;
+  color: white;
+}
+
+#profile .schedule-table .day-pending {
+  background-color: #ffeb3b;
+  color: black;
+}
+
+/* Modal */
+#profile .modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+#profile .modal-content {
+  background-color: var(--card-bg);
+  padding: 12px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  width: 90%;
+  max-width: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+#profile .modal-content .close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: var(--text);
+}
+
+#profile .modal-content .close:hover {
+  color: var(--primary);
+}
+
+/* Notification List */
+#profile #notification-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+  padding: 8px;
+  background-color: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+#profile .notification {
+  padding: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #eee;
+  font-size: 0.85rem;
+}
+
+#profile .notification.read {
+  background-color: #f5f5f5;
+}
+
+#profile .notification.unread {
+  background-color: #fff;
+  font-weight: 500;
+}
+
+#profile .notification button {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  margin-top: 4px;
+}
+
+#profile .notification button:hover {
+  background-color: var(--primary-dark);
+}
+
+/* Responsive Adjustments for Larger Screens */
+@media (min-width: 601px) {
+  #profile {
+    padding: 12px;
+  }
+
+  #profile .card {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  #profile h3 {
+    font-size: 1.4rem;
+  }
+
+  #profile p {
+    font-size: 1rem;
+  }
+
+  #profile .input-group input,
+  #profile .input-group textarea,
+  #profile .input-group select {
+    padding: 10px;
+    font-size: 1rem;
+  }
+
+  #profile .button-group button {
+    padding: 10px 20px;
+    font-size: 1rem;
+    min-width: 120px;
+  }
+
+  #profile .calendar-header h3 {
+    font-size: 1.2rem;
+  }
+
+  #profile .calendar .day {
+    font-size: 0.9rem;
+    padding: 10px;
+  }
+
+  #profile .schedule-table {
+    font-size: 0.9rem;
+  }
+
+  #profile .schedule-table th,
+  #profile .schedule-table td {
+    padding: 8px;
+    min-width: 60px;
+  }
+
+  #profile .schedule-table th:first-child,
+  #profile .schedule-table td:first-child {
+    min-width: 80px;
+  }
+
+  #profile .notification {
+    font-size: 0.9rem;
+    padding: 10px;
+  }
+
+  #profile .notification button {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Trong styles.css, thay phần #profile .calendar-header */
+#profile .calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  background-color: var(--primary); /* Giữ màu nền, giả sử là #6f4e37 */
+  color: white; /* Đảm bảo chữ trắng để dễ đọc */
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+}
+
+#profile .calendar-header h3 {
+  font-size: 1rem;
+  margin: 0;
+  border: none;
+  color: white; /* Đảm bảo tiêu đề "Tháng 6 2025" là màu trắng */
+}
+
+#profile .calendar-header button {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  background-color: var(--secondary); /* Nền nút, giả sử là màu sáng hơn */
+  color: white; /* Chữ nút màu trắng */
+  border: none;
+  border-radius: var(--radius);
+  min-width: 44px; /* Dễ bấm trên mobile */
+}
+
+#profile .calendar-header button:hover {
+  background-color: var(--primary-light);
+  color: white; /* Giữ màu chữ trắng khi hover */
+}
+
+/* Kiểm tra lại màu chữ của .day để đảm bảo tương phản */
+#profile .calendar .day {
+  aspect-ratio: 1 / 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: var(--radius);
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: var(--transition);
+}
+
+#profile .calendar .day.empty {
+  background-color: #f9f9f9;
+  color: var(--text); /* Màu chữ xám cho ngày trống */
+  cursor: default;
+}
+
+#profile .calendar .day.normal {
+  background-color: #fff;
+  color: var(--text); /* Màu chữ đen/xám, dễ đọc trên nền trắng */
+}
+
+#profile .calendar .day.off {
+  background-color: #ff4d4d; /* Nền đỏ */
+  color: white; /* Chữ trắng, tương phản */
+}
+
+#profile .calendar .day.overtime {
+  background-color: #4caf50; /* Nền xanh lá */
+  color: white; /* Chữ trắng */
+}
+
+#profile .calendar .day.swap {
+  background-color: #2196f3; /* Nền xanh dương */
+  color: white; /* Chữ trắng */
+}
+
+#profile .calendar .day.pending {
+  background-color: #ffeb3b; /* Nền vàng */
+  color: black; /* Chữ đen, tương phản với vàng */
+}
+
+#profile .calendar .day:hover:not(.empty) {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+#inventory {
+  .table-style {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    table-layout: auto;
+    overflow-x: auto;
+    display: block;
+  }
+
+  .inventory-table th, .restock-table th, .export-analysis-table th,
+  .inventory-table td, .restock-table td, .export-analysis-table td {
+    border: 1px solid #ddd;
+    padding: 0.6rem;
+    text-align: center;
+    min-width: 60px;
+    white-space: nowrap;
+  }
+
+  .inventory-table th, .restock-table th, .export-analysis-table th {
+    background-color: var(--primary-dark);
+    color: white;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  .quantity-cell {
+    cursor: pointer;
+  }
+
+  #export-chart {
+    max-height: 300px;
+    margin: 1rem 0;
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  @media (max-width: 600px) {
+    .table-style {
+      font-size: 0.75rem;
+    }
+    .inventory-table th, .restock-table th, .export-analysis-table th,
+    .inventory-table td, .restock-table td, .export-analysis-table td {
+      padding: 0.3rem;
+      min-width: 50px;
+    }
+    #export-chart {
+      max-height: 250px;
+    }
+  }
+}
+
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #333;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+}
