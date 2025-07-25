@@ -1,468 +1,505 @@
-// File: js/profile.js
+// Gắn hàm vào window để common.js truy cập
+window.renderReportProductList = renderReportProductList;
+window.renderFilteredReports = renderFilteredReports;
 
-function updateEmployeeInfo() {
-  const user = auth.currentUser;
-  if (!user) {
-    alert("Vui lòng đăng nhập để cập nhật thông tin!");
+// Gửi báo cáo
+function submitReport() {
+  const openingBalance = parseFloat(document.getElementById("opening-balance")?.value) || 0;
+  const revenue = parseFloat(document.getElementById("revenue")?.value) || 0;
+  const expenseInput = document.getElementById("expense-input")?.value || "";
+  const transferAmount = parseFloat(document.getElementById("transfer-amount")?.value) || 0;
+  const closingBalance = parseFloat(document.getElementById("closing-balance")?.value) || 0;
+  const { money: expenseAmount, note: expenseNote } = parseEntry(expenseInput); // Dùng parseEntry từ common.js
+  const products = Array.from(document.querySelectorAll("#report-product-list .product-item")).map(item => {
+    const productId = item.dataset.productId;
+    const name = item.querySelector(".product-name")?.textContent;
+    const quantity = parseInt(item.querySelector(".quantity")?.textContent) || 0;
+    return quantity > 0 ? { productId, name, quantity } : null;
+  }).filter(p => p);
+
+  if (openingBalance < 0 || revenue < 0 || expenseAmount < 0 || transferAmount < 0 || closingBalance < 0) {
+    alert("Các giá trị không được âm!");
     return;
   }
 
-  const nameInput = document.getElementById("personal-employee-name").value.trim();
-  const addressInput = document.getElementById("employee-address").value.trim();
-  const phoneInput = document.getElementById("employee-phone").value.trim();
-  const noteInput = document.getElementById("employee-note").value.trim();
+  const remaining = openingBalance + revenue - expenseAmount - closingBalance;
+  const cashActual = remaining - transferAmount;
 
-  if (!nameInput) {
-    alert("Vui lòng nhập tên hiển thị!");
+  auth.onAuthStateChanged(user => {
+    if (!user) {
+      alert("Vui lòng đăng nhập!");
+      return;
+    }
+
+    const reportData = {
+      date: new Date().toISOString(),
+      openingBalance,
+      revenue,
+      expenseAmount,
+      expenseNote: expenseAmount > 0 ? expenseNote : "",
+      transferAmount,
+      transferTimestamp: transferAmount > 0 ? new Date().toISOString() : null,
+      closingBalance,
+      remaining,
+      cashActual,
+      products,
+      employeeId: user.uid,
+      employeeName: globalEmployeeData.find(emp => emp.id === user.uid)?.name || "Không xác định"
+    };
+
+    db.ref("reports").push(reportData)
+      .then(() => {
+        alert("Báo cáo đã được gửi!");
+        document.getElementById("revenue-expense-form")?.reset();
+        renderReportProductList();
+        renderFilteredReports(getReportData());
+      })
+      .catch(err => alert("Lỗi khi gửi báo cáo: " + err.message));
+  });
+}
+
+// Chỉnh sửa chi phí
+function editReportExpense(reportId) {
+  const report = getReportData().find(r => r.id === reportId);
+  if (!report) {
+    alert("Báo cáo không tồn tại!");
     return;
   }
-
-  db.ref("employees/" + user.uid).update({
-    name: nameInput,
-    address: addressInput || "",
-    phone: phoneInput || "",
-    note: noteInput || "",
-    updatedAt: new Date().toISOString()
+  const newExpense = prompt("Chỉnh sửa chi phí (VND):", report.expenseAmount || 0);
+  const newNote = prompt("Chỉnh sửa ghi chú:", report.expenseNote || "");
+  if (!newExpense || isNaN(newExpense) || newExpense < 0) {
+    alert("Chi phí không hợp lệ!");
+    return;
+  }
+  const updatedExpense = parseFloat(newExpense);
+  db.ref("reports/" + reportId).update({
+    expenseAmount: updatedExpense,
+    expenseNote: newNote || "",
+    remaining: report.openingBalance + report.revenue - updatedExpense - (report.closingBalance || 0),
+    cashActual: (report.openingBalance + report.revenue - updatedExpense - (report.closingBalance || 0)) - (report.transferAmount || 0)
   })
     .then(() => {
-      alert("Cập nhật thông tin thành công!");
-      const employee = globalEmployeeData.find(e => e.id === user.uid);
-      if (employee) {
-        employee.name = nameInput;
-        employee.address = addressInput;
-        employee.phone = phoneInput;
-        employee.note = noteInput;
-      }
-      renderProfile();
+      renderFilteredReports(getReportData());
+      alert("Đã cập nhật chi phí!");
     })
-    .catch(error => alert("Có lỗi xảy ra khi cập nhật thông tin!"));
+    .catch(err => alert("Lỗi khi cập nhật chi phí: " + err.message));
 }
 
-function requestAdvance() {
-  const amount = parseFloat(document.getElementById("advance-amount").value) || 0;
-  const reason = document.getElementById("advance-reason").value.trim();
-
-  if (amount <= 0 || !reason) {
-    alert("Vui lòng nhập số tiền và lý do hợp lệ!");
+// Xóa chi phí
+function deleteReportExpense(reportId) {
+  if (!confirm("Xóa chi phí này?")) return;
+  const report = getReportData().find(r => r.id === reportId);
+  if (!report) {
+    alert("Báo cáo không tồn tại!");
     return;
   }
-
-  const user = auth.currentUser;
-  if (!user) {
-    alert("Vui lòng đăng nhập để gửi yêu cầu!");
-    return;
-  }
-
-  const employee = globalEmployeeData.find(e => e.id === user.uid);
-  const employeeName = employee ? employee.name : (user.displayName || user.email.split('@')[0] || 'Nhân viên');
-
-  const advanceData = {
-    id: Date.now().toString(),
-    employeeId: user.uid,
-    employeeName,
-    amount,
-    reason,
-    date: new Date().toISOString().split("T")[0],
-    status: "pending",
-    timestamp: Date.now()
-  };
-
-  db.ref("advances/" + advanceData.id).set(advanceData)
+  db.ref("reports/" + reportId).update({
+    expenseAmount: 0,
+    expenseNote: "",
+    remaining: report.openingBalance + report.revenue - (report.closingBalance || 0),
+    cashActual: (report.openingBalance + report.revenue - (report.closingBalance || 0)) - (report.transferAmount || 0)
+  })
     .then(() => {
-      globalAdvanceRequests.push(advanceData);
-      alert("Gửi yêu cầu tạm ứng thành công!");
-      document.getElementById("advance-amount").value = "";
-      document.getElementById("advance-reason").value = "";
-      renderAdvanceHistory();
+      renderFilteredReports(getReportData());
+      alert("Đã xóa chi phí!");
     })
-    .catch(err => alert("Lỗi khi gửi yêu cầu tạm ứng: " + err.message));
+    .catch(err => alert("Lỗi khi xóa chi phí: " + err.message));
 }
 
-function renderAdvanceHistory() {
-  const container = document.getElementById("advance-history");
-  if (!container) return;
-  container.innerHTML = "";
-  const myAdvances = globalAdvanceRequests.filter(a => a.employeeId === currentEmployeeId).sort((a, b) => b.timestamp - a.timestamp);
-  if (myAdvances.length === 0) {
-    container.innerHTML = "<p>Chưa có yêu cầu tạm ứng.</p>";
+// Chỉnh sửa giao dịch chuyển khoản
+function editReportTransfer(reportId) {
+  const report = getReportData().find(r => r.id === reportId);
+  if (!report) {
+    alert("Báo cáo không tồn tại!");
     return;
   }
-  let isExpanded = false;
-  const displayAdvances = isExpanded ? myAdvances : myAdvances.slice(0, 3);
-  displayAdvances.forEach(a => {
-    const approvalText = a.status === "approved" ? "Đã duyệt" : a.status === "denied" ? "Bị từ chối" : "Chờ duyệt";
-    const amount = a.amount || 0;
-    const div = document.createElement("div");
-    div.innerHTML = `Tạm ứng: ${amount.toLocaleString('vi-VN')} VND - ${a.reason || "Không có lý do"} - Ngày: ${a.date || "Không xác định"} - ${approvalText}<hr>`;
-    container.appendChild(div);
+  const newAmount = prompt("Chỉnh sửa số tiền chuyển khoản (VND):", report.transferAmount || 0);
+  if (!newAmount || isNaN(newAmount) || newAmount < 0) {
+    alert("Số tiền không hợp lệ!");
+    return;
+  }
+  const updatedAmount = parseFloat(newAmount);
+  db.ref("reports/" + reportId).update({
+    transferAmount: updatedAmount,
+    transferTimestamp: updatedAmount > 0 ? new Date().toISOString() : null,
+    cashActual: (report.openingBalance + report.revenue - report.expenseAmount - (report.closingBalance || 0)) - updatedAmount
+  })
+    .then(() => {
+      renderFilteredReports(getReportData());
+      alert("Đã cập nhật giao dịch chuyển khoản!");
+    })
+    .catch(err => alert("Lỗi khi cập nhật giao dịch: " + err.message));
+}
+
+// Xóa giao dịch chuyển khoản
+function deleteReportTransfer(reportId) {
+  if (!confirm("Xóa giao dịch chuyển khoản này?")) return;
+  const report = getReportData().find(r => r.id === reportId);
+  if (!report) {
+    alert("Báo cáo không tồn tại!");
+    return;
+  }
+  db.ref("reports/" + reportId).update({
+    transferAmount: 0,
+    transferTimestamp: null,
+    cashActual: report.openingBalance + report.revenue - report.expenseAmount - (report.closingBalance || 0)
+  })
+    .then(() => {
+      renderFilteredReports(getReportData());
+      alert("Đã xóa giao dịch chuyển khoản!");
+    })
+    .catch(err => alert("Lỗi khi xóa giao dịch: " + err.message));
+}
+
+// Hiển thị dữ liệu thu chi
+function renderRevenueExpenseData() {
+  const reportContainer = document.getElementById("shared-report-table");
+  if (!reportContainer) return;
+
+  const today = new Date().toISOString().split("T")[0];
+  const displayDate = new Date(today).toLocaleDateString('vi-VN');
+
+  const todayReports = getReportData().filter(report => {
+    const reportDate = new Date(report.date).toISOString().split("T")[0];
+    return reportDate === today;
   });
-  if (myAdvances.length > 3) {
+
+  if (todayReports.length === 0) {
+    reportContainer.innerHTML = `<p>Chưa có dữ liệu chi tiết cho ngày ${displayDate}.</p>`;
+    return;
+  }
+
+  const expenseReports = todayReports.filter(r => r.expenseAmount > 0).sort((a, b) => new Date(b.date) - new Date(a.date));
+  const isExpanded = isExpandedStates.revenueExpenseData;
+  const displayExpenses = isExpanded ? expenseReports : expenseReports.slice(0, 3);
+
+  const reportTable = document.createElement("table");
+  reportTable.classList.add("table-style");
+  reportTable.innerHTML = `
+    <thead><tr><th>STT</th><th>Tên NV</th><th>Chi phí</th><th>Hành động</th></tr></thead>
+    <tbody>${displayExpenses.map((r, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${r.employeeName || "Không xác định"}</td>
+        <td>${(r.expenseAmount || 0).toLocaleString('vi-VN')} VND (${r.expenseNote || "Không có"})</td>
+        <td><div class="action-buttons">
+          <button onclick="editReportExpense('${r.id}')">Sửa</button>
+          <button onclick="deleteReportExpense('${r.id}')">Xóa</button>
+        </div></td>
+      </tr>`).join("")}</tbody>`;
+  reportContainer.innerHTML = `<h3>Bảng Báo cáo Thu Chi (${displayDate})</h3>`;
+  reportContainer.appendChild(reportTable);
+
+  if (expenseReports.length > 3) {
     const expandBtn = document.createElement("button");
     expandBtn.textContent = isExpanded ? "Thu gọn" : "Xem thêm";
     expandBtn.className = "expand-btn";
-    expandBtn.onclick = () => { isExpanded = !isExpanded; renderAdvanceHistory(); };
-    container.appendChild(expandBtn);
+    expandBtn.onclick = () => { 
+      isExpandedStates.revenueExpenseData = !isExpandedStates.revenueExpenseData; 
+      renderRevenueExpenseData(); 
+    };
+    reportContainer.appendChild(expandBtn);
   }
 }
 
-function renderScheduleStatusList() {
-  const container = document.getElementById("schedule-status-list");
-  if (!container) return;
-  container.innerHTML = "";
-  const schedules = globalScheduleData.filter(s => s.employeeId === currentEmployeeId && s.date && !isNaN(new Date(s.date))).sort((a, b) => b.timestamp - a.timestamp);
-  if (schedules.length === 0) {
-    container.innerHTML = "<p>Không có yêu cầu lịch làm việc nào.</p>";
+// Hiển thị báo cáo lọc
+function renderFilteredReports(filteredReports, selectedDate = null, startDate = null, endDate = null) {
+  const reportContainer = document.getElementById("shared-report-table");
+  const productContainer = document.getElementById("report-product-table");
+  const transferContainer = document.getElementById("transfer-details");
+  const summaryContainer = document.getElementById("revenue-expense-summary");
+  if (!reportContainer || !productContainer || !transferContainer || !summaryContainer) {
+    console.error("One or more containers not found");
     return;
   }
-  let isExpanded = false;
-  const displaySchedules = isExpanded ? schedules : schedules.slice(0, 3);
-  displaySchedules.forEach(s => {
-    const statusText = s.status === "off" ? "Nghỉ" : s.status === "overtime" ? "Tăng ca" : "Đổi ca";
-    const approvalText = s.approvalStatus === "approved" ? "Đã duyệt" : s.approvalStatus === "denied" ? "Bị từ chối" : "Chờ duyệt";
-    const dateText = s.date ? new Date(s.date).toLocaleDateString('vi-VN') : "Không xác định";
-    const div = document.createElement("div");
-    div.className = s.approvalStatus === "pending" ? "day pending" : s.status === "off" ? "day off" : s.status === "overtime" ? "day overtime" : "day swap";
-    div.innerHTML = `${dateText}: ${statusText} - ${approvalText} ${approvalText === "Chờ duyệt" ? `<button onclick="cancelSchedule('${s.id}')">Hủy</button>` : ""}<hr>`;
-    container.appendChild(div);
-  });
-  if (schedules.length > 3) {
+
+  let displayReports = filteredReports;
+  if (startDate) {
+    displayReports = filteredReports.filter(r => {
+      const reportDate = new Date(r.date).toISOString().split("T")[0];
+      return reportDate >= startDate && reportDate <= (endDate || startDate);
+    });
+  } else if (selectedDate) {
+    displayReports = filteredReports.filter(r => r.date.split('T')[0] === selectedDate);
+  } else {
+    const today = new Date().toISOString().split("T")[0];
+    displayReports = filteredReports.filter(r => r.date.split('T')[0] === today);
+  }
+
+  const displayDate = selectedDate 
+    ? new Date(selectedDate).toLocaleDateString('vi-VN')
+    : (startDate 
+      ? `${new Date(startDate).toLocaleDateString('vi-VN')}${endDate && endDate !== startDate ? ' - ' + new Date(endDate).toLocaleDateString('vi-VN') : ''}`
+      : new Date().toLocaleDateString('vi-VN'));
+
+  if (displayReports.length === 0) {
+    reportContainer.innerHTML = `<p>Chưa có báo cáo thu chi trong ${displayDate}.</p>`;
+    productContainer.innerHTML = `<p>Chưa có báo cáo xuất hàng trong ${displayDate}.</p>`;
+    transferContainer.innerHTML = `<p>Chưa có giao dịch chuyển khoản trong ${displayDate}.</p>`;
+    summaryContainer.innerHTML = `<p>Chưa có tóm tắt thu chi trong ${displayDate}.</p>`;
+    return;
+  }
+
+  const sortedReports = displayReports.sort((a, b) => new Date(b.date) - new Date(a.date));
+  const isExpandedFinance = isExpandedStates.filteredReports;
+  const isExpandedProduct = isExpandedStates.filteredReports;
+
+  // Bảng báo cáo thu chi
+  const expenseReports = sortedReports.filter(r => r.expenseAmount > 0);
+  const displayExpenses = isExpandedFinance ? expenseReports : expenseReports.slice(0, 3);
+  const reportTable = document.createElement("table");
+  reportTable.classList.add("table-style");
+  reportTable.innerHTML = `
+    <thead><tr><th>STT</th><th>Tên NV</th><th>Chi phí</th><th>Hành động</th></tr></thead>
+    <tbody>${displayExpenses.map((r, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${r.employeeName || "Không xác định"}</td>
+        <td>${(r.expenseAmount || 0).toLocaleString('vi-VN')} VND (${r.expenseNote || "Không có"})</td>
+        <td><div class="action-buttons">
+          <button onclick="editReportExpense('${r.id}')">Sửa</button>
+          <button onclick="deleteReportExpense('${r.id}')">Xóa</button>
+        </div></td>
+      </tr>`).join("")}</tbody>`;
+  reportContainer.innerHTML = `<h3>Bảng Báo cáo Thu Chi (${displayDate})</h3>`;
+  reportContainer.appendChild(reportTable);
+
+  if (expenseReports.length > 3) {
     const expandBtn = document.createElement("button");
-    expandBtn.textContent = isExpanded ? "Thu gọn" : "Xem thêm";
+    expandBtn.textContent = isExpandedFinance ? "Thu gọn" : "Xem thêm";
     expandBtn.className = "expand-btn";
-    expandBtn.onclick = () => { isExpanded = !isExpanded; renderScheduleStatusList(); };
-    container.appendChild(expandBtn);
+    expandBtn.onclick = () => { 
+      isExpandedStates.filteredReports = !isExpandedStates.filteredReports; 
+      renderFilteredReports(filteredReports, selectedDate, startDate, endDate); 
+    };
+    reportContainer.appendChild(expandBtn);
   }
-}
 
-function cancelSchedule(key) {
-  const schedule = globalScheduleData.find(s => s.id === key);
-  if (!schedule || schedule.approvalStatus !== "pending") {
-    alert("Chỉ có thể hủy yêu cầu đang chờ duyệt!");
-    return;
+  // Bảng báo cáo xuất hàng
+  const productReports = sortedReports.flatMap((r, index) => 
+    Array.isArray(r.products) && r.products.length > 0 
+      ? r.products.map(p => ({
+          index: index + 1,
+          reportId: r.id,
+          employeeName: r.employeeName || "Không xác định",
+          productName: p.name || "Sản phẩm không xác định",
+          quantity: p.quantity,
+          productId: p.productId,
+          date: r.date
+        }))
+      : []
+  );
+  const displayProducts = isExpandedProduct ? productReports : productReports.slice(0, 3);
+  const productTable = document.createElement("table");
+  productTable.classList.add("table-style");
+  productTable.innerHTML = `
+    <thead><tr><th>STT</th><th>Tên NV</th><th>Tên hàng hóa</th><th>Số lượng</th><th>Hành động</th></tr></thead>
+    <tbody>${displayProducts.map(p => `
+      <tr>
+        <td>${p.index}</td>
+        <td>${p.employeeName}</td>
+        <td>${p.productName}</td>
+        <td>${p.quantity}</td>
+        <td><div class="action-buttons">
+          <button onclick="editReportProduct('${p.reportId}', '${p.productId}')">Sửa</button>
+          <button onclick="deleteReportProduct('${p.reportId}', '${p.productId}')">Xóa</button>
+        </div></td>
+      </tr>`).join("")}</tbody>`;
+  productContainer.innerHTML = `<h3>Bảng Báo cáo Xuất Hàng (${displayDate})</h3>`;
+  productContainer.appendChild(productTable);
+
+  if (productReports.length > 3) {
+    const expandBtn = document.createElement("button");
+    expandBtn.textContent = isExpandedProduct ? "Thu gọn" : "Xem thêm";
+    expandBtn.className = "expand-btn";
+    expandBtn.onclick = () => { 
+      isExpandedStates.filteredReports = !isExpandedStates.filteredReports; 
+      renderFilteredReports(filteredReports, selectedDate, startDate, endDate); 
+    };
+    productContainer.appendChild(expandBtn);
   }
-  db.ref("schedules/" + key).remove()
-    .then(() => {
-      globalScheduleData = globalScheduleData.filter(s => s.id !== key);
-      const employee = globalEmployeeData.find(e => e.id === currentEmployeeId);
-      const employeeName = employee ? employee.name : (auth.currentUser.displayName || auth.currentUser.email.split('@')[0]);
-      const statusText = schedule.status === "off" ? "Nghỉ" : schedule.status === "overtime" ? "Tăng ca" : "Đổi ca";
-      const message = `${employeeName} đã hủy yêu cầu ${statusText} ngày ${schedule.date}`;
-      db.ref("messages/manager").push({ text: message, time: new Date().toISOString(), employeeId: currentEmployeeId, employeeName })
-        .then(() => {
-          db.ref("notifications/" + schedule.employeeId).push({
-            message: `Yêu cầu ${statusText} ngày ${schedule.date} đã bị hủy.`,
-            timestamp: Date.now(),
-            type: "confirmation",
-            isRead: false
-          });
-          alert("Đã hủy yêu cầu và thông báo quản lý!");
-          renderCalendar();
-          renderScheduleStatusList();
-          renderOffAndOvertime();
-          renderSalarySummary();
-        })
-        .catch(err => alert("Lỗi gửi thông báo hủy: " + err.message));
-    })
-    .catch(err => alert("Lỗi hủy yêu cầu: " + err.message));
-}
 
-// File: js/profile.js (or add to common.js if not in a separate file)
-function renderCalendar() {
-  const container = document.getElementById("calendar");
-  if (!container) {
-    console.warn("Container 'calendar' not found in DOM.");
-    return;
+  // Bảng chi tiết giao dịch chuyển khoản
+  const transferReports = sortedReports.filter(r => r.transferAmount > 0 && r.transferTimestamp);
+  let totalTransferAmount = 0;
+  const transferTable = document.createElement("table");
+  transferTable.classList.add("table-style");
+  transferTable.innerHTML = `
+    <thead><tr><th>STT</th><th>Giờ</th><th>Số tiền (VND)</th><th>Hành động</th></tr></thead>
+    <tbody>${transferReports.map((r, index) => {
+      totalTransferAmount += r.transferAmount || 0;
+      return `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${new Date(r.transferTimestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</td>
+        <td>${(r.transferAmount || 0).toLocaleString('vi-VN')}</td>
+        <td><div class="action-buttons">
+          <button onclick="editReportTransfer('${r.id}')">Sửa</button>
+          <button onclick="deleteReportTransfer('${r.id}')">Xóa</button>
+        </div></td>
+      </tr>`;
+    }).join("")}</tbody>`;
+  transferTable.innerHTML += `
+    <tfoot><tr><td colspan="2"><strong>Tổng</strong></td><td><strong>${totalTransferAmount.toLocaleString('vi-VN')} VND</strong></td><td></td></tr></tfoot>`;
+  transferContainer.innerHTML = `<h3>Chi tiết Giao dịch Chuyển khoản (${displayDate})</h3>`;
+  if (transferReports.length === 0) {
+    transferContainer.innerHTML += `<p>Chưa có giao dịch chuyển khoản trong ${displayDate}.</p>`;
+  } else {
+    transferContainer.appendChild(transferTable);
   }
-  container.innerHTML = "";
 
-  // Current month and year
-  let currentDate = new Date();
-  let currentMonth = currentDate.getMonth();
-  let currentYear = currentDate.getFullYear();
+  // Tóm tắt thu chi
+  const totalOpeningBalance = sortedReports.reduce((sum, r) => sum + (r.openingBalance || 0), 0);
+  const totalRevenue = sortedReports.reduce((sum, r) => sum + (r.revenue || 0), 0);
+  const totalExpense = sortedReports.reduce((sum, r) => sum + (r.expenseAmount || 0), 0);
+  const totalClosingBalance = sortedReports.reduce((sum, r) => sum + (r.closingBalance || 0), 0);
+  const totalRemaining = totalOpeningBalance + totalRevenue - totalExpense - totalClosingBalance;
+  const totalCashActual = totalRemaining - totalTransferAmount;
 
-  // Function to render calendar for a specific month/year
-  window.renderMonth = function(month, year) {
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const firstDayOfWeek = firstDay.getDay() || 7; // Convert Sunday (0) to 7
-
-    // Format month/year for display
-    const monthNames = [
-      "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
-      "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"
-    ];
-    const header = `
-      <div class="calendar-header">
-        <button onclick="renderMonth(${month - 1 < 0 ? 11 : month - 1}, ${month - 1 < 0 ? year - 1 : year})">◄</button>
-        <h3>${monthNames[month]} ${year}</h3>
-        <button onclick="renderMonth(${month + 1 > 11 ? 0 : month + 1}, ${month + 1 > 11 ? year + 1 : year})">►</button>
-      </div>
-    `;
-
-    // Generate days
-    let daysHTML = "";
-    // Add empty days for alignment
-    for (let i = 1; i < firstDayOfWeek; i++) {
-      daysHTML += `<div class="day empty"></div>`;
-    }
-    // Add actual days
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-      const schedule = globalScheduleData.find(
-        s => s.employeeId === currentEmployeeId && s.date === dateStr && s.approvalStatus === "approved"
-      );
-      let className = "day normal";
-      let displayText = day;
-      if (schedule) {
-        if (schedule.status === "off") {
-          className = "day off";
-          displayText = `${day} (Nghỉ)`;
-        } else if (schedule.status === "overtime") {
-          className = "day overtime";
-          displayText = `${day} (Tăng ca)`;
-        } else if (schedule.status === "swap") {
-          className = "day swap";
-          displayText = `${day} (Đổi ca)`;
-        }
-      }
-      daysHTML += `<div class="${className}" onclick="showScheduleRequestModal('${dateStr}')">${displayText}</div>`;
-    }
-
-    container.innerHTML = `
-      ${header}
-      <div class="calendar">
-        <div class="day">T2</div><div class="day">T3</div><div class="day">T4</div><div class="day">T5</div>
-        <div class="day">T6</div><div class="day">T7</div><div class="day">CN</div>
-        ${daysHTML}
-      </div>
-    `;
+  const getLatestReport = (field, condition) => {
+    const validReports = sortedReports.filter(condition).sort((a, b) => new Date(b.date) - new Date(a.date));
+    return validReports[0] || { employeeName: "Không xác định", date: null };
   };
 
-  // Render current month
-  window.renderMonth(currentMonth, currentYear);
-}
+  const latestOpening = getLatestReport('openingBalance', r => r.openingBalance > 0);
+  const latestRevenue = getLatestReport('revenue', r => r.revenue > 0);
+  const latestExpense = getLatestReport('expenseAmount', r => r.expenseAmount > 0);
+  const latestTransfer = getLatestReport('transferAmount', r => r.transferAmount > 0);
+  const latestClosing = getLatestReport('closingBalance', r => r.closingBalance > 0);
+  const latestRemaining = getLatestReport('remaining', r => r.remaining !== 0);
+  const latestCashActual = getLatestReport('cashActual', r => r.cashActual !== 0);
 
-function changeMonth(offset) {
-  let currentMonth = new Date().getMonth() + 1 + offset;
-  let currentYear = new Date().getFullYear();
-  if (currentMonth < 1) { currentMonth = 12; currentYear--; }
-  else if (currentMonth > 12) { currentMonth = 1; currentYear++; }
-  renderCalendar();
-}
+  const formatTime = (date) => date ? new Date(date).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '';
 
-function showActionModal(date) {
-  const modal = document.getElementById("action-modal");
-  const modalContent = document.getElementById("action-modal-content");
-  if (!modal || !modalContent) return;
-  const schedule = globalScheduleData.find(s => s.date === date && s.employeeId === currentEmployeeId);
-  modalContent.innerHTML = `
-    <span class="close" onclick="closeModal('action-modal')">×</span>
-    <h3>Chọn hành động cho ngày ${new Date(date).toLocaleDateString('vi-VN')}</h3>
-    <div class="button-group">
-      ${!schedule || schedule.approvalStatus !== "approved" ? `<button class="primary-btn" onclick="submitScheduleRequest('${date}', 'off')">Nghỉ</button>` : ""}
-      ${!schedule || schedule.approvalStatus !== "approved" ? `<button class="primary-btn" onclick="submitScheduleRequest('${date}', 'overtime')">Tăng ca</button>` : ""}
-      ${!schedule || schedule.approvalStatus !== "approved" ? `<button class="primary-btn" onclick="submitScheduleRequest('${date}', 'swap')">Đổi ca</button>` : ""}
-      ${schedule && schedule.approvalStatus === "pending" ? `<button class="secondary-btn" onclick="cancelSchedule('${schedule.id}')">Hủy</button>` : ""}
-    </div>
-  `;
-  modal.style.display = "block";
-}
+  summaryContainer.innerHTML = `
+    <h3>Tóm tắt Thu Chi (${displayDate}):</h3>
+    <p><strong>Số dư đầu kỳ:</strong> ${totalOpeningBalance.toLocaleString('vi-VN')} VND (${formatTime(latestOpening.date)} NV: ${latestOpening.employeeName})</p>
+    <p><strong>Doanh thu:</strong> ${totalRevenue.toLocaleString('vi-VN')} VND (${formatTime(latestRevenue.date)} NV: ${latestRevenue.employeeName})</p>
+    <p><strong>Tiền chuyển khoản:</strong> ${totalTransferAmount.toLocaleString('vi-VN')} VND (${formatTime(latestTransfer.date)} NV: ${latestTransfer.employeeName})</p>
+    <p><strong>Chi phí:</strong> ${totalExpense.toLocaleString('vi-VN')} VND (${formatTime(latestExpense.date)} NV: ${latestExpense.employeeName})</p>
+    <p><strong>Số dư cuối kỳ:</strong> ${totalClosingBalance.toLocaleString('vi-VN')} VND (${formatTime(latestClosing.date)} NV: ${latestClosing.employeeName})</p>
+    <p><strong>Còn lại:</strong> ${totalRemaining.toLocaleString('vi-VN')} VND (${formatTime(latestRemaining.date)} NV: ${latestRemaining.employeeName})</p>
+    <p><strong>Tiền mặt thực tế:</strong> ${totalCashActual.toLocaleString('vi-VN')} VND (${formatTime(latestCashActual.date)} NV: ${latestCashActual.employeeName})</p>`;
 
-function submitScheduleRequest(date, status) {
-  if (!["off", "overtime", "swap"].includes(status)) {
-    alert("Trạng thái không hợp lệ!");
-    return;
-  }
-  const user = auth.currentUser;
-  if (!user) {
-    alert("Vui lòng đăng nhập để gửi yêu cầu!");
-    return;
-  }
-  const employee = globalEmployeeData.find(e => e.id === user.uid);
-  if (!employee) {
-    alert("Không tìm thấy thông tin nhân viên!");
-    return;
-  }
-
-  const scheduleId = `${date}_${user.uid}`;
-  const scheduleData = {
-    id: scheduleId,
-    employeeId: user.uid,
-    employeeName: employee.name,
-    date,
-    status,
-    approvalStatus: "pending", // Luôn đặt trạng thái là pending
-    timestamp: Date.now()
-  };
-
-  db.ref("schedules/" + scheduleId).set(scheduleData)
-    .then(() => {
-      globalScheduleData.push(scheduleData);
-      const statusText = status === "off" ? "Nghỉ" : status === "overtime" ? "Tăng ca" : "Đổi ca";
-      // Gửi thông báo cho quản lý
-      db.ref("messages/manager").push({
-        message: `Yêu cầu ${statusText} ngày ${date} từ ${employee.name}`,
-        senderId: user.uid,
-        senderName: employee.name,
-        scheduleId,
-        timestamp: Date.now()
-      });
-      // Gửi thông báo xác nhận cho nhân viên
-      db.ref("notifications/" + user.uid).push({
-        message: `Yêu cầu ${statusText} ngày ${date} đã được gửi.`,
-        timestamp: Date.now(),
-        type: "confirmation",
-        date,
-        isRead: false
-      }).then(() => {
-        alert(`Yêu cầu ${statusText} đã được gửi!`);
-        closeModal("action-modal");
-        renderCalendar();
-        renderScheduleStatusList();
-        renderOffAndOvertime();
-        renderSalarySummary();
-        renderAllSchedule(); // Cập nhật lịch toàn thể
-      });
+  // Tổng xuất kho
+  const totalProductSummary = productReports.reduce((acc, p) => {
+    acc[p.productName] = (acc[p.productName] || 0) + p.quantity;
+    return acc;
+  }, {});
+  const totalProductText = Object.entries(totalProductSummary)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, qty]) => {
+      const inventoryItem = getInventoryData().find(item => item.name === name);
+      const remainingQty = inventoryItem ? inventoryItem.quantity : 0;
+      return `<li>${name}: ${qty} (Còn: ${remainingQty})</li>`;
     })
-    .catch(err => alert("Lỗi khi gửi yêu cầu: " + err.message));
-}
-function renderOffAndOvertime() {
-  const container = document.getElementById("off-and-overtime");
-  if (!container) return;
-  container.innerHTML = "";
-
-  const today = new Date();
-  const currentMonth = today.getMonth() + 1;
-  const currentYear = today.getFullYear();
-  const schedules = globalScheduleData.filter(s => 
-    s.employeeId === currentEmployeeId && 
-    s.approvalStatus === "approved" && 
-    s.date && 
-    !isNaN(new Date(s.date)) && 
-    s.date.startsWith(`${currentYear}-${String(currentMonth).padStart(2, '0')}`)
-  );
-
-  const offDays = schedules
-    .filter(s => s.status === "off")
-    .map(s => new Date(s.date).toLocaleDateString('vi-VN'))
-    .join(", ");
-  const overtimeDays = schedules
-    .filter(s => s.status === "overtime")
-    .map(s => new Date(s.date).toLocaleDateString('vi-VN'))
-    .join(", ");
-
-  container.innerHTML = `
-    <p><strong>Ngày off trong tháng:</strong> ${offDays || "Không có"}</p>
-    <p><strong>Ngày tăng ca:</strong> ${overtimeDays || "Không có"}</p>
-  `;
+    .join("");
+  const totalProductDiv = document.createElement("div");
+  totalProductDiv.classList.add("report-total");
+  totalProductDiv.innerHTML = `<strong>Tổng xuất kho (${displayDate}):</strong><ul>${totalProductText || "<li>Không có</li>"}</ul>`;
+  productContainer.appendChild(totalProductDiv);
 }
 
-function renderSalarySummary() {
-  const container = document.getElementById("salary-summary");
-  if (!container) return;
-  const employee = globalEmployeeData.find(e => e.id === currentEmployeeId);
-  if (!employee) {
-    container.innerHTML = "<p>Không tìm thấy thông tin nhân viên.</p>";
+// Hiển thị danh sách sản phẩm
+function renderReportProductList() {
+  const productList = document.getElementById("report-product-list");
+  if (!productList) return;
+
+  productList.innerHTML = getInventoryData().map(item => `
+    <div class="product-item" data-product-id="${item.id}">
+      <span class="product-name">${item.name} (Tồn: ${item.quantity})</span>
+      <button class="minus" onclick="decrementProductCount('${item.id}')">-</button>
+      <span class="quantity">0</span>
+    </div>`).join("");
+}
+
+// Tăng số lượng sản phẩm
+function incrementProductCount(productId) {
+  const productItem = document.querySelector(`.product-item[data-product-id="${productId}"]`);
+  if (!productItem) return;
+
+  const quantitySpan = productItem.querySelector(".quantity");
+  const currentQuantity = parseInt(quantitySpan.textContent) || 0;
+  const inventoryItem = getInventoryData().find(item => item.id === productId);
+  if (!inventoryItem || currentQuantity >= inventoryItem.quantity) {
+    alert("Không đủ hàng trong kho!");
     return;
   }
-  const today = new Date();
-  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-  const approvedSchedules = globalScheduleData.filter(s => 
-    s.employeeId === currentEmployeeId && 
-    s.approvalStatus === "approved" && 
-    s.date && 
-    !isNaN(new Date(s.date)) && 
-    s.date.startsWith(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`)
-  );
-  const workdays = approvedSchedules.filter(s => s.status !== "off").length;
-  const offdays = approvedSchedules.filter(s => s.status === "off").length;
-  const baseSalary = workdays * (employee.dailyWage || 0);
-  const overtimePay = approvedSchedules.filter(s => s.status === "overtime").length * ((employee.dailyWage || 0) * 1.5);
-  const advances = globalAdvanceRequests
-    .filter(a => a.employeeId === currentEmployeeId && a.status === "approved")
-    .reduce((sum, a) => sum + (a.amount || 0), 0);
-  const totalSalary = baseSalary + overtimePay + (employee.allowance || 0) - (employee.otherFee || 0) - advances;
-  container.innerHTML = `
-    <h3>Tổng lương tháng ${today.getMonth() + 1}/${today.getFullYear()}</h3>
-    <p>Số ngày làm: ${workdays}</p>
-    <p>Lương cơ bản: ${baseSalary.toLocaleString('vi-VN')} VND</p>
-    <p>Tiền tăng ca: ${overtimePay.toLocaleString('vi-VN')} VND</p>
-    <p>Phụ cấp: ${(employee.allowance || 0).toLocaleString('vi-VN')} VND</p>
-    <p>Phí khác: ${(employee.otherFee || 0).toLocaleString('vi-VN')} VND</p>
-    <p><strong>Thực nhận: ${totalSalary.toLocaleString('vi-VN')} VND</strong></p>
-  `;
+  quantitySpan.textContent = currentQuantity + 1;
 }
 
-// File: js/profile.js
+// Giảm số lượng sản phẩm
+function decrementProductCount(productId) {
+  const productItem = document.querySelector(`.product-item[data-product-id="${productId}"]`);
+  if (!productItem) return;
 
-// Hàm mới: Hiển thị lịch làm việc toàn thể nhân viên (chỉ xem, không chỉnh sửa)
-function renderAllSchedule() {
-  const container = document.getElementById("all-schedule-list");
-  if (!container) return;
-  container.innerHTML = "";
-  if (!globalScheduleData || !globalEmployeeData || globalEmployeeData.length === 0) {
-    container.innerHTML = "<p>Chưa có lịch làm việc hoặc thông tin nhân viên.</p>";
+  const quantitySpan = productItem.querySelector(".quantity");
+  const currentQuantity = parseInt(quantitySpan.textContent) || 0;
+  if (currentQuantity > 0) {
+    quantitySpan.textContent = currentQuantity - 1;
+  }
+}
+
+// Chỉnh sửa sản phẩm trong báo cáo
+function editReportProduct(reportId, productId) {
+  const report = getReportData().find(r => r.id === reportId);
+  if (!report) {
+    alert("Báo cáo không tồn tại!");
     return;
   }
-
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth() + 1;
-  const daysInMonth = new Date(year, month, 0).getDate();
-  const table = document.createElement("table");
-  table.classList.add("table-style");
-
-  let header = "<tr><th>Nhân viên</th>";
-  for (let day = 1; day <= daysInMonth; day++) {
-    header += `<th>${day}</th>`;
+  const product = report.products?.find(p => p.productId === productId);
+  if (!product) {
+    alert("Sản phẩm không tồn tại trong báo cáo!");
+    return;
   }
-  header += "</tr>";
-  table.innerHTML = `<thead>${header}</thead><tbody>`;
-
-  globalEmployeeData.forEach(emp => {
-    let row = `<tr><td class="employee-name">${emp.name}</td>`;
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const schedule = globalScheduleData.find(s => s.date === date && s.employeeId === emp.id);
-      let className = "";
-      let content = "";
-      if (schedule && schedule.date && !isNaN(new Date(schedule.date))) {
-        if (schedule.approvalStatus === "approved") {
-          className = schedule.status === "off" ? "day off" : schedule.status === "overtime" ? "day overtime" : "day swap";
-          content = `${emp.name} ${schedule.status === "off" ? "off" : schedule.status === "overtime" ? "tăng ca" : "đổi ca"}`;
-        } else if (schedule.approvalStatus === "pending") {
-          className = "day pending";
-          content = `${emp.name} chờ duyệt`;
-        }
-      }
-      row += `<td class="${className}">${content}</td>`;
-    }
-    row += "</tr>";
-    table.innerHTML += row;
-  });
-
-  table.innerHTML += "</tbody>";
-  container.appendChild(table);
+  const newQuantity = prompt("Chỉnh sửa số lượng:", product.quantity);
+  if (!newQuantity || isNaN(newQuantity) || newQuantity < 0) {
+    alert("Số lượng không hợp lệ!");
+    return;
+  }
+  const updatedQuantity = parseInt(newQuantity);
+  const inventoryItem = getInventoryData().find(item => item.id === productId);
+  if (updatedQuantity > inventoryItem.quantity + product.quantity) {
+    alert("Số lượng vượt quá tồn kho!");
+    return;
+  }
+  const updatedProducts = report.products.map(p => 
+    p.productId === productId ? { ...p, quantity: updatedQuantity } : p
+  ).filter(p => p.quantity > 0);
+  db.ref("reports/" + reportId).update({ products: updatedProducts })
+    .then(() => {
+      renderFilteredReports(getReportData());
+      alert("Đã cập nhật sản phẩm!");
+    })
+    .catch(err => alert("Lỗi khi cập nhật sản phẩm: " + err.message));
 }
 
-// Cập nhật renderProfile để gọi renderAllSchedule
-function renderProfile() {
-  const user = auth.currentUser;
-  if (!user) return;
-  const employee = globalEmployeeData.find(e => e.id === user.uid);
-  if (employee) {
-    document.getElementById("personal-employee-name").value = employee.name || "";
-    document.getElementById("employee-address").value = employee.address || "";
-    document.getElementById("employee-phone").value = employee.phone || "";
-    document.getElementById("employee-note").value = employee.note || "";
+// Xóa sản phẩm trong báo cáo
+function deleteReportProduct(reportId, productId) {
+  if (!confirm("Xóa sản phẩm này khỏi báo cáo?")) return;
+  const report = getReportData().find(r => r.id === reportId);
+  if (!report) {
+    alert("Báo cáo không tồn tại!");
+    return;
   }
-  renderCalendar();
-  renderScheduleStatusList();
-  renderAdvanceHistory();
-  renderOffAndOvertime();
-  renderSalarySummary();
-  renderAllSchedule(); // Gọi hàm mới
+  const updatedProducts = report.products?.filter(p => p.productId !== productId) || [];
+  db.ref("reports/" + reportId).update({ products: updatedProducts })
+    .then(() => {
+      renderFilteredReports(getReportData());
+      alert("Đã xóa sản phẩm!");
+    })
+    .catch(err => alert("Lỗi khi xóa sản phẩm: " + err.message));
 }
 
-// Các hàm khác (updateEmployeeInfo, requestAdvance, v.v.) giữ nguyên từ phiên bản trước
+// Lọc báo cáo
+function applyFilter() {
+  const filterRange = document.getElementById("filter-range")?.value;
+  if (!filterRange) {
+    renderFilteredReports(getReportData());
+    return;
+  }
+  const [start, end] = filterRange.split(" - ");
+  const startDate = start ? new Date(start.split("/").reverse().join("-")).toISOString().split("T")[0] : null;
+  const endDate = end ? new Date(end.split("/").reverse().join("-")).toISOString().split("T")[0] : startDate;
+  renderFilteredReports(getReportData(), null, startDate, endDate);
+}

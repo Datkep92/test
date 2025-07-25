@@ -93,7 +93,7 @@
     </div>
 
     <!-- Tab Thu Chi -->
-    <div class="tabcontent" id="revenue-expense">
+<div class="tabcontent" id="revenue-expense">
   <h2>Báo cáo Thu Chi</h2>
   <h3>Nhập báo cáo</h3>
   <input type="number" id="opening-balance" placeholder="Số dư đầu kỳ (VND)">
@@ -106,7 +106,7 @@
   <button class="primary-btn" onclick="submitReport()">Gửi Báo Cáo</button>
   <div id="filter-section">
     <h3>Lọc Báo Cáo</h3>
-    <input type="text" id="filter-range" placeholder="Chọn khoảng thời gian">
+    <input type="text" id="filter-range" placeholder="Chọn khoảng thời gian (VD: 25/07/2025 - 26/07/2025)">
     <button onclick="applyFilter()">Apply</button>
   </div>
   <div id="revenue-expense-summary" class="summary-section">
@@ -121,69 +121,6 @@
   <div id="report-product-table" class="table-section">
     <h3>Bảng Báo cáo Xuất Hàng</h3>
   </div>
-  <style>
-    /* CSS cho bảng báo cáo */
-    .table-section {
-      margin: 20px 0;
-    }
-    .table-style {
-      width: 100%;
-      border-collapse: collapse;
-      background: #fff;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .table-style th, .table-style td {
-      border: 1px solid #ddd;
-      padding: 12px;
-      text-align: center;
-      vertical-align: middle;
-    }
-    .table-style th {
-      background-color: #f4f4f4;
-      font-weight: bold;
-    }
-    .table-style tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
-    .table-style button {
-      padding: 6px 12px;
-      margin: 0 5px;
-      border: none;
-      border-radius: 3px;
-      cursor: pointer;
-    }
-    .table-style button:first-child {
-      background-color: #007bff;
-      color: #fff;
-    }
-    .table-style button:last-child {
-      background-color: #dc3545;
-      color: #fff;
-    }
-    /* CSS cho tổng xuất kho */
-    .report-total {
-      margin-top: 15px;
-      padding: 10px;
-      background: #f8f9fa;
-      border-radius: 5px;
-    }
-    .report-total ul {
-      list-style-type: none;
-      padding: 0;
-    }
-    .report-total li {
-      margin: 5px 0;
-      padding-left: 20px;
-      position: relative;
-    }
-    .report-total li:before {
-      content: "•";
-      position: absolute;
-      left: 0;
-      color: #007bff;
-      font-size: 1.2em;
-    }
-  </style>
 </div>
 
     <div id="inventory" class="tabcontent">
@@ -233,62 +170,74 @@
   </div>
 </div>
 
-    <!-- Tab Cá nhân -->
-    <div id="profile" class="tabcontent">
-      <h2>Thông tin cá nhân</h2>
-      <div class="card">
-        <h3>Thông tin cá nhân</h3>
-        <div class="input-group">
-          <label for="personal-employee-name">Họ tên:</label>
-          <input type="text" id="personal-employee-name" placeholder="Họ tên">
-          <label for="employee-address">Địa chỉ:</label>
-          <input type="text" id="employee-address" placeholder="Địa chỉ">
-          <label for="employee-phone">Số điện thoại:</label>
-          <input type="text" id="employee-phone" placeholder="Số điện thoại">
-          <label for="employee-note">Ghi chú:</label>
-          <input type="text" id="employee-note" placeholder="Ghi chú">
-        </div>
-
-        <div class="button-group">
-          <button class="primary-btn" onclick="updateEmployeeInfo()">Cập nhật</button>
-        </div>
-      </div>
-      <div class="card">
-        <h3>Lịch làm việc cá nhân</h3>
-        <div id="calendar"></div>
-        <div id="schedule-status-list"></div>
-      </div>
-      <div class="card">
-        <h3>Lịch làm việc toàn thể nhân viên</h3>
-        <div id="all-schedule-list" style="overflow-x: auto;"></div>
-      </div>
-      <div class="card">
-        <h3>Yêu cầu tạm ứng</h3>
-        <div class="input-group">
-          <label for="advance-amount">Số tiền (VND):</label>
-          <input type="number" id="advance-amount" placeholder="Số tiền" min="0">
-          <label for="advance-reason">Lý do:</label>
-          <input type="text" id="advance-reason" placeholder="Lý do">
-        </div>
-        <div class="button-group">
-          <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu</button>
-        </div>
-        <div id="advance-history"></div>
-      </div>
-      <div class="card">
-        <h3>Tổng lương</h3>
-        <div id="salary-summary"></div>
-      </div>
-      <div class="card">
-        <h3>Ngày off và tăng ca</h3>
-        <div id="off-and-overtime"></div>
-      </div>
-      <div id="action-modal" class="modal">
-        <div id="action-modal-content" class="modal-content">
-          <span class="close" onclick="closeModal('action-modal')">×</span>
-        </div>
-      </div>
+  <!-- Tab Cá nhân -->
+<div id="profile" class="tabcontent">
+  <h2>Thông tin cá nhân</h2>
+  <div class="card">
+    <div class="input-group">
+      <label for="personal-employee-name">Họ tên:</label>
+      <input type="text" id="personal-employee-name" placeholder="Họ tên">
+      <label for="employee-address">Địa chỉ:</label>
+      <input type="text" id="employee-address" placeholder="Địa chỉ">
+      <label for="employee-phone">Số điện thoại:</label>
+      <input type="text" id="employee-phone" placeholder="Số điện thoại">
+      <label for="employee-note">Ghi chú:</label>
+      <input type="text" id="employee-note" placeholder="Ghi chú">
     </div>
+    <div class="button-group">
+      <button class="primary-btn" onclick="updateEmployeeInfo()">Cập nhật</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Lịch làm việc</h3>
+    <div id="calendar"></div>
+  </div>
+  <div class="card">
+    <h3>Yêu cầu tạm ứng</h3>
+    <div class="input-group">
+      <label for="advance-amount">Số tiền (VND):</label>
+      <input type="number" id="advance-amount" placeholder="Số tiền" min="0">
+      <label for="advance-reason">Lý do:</label>
+      <input type="text" id="advance-reason" placeholder="Lý do">
+    </div>
+    <div class="button-group">
+      <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Tổng lương</h3>
+    <div id="salary-summary"></div>
+  </div>
+  <div class="card">
+    <h3>Ngày off và tăng ca</h3>
+    <div id="off-and-overtime"></div>
+  </div>
+  <div class="card">
+    <h3>Lịch sử tạm ứng</h3>
+    <div id="advance-history-container"></div>
+  </div>
+  <div class="card">
+    <h3>Trạng thái lịch làm việc</h3>
+    <div id="schedule-status-container">
+      <div class="calendar-header">
+        <button onclick="changeScheduleMonth(-1)">Trước</button>
+        <h3 id="schedule-month-title">Tháng 7/2025</h3>
+        <button onclick="changeScheduleMonth(1)">Sau</button>
+      </div>
+      <div id="schedule-status-list"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Thông báo</h3>
+    <div id="notifications-container"></div>
+  </div>
+  <div id="action-modal" class="modal">
+    <div id="action-modal-content" class="modal-content">
+      <span class="close" onclick="closeModal('action-modal')">×</span>
+      <div id="schedule-action-content"></div>
+    </div>
+  </div>
+</div>
 
     <!-- Tab Báo cáo Kinh doanh -->
     <div class="tabcontent" id="business-report">
@@ -313,101 +262,148 @@
       <button class="primary-btn" onclick="exportReportsToCSV()">Xuất CSV</button>
     </div>
 
-    <!-- Tab Quản lý Nhân viên -->
-    <div id="employee-management" class="tabcontent">
-      <h2>Quản lý Nhân viên</h2>
-      <div class="card">
-        <h3>Danh sách Nhân viên</h3>
-        <div class="button-group">
-          <button class="primary-btn" onclick="showEmployeeModal('add')">Thêm nhân viên</button>
-        </div>
-        <div id="employee-list" style="overflow-x: auto;"></div>
-        <div id="employee-details"></div>
-      </div>
-      <div class="card">
+    
+  <!-- Tab Quản lý Nhân viên -->
+<div id="employee-management" class="tabcontent">
+  <div class="mobile-header">
+    <h2>Quản lý Nhân viên</h2>
+    <button class="mobile-menu-btn" onclick="toggleMobileMenu('employee-menu')">☰</button>
+  </div>
+
+  <!-- Menu di động -->
+  <div id="employee-menu" class="mobile-menu">
+    <button onclick="showEmployeeSection('employee-calendar-section')">Lịch làm việc</button>
+    <button onclick="showEmployeeSection('employee-list-section')">Danh sách NV</button>
+    <button onclick="showEmployeeSection('schedule-approval-section')">Duyệt lịch</button>
+    <button onclick="showEmployeeSection('advance-approval-section')">Duyệt tạm ứng</button>
+    <button onclick="showEmployeeSection('notification-section')">Thông báo</button>
+    <button onclick="showEmployeeSection('employee-chat-section')">Chat</button>
+  </div>
+
+  <!-- Lịch làm việc -->
+  <div id="employee-calendar-section" class="mobile-section active">
+    <div class="card">
+      <div class="section-header">
         <h3>Lịch làm việc</h3>
-        <div id="schedule-list" style="overflow-x: auto;"></div>
+        <div class="month-nav">
+          <button onclick="changeEmployeeMonth(-1)">❮</button>
+          <span>Tháng ${currentCalendarMonth}/${currentCalendarYear}</span>
+          <button onclick="changeEmployeeMonth(1)">❯</button>
+        </div>
       </div>
-      <div class="card">
+      <div id="employee-calendar" class="mobile-calendar"></div>
+    </div>
+  </div>
+
+  <!-- Danh sách nhân viên -->
+  <div id="employee-list-section" class="mobile-section">
+    <div class="card">
+      <div class="section-header">
+        <h3>Danh sách nhân viên</h3>
+        <button class="primary-btn small" onclick="showAddEmployeeForm()">+ Thêm</button>
+      </div>
+      <div id="employee-list" class="mobile-list"></div>
+    </div>
+  </div>
+
+  <!-- Duyệt lịch làm việc -->
+  <div id="schedule-approval-section" class="mobile-section">
+    <div class="card">
+      <div class="section-header">
         <h3>Yêu cầu lịch làm việc</h3>
-        <div id="schedule-approval-list"></div>
       </div>
-      <div class="card">
-        <h3>Lịch sử duyệt lịch làm việc</h3>
-        <div id="schedule-history"></div>
+      <div id="schedule-approval-list" class="mobile-list"></div>
+    </div>
+    
+    <div class="card">
+      <div class="section-header">
+        <h3>Lịch sử duyệt lịch</h3>
       </div>
-      <div class="card">
+      <div id="schedule-history" class="mobile-list"></div>
+    </div>
+  </div>
+
+  <!-- Duyệt tạm ứng -->
+  <div id="advance-approval-section" class="mobile-section">
+    <div class="card">
+      <div class="section-header">
         <h3>Yêu cầu tạm ứng</h3>
-        <div id="advance-approval-list"></div>
       </div>
-      <div class="card">
-        <h3>Thông báo toàn nhân viên</h3>
-        <div class="input-group">
-          <textarea id="general-notification-text" placeholder="Nhập thông báo"></textarea>
-        </div>
-        <div class="button-group">
-          <button class="primary-btn" onclick="sendGeneralNotification()">Gửi thông báo</button>
-        </div>
-        <div id="general-notification-list"></div>
+      <div id="advance-approval-list" class="mobile-list"></div>
+    </div>
+    
+    <div class="card">
+      <div class="section-header">
+        <h3>Lịch sử tạm ứng</h3>
       </div>
-      <div class="card">
+      <div id="advance-history" class="mobile-list"></div>
+    </div>
+  </div>
+
+  <!-- Thông báo -->
+  <div id="notification-section" class="mobile-section">
+    <div class="card">
+      <div class="section-header">
+        <h3>Thông báo chung</h3>
+      </div>
+      <div class="input-group">
+        <textarea id="general-notification-text" placeholder="Nhập thông báo..."></textarea>
+        <button class="primary-btn small" onclick="sendGeneralNotification()">Gửi</button>
+      </div>
+      <div id="general-notification-list" class="notification-list"></div>
+    </div>
+  </div>
+
+  <!-- Chat -->
+  <div id="employee-chat-section" class="mobile-section">
+    <div class="card">
+      <div class="section-header">
         <h3>Chat với nhân viên</h3>
-        <div id="employee-chat"></div>
-        <div class="input-group">
-          <textarea id="employee-chat-text" placeholder="Nhập tin nhắn"></textarea>
-        </div>
-        <div class="button-group">
-          <button class="primary-btn" onclick="sendEmployeeChat()">Gửi tin nhắn</button>
-        </div>
+        <select id="chat-employee-select" onchange="loadEmployeeChat(this.value)" class="mobile-select">
+          <option value="">Chọn nhân viên</option>
+          ${globalEmployeeData.map(emp => `<option value="${emp.id}">${emp.name}</option>`).join('')}
+        </select>
       </div>
-      <!-- Modal thêm/chỉnh sửa nhân viên -->
-      <div id="employee-modal" class="modal">
-        <div id="employee-modal-content" class="modal-content">
-          <span class="close" onclick="closeModal('employee-modal')">×</span>
-          <h3 id="employee-modal-title">Thêm nhân viên</h3>
-          <div class="input-group">
-            <label for="employee-name">Họ tên:</label>
-            <input type="text" id="employee-name" placeholder="Họ tên">
-            <label for="employee-email">Email:</label>
-            <input type="email" id="employee-email" placeholder="Email">
-            <label for="employee-password" id="employee-password-label">Mật khẩu:</label>
-            <input type="password" id="employee-password" placeholder="Mật khẩu">
-            <label for="employee-address">Địa chỉ:</label>
-            <input type="text" id="employee-address" placeholder="Địa chỉ">
-            <label for="employee-phone">Số điện thoại:</label>
-            <input type="text" id="employee-phone" placeholder="Số điện thoại">
-            <label for="employee-note">Ghi chú:</label>
-            <input type="text" id="employee-note" placeholder="Ghi chú">
-            <label for="employee-daily-wage">Lương ngày (VND):</label>
-            <input type="number" id="employee-daily-wage" placeholder="Lương ngày" min="0">
-            <label for="employee-allowance">Phụ cấp (VND):</label>
-            <input type="number" id="employee-allowance" placeholder="Phụ cấp" min="0">
-            <label for="employee-other-fee">Phí khác (VND):</label>
-            <input type="number" id="employee-other-fee" placeholder="Phí khác" min="0">
-          </div>
-          <div class="button-group">
-            <button class="primary-btn" id="employee-modal-submit">Lưu</button>
-            <button class="secondary-btn" onclick="closeModal('employee-modal')">Hủy</button>
-          </div>
-        </div>
-      </div>
-      <!-- Modal duyệt/từ chối yêu cầu lịch -->
-      <div id="schedule-approval-modal" class="modal">
-        <div id="schedule-approval-modal-content" class="modal-content"></div>
-      </div>
-      <!-- Modal duyệt/từ chối yêu cầu tạm ứng -->
-      <div id="advance-approval-modal" class="modal">
-        <div id="advance-approval-modal-content" class="modal-content">
-          <span class="close" onclick="closeModal('advance-approval-modal')">×</span>
-        </div>
-      </div>
-      <!-- Modal xác nhận thông báo toàn nhân viên -->
-      <div id="general-notification-confirm-modal" class="modal">
-        <div id="general-notification-confirm-modal-content" class="modal-content">
-          <span class="close" onclick="closeModal('general-notification-confirm-modal')">×</span>
-        </div>
+      <div id="chat-messages" class="chat-messages"></div>
+      <div class="chat-input">
+        <textarea id="employee-chat-text" placeholder="Nhập tin nhắn..."></textarea>
+        <button class="primary-btn" onclick="sendEmployeeChat()">Gửi</button>
       </div>
     </div>
+  </div>
+
+  <!-- Modal chi tiết ngày -->
+  <div id="employee-day-modal" class="modal mobile-modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('employee-day-modal')">&times;</span>
+      <div id="employee-day-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Modal thêm/chỉnh sửa nhân viên -->
+  <div id="employee-modal" class="modal mobile-modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('employee-modal')">&times;</span>
+      <div id="employee-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Modal chi tiết tài chính nhân viên -->
+  <div id="employee-financial-modal" class="modal mobile-modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('employee-financial-modal')">&times;</span>
+      <div id="employee-financial-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Modal duyệt/từ chối -->
+  <div id="approval-modal" class="modal mobile-modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('approval-modal')">&times;</span>
+      <div id="approval-modal-content"></div>
+    </div>
+  </div>
+</div>
 
     <!-- Tab Chat -->
     <div id="chat" class="tabcontent">

@@ -1,8 +1,10 @@
-// File: js/common.js
+
+let currentEmployeeId = null;
+// File: js/employee-management.js
+
 // Firebase References
 const db = firebase.database();
 const auth = firebase.auth();
-let currentEmployeeId = null;
 
 // Common Variables
 let globalInventoryData = [];
@@ -33,17 +35,15 @@ function initApp() {
         // Load lại tất cả tab khi vào trang
         renderReportProductList();
         renderRevenueExpenseData();
-        renderRevenueExpenseSummary();
+        //renderRevenueExpenseSummary();
         renderInventory();
         renderAdvanceHistory();
         renderScheduleStatusList();
         renderCalendar();
-renderScheduleApprovalList();
         renderBusinessReport(globalReportData);
         renderEmployeeList();
         renderSchedule();
-renderScheduleHistory();
-        renderAllSchedule();
+        //renderAllSchedule();
         renderEmployeeDetails();
         renderAdvanceApprovalList();
         renderGeneralNotifications();
@@ -102,7 +102,7 @@ function loadFirebaseData(callback) {
           globalInventoryData = snapshot.val() ? Object.keys(snapshot.val()).map(key => ({ id: key, ...snapshot.val()[key] })) : [];
           console.log("Loaded inventory data:", globalInventoryData);
           if (window.renderInventory) renderInventory();
-          if (window.renderReportProductList) renderReportProductList(); // Kiểm tra trước khi gọi
+          if (window.renderReportProductList) renderReportProductList();
           globalInventoryData.forEach(item => checkLowStock(item));
         }),
         db.ref("reports").on("value", snapshot => {
@@ -156,8 +156,6 @@ function loadFirebaseData(callback) {
           if (window.renderCalendar) renderCalendar();
           if (window.renderSalarySummary) renderSalarySummary();
           if (window.renderEmployeeDetails) renderEmployeeDetails();
-          if (window.renderScheduleApprovalList) renderScheduleApprovalList();
-          if (window.renderScheduleHistory) renderScheduleHistory();
         }),
         db.ref("notifications/" + currentEmployeeId).on("value", snapshot => {
           globalNotifications = snapshot.val() ? Object.values(snapshot.val()).map(n => ({ id: n.id || snapshot.key, ...n })) : [];
@@ -207,8 +205,6 @@ function loadFirebaseData(callback) {
       if (window.renderChat) renderChat("manager");
       if (window.renderNotifications) renderNotifications();
       if (window.renderFilteredReports) renderFilteredReports([]);
-      if (window.renderScheduleApprovalList) renderScheduleApprovalList();
-      if (window.renderScheduleHistory) renderScheduleHistory();
     }
   });
 }
@@ -374,22 +370,22 @@ function getMessages() { return globalMessages; }
 function getScheduleData() { return globalScheduleData; }
 function getNotifications() { return globalNotifications; }
 function getGeneralNotifications() { return globalGeneralNotifications; }
-function checkLowStock(item) {
-  if (item.quantity !== undefined && item.quantity < 10) {
-    showToastNotification(`Cảnh báo: ${item.name} chỉ còn ${item.quantity} đơn vị!`);
+//
+function sendNotification(recipient, message) {
+  const notification = {
+    id: 'notif-' + Math.random().toString(36).substr(2, 9),
+    recipient: recipient,
+    message: message,
+    timestamp: new Date().toISOString(),
+    read: false
+  };
+  if (recipient === 'manager') {
+    globalMessages.manager.push(notification);
+    firebase.database().ref('messages/manager/' + notification.id).set(notification);
+  } else {
+    globalMessages[recipient] = globalMessages[recipient] || [];
+    globalMessages[recipient].push(notification);
+    firebase.database().ref(`messages/employees/${recipient}/` + notification.id).set(notification);
   }
 }
-// File: employee-management.js (cuối file)
-function initEmployeeManagement() {
-  renderEmployeeList();
-  renderEmployeeDetails();
-  renderSchedule();
-  renderScheduleApprovalList(); // Thêm để render danh sách yêu cầu lịch
-  renderScheduleHistory();
-  renderAdvanceApprovalList();
-  renderGeneralNotifications();
-}
-
-// Gọi khi tải xong dữ liệu
-document.addEventListener("DOMContentLoaded", initEmployeeManagement);
 initApp();

@@ -2358,3 +2358,83 @@ button {
   padding: 10px;
   border-radius: 5px;
 }
+.table-section {
+  display: block; /* Đảm bảo không bị ẩn */
+  margin: 20px 0;
+}
+
+.summary-section {
+  display: block;
+  margin: 20px 0;
+}
+
+.table-style {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card-bg, #fff);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  table-layout: auto; /* Co giãn trên mobile */
+}
+
+.table-style th, .table-style td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: center;
+  vertical-align: middle;
+  color: var(--text, #333);
+  font-size: 0.95rem;
+}
+
+@media (max-width: 600px) {
+  .table-style th, .table-style td {
+    padding: 8px;
+    font-size: 0.75rem;
+  }
+}
+
+#action-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+}
+#action-modal-content {
+  background: white;
+  margin: 15% auto;
+  padding: 20px;
+  width: 80%;
+  max-width: 500px;
+  border-radius: 5px;
+}
+#schedule-action-content .button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+//
+.schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+.schedule-table th, .schedule-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+.schedule-table th {
+  background-color: #f0f0f0;
+  font-weight: bold;
+}
+.schedule-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+.schedule-table tr:hover {
+  background-color: #f1f1f1;
+}
+
+/////
