@@ -170,74 +170,7 @@
   </div>
 </div>
 
-  <!-- Tab Cá nhân -->
-<div id="profile" class="tabcontent">
-  <h2>Thông tin cá nhân</h2>
-  <div class="card">
-    <div class="input-group">
-      <label for="personal-employee-name">Họ tên:</label>
-      <input type="text" id="personal-employee-name" placeholder="Họ tên">
-      <label for="employee-address">Địa chỉ:</label>
-      <input type="text" id="employee-address" placeholder="Địa chỉ">
-      <label for="employee-phone">Số điện thoại:</label>
-      <input type="text" id="employee-phone" placeholder="Số điện thoại">
-      <label for="employee-note">Ghi chú:</label>
-      <input type="text" id="employee-note" placeholder="Ghi chú">
-    </div>
-    <div class="button-group">
-      <button class="primary-btn" onclick="updateEmployeeInfo()">Cập nhật</button>
-    </div>
-  </div>
-  <div class="card">
-    <h3>Lịch làm việc</h3>
-    <div id="calendar"></div>
-  </div>
-  <div class="card">
-    <h3>Yêu cầu tạm ứng</h3>
-    <div class="input-group">
-      <label for="advance-amount">Số tiền (VND):</label>
-      <input type="number" id="advance-amount" placeholder="Số tiền" min="0">
-      <label for="advance-reason">Lý do:</label>
-      <input type="text" id="advance-reason" placeholder="Lý do">
-    </div>
-    <div class="button-group">
-      <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu</button>
-    </div>
-  </div>
-  <div class="card">
-    <h3>Tổng lương</h3>
-    <div id="salary-summary"></div>
-  </div>
-  <div class="card">
-    <h3>Ngày off và tăng ca</h3>
-    <div id="off-and-overtime"></div>
-  </div>
-  <div class="card">
-    <h3>Lịch sử tạm ứng</h3>
-    <div id="advance-history-container"></div>
-  </div>
-  <div class="card">
-    <h3>Trạng thái lịch làm việc</h3>
-    <div id="schedule-status-container">
-      <div class="calendar-header">
-        <button onclick="changeScheduleMonth(-1)">Trước</button>
-        <h3 id="schedule-month-title">Tháng 7/2025</h3>
-        <button onclick="changeScheduleMonth(1)">Sau</button>
-      </div>
-      <div id="schedule-status-list"></div>
-    </div>
-  </div>
-  <div class="card">
-    <h3>Thông báo</h3>
-    <div id="notifications-container"></div>
-  </div>
-  <div id="action-modal" class="modal">
-    <div id="action-modal-content" class="modal-content">
-      <span class="close" onclick="closeModal('action-modal')">×</span>
-      <div id="schedule-action-content"></div>
-    </div>
-  </div>
-</div>
+  
 
     <!-- Tab Báo cáo Kinh doanh -->
     <div class="tabcontent" id="business-report">
@@ -263,96 +196,72 @@
     </div>
 
     
-  <!-- Tab Quản lý Nhân viên -->
-<div id="employee-management" class="tabcontent">
-  <div class="mobile-header">
-    <h2>Quản lý Nhân viên</h2>
-    <button class="mobile-menu-btn" onclick="toggleMobileMenu('employee-menu')">☰</button>
-  </div>
+ <!-- Navigation -->
+    <nav id="app-navigation">
+      <button data-tab="dashboard">Bảng điều khiển</button>
+      <button data-tab="schedule">Lịch làm việc</button>
+      <button data-tab="requests">Yêu cầu</button>
+      <button data-tab="chat">Tin nhắn</button>
+      <button data-tab="notifications">Thông báo</button>
+    </nav>
 
-  <!-- Menu di động -->
-  <div id="employee-menu" class="mobile-menu">
-    <button onclick="showEmployeeSection('employee-calendar-section')">Lịch làm việc</button>
-    <button onclick="showEmployeeSection('employee-list-section')">Danh sách NV</button>
-    <button onclick="showEmployeeSection('schedule-approval-section')">Duyệt lịch</button>
-    <button onclick="showEmployeeSection('advance-approval-section')">Duyệt tạm ứng</button>
-    <button onclick="showEmployeeSection('notification-section')">Thông báo</button>
-    <button onclick="showEmployeeSection('employee-chat-section')">Chat</button>
-  </div>
+    <!-- Content Areas -->
+    <main>
+      <!-- Dashboard Tab -->
+      <div id="dashboard-tab" class="tab-content">
+        <!-- Content will be loaded dynamically -->
+      </div>
 
-  <!-- Lịch làm việc -->
-  <div id="employee-calendar-section" class="mobile-section active">
-    <div class="card">
-      <div class="section-header">
-        <h3>Lịch làm việc</h3>
-        <div class="month-nav">
-          <button onclick="changeEmployeeMonth(-1)">❮</button>
-          <span>Tháng ${currentCalendarMonth}/${currentCalendarYear}</span>
-          <button onclick="changeEmployeeMonth(1)">❯</button>
+      <!-- Schedule Tab -->
+      <div id="schedule-tab" class="tab-content">
+        <div id="employee-calendar"></div>
+        <div id="schedule-requests">
+          <h2>Yêu cầu lịch làm việc</h2>
+          <div id="pending-requests-list"></div>
         </div>
       </div>
-      <div id="employee-calendar" class="mobile-calendar"></div>
-    </div>
+
+      <!-- Requests Tab -->
+      <div id="requests-tab" class="tab-content">
+        <div id="advance-requests">
+          <h2>Yêu cầu tạm ứng</h2>
+          <div id="advance-requests-list"></div>
+        </div>
+      </div>
+
+      <!-- Chat Tab -->
+      <div id="chat-tab" class="tab-content">
+        <div id="chat-container">
+          <div id="chat-messages"></div>
+          <div id="chat-input">
+            <input type="text" id="message-input" placeholder="Nhập tin nhắn...">
+            <button onclick="sendMessage()">Gửi</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notifications Tab -->
+      <div id="notifications-tab" class="tab-content">
+        <div id="notifications-list"></div>
+      </div>
+    </main>
   </div>
 
-  <!-- Danh sách nhân viên -->
-  <div id="employee-list-section" class="mobile-section">
-    <div class="card">
-      <div class="section-header">
-        <h3>Danh sách nhân viên</h3>
-        <button class="primary-btn small" onclick="showAddEmployeeForm()">+ Thêm</button>
-      </div>
-      <div id="employee-list" class="mobile-list"></div>
-    </div>
-  </div>
-
-  <!-- Duyệt lịch làm việc -->
-  <div id="schedule-approval-section" class="mobile-section">
-    <div class="card">
-      <div class="section-header">
-        <h3>Yêu cầu lịch làm việc</h3>
-      </div>
-      <div id="schedule-approval-list" class="mobile-list"></div>
+  <!-- Modals -->
+  <div id="modal-container">
+    <!-- Schedule Request Modal -->
+    <div id="schedule-request-modal" class="modal">
+      <!-- Modal content -->
     </div>
     
-    <div class="card">
-      <div class="section-header">
-        <h3>Lịch sử duyệt lịch</h3>
-      </div>
-      <div id="schedule-history" class="mobile-list"></div>
-    </div>
-  </div>
-
-  <!-- Duyệt tạm ứng -->
-  <div id="advance-approval-section" class="mobile-section">
-    <div class="card">
-      <div class="section-header">
-        <h3>Yêu cầu tạm ứng</h3>
-      </div>
-      <div id="advance-approval-list" class="mobile-list"></div>
+    <!-- Advance Request Modal -->
+    <div id="advance-request-modal" class="modal">
+      <!-- Modal content -->
     </div>
     
-    <div class="card">
-      <div class="section-header">
-        <h3>Lịch sử tạm ứng</h3>
-      </div>
-      <div id="advance-history" class="mobile-list"></div>
-    </div>
-  </div>
-
-  <!-- Thông báo -->
-  <div id="notification-section" class="mobile-section">
-    <div class="card">
-      <div class="section-header">
-        <h3>Thông báo chung</h3>
-      </div>
-      <div class="input-group">
-        <textarea id="general-notification-text" placeholder="Nhập thông báo..."></textarea>
-        <button class="primary-btn small" onclick="sendGeneralNotification()">Gửi</button>
-      </div>
-      <div id="general-notification-list" class="notification-list"></div>
-    </div>
-  </div>
+    <!-- Notification Detail Modal -->
+    <div id="notification-modal" class="modal">
+      <!-- Modal content -->
 
   <!-- Chat -->
   <div id="employee-chat-section" class="mobile-section">
