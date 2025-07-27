@@ -1,136 +1,438 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Quản Lý Milano 259</title>
+  <title>Đăng Nhập - Milano 259</title>
   <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Tích hợp flatpickr -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <style>
-    /* Core styles for all components */
-    body {
-      font-family: 'Roboto', sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f5f5f5;
+    /* CSS cơ bản để đảm bảo lịch flatpickr hiển thị */
+    .flatpickr-calendar {
+      z-index: 1000;
     }
-    
-    .tabcontent {
-      display: none;
-      padding: 20px;
-      animation: fadeIn 0.3s;
+    #filter-range {
+      width: 200px;
+      padding: 8px;
+      margin: 5px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
     }
-    
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 100;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.4);
-    }
-    
+    /* CSS cho bảng và nút mở rộng */
     .table-style {
       width: 100%;
       border-collapse: collapse;
-      margin: 15px 0;
+      margin-top: 10px;
     }
-    
-    /* Responsive design */
-    @media (max-width: 768px) {
-      .floating-menu {
-        bottom: 10px;
-        right: 10px;
-      }
+    .table-style th, .table-style td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
     }
-
-    /* Animation */
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+    .table-style th {
+      background-color: #f2f2f2;
+    }
+    .expand-btn {
+      margin-top: 10px;
+      padding: 8px 16px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .expand-btn:hover {
+      background-color: #0056b3;
+    }
+    /* CSS cho nút tăng/giảm số lượng */
+    .product-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .product-item span {
+      flex: 1;
+    }
+    .product-item button {
+      padding: 5px 10px;
+      margin: 0 5px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .product-item button.plus {
+      background-color: #28a745;
+      color: #fff;
+    }
+    .product-item button.minus {
+      background-color: #dc3545;
+      color: #fff;
+    }
+    .product-item button:hover {
+      opacity: 0.8;
     }
   </style>
 </head>
 <body>
-  <!-- Login Page -->
   <div id="login-page" class="center-screen">
-    <div class="login-container">
-      <h2>Đăng Nhập Hệ Thống</h2>
-      <input type="email" id="email" placeholder="Email" class="login-input">
-      <input type="password" id="password" placeholder="Mật khẩu" class="login-input">
-      <button onclick="login()" class="login-btn">Đăng Nhập</button>
-      <div id="login-error" class="error-message"></div>
+    <h2>Đăng Nhập</h2>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Mật khẩu">
+    <button onclick="login()">Đăng Nhập</button>
+  </div>
+
+  <div id="main-page" style="display: none;">
+    <div class="app-header">
+      <span>Milano 259</span>
+      <button class="logout-btn" onclick="logout()">Đăng Xuất</button>
+    </div>
+
+    <!-- Tab Thu Chi -->
+<div class="tabcontent" id="revenue-expense">
+  <h2>Báo cáo Thu Chi</h2>
+  <h3>Nhập báo cáo</h3>
+  <input type="number" id="opening-balance" placeholder="Số dư đầu kỳ (VND)">
+  <input type="number" id="revenue" placeholder="Doanh thu (VND)">
+  <input type="number" id="transfer-amount" placeholder="Tiền chuyển khoản (VND)">
+  <input type="text" id="expense-input" placeholder="Chi phí (VD: Mua nguyên liệu: 500000)">
+  <input type="number" id="closing-balance" placeholder="Số dư cuối kỳ (VND)">
+  <h4>Xuất hàng</h4>
+  <div id="report-product-list" class="product-list"></div>
+  <button class="primary-btn" onclick="submitReport()">Gửi Báo Cáo</button>
+  <div id="filter-section">
+    <h3>Lọc Báo Cáo</h3>
+    <input type="text" id="filter-range" placeholder="Chọn khoảng thời gian (VD: 25/07/2025 - 26/07/2025)">
+    <button onclick="applyFilter()">Apply</button>
+  </div>
+  <div id="revenue-expense-summary" class="summary-section">
+    <h3>Tóm tắt Thu Chi</h3>
+  </div>
+  <div id="shared-report-table" class="table-section">
+    <h3>Bảng Báo cáo Thu Chi</h3>
+  </div>
+  <div id="transfer-details" class="table-section">
+    <h3>Chi tiết Giao dịch Chuyển khoản</h3>
+  </div>
+  <div id="report-product-table" class="table-section">
+    <h3>Bảng Báo cáo Xuất Hàng</h3>
+  </div>
+</div>
+
+    <div id="inventory" class="tabcontent">
+  <div class="card">
+    <h2>Quản lý Kho</h2>
+    
+    <!-- Phần thêm sản phẩm -->
+    <h3>Thêm sản phẩm</h3>
+    <div class="input-group">
+      <input type="text" id="product-name" placeholder="Tên sản phẩm">
+      <input type="number" id="product-quantity" placeholder="Số lượng">
+      <input type="number" id="product-price" placeholder="Giá (VND)">
+      <input type="number" id="product-low-stock-threshold" placeholder="Ngưỡng tồn thấp">
+    </div>
+    <div class="button-group">
+      <button class="primary-btn" onclick="addInventory()">Thêm sản phẩm</button>
+    </div>
+
+    <!-- Danh sách sản phẩm -->
+    <h3>Danh sách sản phẩm</h3>
+    <div id="inventory-list"></div>
+
+    <!-- Bảng ngày mua hàng dự kiến -->
+    <h3>Ngày mua hàng dự kiến</h3>
+    <div id="restock-schedule"></div>
+
+    <!-- Bảng phân tích tỷ lệ bán ra -->
+    <h3>Phân tích tỷ lệ bán ra</h3>
+    <div id="export-analysis"></div>
+    <canvas id="export-chart"></canvas>
+  </div>
+
+  <!-- Modal chỉnh sửa sản phẩm -->
+  <div id="edit-inventory-modal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('edit-inventory-modal')">×</span>
+      <h3>Chỉnh sửa sản phẩm</h3>
+      <input type="text" id="edit-product-name" placeholder="Tên sản phẩm">
+      <input type="number" id="edit-product-quantity" placeholder="Số lượng">
+      <input type="number" id="edit-product-price" placeholder="Giá (VND)">
+      <input type="number" id="edit-product-low-stock-threshold" placeholder="Ngưỡng tồn thấp">
+      <div class="button-group">
+        <button class="primary-btn" onclick="saveInventoryEdit()">Lưu</button>
+        <button class="secondary-btn" onclick="closeModal('edit-inventory-modal')">Hủy</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- Tab Cá nhân -->
+<div id="profile" class="tabcontent">
+  <h2>Thông tin cá nhân</h2>
+  <div class="card">
+    <div class="input-group">
+      <label for="personal-employee-name">Họ tên:</label>
+      <input type="text" id="personal-employee-name" placeholder="Họ tên">
+      <label for="employee-address">Địa chỉ:</label>
+      <input type="text" id="employee-address" placeholder="Địa chỉ">
+      <label for="employee-phone">Số điện thoại:</label>
+      <input type="text" id="employee-phone" placeholder="Số điện thoại">
+      <label for="employee-note">Ghi chú:</label>
+      <input type="text" id="employee-note" placeholder="Ghi chú">
+    </div>
+    <div class="button-group">
+      <button class="primary-btn" onclick="updateEmployeeInfo()">Cập nhật</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Lịch làm việc</h3>
+    <div id="calendar"></div>
+  </div>
+  <div class="card">
+    <h3>Yêu cầu tạm ứng</h3>
+    <div class="input-group">
+      <label for="advance-amount">Số tiền (VND):</label>
+      <input type="number" id="advance-amount" placeholder="Số tiền" min="0">
+      <label for="advance-reason">Lý do:</label>
+      <input type="text" id="advance-reason" placeholder="Lý do">
+    </div>
+    <div class="button-group">
+      <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Tổng lương</h3>
+    <div id="salary-summary"></div>
+  </div>
+  <div class="card">
+    <h3>Ngày off và tăng ca</h3>
+    <div id="off-and-overtime"></div>
+  </div>
+  <div class="card">
+    <h3>Lịch sử tạm ứng</h3>
+    <div id="advance-history-container"></div>
+  </div>
+  <div class="card">
+    <h3>Trạng thái lịch làm việc</h3>
+    <div id="schedule-status-container">
+      <div class="calendar-header">
+        <button onclick="changeScheduleMonth(-1)">Trước</button>
+        <h3 id="schedule-month-title">Tháng 7/2025</h3>
+        <button onclick="changeScheduleMonth(1)">Sau</button>
+      </div>
+      <div id="schedule-status-list"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Thông báo</h3>
+    <div id="notifications-container"></div>
+  </div>
+  <div id="action-modal" class="modal">
+    <div id="action-modal-content" class="modal-content">
+      <span class="close" onclick="closeModal('action-modal')">×</span>
+      <div id="schedule-action-content"></div>
+    </div>
+  </div>
+</div>
+
+    <!-- Tab Báo cáo Kinh doanh -->
+    <div class="tabcontent" id="business-report">
+      <h2>Báo cáo Kinh doanh</h2>
+      <button id="filter-report-btn" onclick="filterReports()">Lọc Báo Cáo</button>
+      <h3>Danh sách Báo cáo Thu Chi</h3>
+      <div id="shared-report-table"></div>
+      <h3>Danh sách Báo cáo Xuất Hàng</h3>
+      <div id="report-product-table"></div>
+      <h3>Biểu đồ Doanh thu và Chi phí</h3>
+      <canvas id="growth-chart" style="max-height: 300px;"></canvas>
+      <h3>Tổng hợp Chi phí theo Danh mục</h3>
+      <div id="expense-category-summary"></div>
+      <div class="category-adjust">
+        <input type="text" id="custom-category" placeholder="Nhập danh mục (VD: Trái cây)">
+        <button class="primary-btn" onclick="adjustCategory()">Cập nhật danh mục</button>
+      </div>
+      <h3>Tổng Chi phí trừ Hàng Xuất Kho</h3>
+      <div id="expense-minus-inventory"></div>
+      <h3>Danh sách Chi phí</h3>
+      <div id="expense-summary-table"></div>
+      <button class="primary-btn" onclick="exportReportsToCSV()">Xuất CSV</button>
+    </div>
+
+    
+  <!-- Tab Quản lý Nhân viên -->
+<div id="employee-management" class="tabcontent">
+  <div class="mobile-header">
+    <h2>Quản lý Nhân viên</h2>
+    <button class="mobile-menu-btn" onclick="toggleMobileMenu('employee-menu')">☰</button>
+  </div>
+
+  <!-- Menu di động -->
+  <div id="employee-menu" class="mobile-menu">
+    <button onclick="showEmployeeSection('employee-calendar-section')">Lịch làm việc</button>
+    <button onclick="showEmployeeSection('employee-list-section')">Danh sách NV</button>
+    <button onclick="showEmployeeSection('schedule-approval-section')">Duyệt lịch</button>
+    <button onclick="showEmployeeSection('advance-approval-section')">Duyệt tạm ứng</button>
+    <button onclick="showEmployeeSection('notification-section')">Thông báo</button>
+    <button onclick="showEmployeeSection('employee-chat-section')">Chat</button>
+  </div>
+
+  <!-- Lịch làm việc -->
+  <div id="employee-calendar-section" class="mobile-section active">
+    <div class="card">
+      <div class="section-header">
+        <h3>Lịch làm việc</h3>
+        <div class="month-nav">
+          <button onclick="changeEmployeeMonth(-1)">❮</button>
+          <span>Tháng ${currentCalendarMonth}/${currentCalendarYear}</span>
+          <button onclick="changeEmployeeMonth(1)">❯</button>
+        </div>
+      </div>
+      <div id="employee-calendar" class="mobile-calendar"></div>
     </div>
   </div>
 
-  <!-- Main App Container -->
-  <div id="main-page" style="display: none;">
-    <!-- Header -->
-    <header class="app-header">
-      <h1>Milano 259</h1>
-      <div class="user-info">
-        <span id="username-display"></span>
-        <button onclick="logout()" class="logout-btn">Đăng Xuất</button>
+  <!-- Danh sách nhân viên -->
+  <div id="employee-list-section" class="mobile-section">
+    <div class="card">
+      <div class="section-header">
+        <h3>Danh sách nhân viên</h3>
+        <button class="primary-btn small" onclick="showAddEmployeeForm()">+ Thêm</button>
       </div>
-    </header>
+      <div id="employee-list" class="mobile-list"></div>
+    </div>
+  </div>
 
-    <!-- Main Content Tabs -->
-    <div class="tab-container">
-      <!-- Revenue/Expense Tab -->
-      <div id="revenue-expense" class="tabcontent">
-        <!-- Content loaded by revenue-expense.js -->
+  <!-- Duyệt lịch làm việc -->
+  <div id="schedule-approval-section" class="mobile-section">
+    <div class="card">
+      <div class="section-header">
+        <h3>Yêu cầu lịch làm việc</h3>
       </div>
-
-      <!-- Inventory Tab -->
-      <div id="inventory" class="tabcontent">
-        <!-- Content loaded by inventory.js -->
+      <div id="schedule-approval-list" class="mobile-list"></div>
+    </div>
+    
+    <div class="card">
+      <div class="section-header">
+        <h3>Lịch sử duyệt lịch</h3>
       </div>
+      <div id="schedule-history" class="mobile-list"></div>
+    </div>
+  </div>
 
-      <!-- Profile Tab -->
-      <div id="profile" class="tabcontent">
-        <!-- Content loaded by profile.js -->
+  <!-- Duyệt tạm ứng -->
+  <div id="advance-approval-section" class="mobile-section">
+    <div class="card">
+      <div class="section-header">
+        <h3>Yêu cầu tạm ứng</h3>
       </div>
-
-      <!-- Business Report Tab -->
-      <div id="business-report" class="tabcontent">
-        <!-- Content loaded by business-report.js -->
+      <div id="advance-approval-list" class="mobile-list"></div>
+    </div>
+    
+    <div class="card">
+      <div class="section-header">
+        <h3>Lịch sử tạm ứng</h3>
       </div>
+      <div id="advance-history" class="mobile-list"></div>
+    </div>
+  </div>
 
-      <!-- Employee Management Tab -->
-      <div id="employee-management" class="tabcontent">
-        <!-- Content loaded by employee-management.js -->
+  <!-- Thông báo -->
+  <div id="notification-section" class="mobile-section">
+    <div class="card">
+      <div class="section-header">
+        <h3>Thông báo chung</h3>
       </div>
+      <div class="input-group">
+        <textarea id="general-notification-text" placeholder="Nhập thông báo..."></textarea>
+        <button class="primary-btn small" onclick="sendGeneralNotification()">Gửi</button>
+      </div>
+      <div id="general-notification-list" class="notification-list"></div>
+    </div>
+  </div>
 
-      <!-- Chat Tab -->
-      <div id="chat" class="tabcontent">
-        <!-- Content loaded by chat.js -->
+  <!-- Chat -->
+  <div id="employee-chat-section" class="mobile-section">
+    <div class="card">
+      <div class="section-header">
+        <h3>Chat với nhân viên</h3>
+        <select id="chat-employee-select" onchange="loadEmployeeChat(this.value)" class="mobile-select">
+          <option value="">Chọn nhân viên</option>
+          ${globalEmployeeData.map(emp => `<option value="${emp.id}">${emp.name}</option>`).join('')}
+        </select>
+      </div>
+      <div id="chat-messages" class="chat-messages"></div>
+      <div class="chat-input">
+        <textarea id="employee-chat-text" placeholder="Nhập tin nhắn..."></textarea>
+        <button class="primary-btn" onclick="sendEmployeeChat()">Gửi</button>
       </div>
     </div>
+  </div>
 
-    <!-- Floating Navigation Menu -->
+  <!-- Modal chi tiết ngày -->
+  <div id="employee-day-modal" class="modal mobile-modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('employee-day-modal')">&times;</span>
+      <div id="employee-day-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Modal thêm/chỉnh sửa nhân viên -->
+  <div id="employee-modal" class="modal mobile-modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('employee-modal')">&times;</span>
+      <div id="employee-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Modal chi tiết tài chính nhân viên -->
+  <div id="employee-financial-modal" class="modal mobile-modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('employee-financial-modal')">&times;</span>
+      <div id="employee-financial-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Modal duyệt/từ chối -->
+  <div id="approval-modal" class="modal mobile-modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('approval-modal')">&times;</span>
+      <div id="approval-modal-content"></div>
+    </div>
+  </div>
+</div>
+
+    <!-- Tab Chat -->
+    <div id="chat" class="tabcontent">
+      <div id="notification-list"></div>
+    </div>
+
+    <!-- Floating Menu -->
     <div class="floating-menu">
       <button id="main-float-btn" onclick="toggleMenu()">☰</button>
       <div id="float-options" class="float-options">
-        <button onclick="openTab('revenue-expense')">Thu Chi</button>
-        <button onclick="openTab('inventory')">Kho</button>
-        <button onclick="openTab('profile')">Cá nhân</button>
-        <button onclick="openTab('business-report')">Báo cáo</button>
-        <button onclick="openTab('employee-management')">Nhân viên</button>
-        <button onclick="openTab('chat')">Chat</button>
+        <button onclick="openTabBubble('revenue-expense')">Thu Chi</button>
+        <button onclick="openTabBubble('inventory')">Kho</button>
+        <button onclick="openTabBubble('profile')">Cá nhân</button>
+        <button onclick="openTabBubble('business-report')">Báo cáo</button>
+        <button onclick="openTabBubble('employee-management')">Nhân viên</button>
+        <button onclick="openTabBubble('chat')">Chat</button>
       </div>
+      <div id="general-notification-modal" class="modal">
+        <div id="general-notification-modal-content" class="modal-content">
+          <h3>Thông báo quan trọng</h3>
+          <div id="general-notification-modal-list"></div>
+          <button onclick="markGeneralNotificationsAsRead()">Đã đọc</button>
+          <button onclick="closeModal('general-notification-modal')">Tắt</button>
+        </div>
+      </div>
+      <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 2000;"></div>
     </div>
-
-    <!-- Notification System -->
-    <div id="toast-container"></div>
   </div>
 
-  <!-- Firebase Configuration -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
@@ -142,61 +444,33 @@
       appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
     };
 
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const auth = firebase.auth();
-  </script>
+    try {
+      firebase.initializeApp(firebaseConfig);
+      console.log("Firebase initialized successfully");
+    } catch (err) {
+      console.error("Firebase initialization failed:", err);
+    }
 
-  <!-- External Libraries -->
+    // Khởi tạo flatpickr cho lịch chọn khoảng thời gian
+    document.addEventListener("DOMContentLoaded", () => {
+      flatpickr("#filter-range", {
+        mode: "range",
+        dateFormat: "Y-m-d",
+        defaultDate: [new Date(), new Date()],
+        locale: {
+          firstDayOfWeek: 1
+        }
+      });
+    });
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   
-  <!-- Core Application Scripts -->
-  <script src="common.js"></script>
   <script src="revenue-expense.js"></script>
   <script src="inventory.js"></script>
   <script src="profile.js"></script>
   <script src="business-report.js"></script>
   <script src="employee-management.js"></script>
   <script src="chat.js"></script>
-
-  <!-- Initialization Script -->
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      // Initialize flatpickr
-      flatpickr("#filter-range", {
-        mode: "range",
-        dateFormat: "Y-m-d",
-        locale: "vi"
-      });
-
-      // Initialize auth state listener
-      auth.onAuthStateChanged(user => {
-        if (user) {
-          currentUser = user;
-          document.getElementById("login-page").style.display = "none";
-          document.getElementById("main-page").style.display = "block";
-          document.getElementById("username-display").textContent = user.displayName || user.email;
-          initAllTabs();
-        } else {
-          document.getElementById("login-page").style.display = "flex";
-          document.getElementById("main-page").style.display = "none";
-        }
-      });
-
-      // Open default tab
-      openTab('revenue-expense');
-    });
-
-    function initAllTabs() {
-      // These functions are defined in their respective JS files
-      if (typeof initRevenueExpense === 'function') initRevenueExpense();
-      if (typeof initInventory === 'function') initInventory();
-      if (typeof initProfile === 'function') initProfile();
-      if (typeof initBusinessReport === 'function') initBusinessReport();
-      if (typeof initEmployeeManagement === 'function') initEmployeeManagement();
-      if (typeof initChat === 'function') initChat();
-    }
-  </script>
+<script src="common.js"></script>
 </body>
 </html>
