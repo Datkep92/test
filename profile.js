@@ -7,16 +7,14 @@ let currentScheduleYear = new Date().getFullYear();
 // ================ INITIALIZATION ================
 // Sửa hàm initProfile
 function initProfile() {
+  loadFirebaseData(); // <<== thêm dòng này
   setupRealtimeListeners();
-  
-  // Chỉ render các component cơ bản
   renderCalendar();
   renderScheduleStatusList();
   renderNotifications();
   renderAdvanceHistory();
-  
-  // Không tự động mở tab nào
 }
+
 
 function setupRealtimeListeners() {
   // Schedules
@@ -174,8 +172,24 @@ function showActionModal(date, schedule = null) {
 
 function submitScheduleRequest(date, status, targetEmployeeId = null) {
   const scheduleId = `${date}_${currentEmployeeId}`;
+
+  // ✅ Kiểm tra dữ liệu nhân viên đã được load
+  if (!isEmployeeDataLoaded || !globalEmployeeData || globalEmployeeData.length === 0) {
+  showToastNotification('Dữ liệu nhân viên chưa sẵn sàng. Vui lòng thử lại sau vài giây.');
+  console.warn('globalEmployeeData not ready');
+  return;
+}
+
+
+  // ✅ Tìm thông tin nhân viên hiện tại
   const employee = globalEmployeeData.find(e => e.id === currentEmployeeId);
-  
+  if (!employee || !employee.name) {
+    showToastNotification('Lỗi: Không tìm thấy thông tin nhân viên hiện tại');
+    console.error('Employee not found for ID:', currentEmployeeId);
+    return;
+  }
+
+  // ✅ Tạo dữ liệu lịch
   const scheduleData = {
     id: scheduleId,
     employeeId: currentEmployeeId,
@@ -187,15 +201,16 @@ function submitScheduleRequest(date, status, targetEmployeeId = null) {
     ...(targetEmployeeId && { targetEmployeeId })
   };
 
+  // ✅ Gửi dữ liệu lên Firebase
   db.ref('schedules/' + scheduleId).set(scheduleData)
     .then(() => {
-      showToastNotification(`Đã gửi yêu cầu ${getScheduleTypeText(scheduleData)} thành công`);
-      
-      // Gửi thông báo cho quản lý
+      showToastNotification(`✅ Đã gửi yêu cầu ${getScheduleTypeText(scheduleData)} thành công`);
+
+      // ✅ Thông báo cho quản lý
       const notificationMessage = status === 'swap' 
         ? `${employee.name} yêu cầu đổi ca ngày ${date} với ${getEmployeeName(targetEmployeeId)}`
         : `${employee.name} yêu cầu ${status === 'off' ? 'nghỉ' : 'tăng ca'} ngày ${date}`;
-      
+
       db.ref('notifications/manager').push({
         message: notificationMessage,
         timestamp: Date.now(),
@@ -204,7 +219,7 @@ function submitScheduleRequest(date, status, targetEmployeeId = null) {
         isRead: false
       });
 
-      // Nếu là yêu cầu đổi ca, gửi thông báo cho nhân viên kia
+      // ✅ Thông báo cho người được đổi ca (nếu có)
       if (status === 'swap' && targetEmployeeId) {
         db.ref(`notifications/${targetEmployeeId}`).push({
           message: `${employee.name} muốn đổi ca với bạn ngày ${date}`,
@@ -215,8 +230,12 @@ function submitScheduleRequest(date, status, targetEmployeeId = null) {
         });
       }
     })
-    .catch(err => showToastNotification(`Lỗi: ${err.message}`));
+    .catch(err => {
+      showToastNotification(`Lỗi khi gửi yêu cầu: ${err.message}`);
+      console.error('Firebase error:', err);
+    });
 }
+
 
 function cancelSchedule(scheduleId) {
   const schedule = globalScheduleData.find(s => s.id === scheduleId);
@@ -430,7 +449,7 @@ function renderAdvanceHistory() {
           ${requests.map(a => `
             <tr>
               <td>${new Date(a.date).toLocaleDateString('vi-VN')}</td>
-              <td>${a.amount.toLocaleString('vi-VN')} VND</td>
+<td>${!isNaN(Number(a.amount)) ? Number(a.amount).toLocaleString('vi-VN') : 'Không xác định'} VND</td>
               <td>${a.reason || 'Không có'}</td>
               <td class="${getAdvanceStatusClass(a)}">${getAdvanceStatusText(a)}</td>
             </tr>
@@ -440,7 +459,6 @@ function renderAdvanceHistory() {
     ` : '<p>Chưa có yêu cầu tạm ứng nào</p>'}
   `;
 }
-
 function requestAdvance() {
   const amount = document.getElementById('advance-amount').value;
   const reason = document.getElementById('advance-reason').value;
