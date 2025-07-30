@@ -52,35 +52,36 @@ function renderInventory() {
 
   const table = document.createElement("table");
   table.classList.add("table-style");
-  table.innerHTML = `
-    <thead>
-      <tr>
-        <th class="col-stt">STT</th>
-        <th class="col-time">Ngày</th>
-        <th class="col-name">Tên sản phẩm</th>
-        <th class="col-sl">SL</th>
-        <th class="col-money">Thành tiền</th>
-        <th class="col-action">Thao tác</th>
+table.innerHTML = `
+  <thead>
+    <tr>
+      <th class="col-stt">STT</th>
+      <th class="col-time">Time</th>
+      <th class="col-name">Tên</th>
+      <th class="col-sl">SL</th>
+      <th class="col-money">Thành tiền</th>
+      <th class="col-action">Hành động</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${displayItems.map((item, index) => `
+      <tr class="${item.quantity < item.lowStockThreshold ? 'low-stock' : ''}">
+        <td>${index + 1}</td>
+        <td>${new Date(item.timestamp).toLocaleDateString('vi-VN')}</td>
+        <td class="col-name">${item.name}</td>
+        <td>${item.quantity}</td>
+        <td>${(item.quantity * item.price).toLocaleString('vi-VN')} VND</td>
+        <td>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <button onclick="openEditInventoryModal('${item.id}')">Sửa</button>
+            <button onclick="deleteInventory('${item.id}')">Xóa</button>
+          </div>
+        </td>
       </tr>
-    </thead>
-    <tbody>
-      ${displayItems.map((item, index) => `
-        <tr class="${item.quantity < item.lowStockThreshold ? 'low-stock' : ''}">
-          <td class="col-stt">${index + 1}</td>
-          <td class="col-time">${new Date(item.timestamp).toLocaleDateString('vi-VN').slice(0, 5)}</td>
-          <td class="col-name">${item.name}</td>
-          <td class="col-sl">${item.quantity}</td>
-          <td class="col-money">${(item.quantity * item.price).toLocaleString('vi-VN')}₫</td>
-          <td class="col-action">
-            <div class="action-buttons">
-              <button onclick="openEditInventoryModal('${item.id}')">Sửa</button>
-              <button onclick="deleteInventory('${item.id}')">Xóa</button>
-            </div>
-          </td>
-        </tr>
-      `).join("")}
-    </tbody>
-  `;
+    `).join("")}
+  </tbody>
+`;
+
 
   container.appendChild(table);
 
@@ -95,6 +96,7 @@ function renderInventory() {
     container.appendChild(expandBtn);
   }
 
+  // Kiểm tra tồn kho thấp
   globalInventoryData.forEach(item => checkLowStock(item));
 }
 
