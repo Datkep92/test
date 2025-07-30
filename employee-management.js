@@ -663,40 +663,107 @@ function rejectAdvance(advanceId) {
 }
 
 // ================ EMPLOYEE MANAGEMENT ================
-function renderEmployeeList() {
-  const container = document.getElementById('employee-list');
-  if (!container) return;
+// File: js/employee-management.js
 
-  if (globalEmployeeData.length === 0) {
-    container.innerHTML = '<p>Chưa có nhân viên nào.</p>';
+// ================ EMPLOYEE MANAGEMENT ================
+
+function renderEmployeeList() {
+  const container = document.getElementById("employee-list");
+  container.innerHTML = "";
+
+  globalEmployeeData.forEach(emp => {
+    const div = document.createElement("div");
+    div.className = "employee-item";
+    div.innerHTML = `
+      <div><b>${emp.name}</b> (${emp.role})</div>
+      <div>${emp.email || ""}</div>
+      <button onclick="editEmployee('${emp.id}')">Sửa</button>
+      <button onclick="deleteEmployee('${emp.id}')">Xóa</button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+
+
+function showAddEmployeeForm() {
+  document.getElementById("employee-form-id").value = "";
+  document.getElementById("employee-name").value = "";
+  document.getElementById("employee-email").value = "";
+  document.getElementById("employee-role").value = "employee";
+  document.getElementById("employee-modal").style.display = "flex";
+}
+
+function editEmployee(employeeId) {
+  const employee = globalEmployeeData.find(e => e.id === employeeId);
+  if (!employee) return alert("Không tìm thấy nhân viên.");
+
+  // Hiển thị popup trước
+  document.getElementById("employee-modal").style.display = "flex";
+
+  // Gán dữ liệu sau 100ms để chắc chắn DOM sẵn sàng
+  setTimeout(() => {
+    document.getElementById("employee-form-id").value = employee.id;
+    document.getElementById("employee-name").value = employee.name || "";
+    document.getElementById("employee-email").value = employee.email || "";
+    document.getElementById("employee-role").value = employee.role || "employee";
+  }, 100);
+}
+
+
+
+
+function closeEmployeeForm() {
+  document.getElementById("employee-modal").style.display = "none";
+}
+
+
+function submitEmployeeForm() {
+  const id = document.getElementById("employee-form-id").value;
+  const name = document.getElementById("employee-name").value.trim();
+  const email = document.getElementById("employee-email").value.trim();
+  const role = document.getElementById("employee-role").value;
+
+  if (!name || !email) {
+    alert("Vui lòng nhập đầy đủ thông tin.");
     return;
   }
 
-  const currentMonth = `${currentCalendarYear}-${String(currentCalendarMonth).padStart(2, '0')}`;
-  container.innerHTML = globalEmployeeData.map(employee => {
-    const offDays = globalScheduleData.filter(s => 
-      s.employeeId === employee.id && 
-      s.status === 'off' && 
-      s.approvalStatus === 'approved' && 
-      s.date.startsWith(currentMonth)
-    ).map(s => new Date(s.date).toLocaleDateString('vi-VN')).join(', ') || 'Không có';
-    
-    const overtimeDays = globalScheduleData.filter(s => 
-      s.employeeId === employee.id && 
-      s.status === 'overtime' && 
-      s.approvalStatus === 'approved' && 
-      s.date.startsWith(currentMonth)
-    ).map(s => new Date(s.date).toLocaleDateString('vi-VN')).join(', ') || 'Không có';
+  const newData = { name, email, role, active: true };
 
-    return `
-      <div class="employee-card" onclick="showEmployeeDetailModal('${employee.id}')">
-        <h3>${employee.name}</h3>
-        <p><strong>Ngày nghỉ:</strong> ${offDays}</p>
-        <p><strong>Ngày tăng ca:</strong> ${overtimeDays}</p>
-      </div>
-    `;
-  }).join('');
+  if (id) {
+    // Cập nhật nhân viên
+    firebase.database().ref("users/" + id).update(newData)
+      .then(() => {
+        showToastNotification("✅ Đã cập nhật nhân viên.");
+        closeEmployeeForm();
+        loadFirebaseData();
+      })
+      .catch(err => alert("Lỗi khi cập nhật: " + err.message));
+  } else {
+    // Thêm mới nhân viên
+    const newRef = firebase.database().ref("users").push();
+    newRef.set(newData)
+      .then(() => {
+        showToastNotification("✅ Đã thêm nhân viên.");
+        closeEmployeeForm();
+        loadFirebaseData();
+      })
+      .catch(err => alert("Lỗi khi thêm mới: " + err.message));
+  }
 }
+
+// Tải danh sách nhân viên khi khởi tạo
+function loadEmployees() {
+  db.ref("users").once("value").then(snapshot => {
+    globalEmployeeData = [];
+    snapshot.forEach(child => {
+      globalEmployeeData.push({ id: child.key, ...child.val() });
+    });
+    renderEmployeeList();
+  });
+}
+
 
 function showEmployeeDetailModal(employeeId) {
   const modal = document.getElementById('employee-modal');
