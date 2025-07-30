@@ -235,6 +235,39 @@ function submitScheduleRequest(date, status, targetEmployeeId = null) {
       console.error('Firebase error:', err);
     });
 }
+function updateEmployeeInfo() {
+  const name = document.getElementById("personal-employee-name").value.trim();
+  const address = document.getElementById("employee-address").value.trim();
+  const phone = document.getElementById("employee-phone").value.trim();
+  const note = document.getElementById("employee-note").value.trim();
+
+  if (!name) {
+    alert("Vui lòng nhập họ tên.");
+    return;
+  }
+
+  if (!currentEmployeeId) {
+    alert("Không xác định được ID nhân viên hiện tại.");
+    return;
+  }
+
+  db.ref(`users/${currentEmployeeId}`).update({
+    name,
+    address,
+    phone,
+    note
+  })
+  .then(() => {
+    showToastNotification("✅ Đã cập nhật thông tin cá nhân.");
+    // Cập nhật lại tên nếu có nơi đang hiển thị tên cũ
+    const emp = globalEmployeeData.find(e => e.id === currentEmployeeId);
+    if (emp) emp.name = name;
+    renderEmployeeList?.();  // render lại danh sách nếu cần
+  })
+  .catch(err => {
+    alert("❌ Lỗi khi cập nhật: " + err.message);
+  });
+}
 
 
 function cancelSchedule(scheduleId) {
