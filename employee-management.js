@@ -687,28 +687,56 @@ function renderEmployeeList() {
 
 
 function showAddEmployeeForm() {
-  document.getElementById("employee-form-id").value = "";
-  document.getElementById("employee-name").value = "";
-  document.getElementById("employee-email").value = "";
-  document.getElementById("employee-role").value = "employee";
-  document.getElementById("employee-modal").style.display = "flex";
+  const modal = document.getElementById("employee-modal");
+  const content = document.getElementById("employee-modal-content");
+
+  content.innerHTML = `
+    <div class="employee-form">
+      <input type="hidden" id="employee-form-id" value="">
+      <label for="employee-name">Tên nhân viên</label>
+      <input type="text" id="employee-name" placeholder="Nhập tên nhân viên">
+      <label for="employee-email">Email</label>
+      <input type="email" id="employee-email" placeholder="Nhập email">
+      <label for="employee-role">Vai trò</label>
+      <select id="employee-role">
+        <option value="employee">Nhân viên</option>
+        <option value="manager">Quản lý</option>
+      </select>
+      <div style="margin-top: 12px; display: flex; gap: 10px;">
+        <button class="primary-btn" onclick="submitEmployeeForm()">💾 Lưu</button>
+        <button class="secondary-btn" onclick="closeEmployeeForm()">❌ Hủy</button>
+      </div>
+    </div>
+  `;
+  modal.style.display = "block";
 }
 
-function editEmployee(employeeId) {
-  const employee = globalEmployeeData.find(e => e.id === employeeId);
-  if (!employee) return alert("Không tìm thấy nhân viên.");
 
-  // Hiển thị popup trước
-  document.getElementById("employee-modal").style.display = "flex";
+function editEmployee(employee) {
+  const modal = document.getElementById("employee-modal");
+  const content = document.getElementById("employee-modal-content");
 
-  // Gán dữ liệu sau 100ms để chắc chắn DOM sẵn sàng
-  setTimeout(() => {
-    document.getElementById("employee-form-id").value = employee.id;
-    document.getElementById("employee-name").value = employee.name || "";
-    document.getElementById("employee-email").value = employee.email || "";
-    document.getElementById("employee-role").value = employee.role || "employee";
-  }, 100);
+  content.innerHTML = `
+    <div class="employee-form">
+      <input type="hidden" id="employee-form-id" value="${employee.id}">
+      <label for="employee-name">Tên nhân viên</label>
+      <input type="text" id="employee-name" value="${employee.name}">
+      <label for="employee-email">Email</label>
+      <input type="email" id="employee-email" value="${employee.email}">
+      <label for="employee-role">Vai trò</label>
+      <select id="employee-role">
+        <option value="employee" ${employee.role === 'employee' ? 'selected' : ''}>Nhân viên</option>
+        <option value="manager" ${employee.role === 'manager' ? 'selected' : ''}>Quản lý</option>
+      </select>
+      <div style="margin-top: 12px; display: flex; gap: 10px;">
+        <button class="primary-btn" onclick="submitEmployeeForm()">💾 Lưu</button>
+        <button class="secondary-btn" onclick="closeEmployeeForm()">❌ Hủy</button>
+      </div>
+    </div>
+  `;
+  modal.style.display = "block";
 }
+
 
 
 
@@ -716,6 +744,7 @@ function editEmployee(employeeId) {
 function closeEmployeeForm() {
   document.getElementById("employee-modal").style.display = "none";
 }
+
 
 
 function submitEmployeeForm() {
@@ -732,7 +761,6 @@ function submitEmployeeForm() {
   const newData = { name, email, role, active: true };
 
   if (id) {
-    // Cập nhật nhân viên
     firebase.database().ref("users/" + id).update(newData)
       .then(() => {
         showToastNotification("✅ Đã cập nhật nhân viên.");
@@ -741,7 +769,6 @@ function submitEmployeeForm() {
       })
       .catch(err => alert("Lỗi khi cập nhật: " + err.message));
   } else {
-    // Thêm mới nhân viên
     const newRef = firebase.database().ref("users").push();
     newRef.set(newData)
       .then(() => {
