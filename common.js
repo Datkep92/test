@@ -102,15 +102,18 @@ function loadFirebaseData() {
     }
     const userId = user.uid;
     globalEmployeeData = [];
-    db.ref("employees").once("value").then(snapshot => {
+    db.ref("users").once("value").then(snapshot => {
   globalEmployeeData = [];
   snapshot.forEach(child => {
     globalEmployeeData.push({ id: child.key, ...child.val() });
   });
-  console.log("Loaded employee data:", globalEmployeeData);
+  console.log("✅ Loaded employee data:", globalEmployeeData);
   isEmployeeDataLoaded = true;
   renderEmployeeList();
+}).catch(err => {
+  console.error("❌ Error loading users:", err.message);
 });
+
 
 
     db.ref("inventory").once("value").then(snapshot => {
@@ -244,7 +247,7 @@ function closeModal(modalId) {
 function loadEmployeeInfo() {
   const user = auth.currentUser;
   if (!user) return;
-  db.ref(`employees/${user.uid}`).once("value").then(snapshot => {
+  db.ref(`users/${user.uid}`).once("value").then(snapshot => {
     const data = snapshot.val();
     if (data) {
       document.getElementById("personal-employee-name").value = data.name || "";
