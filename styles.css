@@ -433,72 +433,6 @@ button {
 
 /* ===== EMPLOYEE MANAGEMENT TAB ===== */
 
-/* Calendar Styles */
-.calendar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background-color: var(--primary);
-  color: white;
-  border-radius: var(--radius) var(--radius) 0 0;
-}
-
-.calendar {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 0.5rem;
-  padding: 1rem;
-  background-color: var(--card-bg);
-  border-radius: 0 0 var(--radius) var(--radius);
-}
-
-.day {
-  aspect-ratio: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: var(--transition);
-  padding: 0.5rem;
-  position: relative;
-}
-
-.day.normal {
-  background-color: var(--card-bg);
-  border: 1px solid #eee;
-}
-
-.day.off {
-  background-color: #ffcdd2;
-  color: white;
-}
-
-.day.overtime {
-  background-color: #c8e6c9;
-  color: white;
-}
-
-.day.swap {
-  background-color: #bbdefb;
-  color: white;
-}
-
-.day.pending {
-  background-color: #fff9c4;
-  color: black;
-}
-
-.day-status {
-  position: absolute;
-  bottom: 0.25rem;
-  font-size: 0.6rem;
-  display: flex;
-  gap: 0.1rem;
-}
-
 /* Employee List */
 .employee-card {
   background-color: var(--card-bg);
@@ -700,4 +634,217 @@ button {
   .input-group {
     width: 100%;
   }
+}
+
+  
+/* === LỊCH LÀM VIỆC (LLV) === */
+
+/* ==== Layout chính ==== */
+.calendar-container {
+  margin-bottom: 1rem;
+}
+
+/* ==== Header Lịch ==== */
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background-color: var(--primary);
+  color: white;
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+}
+
+.calendar-header h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.calendar-header button {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  background-color: var(--secondary);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  min-width: 44px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.calendar-header button:hover {
+  background-color: var(--primary-light);
+}
+
+/* ==== Grid lịch ==== */
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+/* ==== Ô ngày ==== */
+.day {
+  aspect-ratio: 1 / 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: var(--radius);
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: var(--transition);
+  background-color: #fff;
+  color: var(--text);
+}
+
+.day.empty {
+  background-color: #f9f9f9;
+  color: var(--text-muted);
+  cursor: default;
+}
+
+/* ==== Trạng thái ngày ==== */
+.day.normal {
+  background-color: #fff;
+  color: var(--text);
+}
+
+.day.off {
+  background-color: #ff4d4d;
+  color: white;
+}
+
+.day.overtime {
+  background-color: #4caf50;
+  color: white;
+}
+
+.day.swap {
+  background-color: #2196f3;
+  color: white;
+}
+
+.day.pending {
+  background-color: #ffeb3b;
+  color: black;
+}
+
+/* ==== Hover ==== */
+.day:hover:not(.empty) {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+/* ==== Nhãn trạng thái nhỏ bên dưới (tuỳ chọn) ==== */
+.day-status {
+  position: absolute;
+  bottom: 4px;
+  font-size: 0.6rem;
+  display: flex;
+  gap: 2px;
+}
+
+/* ==== Nút thao tác trong modal ==== */
+#calendar-modal {
+  background: white;
+  padding: 16px;
+  box-sizing: border-box;
+  font-family: sans-serif;
+  width: 100%;
+  margin-top: 10px;
+}
+
+#calendar-modal button {
+  padding: 8px 14px;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-top: 12px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+#calendar-modal button:hover {
+  background-color: var(--primary-dark);
+}
+
+/* ===== Prevent Horizontal Scroll & Zoom ===== */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+  touch-action: pan-y; /* Disable zoom gestures */
+}
+
+/* Ensure all containers don't exceed viewport width */
+.tab-content-wrapper, 
+.tabcontent, 
+.modal-content, 
+.table-style,
+.calendar,
+.schedule-table,
+.advance-table,
+.report-table {
+  max-width: 100%;
+}
+
+/* Force table cells to wrap content */
+.table-style td, 
+.table-style th {
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 768px) {
+  /* Make tables scroll horizontally if needed */
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+  
+  /* Reset table width for scrolling */
+  .table-style {
+    min-width: 600px; /* Force horizontal scroll if needed */
+  }
+  
+  /* Calendar adjustments */
+  .calendar {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    font-size: 0.8rem;
+  }
+  
+  .day {
+    padding: 0.25rem;
+    font-size: 0.7rem;
+  }
+  
+  /* Form elements */
+  .input-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  /* Modal full width on mobile */
+  .modal-content {
+    width: 95%;
+    max-width: 95%;
+  }
+}
+
+/* Disable pinch zoom */
+@viewport {
+  width: device-width;
+  zoom: 1.0;
+  min-zoom: 1.0;
+  max-zoom: 1.0;
+  user-zoom: fixed;
 }
