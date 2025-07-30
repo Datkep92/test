@@ -12,16 +12,15 @@
   <!-- Tích hợp flatpickr -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <style>
-   
-  </style>
+     </style>
 </head>
 <body>
   <div id="login-page" class="center-screen">
-    <h2>Đăng Nhập</h2>
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Mật khẩu">
-    <button onclick="login()">Đăng Nhập</button>
-  </div>
+  <h2>Đăng Nhập Hệ Thống<br>Milano Coffee</h2>
+  <input type="email" id="email" placeholder="Email" autocomplete="username">
+  <input type="password" id="password" placeholder="Mật khẩu" autocomplete="current-password">
+  <button onclick="login()" id="login-btn">Đăng Nhập</button>
+</div>
 
   <div id="main-page" style="display: none;">
     <div class="app-header">
@@ -37,25 +36,24 @@
   <h3>Nhập báo cáo</h3>
   <div class="input-group">
     <input type="number" id="opening-balance" placeholder="Số dư đầu kỳ (VND)" min="0">
-    <button class="primary-btn" onclick="submitField('opening-balance')">Gửi</button>
+    <button class="primary-btn small" onclick="submitField('opening-balance')">Gửi</button>
   </div>
   <div class="input-group">
     <input type="number" id="revenue" placeholder="Doanh thu (VND)" min="0">
-    <button class="primary-btn" onclick="submitField('revenue')">Gửi</button>
+    <button class="primary-btn small" onclick="submitField('revenue')">Gửi</button>
   </div>
   <div class="input-group">
     <input type="text" id="expense-input" placeholder="Chi phí (VD: Mua nguyên liệu: 500000)">
-    <button class="primary-btn" onclick="submitField('expense-input')">Gửi</button>
+    <button class="primary-btn small" onclick="submitField('expense-input')">Gửi</button>
   </div>
   <div class="input-group">
     <input type="number" id="transfer-amount" placeholder="Tiền chuyển khoản (VND)" min="0">
-    <button class="primary-btn" onclick="submitField('transfer-amount')">Gửi</button>
+    <button class="primary-btn small" onclick="submitField('transfer-amount')">Gửi</button>
   </div>
   <div class="input-group">
     <input type="number" id="closing-balance" placeholder="Số dư cuối kỳ (VND)" min="0">
-    <button class="primary-btn" onclick="submitField('closing-balance')">Gửi</button>
+    <button class="primary-btn small" onclick="submitField('closing-balance')">Gửi</button>
   </div>
-
   <!-- Xuất hàng -->
   <h4>Xuất hàng</h4>
   <div id="report-product-list" class="product-list"></div>
@@ -237,32 +235,12 @@
     
   <!-- Tab Quản lý Nhân viên -->
 <div id="employee-management" class="tabcontent">
-  <div class="mobile-header">
-    <h2>Quản lý Nhân viên</h2>
-    <button class="mobile-menu-btn" onclick="toggleMobileMenu('employee-menu')">☰</button>
-  </div>
-
-  <!-- Menu di động -->
-  <div id="employee-menu" class="mobile-menu">
-    <button onclick="showEmployeeSection('employee-calendar-section')">Lịch làm việc</button>
-    <button onclick="showEmployeeSection('employee-list-section')">Danh sách NV</button>
-    <button onclick="showEmployeeSection('schedule-approval-section')">Duyệt lịch</button>
-    <button onclick="showEmployeeSection('advance-approval-section')">Duyệt tạm ứng</button>
-    <button onclick="showEmployeeSection('notification-section')">Thông báo</button>
-    <button onclick="showEmployeeSection('employee-chat-section')">Chat</button>
-  </div>
-
-  <!-- Lịch làm việc -->
+   <!-- Lịch làm việc -->
   <div id="employee-calendar-section" class="mobile-section active">
     <div class="card">
       <div class="section-header">
         <h3>Lịch làm việc</h3>
-        <div class="month-nav">
-          <button onclick="changeEmployeeMonth(-1)">❮</button>
-          <span>Tháng ${currentCalendarMonth}/${currentCalendarYear}</span>
-          <button onclick="changeEmployeeMonth(1)">❯</button>
-        </div>
-      </div>
+             </div>
       <div id="employee-calendar" class="mobile-calendar"></div>
     </div>
   </div>
