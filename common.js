@@ -78,7 +78,7 @@ function initApp() {
       renderBusinessReport([]);
       renderEmployeeList();
       renderSchedule();
-      renderAllSchedule();
+      //renderAllSchedule();
       renderEmployeeDetails();
       renderAdvanceApprovalList();
       renderGeneralNotifications();
@@ -92,6 +92,7 @@ function initApp() {
     }
   });
 }
+let isEmployeeDataLoaded = false;
 
 function loadFirebaseData() {
   auth.onAuthStateChanged(user => {
@@ -102,17 +103,15 @@ function loadFirebaseData() {
     const userId = user.uid;
     globalEmployeeData = [];
     db.ref("employees").once("value").then(snapshot => {
-      snapshot.forEach(child => {
-        globalEmployeeData.push({ id: child.key, ...child.val() });
-      });
-      console.log("Loaded employee data:", globalEmployeeData);
-      // Xóa hoặc kiểm tra renderSchedule
-      if (typeof renderSchedule === "function") {
-        renderSchedule();
-      } else {
-        console.warn("renderSchedule is not defined, skipping schedule render.");
-      }
-    }).catch(err => console.error("Error loading employee data:", err));
+  globalEmployeeData = [];
+  snapshot.forEach(child => {
+    globalEmployeeData.push({ id: child.key, ...child.val() });
+  });
+  console.log("Loaded employee data:", globalEmployeeData);
+  isEmployeeDataLoaded = true;
+  renderEmployeeList();
+});
+
 
     db.ref("inventory").once("value").then(snapshot => {
       globalInventoryData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
@@ -165,10 +164,17 @@ function markNotificationAsRead(notificationId, employeeId) {
 function login() {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
+  const loginBtn = document.getElementById("login-btn");
+  
   if (!email || !password) {
     alert("Vui lòng nhập đầy đủ thông tin!");
     return;
   }
+  
+  // Hiệu ứng loading
+  loginBtn.classList.add('loading');
+  loginBtn.disabled = true;
+  
   auth.signInWithEmailAndPassword(email, password)
     .then(user => {
       currentEmployeeId = user.user.uid;
@@ -176,9 +182,12 @@ function login() {
       document.getElementById("main-page").style.display = "block";
       loadFirebaseData();
     })
-    .catch(err => alert("Lỗi đăng nhập: " + err.message));
+    .catch(err => {
+      alert("Lỗi đăng nhập: " + err.message);
+      loginBtn.classList.remove('loading');
+      loginBtn.disabled = false;
+    });
 }
-
 function logout() {
   auth.signOut().then(() => {
     currentEmployeeId = null;
@@ -204,7 +213,7 @@ function openTabBubble(tabId) {
     renderFilteredReports(getReportData());
   } else if (tabId === 'profile') {
     renderProfile();
-    renderAllSchedule();
+    //renderAllSchedule();
   } else if (tabId === 'employee') {
     renderEmployeeList();
     renderSchedule();
