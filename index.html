@@ -331,11 +331,31 @@
   </div>
 
   <!-- Modal thêm/chỉnh sửa nhân viên -->
-  <div id="employee-modal" class="modal mobile-modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('employee-modal')">&times;</span>
-      <div id="employee-modal-content"></div>
+ <div id="employee-modal" class="modal mobile-modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeEmployeeForm()">&times;</span>
+    <div id="employee-modal-content">
+      <div class="employee-form">
+        <input type="hidden" id="employee-form-id">
+        <label for="employee-name">Tên nhân viên</label>
+        <input type="text" id="employee-name">
+        <label for="employee-email">Email</label>
+        <input type="email" id="employee-email">
+        <label for="employee-role">Vai trò</label>
+        <select id="employee-role">
+          <option value="employee">Nhân viên</option>
+          <option value="manager">Quản lý</option>
+        </select>
+        <div>
+          <button onclick="submitEmployeeForm()">💾 Lưu</button>
+          <button onclick="closeEmployeeForm()">❌ Hủy</button>
+        </div>
+      </div>
     </div>
+  </div>
+</div>
+
+
   </div>
 
   <!-- Modal chi tiết tài chính nhân viên -->
