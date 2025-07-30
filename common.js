@@ -93,153 +93,58 @@ function initApp() {
   });
 }
 
-function loadFirebaseData(callback) {
+function loadFirebaseData() {
   auth.onAuthStateChanged(user => {
-    if (user) {
-      currentEmployeeId = user.uid;
-      Promise.all([
-        db.ref("inventory").on("value", snapshot => {
-          globalInventoryData = snapshot.val() ? Object.keys(snapshot.val()).map(key => ({ id: key, ...snapshot.val()[key] })) : [];
-          console.log("Loaded inventory data:", globalInventoryData);
-          if (window.renderInventory) renderInventory();
-          if (window.renderReportProductList) renderReportProductList();
-          globalInventoryData.forEach(item => checkLowStock(item));
-        }),
-        db.ref("reports").on("value", snapshot => {
-          globalReportData = snapshot.val() ? Object.keys(snapshot.val()).map(key => ({ id: key, ...snapshot.val()[key] })) : [];
-          console.log("Loaded report data:", globalReportData);
-          if (window.renderBusinessReport) renderBusinessReport(globalReportData);
-          if (window.renderFilteredReports) renderFilteredReports(getReportData());
-        }),
-        db.ref("employees").on("value", snapshot => {
-          const employees = snapshot.val() || {};
-          globalEmployeeData = Object.keys(employees).map(id => ({
-            id,
-            dailyWage: employees[id].dailyWage != null ? employees[id].dailyWage : 0,
-            allowance: employees[id].allowance != null ? employees[id].allowance : 0,
-            otherFee: employees[id].otherFee != null ? employees[id].otherFee : 0,
-            ...employees[id]
-          }));
-          console.log("Loaded employee data:", globalEmployeeData);
-          if (window.renderEmployeeList) renderEmployeeList();
-          if (window.renderSchedule) renderSchedule();
-          if (window.renderAllSchedule) renderAllSchedule();
-          if (window.renderEmployeeDetails) renderEmployeeDetails();
-        }),
-        db.ref("advances").on("value", snapshot => {
-          globalAdvanceRequests = snapshot.val() ? Object.values(snapshot.val()) : [];
-          console.log("Loaded advance requests:", globalAdvanceRequests);
-          if (window.renderAdvanceHistory) renderAdvanceHistory();
-          if (window.renderAdvanceApprovalList) renderAdvanceApprovalList();
-          if (window.renderEmployeeDetails) renderEmployeeDetails();
-        }),
-        db.ref("messages/group").on("value", snapshot => {
-          globalMessages.group = snapshot.val() ? Object.values(snapshot.val()) : [];
-          console.log("Loaded group messages:", globalMessages.group);
-          if (window.renderChat) renderChat("group");
-        }),
-        db.ref("messages/manager").on("value", snapshot => {
-          globalMessages.manager = snapshot.val() ? Object.values(snapshot.val()) : [];
-          console.log("Loaded manager messages:", globalMessages.manager);
-          if (window.renderChat) renderChat("manager");
-        }),
-        db.ref("schedules").on("value", snapshot => {
-          globalScheduleData = snapshot.val() ? Object.keys(snapshot.val()).map(key => ({
-            id: key,
-            ...snapshot.val()[key]
-          })) : [];
-          console.log("Loaded schedule data:", globalScheduleData);
-          if (window.renderSchedule) renderSchedule();
-          if (window.renderAllSchedule) renderAllSchedule();
-          if (window.renderScheduleStatusList) renderScheduleStatusList();
-          if (window.renderOffAndOvertime) renderOffAndOvertime();
-          if (window.renderCalendar) renderCalendar();
-          if (window.renderSalarySummary) renderSalarySummary();
-          if (window.renderEmployeeDetails) renderEmployeeDetails();
-        }),
-        db.ref("notifications/" + currentEmployeeId).on("value", snapshot => {
-          globalNotifications = snapshot.val() ? Object.values(snapshot.val()).map(n => ({ id: n.id || snapshot.key, ...n })) : [];
-          console.log("Loaded notifications:", globalNotifications);
-          if (window.renderNotifications) renderNotifications();
-        }),
-        db.ref("notifications/general").on("value", snapshot => {
-          globalGeneralNotifications = snapshot.val() ? Object.values(snapshot.val()) : [];
-          console.log("Loaded general notifications:", globalGeneralNotifications);
-          if (window.renderNotifications) renderNotifications();
-        }),
-        db.ref("messages/" + currentEmployeeId).on("value", snapshot => {
-          globalMessages[currentEmployeeId] = snapshot.val() ? Object.values(snapshot.val()) : [];
-          console.log("Loaded messages for employee:", globalMessages[currentEmployeeId]);
-          if (window.renderEmployeeChat) renderEmployeeChat(currentEmployeeId);
-        })
-      ]).then(() => {
-        if (callback) callback();
-      }).catch(err => console.error("Error loading Firebase data:", err));
-    } else {
-      currentEmployeeId = null;
-      globalInventoryData = [];
-      globalReportData = [];
-      globalEmployeeData = [];
-      globalAdvanceRequests = [];
-      globalMessages = { group: [], manager: [] };
-      globalScheduleData = [];
-      globalNotifications = [];
-      globalGeneralNotifications = [];
-      if (window.renderProfile) renderProfile();
-      if (window.renderEmployeeList) renderEmployeeList();
-      if (window.renderSchedule) renderSchedule();
-      if (window.renderAllSchedule) renderAllSchedule();
-      if (window.renderEmployeeDetails) renderEmployeeDetails();
-      if (window.renderAdvanceApprovalList) renderAdvanceApprovalList();
-      if (window.renderGeneralNotifications) renderGeneralNotifications();
-      if (window.renderEmployeeChat) renderEmployeeChat(null);
-      if (window.renderReportProductList) renderReportProductList();
-      if (window.renderRevenueExpenseData) renderRevenueExpenseData();
-      if (window.renderRevenueExpenseSummary) renderRevenueExpenseSummary();
-      if (window.renderInventory) renderInventory();
-      if (window.renderAdvanceHistory) renderAdvanceHistory();
-      if (window.renderScheduleStatusList) renderScheduleStatusList();
-      if (window.renderCalendar) renderCalendar();
-      if (window.renderBusinessReport) renderBusinessReport([]);
-      if (window.renderChat) renderChat("group");
-      if (window.renderChat) renderChat("manager");
-      if (window.renderNotifications) renderNotifications();
-      if (window.renderFilteredReports) renderFilteredReports([]);
+    if (!user) {
+      console.log("User not logged in");
+      return;
     }
+    const userId = user.uid;
+    globalEmployeeData = [];
+    db.ref("employees").once("value").then(snapshot => {
+      snapshot.forEach(child => {
+        globalEmployeeData.push({ id: child.key, ...child.val() });
+      });
+      console.log("Loaded employee data:", globalEmployeeData);
+      // Xóa hoặc kiểm tra renderSchedule
+      if (typeof renderSchedule === "function") {
+        renderSchedule();
+      } else {
+        console.warn("renderSchedule is not defined, skipping schedule render.");
+      }
+    }).catch(err => console.error("Error loading employee data:", err));
+
+    db.ref("inventory").once("value").then(snapshot => {
+      globalInventoryData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
+      //console.log("Loaded inventory data:", globalInventoryData);
+      if (typeof renderInventory === "function") {
+        renderInventory();
+      }
+    }).catch(err => console.error("Error loading inventory data:", err));
+
+    db.ref("advanceRequests").once("value").then(snapshot => {
+      globalAdvanceData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
+      //console.log("Loaded advance requests:", globalAdvanceData);
+      if (typeof renderAdvanceHistory === "function") {
+        renderAdvanceHistory();
+      }
+    }).catch(err => console.error("Error loading advance requests:", err));
+
+    db.ref("schedules").once("value").then(snapshot => {
+      globalScheduleData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
+      //console.log("Loaded schedule data:", globalScheduleData);
+      // Đã kiểm tra renderSchedule ở trên
+    }).catch(err => console.error("Error loading schedule data:", err));
+
+    db.ref("reports").once("value").then(snapshot => {
+      globalReportData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
+      //console.log("Loaded report data:", globalReportData);
+      if (typeof renderFilteredReports === "function") {
+        renderFilteredReports(globalReportData);
+      }
+    }).catch(err => console.error("Error loading report data:", err));
   });
 }
-// Thêm hàm renderNotifications
-function renderNotifications() {
-  const container = document.getElementById("notification-list");
-  if (!container) {
-    console.warn("Container 'notification-list' không tồn tại trong DOM.");
-    return;
-  }
-  container.innerHTML = "";
-  
-  // Kết hợp thông báo cá nhân và thông báo chung
-  const allNotifications = [
-    ...globalNotifications.map(n => ({ ...n, type: 'personal' })),
-    ...globalGeneralNotifications.map(n => ({ ...n, type: 'general' }))
-  ].sort((a, b) => b.timestamp - a.timestamp); // Sắp xếp theo thời gian giảm dần
-
-  if (allNotifications.length === 0) {
-    container.innerHTML = "<p>Chưa có thông báo nào.</p>";
-    return;
-  }
-
-  allNotifications.forEach(notification => {
-    const div = document.createElement("div");
-    div.className = `notification ${notification.isRead ? 'read' : 'unread'}`;
-    div.innerHTML = `
-      <p>${notification.message} - ${new Date(notification.timestamp).toLocaleString('vi-VN')}</p>
-      ${notification.type === 'personal' && !notification.isRead ? 
-        `<button onclick="markNotificationAsRead('${notification.id}', '${currentEmployeeId}')">Đã đọc</button>` : ''}
-    `;
-    container.appendChild(div);
-  });
-}
-
 // Thêm hàm để đánh dấu thông báo là đã đọc
 function markNotificationAsRead(notificationId, employeeId) {
   db.ref(`notifications/${employeeId}/${notificationId}`).update({

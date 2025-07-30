@@ -95,33 +95,68 @@
     <!-- Tab Thu Chi -->
 <div class="tabcontent" id="revenue-expense">
   <h2>Báo cáo Thu Chi</h2>
+  
+  <!-- Nhập báo cáo -->
   <h3>Nhập báo cáo</h3>
-  <input type="number" id="opening-balance" placeholder="Số dư đầu kỳ (VND)">
-  <input type="number" id="revenue" placeholder="Doanh thu (VND)">
-  <input type="number" id="transfer-amount" placeholder="Tiền chuyển khoản (VND)">
-  <input type="text" id="expense-input" placeholder="Chi phí (VD: Mua nguyên liệu: 500000)">
-  <input type="number" id="closing-balance" placeholder="Số dư cuối kỳ (VND)">
+  <div class="input-group">
+    <input type="number" id="opening-balance" placeholder="Số dư đầu kỳ (VND)" min="0">
+    <button class="primary-btn" onclick="submitField('opening-balance')">Gửi</button>
+  </div>
+  <div class="input-group">
+    <input type="number" id="revenue" placeholder="Doanh thu (VND)" min="0">
+    <button class="primary-btn" onclick="submitField('revenue')">Gửi</button>
+  </div>
+  <div class="input-group">
+    <input type="text" id="expense-input" placeholder="Chi phí (VD: Mua nguyên liệu: 500000)">
+    <button class="primary-btn" onclick="submitField('expense-input')">Gửi</button>
+  </div>
+  <div class="input-group">
+    <input type="number" id="transfer-amount" placeholder="Tiền chuyển khoản (VND)" min="0">
+    <button class="primary-btn" onclick="submitField('transfer-amount')">Gửi</button>
+  </div>
+  <div class="input-group">
+    <input type="number" id="closing-balance" placeholder="Số dư cuối kỳ (VND)" min="0">
+    <button class="primary-btn" onclick="submitField('closing-balance')">Gửi</button>
+  </div>
+
+  <!-- Xuất hàng -->
   <h4>Xuất hàng</h4>
   <div id="report-product-list" class="product-list"></div>
-  <button class="primary-btn" onclick="submitReport()">Gửi Báo Cáo</button>
+  <button class="primary-btn" onclick="submitInventoryReport()">Gửi Báo Cáo Tồn Kho</button>
+
+  <!-- Lọc báo cáo -->
   <div id="filter-section">
     <h3>Lọc Báo Cáo</h3>
     <input type="text" id="filter-range" placeholder="Chọn khoảng thời gian (VD: 25/07/2025 - 26/07/2025)">
-    <button onclick="applyFilter()">Apply</button>
+    <button class="primary-btn" onclick="applyFilter()">Lọc</button>
   </div>
+
+  <!-- Tóm tắt thu chi -->
   <div id="revenue-expense-summary" class="summary-section">
     <h3>Tóm tắt Thu Chi</h3>
   </div>
+
+  <!-- Bảng báo cáo thu chi -->
   <div id="shared-report-table" class="table-section">
     <h3>Bảng Báo cáo Thu Chi</h3>
   </div>
+
+  <!-- Chi tiết giao dịch chuyển khoản -->
   <div id="transfer-details" class="table-section">
     <h3>Chi tiết Giao dịch Chuyển khoản</h3>
   </div>
+
+  <!-- Bảng báo cáo xuất hàng -->
   <div id="report-product-table" class="table-section">
     <h3>Bảng Báo cáo Xuất Hàng</h3>
   </div>
+
+  <!-- Lịch sử thao tác -->
+  <div id="history-table" class="table-section">
+    <h3>Lịch sử Thao tác</h3>
+  </div>
 </div>
+
 
     <div id="inventory" class="tabcontent">
   <div class="card">
