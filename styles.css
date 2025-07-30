@@ -1,4 +1,6 @@
-/* ===== Base Reset & Variables ===== */
+/* ===== Mobile-Optimized CSS for Milano Coffee App ===== */
+
+/* Base Reset & Variables */
 :root {
   /* Color Palette - Milano Coffee Theme */
   --primary: #6F4E37;        /* Coffee brown */
@@ -31,6 +33,13 @@
   padding: 0;
 }
 
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  touch-action: pan-y; /* Disable zoom gestures */
+}
+
 body {
   font-family: 'Segoe UI', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--bg);
@@ -40,121 +49,30 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ===== Login Page ===== */
-#login-page {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  padding: 2rem;
-  background: linear-gradient(rgba(111, 78, 55, 0.8), rgba(111, 78, 55, 0.9)), 
-              url('https://images.unsplash.com/photo-1445116572660-236099ec97a0?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80') no-repeat center/cover;
-  text-align: center;
-  color: white;
-}
-
-#login-page h2 {
-  margin-bottom: 2rem;
-  font-size: 2rem;
-  font-weight: 600;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-#login-page input {
-  width: 100%;
-  max-width: 320px;
-  padding: 0.75rem 1rem;
-  margin: 0.5rem 0;
-  font-size: 1rem;
-  border: none;
-  border-radius: var(--radius);
-  background-color: rgba(255, 255, 255, 0.9);
-  transition: var(--transition);
-}
-
-#login-page input:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.3);
-  background-color: white;
-}
-
-#login-page button {
-  width: 100%;
-  max-width: 320px;
-  padding: 0.75rem;
-  margin: 1rem 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--primary);
-  background-color: white;
-  border: none;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: var(--transition);
-  box-shadow: var(--shadow-sm);
-}
-
-#login-page button:hover {
-  background-color: var(--secondary);
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-/* ===== Main Layout ===== */
+/* ===== Layout Structure ===== */
 #main-page {
   display: none;
   min-height: 100vh;
+  padding-bottom: 80px; /* Space for floating menu */
 }
 
 .app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
+  padding: 12px 16px;
   background-color: var(--primary);
   color: white;
   box-shadow: var(--shadow-md);
-  position: relative;
-  z-index: 10;
 }
 
-.app-header h1 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-.logout-btn {
-  padding: 0.5rem 1rem;
-  background-color: rgba(255, 255, 255, 0.15);
-  border: none;
-  border-radius: var(--radius);
-  color: white;
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.logout-btn:hover {
-  background-color: rgba(255, 255, 255, 0.25);
-}
-
-.tab-content-wrapper {
-  padding: 1.5rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-/* ===== Tab Content ===== */
+/* ===== Tab System ===== */
 .tabcontent {
   display: none;
-  background-color: var(--card-bg);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: var(--shadow-sm);
+  padding: 16px;
   animation: fadeIn 0.3s ease;
 }
 
@@ -168,54 +86,113 @@ body {
 }
 
 /* ===== Typography ===== */
-h2, h3 {
-  color: var(--primary);
-  margin-bottom: 1rem;
-}
-
 h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: 1.4rem;
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
   border-bottom: 2px solid var(--secondary);
-  padding-bottom: 0.5rem;
-  margin-bottom: 1.5rem;
 }
 
 h3 {
-  font-size: 1.25rem;
-  font-weight: 500;
-  margin-top: 1.5rem;
+  font-size: 1.2rem;
+  color: var(--primary-light);
+  margin: 16px 0 12px;
 }
 
-/* ===== Form Elements ===== */
-input, textarea, select {
-  padding: 0.75rem 1rem;
-  font-size: 1rem;
+/* ===== Tables - Mobile Optimized ===== */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 16px 0;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th, td {
+  padding: 10px 8px;
+  text-align: left;
+  border-bottom: 1px solid rgba(196, 164, 132, 0.2);
+  word-break: break-word; /* Ensure text wraps */
+  white-space: normal; /* Allow text wrapping */
+}
+
+th {
+  background-color: var(--primary);
+  color: white;
+  position: sticky;
+  top: 0;
+}
+
+tr:nth-child(even) {
+  background-color: rgba(196, 164, 132, 0.05);
+}
+
+tr:hover {
+  background-color: rgba(196, 164, 132, 0.1);
+}
+
+/* Compact table layout for mobile */
+@media (max-width: 768px) {
+  th, td {
+    padding: 8px 6px;
+    font-size: 0.85rem;
+  }
+  
+  /* Special handling for action columns */
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .action-buttons button {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
+}
+
+/* ===== Forms & Inputs ===== */
+.input-group {
+  margin-bottom: 16px;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 10px 12px;
+  margin: 6px 0;
   border: 1px solid #ddd;
   border-radius: var(--radius);
-  width: 100%;
+  font-size: 1rem;
   transition: var(--transition);
-  background-color: var(--card-bg);
 }
 
-input:focus, textarea:focus, select:focus {
+input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(111, 78, 55, 0.1);
 }
 
-textarea {
-  min-height: 100px;
-  resize: vertical;
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin: 16px 0;
 }
 
 /* ===== Buttons ===== */
 button {
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 500;
+  padding: 10px 16px;
   border: none;
   border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
   transition: var(--transition);
 }
@@ -236,407 +213,11 @@ button {
   color: white;
 }
 
-.secondary-btn:hover {
-  background-color: var(--primary-light);
+.small-btn {
+  padding: 6px 10px;
+  font-size: 0.85rem;
 }
 
-.success-btn {
-  background-color: var(--success);
-  color: white;
-}
-
-.danger-btn {
-  background-color: var(--danger);
-  color: white;
-}
-
-.warning-btn {
-  background-color: var(--warning);
-  color: white;
-}
-
-.info-btn {
-  background-color: var(--info);
-  color: white;
-}
-
-/* ===== Tables ===== */
-.table-style {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 1.5rem 0;
-  font-size: 0.95rem;
-  background-color: var(--card-bg);
-  border-radius: var(--radius);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-}
-
-.table-style th, .table-style td {
-  padding: 0.75rem 1rem;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-}
-
-.table-style th {
-  background-color: var(--primary);
-  color: white;
-  font-weight: 500;
-}
-
-.table-style tr:hover td {
-  background-color: rgba(196, 164, 132, 0.1);
-}
-
-/* ===== Cards ===== */
-.card {
-  background-color: var(--card-bg);
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: var(--shadow-sm);
-}
-
-/* ===== Utility Classes ===== */
-.empty-state {
-  padding: 2rem;
-  text-align: center;
-  color: var(--text-light);
-  background-color: rgba(196, 164, 132, 0.1);
-  border-radius: var(--radius);
-  margin: 1rem 0;
-}
-
-/* ===== Floating Menu ===== */
-.floating-menu {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  z-index: 1000;
-}
-
-#main-float-btn {
-  width: 64px;
-  height: 64px;
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 50%;
-  font-size: 1.75rem;
-  box-shadow: var(--shadow-md);
-  cursor: pointer;
-  transition: var(--transition);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#main-float-btn:hover {
-  background-color: var(--primary-dark);
-  transform: scale(1.05);
-  box-shadow: var(--shadow-md);
-}
-
-.float-options {
-  display: none;
-  position: absolute;
-  bottom: 80px;
-  right: 0;
-  flex-direction: column;
-  gap: 0.75rem;
-  align-items: flex-end;
-}
-
-.float-options button {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  border: none;
-  background-color: var(--primary);
-  color: white;
-  font-size: 0.75rem;
-  cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  transition: var(--transition);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  line-height: 1.2;
-  padding: 0.5rem;
-}
-
-/* ===== Responsive Design ===== */
-@media (max-width: 768px) {
-  .app-header h1 {
-    font-size: 1.25rem;
-  }
-  
-  .tab-content-wrapper {
-    padding: 1rem;
-  }
-  
-  .tabcontent {
-    padding: 1.25rem;
-  }
-}
-
-/* ===== Modal Styles ===== */
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-  justify-content: center;
-  align-items: center;
-}
-
-.modal-content {
-  background-color: var(--card-bg);
-  padding: 1.5rem;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-md);
-  width: 90%;
-  max-width: 500px;
-  position: relative;
-}
-
-.close {
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: var(--text);
-}
-
-.close:hover {
-  color: var(--primary);
-}
-
-/* ===== Toast Notification ===== */
-.toast {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: #333;
-  color: white;
-  padding: 10px;
-  border-radius: 5px;
-  box-shadow: var(--shadow-md);
-  z-index: 1100;
-}
-
-/* ===== EMPLOYEE MANAGEMENT TAB ===== */
-
-/* Employee List */
-.employee-card {
-  background-color: var(--card-bg);
-  padding: 1.5rem;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-  margin-bottom: 1rem;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.employee-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-}
-
-/* Schedule Table */
-.schedule-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-}
-
-.schedule-table th {
-  background-color: var(--primary);
-  color: white;
-  padding: 0.75rem;
-  text-align: left;
-}
-
-.schedule-table td {
-  padding: 0.75rem;
-  border-bottom: 1px solid #eee;
-}
-
-/* Advance Table */
-.advance-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-}
-
-.advance-table th {
-  background-color: var(--primary);
-  color: white;
-  padding: 0.75rem;
-  text-align: left;
-}
-
-/* Chat Styles */
-.chat-messages {
-  height: 300px;
-  overflow-y: auto;
-  padding: 1rem;
-  background-color: var(--card-bg);
-  border-radius: var(--radius);
-  margin-bottom: 1rem;
-}
-
-.chat-message {
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  border-radius: var(--radius);
-  max-width: 80%;
-}
-
-.chat-message.sent {
-  background-color: var(--primary);
-  color: white;
-  margin-left: auto;
-}
-
-.chat-message.received {
-  background-color: #f5f5f5;
-  margin-right: auto;
-}
-
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-  .calendar-header h3 {
-    font-size: 1rem;
-  }
-  
-  .schedule-table, .advance-table {
-    font-size: 0.85rem;
-  }
-}
-
-/* ===== INVENTORY MANAGEMENT TAB ===== */
-
-/* Inventory List */
-.inventory-list {
-  margin-bottom: 1.5rem;
-}
-
-.inventory-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background-color: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-  margin-bottom: 0.75rem;
-}
-
-.low-stock {
-  background-color: #ffebee;
-  border-left: 4px solid var(--danger);
-}
-
-/* Restock Schedule */
-.restock-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-}
-
-.restock-table th {
-  background-color: var(--primary);
-  color: white;
-  padding: 0.75rem;
-  text-align: left;
-}
-
-/* Export Analysis */
-.export-chart {
-  width: 100%;
-  height: 300px;
-  margin: 1.5rem 0;
-}
-
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-  .inventory-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-}
-
-/* ===== REVENUE & EXPENSE TAB ===== */
-
-/* Input Form */
-#revenue-expense-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.input-group {
-  flex: 1;
-  min-width: 200px;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* Product List */
-#report-product-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-}
-
-.product-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  background-color: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-}
-
-/* Report Tables */
-.report-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 1rem 0;
-}
-
-.report-table th {
-  background-color: var(--primary);
-  color: white;
-  padding: 0.75rem;
-  text-align: left;
-}
-
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-  #revenue-expense-form {
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  
-  .input-group {
-    width: 100%;
-  }
-}
-
-  
 /* === LỊCH LÀM VIỆC (LLV) === */
 
 /* ==== Layout chính ==== */
@@ -804,19 +385,6 @@ html, body {
   word-break: break-word;
 }
 
-/* Mobile-specific adjustments */
-@media (max-width: 768px) {
-  /* Make tables scroll horizontally if needed */
-  .table-container {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    width: 100%;
-  }
-  
-  /* Reset table width for scrolling */
-  .table-style {
-    min-width: 600px; /* Force horizontal scroll if needed */
-  }
   
   /* Calendar adjustments */
   .calendar {
@@ -830,11 +398,200 @@ html, body {
   }
 
   
-  /* Modal full width on mobile */
-  .modal-content {
-    width: 95%;
-    max-width: 95%;
+
+
+
+/* ===== Cards ===== */
+.card {
+  background-color: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ===== Modals ===== */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: white;
+  width: 95%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: var(--radius);
+  padding: 20px;
+  position: relative;
+}
+
+.close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+/* ===== Floating Menu ===== */
+.floating-menu {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 100;
+}
+
+#main-float-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  color: white;
+  font-size: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+}
+
+.float-options {
+  display: none;
+  position: absolute;
+  bottom: 70px;
+  right: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.float-options button {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  color: white;
+  font-size: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  line-height: 1.2;
+  padding: 5px;
+}
+
+/* ===== Inventory Specific ===== */
+.product-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  margin-bottom: 8px;
+  background-color: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.product-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ===== Employee Management ===== */
+.employee-card {
+  padding: 12px;
+  margin-bottom: 12px;
+  background-color: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ===== Responsive Adjustments ===== */
+@media (max-width: 480px) {
+  .input-group {
+    flex-direction: column;
   }
+  
+  .button-group {
+    flex-direction: column;
+  }
+  
+  button {
+    width: 100%;
+  }
+  
+  /* Make calendar days smaller */
+  .day {
+    font-size: 0.7rem;
+  }
+  
+  /* Stack table headers on very small screens */
+  @media (max-width: 360px) {
+    table {
+      font-size: 0.8rem;
+    }
+    
+    th, td {
+      padding: 6px 4px;
+    }
+  }
+}
+
+/* ===== Utility Classes ===== */
+.hidden {
+  display: none !important;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.mt-1 { margin-top: 4px; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 16px; }
+
+.mb-1 { margin-bottom: 4px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
+.mb-4 { margin-bottom: 16px; }
+
+/* Status indicators */
+.status-pending { color: var(--warning); }
+.status-approved { color: var(--success); }
+.status-rejected { color: var(--danger); }
+.status-off { color: var(--danger); }
+.status-overtime { color: var(--success); }
+.status-swap { color: var(--info); }
+
+/* Toast notifications */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--primary);
+  color: white;
+  padding: 12px 24px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  z-index: 1100;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateX(-50%) translateY(100%); }
+  to { transform: translateX(-50%) translateY(0); }
 }
 
 /* Disable pinch zoom */
@@ -846,216 +603,107 @@ html, body {
   user-zoom: fixed;
 }
 //
-/* ===== INVENTORY MANAGEMENT TAB ===== */
-#inventory .tabcontent {
-  padding: 1rem;
+/* Thêm vào file CSS */
+.input-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  align-items: center;
 }
 
-#inventory .card {
-  background-color: var(--card-bg);
+.input-group input {
+  flex: 1;
+  min-width: 0; /* Cho phép co nhỏ */
+  margin: 0;
+}
+
+.input-group button {
+  white-space: nowrap;
+  padding: 10px 12px;
+}
+/* Login Page Styling */
+#login-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+  background-color: var(--primary);
+  background-image: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+}
+
+#login-page h2 {
+  color: white;
+  margin-bottom: 30px;
+  font-size: 1.8rem;
+  text-align: center;
+}
+
+#login-page input {
+  width: 100%;
+  max-width: 350px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  border: 2px solid rgba(255,255,255,0.2);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-#inventory h2 {
-  color: var(--primary);
-  border-bottom: 2px solid var(--secondary);
-  padding-bottom: 0.5rem;
-  margin-bottom: 1.5rem;
-}
-
-#inventory h3 {
-  color: var(--primary-light);
-  margin: 1.5rem 0 1rem;
-}
-
-/* Input form styles */
-#inventory .input-group {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-#inventory .input-group input {
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--secondary);
-  border-radius: var(--radius);
-  background-color: white;
+  background-color: rgba(255,255,255,0.9);
   font-size: 1rem;
   transition: var(--transition);
 }
 
-#inventory .input-group input:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(111, 78, 55, 0.1);
+#login-page input:focus {
+  border-color: var(--accent);
+  background-color: white;
+  box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.2);
 }
 
-#inventory .button-group {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-/* Inventory list styles */
-#inventory-list {
+#login-page button {
   width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  margin-bottom: 1.5rem;
-}
-
-#inventory-list table {
-  width: 100%;
-  min-width: 600px;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-#inventory-list th {
-  background-color: var(--primary);
-  color: white;
-  padding: 0.75rem;
-  text-align: left;
-  position: sticky;
-  top: 0;
-}
-
-#inventory-list td {
-  padding: 0.75rem;
-  border-bottom: 1px solid rgba(196, 164, 132, 0.2);
-}
-
-#inventory-list tr.low-stock {
-  background-color: rgba(231, 76, 60, 0.1);
-  border-left: 3px solid var(--danger);
-}
-
-#inventory-list button {
-  padding: 0.5rem 0.75rem;
-  margin: 0.25rem;
-  font-size: 0.8rem;
+  max-width: 350px;
+  padding: 14px;
+  background-color: var(--accent);
+  color: #333;
+  font-weight: 600;
+  font-size: 1.1rem;
+  border-radius: var(--radius-lg);
   border: none;
-  border-radius: var(--radius);
   cursor: pointer;
   transition: var(--transition);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-#inventory-list button:first-child {
-  background-color: var(--accent);
-  color: var(--primary-dark);
+#login-page button:hover {
+  background-color: #e6b800;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
 }
 
-#inventory-list button:last-child {
-  background-color: var(--danger);
-  color: white;
+#login-page button:active {
+  transform: translateY(0);
 }
 
-/* Restock schedule styles */
-#restock-schedule {
-  margin-bottom: 1.5rem;
+/* Thêm hiệu ứng loading khi nhấn nút */
+#login-page button.loading {
+  position: relative;
+  color: transparent;
 }
 
-/* Chart container */
-#export-analysis {
-  margin-bottom: 1rem;
+#login-page button.loading::after {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  top: 50%;
+  left: 50%;
+  margin: -10px 0 0 -10px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
-#export-chart {
-  width: 100%;
-  max-height: 300px;
-  margin-bottom: 1.5rem;
-}
-
-/* Modal styles */
-#edit-inventory-modal .modal-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-#edit-inventory-modal .input-group {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
-}
-/* ===== INVENTORY TABLE OPTIMIZATION ===== */
-#inventory-list table {
-  width: 100%;
-  min-width: 100%; /* Thay đổi từ 600px để tận dụng tối đa chiều rộng */
-  table-layout: auto; /* Cho phép các cột co giãn theo nội dung */
-}
-
-#inventory-list th,
-#inventory-list td {
-  padding: 4px 6px; /* Giảm padding để tiết kiệm không gian */
-  white-space: nowrap; /* Ngăn text xuống dòng */
-  overflow: hidden; /* Ẩn phần text vượt quá */
-  text-overflow: ellipsis; /* Hiển thị dấu ... khi text quá dài */
-}
-
-/* Cột STT (số thứ tự) */
-.col-stt {
-  width: 40px;
-  min-width: 40px;
-  text-align: center;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-}
-
-
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .col-name {
-    max-width: 100px; /* Thu nhỏ hơn trên mobile */
-  }
-  
-  .col-time {
-    width: 80px;
-    min-width: 80px;
-  }
-  
-  .col-money {
-    width: 90px;
-    min-width: 90px;
-  }
-  
-  .col-action {
-    width: 80px;
-    min-width: 80px;
-  }
-}
-
-/* Cột Hành động - Xếp dọc các nút */
-.col-action {
-  width: 80px;
-  text-align: center;
-}
-
-.col-action .action-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.col-action button {
-  width: 100%;
-  margin: 0;
-  padding: 4px 8px;
-}
-
-/* Màu sắc nút bấm */
-.col-action button:first-child {
-  background-color: var(--accent);
-  color: var(--primary-dark);
-}
-
-.col-action button:last-child {
-  background-color: var(--danger);
-  color: white;
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
