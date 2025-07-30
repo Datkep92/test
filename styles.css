@@ -1,22 +1,27 @@
 /* ===== Base Reset & Variables ===== */
 :root {
-  --primary: #6F4E37; /* Coffee brown */
-  --primary-dark: #5a3d2a;
-  --primary-light: #8b6b4b;
-  --secondary: #C4A484; /* Latte color */
-  --accent: #D4AF37; /* Gold accent */
-  --text: #333333;
-  --text-light: #5a5a5a;
-  --bg: #f9f5f0; /* Creamy background */
-  --card-bg: #ffffff;
-  --success: #4CAF50;
-  --danger: #e74c3c;
-  --warning: #f39c12;
-  --info: #3498db;
+  /* Color Palette - Milano Coffee Theme */
+  --primary: #6F4E37;        /* Coffee brown */
+  --primary-dark: #5a3d2a;   /* Dark coffee */
+  --primary-light: #8b6b4b;  /* Light coffee */
+  --secondary: #C4A484;      /* Latte color */
+  --accent: #D4AF37;         /* Gold accent */
+  --text: #333333;           /* Main text */
+  --text-light: #5a5a5a;     /* Secondary text */
+  --bg: #f9f5f0;             /* Creamy background */
+  --card-bg: #ffffff;        /* Card background */
+  
+  /* Status Colors */
+  --success: #4CAF50;        /* Green */
+  --danger: #e74c3c;         /* Red */
+  --warning: #f39c12;        /* Orange */
+  --info: #3498db;           /* Blue */
+  
+  /* UI Elements */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
-  --radius: 8px;
-  --radius-lg: 12px;
+  --radius: 8px;             /* Default border radius */
+  --radius-lg: 12px;         /* Large border radius */
   --transition: all 0.2s ease;
 }
 
@@ -162,6 +167,7 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ===== Typography ===== */
 h2, h3 {
   color: var(--primary);
   margin-bottom: 1rem;
@@ -181,12 +187,29 @@ h3 {
   margin-top: 1.5rem;
 }
 
+/* ===== Form Elements ===== */
+input, textarea, select {
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: var(--radius);
+  width: 100%;
+  transition: var(--transition);
+  background-color: var(--card-bg);
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(111, 78, 55, 0.1);
+}
 
 textarea {
   min-height: 100px;
   resize: vertical;
 }
 
+/* ===== Buttons ===== */
 button {
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
@@ -217,6 +240,26 @@ button {
   background-color: var(--primary-light);
 }
 
+.success-btn {
+  background-color: var(--success);
+  color: white;
+}
+
+.danger-btn {
+  background-color: var(--danger);
+  color: white;
+}
+
+.warning-btn {
+  background-color: var(--warning);
+  color: white;
+}
+
+.info-btn {
+  background-color: var(--info);
+  color: white;
+}
+
 /* ===== Tables ===== */
 .table-style {
   width: 100%;
@@ -245,44 +288,23 @@ button {
   background-color: rgba(196, 164, 132, 0.1);
 }
 
-.table-style button {
-  padding: 0.5rem 0.75rem;
-  font-size: 0.85rem;
-  margin-right: 0.5rem;
-}
-
-/* ===== Chat ===== */
-.chat-box {
+/* ===== Cards ===== */
+.card {
   background-color: var(--card-bg);
-  border: 1px solid #eee;
-  height: 200px;
-  max-height: 300px;
-  overflow-y: auto;
-  padding: 1rem;
   border-radius: var(--radius);
-  margin-bottom: 1rem;
-  box-shadow: var(--shadow-sm) inset;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
 }
 
-.chat-message {
-  padding: 0.75rem;
-  margin-bottom: 0.75rem;
-  background-color: #f5f5f5;
+/* ===== Utility Classes ===== */
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-light);
+  background-color: rgba(196, 164, 132, 0.1);
   border-radius: var(--radius);
-  position: relative;
-  max-width: 80%;
-}
-
-.chat-message::before {
-  content: '';
-  position: absolute;
-  left: -8px;
-  top: 12px;
-  width: 0;
-  height: 0;
-  border-top: 8px solid transparent;
-  border-bottom: 8px solid transparent;
-  border-right: 8px solid #f5f5f5;
+  margin: 1rem 0;
 }
 
 /* ===== Floating Menu ===== */
@@ -325,8 +347,6 @@ button {
   align-items: flex-end;
 }
 
-
-
 .float-options button {
   width: 56px;
   height: 56px;
@@ -346,27 +366,7 @@ button {
   padding: 0.5rem;
 }
 
-
-
-/* ===== Utility Classes ===== */
-.empty-state {
-  padding: 2rem;
-  text-align: center;
-  color: var(--text-light);
-  background-color: rgba(196, 164, 132, 0.1);
-  border-radius: var(--radius);
-  margin: 1rem 0;
-}
-
-.card {
-  background-color: var(--card-bg);
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: var(--shadow-sm);
-}
-
-/* ===== Responsive ===== */
+/* ===== Responsive Design ===== */
 @media (max-width: 768px) {
   .app-header h1 {
     font-size: 1.25rem;
@@ -379,288 +379,9 @@ button {
   .tabcontent {
     padding: 1.25rem;
   }
-  
-
-
-/* ===== Chart ===== */
-#growth-chart {
-  margin: 1.5rem 0;
-  max-height: 300px;
 }
 
-/* ===== Animation ===== */
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-
-.pulse {
-  animation: pulse 2s infinite;
-}
-/* ==== LỊCH LÀM VIỆC (LLV) ==== */
-
-/* Modal full màn hình nền trắng */
-#calendar-modal {
-  position: relative;
-  width: 100%;
-  background: white;
-  padding: 16px;
-  box-sizing: border-box;
-  font-family: sans-serif;
-  margin-top: 10px;
-}
-
-/* Header của lịch: chuyển tháng và tiêu đề */
-.calendar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.calendar-header h3 {
-  margin: 0;
-  font-size: 18px;
-}
-
-/* Grid 7 cột tương ứng 7 ngày */
-.calendar {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
-}
-
-/* Ô ngày vuông đều nhau */
-.calendar .day {
-  aspect-ratio: 1 / 1;
-  background: #f8f8f8;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  text-align: center;
-  font-size: 14px;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: all 0.2s ease-in-out;
-}
-
-/* Trạng thái ngày */
-.day.normal {
-  background-color: #e0e0e0;
-}
-.day.off {
-  background-color: #ffcdd2;
-}
-.day.overtime {
-  background-color: #c8e6c9;
-}
-.day.swap {
-  background-color: #bbdefb;
-}
-
-.calendar .day:hover {
-  opacity: 0.9;
-  transform: scale(1.03);
-}
-
-#calendar-modal button {
-  padding: 8px 14px;
-  background-color: #2196f3;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  margin-top: 12px;
-}
-
-#calendar-modal button:hover {
-  background-color: #1976d2;
-}
-
-/* Header của lịch: chuyển tháng và tiêu đề */
-.calendar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.calendar-header h3 {
-  margin: 0;
-  font-size: 18px;
-}
-
-/* Grid 7 cột tương ứng 7 ngày */
-.calendar {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
-}
-
-/* Ô ngày vuông đều nhau */
-.calendar .day {
-  aspect-ratio: 1 / 1;
-  background: #f8f8f8;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  text-align: center;
-  font-size: 14px;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: all 0.2s ease-in-out;
-}
-
-/* Trạng thái ngày */
-.day.normal {
-  background-color: #e0e0e0;
-}
-.day.off {
-  background-color: #ffcdd2; /* đỏ nhạt */
-}
-.day.overtime {
-  background-color: #c8e6c9; /* xanh lá nhạt */
-}
-.day.swap {
-  background-color: #bbdefb; /* xanh lam nhạt */
-}
-
-/* Hover đẹp hơn */
-.calendar .day:hover {
-  opacity: 0.9;
-  transform: scale(1.03);
-}
-
-/* Nút thao tác lịch */
-#calendar-modal button {
-  padding: 8px 14px;
-  background-color: #2196f3;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  margin-top: 12px;
-}
-
-#calendar-modal button:hover {
-  background-color: #1976d2;
-}
-/* styles.css */
-.tabcontent {
-  padding: 10px;
-  box-sizing: border-box;
-}
-
-.button-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.button-group button {
-  flex: 1;
-  min-width: 100px;
-  padding: 8px;
-  font-size: 14px;
-}
-
-#work-requests, #advance-approval-list, #employee-list, #advance-history, #schedule-status-list {
-  margin-top: 10px;
-  padding: 10px;
-  font-size: 14px;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-#calendar {
-  margin-top: 10px;
-  font-size: 14px;
-}
-
-.calendar {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
-}
-
-.calendar-header {
-  text-align: center;
-  font-weight: bold;
-  padding: 5px;
-  background: #f0f0f0;
-}
-
-.day {
-  text-align: center;
-  padding: 10px;
-  border: 1px solid #ddd;
-  cursor: pointer;
-}
-
-.day.empty {
-  background: #f9f9f9;
-}
-
-.day.normal { background: #ffffff; }
-.day.off { background: #ffcccc; }
-.day.overtime { background: #ccffcc; }
-.day.swap { background: #ccccff; }
-
-.expand-btn {
-  margin-top: 10px;
-  padding: 5px 10px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-/* Tối ưu cho mobile */
-@media screen and (max-width: 600px) {
-  .tabcontent {
-    padding: 5px;
-  }
-  .button-group button {
-    min-width: 48%;
-  }
-  #work-requests, #advance-approval-list, #employee-list, #advance-history, #schedule-status-list {
-    font-size: 12px;
-    padding: 5px;
-  }
-  .calendar {
-    gap: 3px;
-  }
-  .day {
-    padding: 8px;
-    font-size: 12px;
-  }
-}
-//
-
-#filter-section button {
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  margin: 0 5px;
-  cursor: pointer;
-}
-#filter-section button:hover {
-  background-color: #45a049;
-}
-#range-date-input {
-  padding: 5px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-//kho
-/* Trong styles.css, thêm vào cuối file */
-
-/* Modal chỉnh sửa sản phẩm */
+/* ===== Modal Styles ===== */
 .modal {
   display: none;
   position: fixed;
@@ -679,8 +400,8 @@ button {
   padding: 1.5rem;
   border-radius: var(--radius);
   box-shadow: var(--shadow-md);
-  max-width: 500px;
   width: 90%;
+  max-width: 500px;
   position: relative;
 }
 
@@ -697,1176 +418,7 @@ button {
   color: var(--primary);
 }
 
-/* Cảnh báo tồn kho thấp */
-.low-stock {
-  background-color: #ffcdd2; /* Màu đỏ nhạt, tương tự .day.off */
-}
-
-/* Trong styles.css */
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-}
-.modal-content {
-  background: white;
-  padding: 20px;
-  margin: 100px auto;
-  width: 90%;
-  max-width: 300px;
-  border-radius: 5px;
-  text-align: center;
-  position: relative;
-}
-.close {
-  float: right;
-  cursor: pointer;
-  font-size: 20px;
-  color: #333;
-}
-.day.off {
-  background-color: #ffcdd2; /* Đỏ nhạt cho ngày nghỉ */
-}
-.day.overtime {
-  background-color: #c8e6c9; /* Xanh lá cho tăng ca */
-}
-.day.swap {
-  background-color: #fff9c4; /* Vàng cho đổi ca */
-}
-.day.pending {
-  background-color: #fff9c4; /* Vàng cho chờ duyệt */
-}
-.table-style {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-  table-layout: auto;
-}
-.table-style th, .table-style td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: center;
-  min-width: 60px;
-  white-space: nowrap;
-}
-.table-style th:first-child, .table-style td:first-child {
-  position: sticky;
-  left: 0;
-  background-color: #f9f9f9;
-  z-index: 1;
-}
-.table-style th {
-  background-color: #f2f2f2;
-  font-weight: bold;
-}
-.table-style td {
-  cursor: pointer;
-}
-@media (max-width: 600px) {
-  .table-style {
-    font-size: 10px;
-  }
-  .table-style th, .table-style td {
-    padding: 6px;
-    min-width: 50px;
-  }
-}
-.calendar {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-}
-.calendar-header {
-  background-color: #f2f2f2;
-  text-align: center;
-  padding: 8px;
-  font-weight: bold;
-}
-.day {
-  padding: 8px;
-  border: 1px solid #ddd;
-  text-align: center;
-}
-.day.empty {
-  background-color: #f9f9f9;
-}
-
-/* Trong styles.css */
-.table-style {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-  table-layout: auto;
-}
-.table-style th, .table-style td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: center;
-  min-width: 60px;
-  white-space: nowrap;
-}
-.table-style th:first-child, .table-style td:first-child {
-  position: sticky;
-  left: 0;
-  background-color: #f9f9f9;
-  z-index: 1;
-}
-.table-style th {
-  background-color: #f2f2f2;
-  font-weight: bold;
-}
-.table-style td {
-  cursor: default; /* Loại bỏ cursor pointer cho #all-schedule-list */
-}
-.table-style td.pending {
-  cursor: pointer; /* Chỉ áp dụng cho #schedule-list trong tab Quản lý */
-}
-@media (max-width: 600px) {
-  .table-style {
-    font-size: 10px;
-  }
-/* Trong styles.css, thêm hoặc sửa phần sau */
-
-/* Modal */
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-}
-
-.modal-content {
-  background-color: var(--card-bg);
-  border-radius: var(--radius);
-  padding: 1rem;
-  margin: 10% auto;
-  max-width: 80%; /* Chiếm 80% chiều rộng */
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
-/* Responsive cho điện thoại */
-@media (max-width: 600px) {
-  .modal-content {
-    max-width: 90%;
-    margin: 5% auto;
-  }
-}
-
-/* Trong styles.css, thêm phần sau */
-
-.employee-select {
-  margin-bottom: 1rem;
-}
-
-.employee-select select {
-  padding: 0.5rem;
-  font-size: 1rem;
-  width: 100%;
-  max-width: 300px;
-}
-
-.chat-message {
-  padding: 0.5rem;
-  margin-bottom: 0.5rem;
-  border-radius: var(--radius);
-}
-
-.chat-message.sent {
-  background-color: var(--primary);
-  color: white;
-  margin-left: 20%;
-}
-
-.chat-message.received {
-  background-color: #f5f5f5;
-  margin-right: 20%;
-}
-
-.chat-message p {
-  margin: 0;
-}
-
-.chat-message small {
-  font-size: 0.8rem;
-  color: #666;
-}
-
-
-  .table-style th, .table-style td {
-    padding: 6px;
-    min-width: 50px;
-  }
-}
-
-/* Trong styles.css, thay thế phần CSS của .schedule-table */
-
-.schedule-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  font-size: 1rem;
-}
-
-.schedule-table {
-  width: 100%;
-  border-collapse: collapse;
-  overflow-x: auto;
-  display: block;
-  max-width: 100%;
-}
-
-.schedule-table th, .schedule-table td {
-  border: 1px solid #ddd;
-  padding: 0.3rem;
-  text-align: center;
-  min-width: 60px;
-}
-
-.schedule-table th {
-  background-color: var(--primary);
-  color: white;
-  font-size: 0.85rem;
-}
-
-.schedule-table th div {
-  line-height: 1.2;
-}
-
-.schedule-table .employee-name {
-  position: sticky;
-  left: 0;
-  background-color: var(--card-bg);
-  z-index: 1;
-  min-width: 90px;
-  font-weight: bold;
-}
-
-.schedule-table tbody tr:nth-child(even) {
-  background-color: #f5f5f5;
-}
-
-/* Màu sắc đồng bộ với tab Cá nhân */
-.day-off {
-  background-color: #ff4d4d; /* Đỏ */
-  color: white;
-}
-
-.day-overtime {
-  background-color: #4caf50; /* Xanh lá */
-  color: white;
-}
-
-.day-swap {
-  background-color: #2196f3; /* Xanh dương */
-  color: white;
-}
-
-.day-pending {
-  background-color: #ffeb3b; /* Vàng */
-  color: black;
-}
-
-.day-normal {
-  background-color: #fff; /* Trắng */
-  color: black;
-}
-
-.schedule-actions {
-  display: flex;
-  gap: 0.3rem;
-  margin-top: 0.3rem;
-}
-
-.approve-btn, .reject-btn {
-  padding: 0.2rem 0.5rem;
-  font-size: 0.8rem;
-  border: none;
-  border-radius: var(--radius);
-  cursor: pointer;
-}
-
-.approve-btn {
-  background-color: #4caf50;
-  color: white;
-}
-
-.reject-btn {
-  background-color: #ff4d4d;
-  color: white;
-}
-
-/* Responsive cho điện thoại */
-@media (max-width: 600px) {
-  .schedule-table {
-    font-size: 0.75rem;
-  }
-  .schedule-table th, .schedule-table td {
-    padding: 0.2rem;
-    min-width: 50px;
-  }
-  .schedule-table .employee-name {
-    min-width: 80px;
-  }
-  .schedule-controls {
-    font-size: 0.85rem;
-  }
-  .schedule-controls button {
-    padding: 0.2rem 0.4rem;
-    font-size: 0.75rem;
-  }
-  .approve-btn, .reject-btn {
-    padding: 0.15rem 0.4rem;
-    font-size: 0.7rem;
-  }
-}
-
-
-/* ===== Tab Quản lý Kho ===== */
-#inventory .card {
-  padding: 1rem;
-  margin-bottom: 1rem;
-  background-color: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-}
-
-#inventory .input-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 1rem;
-}
-
-#inventory .input-group input {
-  flex: 1;
-  min-width: 100%;
-  padding: 0.6rem;
-  font-size: 0.95rem;
-  border: 1px solid #ddd;
-  border-radius: var(--radius);
-}
-
-#inventory .button-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-#inventory .button-group button {
-  flex: 1;
-  min-width: 120px;
-  padding: 0.6rem;
-  font-size: 0.95rem;
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  border-radius: var(--radius);
-}
-
-#inventory .button-group button:hover {
-  background-color: var(--primary-dark);
-}
-
-#inventory-list, #restock-schedule, #export-analysis {
-  max-height: 400px;
-  overflow-y: auto;
-  margin-bottom: 1rem;
-  padding: 0.5rem;
-  background-color: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-}
-
-.inventory-table, .restock-table, .export-analysis-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.95rem;
-  table-layout: auto;
-  overflow-x: auto;
-  display: block;
-}
-
-.inventory-table th, .restock-table th, .export-analysis-table th,
-.inventory-table td, .restock-table td, .export-analysis-table td {
-  border: 1px solid #ddd;
-  padding: 0.6rem;
-  text-align: center;
-  min-width: 60px;
-  white-space: nowrap;
-}
-
-.inventory-table th, .restock-table th, .export-analysis-table th {
-  background-color: var(--primary-dark);
-  color: white;
-  font-weight: 600;
-  font-size: 1rem;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-
-.inventory-table td, .restock-table td, .export-analysis-table td {
-  color: var(--text);
-  font-size: 0.9rem;
-}
-
-.inventory-table th:first-child, .restock-table th:first-child, .export-analysis-table th:first-child,
-.inventory-table td:first-child, .restock-table td:first-child, .export-analysis-table td:first-child {
-  position: sticky;
-  left: 0;
-  background-color: var(--primary-dark);
-  color: white;
-  z-index: 1;
-}
-
-.inventory-table td:first-child, .restock-table td:first-child, .export-analysis-table td:first-child {
-  background-color: var(--card-bg);
-  color: var(--text);
-  font-weight: 500;
-}
-
-.inventory-table tbody tr:nth-child(even), .restock-table tbody tr:nth-child(even), .export-analysis-table tbody tr:nth-child(even) {
-  background-color: #f5f5f5;
-}
-
-.inventory-table .action-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  align-items: center;
-}
-
-.inventory-table .edit-btn, .inventory-table .delete-btn {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.9rem;
-  border: none;
-  border-radius: var(--radius);
-  cursor: pointer;
-  min-width: 70px;
-  transition: var(--transition);
-}
-
-.inventory-table .edit-btn {
-  background-color: var(--primary);
-  color: white;
-}
-
-.inventory-table .edit-btn:hover {
-  background-color: var(--primary-dark);
-  transform: translateY(-1px);
-}
-
-.inventory-table .delete-btn {
-  background-color: var(--danger);
-  color: white;
-}
-
-.inventory-table .delete-btn:hover {
-  background-color: #c0392b;
-  transform: translateY(-1px);
-}
-
-.inventory-table .low-stock, .restock-table .low-stock {
-  background-color: #ffcdd2;
-}
-
-.quantity-cell {
-  position: relative;
-  cursor: pointer;
-}
-
-/* Biểu đồ */
-#export-chart {
-  max-height: 300px;
-  margin: 1rem 0;
-  width: 100%;
-  overflow-x: auto;
-}
-
-/* Modal chỉnh sửa sản phẩm */
-#edit-inventory-modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-  justify-content: center;
-  align-items: center;
-}
-
-#edit-inventory-modal .modal-content {
-  background-color: var(--card-bg);
-  padding: 1.5rem;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-md);
-  max-width: 500px;
-  width: 90%;
-  position: relative;
-}
-
-#edit-inventory-modal .close {
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: var(--text);
-}
-
-#edit-inventory-modal .close:hover {
-  color: var(--primary);
-}
-
-/* Responsive cho mobile */
-@media (max-width: 600px) {
-  #inventory .input-group input {
-    font-size: 0.85rem;
-    padding: 0.5rem;
-  }
-
-  #inventory .button-group button {
-    min-width: 100%;
-    font-size: 0.85rem;
-    padding: 0.5rem;
-  }
-
-  .inventory-table, .restock-table, .export-analysis-table {
-    font-size: 0.75rem;
-  }
-
-  .inventory-table th, .restock-table th, .export-analysis-table th,
-  .inventory-table td, .restock-table td, .export-analysis-table td {
-    padding: 0.3rem;
-    min-width: 50px;
-  }
-
-  .inventory-table th:first-child, .restock-table th:first-child, .export-analysis-table th:first-child,
-  .inventory-table td:first-child, .restock-table td:first-child, .export-analysis-table td:first-child {
-    min-width: 40px;
-  }
-
-  .inventory-table .edit-btn, .inventory-table .delete-btn {
-    padding: 0.3rem 0.6rem;
-    font-size: 0.75rem;
-    min-width: 60px;
-  }
-
-  #edit-inventory-modal .modal-content {
-    max-width: 90%;
-    padding: 1rem;
-  }
-
-  #export-chart {
-    max-height: 250px;
-  }
-}
-
-#export-chart {
-  max-height: 300px;
-  margin: 1rem 0;
-  width: 100%;
-  overflow-x: auto;
-}
-
-@media (max-width: 600px) {
-  #export-chart {
-    max-height: 250px;
-  }
-}
-
-.export-analysis-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.95rem;
-  table-layout: auto;
-  overflow-x: auto;
-  display: block;
-}
-
-.export-analysis-table th,
-.export-analysis-table td {
-  border: 1px solid #ddd;
-  padding: 0.6rem;
-  text-align: center;
-  min-width: 60px;
-  white-space: nowrap;
-}
-
-@media (max-width: 600px) {
-  .export-analysis-table {
-    font-size: 0.75rem;
-  }
-  .export-analysis-table th,
-  .export-analysis-table td {
-    padding: 0.3rem;
-    min-width: 50px;
-  }
-}
-
-\\\\\
-/* ===== Tab Cá nhân (#profile) ===== */
-/* Mobile-first approach */
-#profile {
-  padding: 8px;
-  box-sizing: border-box;
-  background-color: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-}
-
-/* Profile Information */
-#profile .card {
-  padding: 12px;
-  margin-bottom: 12px;
-  background-color: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-}
-
-#profile h3 {
-  font-size: 1.2rem;
-  color: var(--primary);
-  margin-bottom: 12px;
-  border-bottom: 2px solid var(--secondary);
-  padding-bottom: 6px;
-}
-
-#profile p {
-  font-size: 0.9rem;
-  color: var(--text);
-  margin: 6px 0;
-}
-
-/* Form Elements */
-#profile .input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-#profile .input-group label {
-  font-size: 0.9rem;
-  color: var(--text);
-  margin-bottom: 4px;
-}
-
-#profile .input-group input,
-#profile .input-group textarea,
-#profile .input-group select {
-  padding: 8px;
-  font-size: 0.9rem;
-  border: 1px solid #ddd;
-  border-radius: var(--radius);
-  width: 100%;
-  box-sizing: border-box;
-  background-color: var(--card-bg);
-}
-
-#profile .input-group input:focus,
-#profile .input-group textarea:focus,
-#profile .input-group select:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(111, 78, 55, 0.2);
-}
-
-#profile .input-group textarea {
-  min-height: 80px;
-  resize: vertical;
-}
-
-#profile .button-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-}
-
-#profile .button-group button {
-  padding: 8px 16px;
-  font-size: 0.9rem;
-  border: none;
-  border-radius: var(--radius);
-  background-color: var(--primary);
-  color: white;
-  cursor: pointer;
-  flex: 1;
-  min-width: 100px;
-  transition: var(--transition);
-}
-
-#profile .button-group button:hover {
-  background-color: var(--primary-dark);
-  transform: translateY(-2px);
-}
-
-/* Calendar */
-#profile .calendar-container {
-  margin-bottom: 12px;
-}
-
-#profile .calendar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px;
-  background-color: var(--primary);
-  color: white;
-  border-radius: var(--radius);
-  margin-bottom: 8px;
-}
-
-#profile .calendar-header h3 {
-  font-size: 1rem;
-  margin: 0;
-  border: none;
-}
-
-#profile .calendar-header button {
-  padding: 6px 12px;
-  font-size: 0.85rem;
-  background-color: var(--secondary);
-  color: white;
-  border: none;
-  border-radius: var(--radius);
-  min-width: 44px; /* Touch-friendly */
-}
-
-#profile .calendar-header button:hover {
-  background-color: var(--primary-light);
-}
-
-#profile .calendar {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-}
-
-#profile .calendar .day {
-  aspect-ratio: 1 / 1;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: var(--radius);
-  text-align: center;
-  font-size: 0.85rem;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: var(--transition);
-}
-
-#profile .calendar .day.empty {
-  background-color: #f9f9f9;
-  cursor: default;
-}
-
-#profile .calendar .day.normal {
-  background-color: #fff;
-  color: var(--text);
-}
-
-#profile .calendar .day.off {
-  background-color: #ff4d4d; /* Red, synced with schedule-table */
-  color: white;
-}
-
-#profile .calendar .day.overtime {
-  background-color: #4caf50; /* Green, synced */
-  color: white;
-}
-
-#profile .calendar .day.swap {
-  background-color: #2196f3; /* Blue, synced */
-  color: white;
-}
-
-#profile .calendar .day.pending {
-  background-color: #ffeb3b; /* Yellow, synced */
-  color: black;
-}
-
-#profile .calendar .day:hover:not(.empty) {
-  opacity: 0.9;
-  transform: scale(1.05);
-}
-
-/* Schedule Table (#all-schedule-list) */
-#profile .schedule-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85rem;
-  table-layout: auto;
-  overflow-x: auto;
-  display: block;
-  margin-bottom: 12px;
-}
-
-#profile .schedule-table th,
-#profile .schedule-table td {
-  border: 1px solid #ddd;
-  padding: 6px;
-  text-align: center;
-  min-width: 50px;
-  white-space: nowrap;
-}
-
-#profile .schedule-table th {
-  background-color: var(--primary);
-  color: white;
-  font-weight: 600;
-  font-size: 0.9rem;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-
-#profile .schedule-table th:first-child,
-#profile .schedule-table td:first-child {
-  position: sticky;
-  left: 0;
-  background-color: var(--primary);
-  color: white;
-  z-index: 2;
-}
-
-#profile .schedule-table td:first-child {
-  background-color: var(--card-bg);
-  color: var(--text);
-  font-weight: 500;
-}
-
-#profile .schedule-table tbody tr:nth-child(even) {
-  background-color: #f5f5f5;
-}
-
-#profile .schedule-table .day-normal {
-  background-color: #fff;
-  color: var(--text);
-}
-
-#profile .schedule-table .day-off {
-  background-color: #ff4d4d;
-  color: white;
-}
-
-#profile .schedule-table .day-overtime {
-  background-color: #4caf50;
-  color: white;
-}
-
-#profile .schedule-table .day-swap {
-  background-color: #2196f3;
-  color: white;
-}
-
-#profile .schedule-table .day-pending {
-  background-color: #ffeb3b;
-  color: black;
-}
-
-/* Modal */
-#profile .modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-  justify-content: center;
-  align-items: center;
-}
-
-#profile .modal-content {
-  background-color: var(--card-bg);
-  padding: 12px;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-md);
-  width: 90%;
-  max-width: 400px;
-  max-height: 80vh;
-  overflow-y: auto;
-  position: relative;
-}
-
-#profile .modal-content .close {
-  position: absolute;
-  top: 8px;
-  right: 12px;
-  font-size: 1.2rem;
-  cursor: pointer;
-  color: var(--text);
-}
-
-#profile .modal-content .close:hover {
-  color: var(--primary);
-}
-
-/* Notification List */
-#profile #notification-list {
-  max-height: 200px;
-  overflow-y: auto;
-  margin-bottom: 12px;
-  padding: 8px;
-  background-color: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-}
-
-#profile .notification {
-  padding: 8px;
-  margin-bottom: 8px;
-  border-bottom: 1px solid #eee;
-  font-size: 0.85rem;
-}
-
-#profile .notification.read {
-  background-color: #f5f5f5;
-}
-
-#profile .notification.unread {
-  background-color: #fff;
-  font-weight: 500;
-}
-
-#profile .notification button {
-  padding: 6px 12px;
-  font-size: 0.8rem;
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  border-radius: var(--radius);
-  margin-top: 4px;
-}
-
-#profile .notification button:hover {
-  background-color: var(--primary-dark);
-}
-
-/* Responsive Adjustments for Larger Screens */
-@media (min-width: 601px) {
-  #profile {
-    padding: 12px;
-  }
-
-  #profile .card {
-    padding: 16px;
-    margin-bottom: 16px;
-  }
-
-  #profile h3 {
-    font-size: 1.4rem;
-  }
-
-  #profile p {
-    font-size: 1rem;
-  }
-
-  #profile .input-group input,
-  #profile .input-group textarea,
-  #profile .input-group select {
-    padding: 10px;
-    font-size: 1rem;
-  }
-
-  #profile .button-group button {
-    padding: 10px 20px;
-    font-size: 1rem;
-    min-width: 120px;
-  }
-
-  #profile .calendar-header h3 {
-    font-size: 1.2rem;
-  }
-
-  #profile .calendar .day {
-    font-size: 0.9rem;
-    padding: 10px;
-  }
-
-  #profile .schedule-table {
-    font-size: 0.9rem;
-  }
-
-  #profile .schedule-table th,
-  #profile .schedule-table td {
-    padding: 8px;
-    min-width: 60px;
-  }
-
-  #profile .schedule-table th:first-child,
-  #profile .schedule-table td:first-child {
-    min-width: 80px;
-  }
-
-  #profile .notification {
-    font-size: 0.9rem;
-    padding: 10px;
-  }
-
-  #profile .notification button {
-    padding: 8px 16px;
-    font-size: 0.9rem;
-  }
-}
-
-/* Trong styles.css, thay phần #profile .calendar-header */
-#profile .calendar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px;
-  background-color: var(--primary); /* Giữ màu nền, giả sử là #6f4e37 */
-  color: white; /* Đảm bảo chữ trắng để dễ đọc */
-  border-radius: var(--radius);
-  margin-bottom: 8px;
-}
-
-#profile .calendar-header h3 {
-  font-size: 1rem;
-  margin: 0;
-  border: none;
-  color: white; /* Đảm bảo tiêu đề "Tháng 6 2025" là màu trắng */
-}
-
-#profile .calendar-header button {
-  padding: 6px 12px;
-  font-size: 0.85rem;
-  background-color: var(--secondary); /* Nền nút, giả sử là màu sáng hơn */
-  color: white; /* Chữ nút màu trắng */
-  border: none;
-  border-radius: var(--radius);
-  min-width: 44px; /* Dễ bấm trên mobile */
-}
-
-#profile .calendar-header button:hover {
-  background-color: var(--primary-light);
-  color: white; /* Giữ màu chữ trắng khi hover */
-}
-
-/* Kiểm tra lại màu chữ của .day để đảm bảo tương phản */
-#profile .calendar .day {
-  aspect-ratio: 1 / 1;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: var(--radius);
-  text-align: center;
-  font-size: 0.85rem;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: var(--transition);
-}
-
-#profile .calendar .day.empty {
-  background-color: #f9f9f9;
-  color: var(--text); /* Màu chữ xám cho ngày trống */
-  cursor: default;
-}
-
-#profile .calendar .day.normal {
-  background-color: #fff;
-  color: var(--text); /* Màu chữ đen/xám, dễ đọc trên nền trắng */
-}
-
-#profile .calendar .day.off {
-  background-color: #ff4d4d; /* Nền đỏ */
-  color: white; /* Chữ trắng, tương phản */
-}
-
-#profile .calendar .day.overtime {
-  background-color: #4caf50; /* Nền xanh lá */
-  color: white; /* Chữ trắng */
-}
-
-#profile .calendar .day.swap {
-  background-color: #2196f3; /* Nền xanh dương */
-  color: white; /* Chữ trắng */
-}
-
-#profile .calendar .day.pending {
-  background-color: #ffeb3b; /* Nền vàng */
-  color: black; /* Chữ đen, tương phản với vàng */
-}
-
-#profile .calendar .day:hover:not(.empty) {
-  opacity: 0.9;
-  transform: scale(1.05);
-}
-#inventory {
-  .table-style {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.95rem;
-    table-layout: auto;
-    overflow-x: auto;
-    display: block;
-  }
-
-  .inventory-table th, .restock-table th, .export-analysis-table th,
-  .inventory-table td, .restock-table td, .export-analysis-table td {
-    border: 1px solid #ddd;
-    padding: 0.6rem;
-    text-align: center;
-    min-width: 60px;
-    white-space: nowrap;
-  }
-
-  .inventory-table th, .restock-table th, .export-analysis-table th {
-    background-color: var(--primary-dark);
-    color: white;
-    font-weight: 600;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-  }
-
-  .quantity-cell {
-    cursor: pointer;
-  }
-
-  #export-chart {
-    max-height: 300px;
-    margin: 1rem 0;
-    width: 100%;
-    overflow-x: auto;
-  }
-
-  @media (max-width: 600px) {
-    .table-style {
-      font-size: 0.75rem;
-    }
-    .inventory-table th, .restock-table th, .export-analysis-table th,
-    .inventory-table td, .restock-table td, .export-analysis-table td {
-      padding: 0.3rem;
-      min-width: 50px;
-    }
-    #export-chart {
-      max-height: 250px;
-    }
-  }
-}
-
+/* ===== Toast Notification ===== */
 .toast {
   position: fixed;
   bottom: 20px;
@@ -1875,552 +427,277 @@ button {
   color: white;
   padding: 10px;
   border-radius: 5px;
-}
-.table-section {
-  display: block; /* Đảm bảo không bị ẩn */
-  margin: 20px 0;
+  box-shadow: var(--shadow-md);
+  z-index: 1100;
 }
 
-.summary-section {
-  display: block;
-  margin: 20px 0;
-}
+/* ===== EMPLOYEE MANAGEMENT TAB ===== */
 
-.table-style {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--card-bg, #fff);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  table-layout: auto; /* Co giãn trên mobile */
-}
-
-.table-style th, .table-style td {
-  border: 1px solid #ddd;
-  padding: 12px;
-  text-align: center;
-  vertical-align: middle;
-  color: var(--text, #333);
-  font-size: 0.95rem;
-}
-
-@media (max-width: 600px) {
-  .table-style th, .table-style td {
-    padding: 8px;
-    font-size: 0.75rem;
-  }
-}
-
-#action-modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-}
-#action-modal-content {
-  background: white;
-  margin: 15% auto;
-  padding: 20px;
-  width: 80%;
-  max-width: 500px;
-  border-radius: 5px;
-}
-#schedule-action-content .button-group {
+/* Calendar Styles */
+.calendar-header {
   display: flex;
-  gap: 10px;
-  margin-top: 20px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--primary);
+  color: white;
+  border-radius: var(--radius) var(--radius) 0 0;
 }
 
-//
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+  padding: 1rem;
+  background-color: var(--card-bg);
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.day {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+  padding: 0.5rem;
+  position: relative;
+}
+
+.day.normal {
+  background-color: var(--card-bg);
+  border: 1px solid #eee;
+}
+
+.day.off {
+  background-color: #ffcdd2;
+  color: white;
+}
+
+.day.overtime {
+  background-color: #c8e6c9;
+  color: white;
+}
+
+.day.swap {
+  background-color: #bbdefb;
+  color: white;
+}
+
+.day.pending {
+  background-color: #fff9c4;
+  color: black;
+}
+
+.day-status {
+  position: absolute;
+  bottom: 0.25rem;
+  font-size: 0.6rem;
+  display: flex;
+  gap: 0.1rem;
+}
+
+/* Employee List */
+.employee-card {
+  background-color: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.employee-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Schedule Table */
 .schedule-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 10px;
+  margin-top: 1rem;
 }
-.schedule-table th, .schedule-table td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: center;
-}
+
 .schedule-table th {
-  background-color: #f0f0f0;
-  font-weight: bold;
-}
-.schedule-table tr:nth-child(even) {
-  background-color: #f9f9f9;
-}
-.schedule-table tr:hover {
-  background-color: #f1f1f1;
+  background-color: var(--primary);
+  color: white;
+  padding: 0.75rem;
+  text-align: left;
 }
 
-/////
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 10px;
-    font-size: 16px;
-    width: 100%;
-    box-sizing: border-box;
+.schedule-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #eee;
+}
+
+/* Advance Table */
+.advance-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.advance-table th {
+  background-color: var(--primary);
+  color: white;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+/* Chat Styles */
+.chat-messages {
+  height: 300px;
+  overflow-y: auto;
+  padding: 1rem;
+  background-color: var(--card-bg);
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+}
+
+.chat-message {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  max-width: 80%;
+}
+
+.chat-message.sent {
+  background-color: var(--primary);
+  color: white;
+  margin-left: auto;
+}
+
+.chat-message.received {
+  background-color: #f5f5f5;
+  margin-right: auto;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .calendar-header h3 {
+    font-size: 1rem;
   }
-  .tabcontent {
-    padding: 10px;
+  
+  .schedule-table, .advance-table {
+    font-size: 0.85rem;
   }
-  .input-group {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-    width: 100%;
-    gap: 5px;
-  }
-  .input-group input {
-    flex: 1;
-    padding: 10px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-  .input-group button, .primary-btn {
-    padding: 10px 20px;
-    font-size: 16px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    min-width: 80px;
-    cursor: pointer;
-  }
-  .product-list {
-    margin-bottom: 15px;
-    width: 100%;
-  }
-  .product-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    width: 100%;
-    padding: 8px;
-    background: #f9f9f9;
-    border-radius: 4px;
-  }
-  .product-name {
-    flex: 1;
-    font-size: 16px;
-    cursor: pointer;
-    padding: 8px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .product-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 120px;
-    justify-content: flex-end;
-  }
-  .product-controls button.minus {
-    padding: 8px 12px;
-    font-size: 16px;
-    background: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    min-width: 40px;
-    cursor: pointer;
-  }
-  .quantity {
-    width: 50px;
-    text-align: center;
-    font-size: 16px;
-    padding: 8px;
-    display: inline-block;
-  }
-  .table-section, .summary-section {
-    margin-bottom: 20px;
-    width: 100%;
-  }
-  .table-style {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-    table-layout: fixed;
-  }
-  .table-style th, .table-style td {
-    border: 1px solid #ccc;
-    padding: 8px;
-    text-align: left;
-    word-break: break-word;
-    overflow-wrap: break-word;
-  }
-  .table-style th:nth-child(1), .table-style td:nth-child(1) {
-    width: 10%;
-  }
-  .table-style th:nth-child(2), .table-style td:nth-child(2) {
-    width: 20%;
-  }
-  .table-style th:nth-child(3), .table-style td:nth-child(3) {
-    width: 25%;
-  }
-  .table-style th:nth-child(4), .table-style td:nth-child(4) {
-    width: 15%;
-  }
-  .table-style th:nth-child(5), .table-style td:nth-child(5) {
-    width: 15%;
-  }
-  .table-style th:nth-child(6), .table-style td:nth-child(6) {
-    width: 15%;
-  }
-  .action-buttons {
-    display: flex;
+}
+
+/* ===== INVENTORY MANAGEMENT TAB ===== */
+
+/* Inventory List */
+.inventory-list {
+  margin-bottom: 1.5rem;
+}
+
+.inventory-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 0.75rem;
+}
+
+.low-stock {
+  background-color: #ffebee;
+  border-left: 4px solid var(--danger);
+}
+
+/* Restock Schedule */
+.restock-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.restock-table th {
+  background-color: var(--primary);
+  color: white;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+/* Export Analysis */
+.export-chart {
+  width: 100%;
+  height: 300px;
+  margin: 1.5rem 0;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .inventory-item {
     flex-direction: column;
-    gap: 5px;
     align-items: flex-start;
+    gap: 0.5rem;
   }
-  .action-buttons button {
-    padding: 6px 12px;
-    font-size: 14px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    width: 80px;
-    text-align: center;
-  }
-  .action-buttons button.delete {
-    background: #dc3545;
-  }
-  .expand-btn {
-    margin-top: 10px;
-    padding: 8px 16px;
-    font-size: 14px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-  }
-  .report-total {
-    margin-top: 10px;
-  }
-  h2, h3, h4 {
-    font-size: 18px;
-    margin: 10px 0;
-  }
-  @media (max-width: 600px) {
-    body {
-      padding: 5px;
-    }
-    .input-group input, .input-group button, .primary-btn {
-      font-size: 14px;
-      padding: 8px;
-    }
-    .product-item {
-      padding: 6px;
-    }
-    .product-name {
-      font-size: 14px;
-      padding: 6px;
-    }
-    .product-controls button.minus {
-      padding: 6px 10px;
-      font-size: 14px;
-      min-width: 36px;
-    }
-    .quantity {
-      width: 40px;
-      font-size: 14px;
-      padding: 6px;
-    }
-    .table-style {
-      font-size: 12px;
-    }
-    .table-style th, .table-style td {
-      padding: 6px;
-    }
-    .table-style th:nth-child(1), .table-style td:nth-child(1) {
-      width: 15%;
-    }
-    .table-style th:nth-child(2), .table-style td:nth-child(2) {
-      width: 25%;
-    }
-    .table-style th:nth-child(3), .table-style td:nth-child(3) {
-      width: 25%;
-    }
-    .table-style th:nth-child(4), .table-style td:nth-child(4) {
-      width: 15%;
-    }
-    .table-style th:nth-child(5), .table-style td:nth-child(5) {
-      width: 10%;
-    }
-    .table-style th:nth-child(6), .table-style td:nth-child(6) {
-      width: 10%;
-    }
-    .action-buttons {
-      gap: 4px;
-    }
-    .action-buttons button {
-      padding: 5px 10px;
-      font-size: 12px;
-      width: 70px;
-    }
-    .expand-btn {
-      padding: 6px 12px;
-      font-size: 12px;
-    }
-  }
-`;
+}
 
-// Áp dụng CSS
-const styleSheet = document.createElement("style");
-styleSheet.innerText = styles;
-document.head.appendChild(styleSheet);
+/* ===== REVENUE & EXPENSE TAB ===== */
 
-const styles = `
-  body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 10px;
-    font-size: 16px;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  .tabcontent {
-    padding: 10px;
-  }
-  .input-group {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-    width: 100%;
-    gap: 5px;
-  }
-  .input-group input {
-    flex: 1;
-    padding: 10px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-  .input-group button, .primary-btn {
-    padding: 10px 20px;
-    font-size: 16px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    min-width: 80px;
-    cursor: pointer;
-  }
-  .product-list {
-    margin-bottom: 15px;
-    width: 100%;
-  }
-  .product-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    width: 100%;
-    padding: 8px;
-    background: #f9f9f9;
-    border-radius: 4px;
-  }
-  .product-name {
-    flex: 1;
-    font-size: 16px;
-    cursor: pointer;
-    padding: 8px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .product-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 120px;
-    justify-content: flex-end;
-  }
-  .product-controls button.minus {
-    padding: 8px 12px;
-    font-size: 16px;
-    background: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    min-width: 40px;
-    cursor: pointer;
-  }
-  .quantity {
-    width: 50px;
-    text-align: center;
-    font-size: 16px;
-    padding: 8px;
-    display: inline-block;
-  }
-  .table-section, .summary-section {
-    margin-bottom: 20px;
-    width: 100%;
-  }
-  .table-style {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-    table-layout: fixed;
-  }
-  .table-style th, .table-style td {
-    border: 1px solid #ccc;
-    padding: 8px;
-    text-align: left;
-    word-break: break-word;
-    overflow-wrap: break-word;
-    white-space: normal;
-  }
-  /* Cột chung cho tất cả các bảng */
-  .table-style th:nth-child(1), .table-style td:nth-child(1) {
-    width: 10%; /* STT hoặc Giờ */
-  }
-  .table-style th:nth-child(2), .table-style td:nth-child(2) {
-    width: 15%; /* Nhân viên */
-  }
-  /* Cột cho bảng có 4 cột (#shared-report-table, #transfer-details) */
-  #shared-report-table .table-style th:nth-child(3), #shared-report-table .table-style td:nth-child(3),
-  #transfer-details .table-style th:nth-child(3), #transfer-details .table-style td:nth-child(3) {
-    width: 37.5%; /* Chi phí hoặc Số tiền */
-  }
-  #shared-report-table .table-style th:nth-child(4), #shared-report-table .table-style td:nth-child(4),
-  #transfer-details .table-style th:nth-child(4), #transfer-details .table-style td:nth-child(4) {
-    width: 37.5%; /* Hành động */
-  }
-  /* Cột cho bảng có 5 cột (#report-product-table) */
-  #report-product-table .table-style th:nth-child(3), #report-product-table .table-style td:nth-child(3) {
-    width: 25%; /* Tên hàng hóa */
-  }
-  #report-product-table .table-style th:nth-child(4), #report-product-table .table-style td:nth-child(4) {
-    width: 25%; /* Số lượng */
-  }
-  #report-product-table .table-style th:nth-child(5), #report-product-table .table-style td:nth-child(5) {
-    width: 25%; /* Hành động */
-  }
-  /* Cột cho bảng có 6 cột (#history-table) */
-  #history-table .table-style th:nth-child(3), #history-table .table-style td:nth-child(3),
-  #history-table .table-style th:nth-child(4), #history-table .table-style td:nth-child(4),
-  #history-table .table-style th:nth-child(5), #history-table .table-style td:nth-child(5),
-  #history-table .table-style th:nth-child(6), #history-table .table-style td:nth-child(6) {
-    width: 18.75%; /* Chi tiết, Ghi chú, Trước, Sau */
-  }
-  .action-buttons {
-    display: flex;
+/* Input Form */
+#revenue-expense-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.input-group {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Product List */
+#report-product-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.product-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background-color: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Report Tables */
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.report-table th {
+  background-color: var(--primary);
+  color: white;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  #revenue-expense-form {
     flex-direction: column;
-    gap: 5px;
-    align-items: flex-start;
+    gap: 0.75rem;
   }
-  .action-buttons button {
-    padding: 6px 12px;
-    font-size: 14px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    width: 80px;
-    text-align: center;
+  
+  .input-group {
+    width: 100%;
   }
-  .action-buttons button.delete {
-    background: #dc3545;
-  }
-  .expand-btn {
-    margin-top: 10px;
-    padding: 8px 16px;
-    font-size: 14px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-  }
-  .report-total {
-    margin-top: 10px;
-  }
-  h2, h3, h4 {
-    font-size: 18px;
-    margin: 10px 0;
-  }
-  @media (max-width: 600px) {
-    body {
-      padding: 5px;
-    }
-    .input-group input, .input-group button, .primary-btn {
-      font-size: 14px;
-      padding: 8px;
-    }
-    .product-item {
-      padding: 6px;
-    }
-    .product-name {
-      font-size: 14px;
-      padding: 6px;
-    }
-    .product-controls button.minus {
-      padding: 6px 10px;
-      font-size: 14px;
-      min-width: 36px;
-    }
-    .quantity {
-      width: 40px;
-      font-size: 14px;
-      padding: 6px;
-    }
-    .table-style {
-      font-size: 12px;
-    }
-    .table-style th, .table-style td {
-      padding: 6px;
-    }
-    /* Cột chung cho tất cả các bảng trên mobile */
-    .table-style th:nth-child(1), .table-style td:nth-child(1) {
-      width: 12%; /* STT hoặc Giờ */
-    }
-    .table-style th:nth-child(2), .table-style td:nth-child(2) {
-      width: 18%; /* Nhân viên */
-    }
-    /* Cột cho bảng có 4 cột trên mobile */
-    #shared-report-table .table-style th:nth-child(3), #shared-report-table .table-style td:nth-child(3),
-    #transfer-details .table-style th:nth-child(3), #transfer-details .table-style td:nth-child(3) {
-      width: 35%; /* Chi phí hoặc Số tiền */
-    }
-    #shared-report-table .table-style th:nth-child(4), #shared-report-table .table-style td:nth-child(4),
-    #transfer-details .table-style th:nth-child(4), #transfer-details .table-style td:nth-child(4) {
-      width: 35%; /* Hành động */
-    }
-    /* Cột cho bảng có 5 cột trên mobile */
-    #report-product-table .table-style th:nth-child(3), #report-product-table .table-style td:nth-child(3) {
-      width: 23.33%; /* Tên hàng hóa */
-    }
-    #report-product-table .table-style th:nth-child(4), #report-product-table .table-style td:nth-child(4) {
-      width: 23.33%; /* Số lượng */
-    }
-    #report-product-table .table-style th:nth-child(5), #report-product-table .table-style td:nth-child(5) {
-      width: 23.33%; /* Hành động */
-    }
-    /* Cột cho bảng có 6 cột trên mobile */
-    #history-table .table-style th:nth-child(3), #history-table .table-style td:nth-child(3),
-    #history-table .table-style th:nth-child(4), #history-table .table-style td:nth-child(4),
-    #history-table .table-style th:nth-child(5), #history-table .table-style td:nth-child(5),
-    #history-table .table-style th:nth-child(6), #history-table .table-style td:nth-child(6) {
-      width: 17.5%; /* Chi tiết, Ghi chú, Trước, Sau */
-    }
-    .action-buttons {
-      gap: 4px;
-    }
-    .action-buttons button {
-      padding: 5px 10px;
-      font-size: 12px;
-      width: 70px;
-    }
-    .expand-btn {
-      padding: 6px 12px;
-      font-size: 12px;
-    }
-  }
-`;
+}
