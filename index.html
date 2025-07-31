@@ -1,408 +1,228 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Đăng Nhập - Milano 259</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Tích hợp flatpickr -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <style>
-     </style>
 </head>
 <body>
+  <!-- Đăng nhập -->
   <div id="login-page" class="center-screen">
-  <h2>Đăng Nhập Hệ Thống<br>Milano Coffee</h2>
-  <input type="email" id="email" placeholder="Email" autocomplete="username">
-  <input type="password" id="password" placeholder="Mật khẩu" autocomplete="current-password">
-  <button onclick="login()" id="login-btn">Đăng Nhập</button>
-</div>
+    <h2>Đăng Nhập Hệ Thống<br>Milano Coffee</h2>
+    <input type="email" id="email" placeholder="Email" autocomplete="username" />
+    <input type="password" id="password" placeholder="Mật khẩu" autocomplete="current-password" />
+    <button onclick="login()" id="login-btn">Đăng Nhập</button>
+  </div>
 
+  <!-- Giao diện chính -->
   <div id="main-page" style="display: none;">
-    <div class="app-header">
+    <header class="app-header">
       <span>Milano 259</span>
       <button class="logout-btn" onclick="logout()">Đăng Xuất</button>
-    </div>
+    </header>
 
-    <!-- Tab Thu Chi -->
-<div class="tabcontent" id="revenue-expense">
-  <h2>Báo cáo Thu Chi</h2>
-  
-  <!-- Nhập báo cáo -->
-  <h3>Nhập báo cáo</h3>
-  <div class="input-group">
-    <input type="number" id="opening-balance" placeholder="Số dư đầu kỳ (VND)" min="0">
-    <button class="primary-btn small" onclick="submitField('opening-balance')">Gửi</button>
-  </div>
-  <div class="input-group">
-    <input type="number" id="revenue" placeholder="Doanh thu (VND)" min="0">
-    <button class="primary-btn small" onclick="submitField('revenue')">Gửi</button>
-  </div>
-  <div class="input-group">
-    <input type="text" id="expense-input" placeholder="Chi phí (VD: Mua nguyên liệu: 500000)">
-    <button class="primary-btn small" onclick="submitField('expense-input')">Gửi</button>
-  </div>
-  <div class="input-group">
-    <input type="number" id="transfer-amount" placeholder="Tiền chuyển khoản (VND)" min="0">
-    <button class="primary-btn small" onclick="submitField('transfer-amount')">Gửi</button>
-  </div>
-  <div class="input-group">
-    <input type="number" id="closing-balance" placeholder="Số dư cuối kỳ (VND)" min="0">
-    <button class="primary-btn small" onclick="submitField('closing-balance')">Gửi</button>
-  </div>
-  <!-- Xuất hàng -->
-  <h4>Xuất hàng</h4>
-  <div id="report-product-list" class="product-list"></div>
-  <button class="primary-btn" onclick="submitInventoryReport()">Gửi Báo Cáo Tồn Kho</button>
-
-  <!-- Lọc báo cáo -->
-  <div id="filter-section">
-    <h3>Lọc Báo Cáo</h3>
-    <input type="text" id="filter-range" placeholder="Chọn khoảng thời gian (VD: 25/07/2025 - 26/07/2025)">
-    <button class="primary-btn" onclick="applyFilter()">Lọc</button>
-  </div>
-
-  <!-- Tóm tắt thu chi -->
-  <div id="revenue-expense-summary" class="summary-section">
-    <h3>Tóm tắt Thu Chi</h3>
-  </div>
-
-  <!-- Bảng báo cáo thu chi -->
-  <div id="shared-report-table" class="table-section">
-    <h3>Bảng Báo cáo Thu Chi</h3>
-  </div>
-
-  <!-- Chi tiết giao dịch chuyển khoản -->
-  <div id="transfer-details" class="table-section">
-    <h3>Chi tiết Giao dịch Chuyển khoản</h3>
-  </div>
-
-  <!-- Bảng báo cáo xuất hàng -->
-  <div id="report-product-table" class="table-section">
-    <h3>Bảng Báo cáo Xuất Hàng</h3>
-  </div>
-
-  <!-- Lịch sử thao tác -->
-  <div id="history-table" class="table-section">
-    <h3>Lịch sử Thao tác</h3>
-  </div>
-</div>
-
-
-    <div id="inventory" class="tabcontent">
-  <div class="card">
-    <h2>Quản lý Kho</h2>
-    
-    <!-- Phần thêm sản phẩm -->
-    <h3>Thêm sản phẩm</h3>
-    <div class="input-group">
-      <input type="text" id="product-name" placeholder="Tên sản phẩm">
-      <input type="number" id="product-quantity" placeholder="Số lượng">
-      <input type="number" id="product-price" placeholder="Giá (VND)">
-      <input type="number" id="product-low-stock-threshold" placeholder="Ngưỡng tồn thấp">
-    </div>
-    <div class="button-group">
-      <button class="primary-btn" onclick="addInventory()">Thêm sản phẩm</button>
-    </div>
-
-    <!-- Danh sách sản phẩm -->
-    <h3>Danh sách sản phẩm</h3>
-    <div id="inventory-list"></div>
-
-    <!-- Bảng ngày mua hàng dự kiến -->
-    <h3>Ngày mua hàng dự kiến</h3>
-    <div id="restock-schedule"></div>
-
-    <!-- Bảng phân tích tỷ lệ bán ra -->
-    <h3>Phân tích tỷ lệ bán ra</h3>
-    <div id="export-analysis"></div>
-    <canvas id="export-chart"></canvas>
-  </div>
-
-  <!-- Modal chỉnh sửa sản phẩm -->
-  <div id="edit-inventory-modal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('edit-inventory-modal')">×</span>
-      <h3>Chỉnh sửa sản phẩm</h3>
-      <input type="text" id="edit-product-name" placeholder="Tên sản phẩm">
-      <input type="number" id="edit-product-quantity" placeholder="Số lượng">
-      <input type="number" id="edit-product-price" placeholder="Giá (VND)">
-      <input type="number" id="edit-product-low-stock-threshold" placeholder="Ngưỡng tồn thấp">
-      <div class="button-group">
-        <button class="primary-btn" onclick="saveInventoryEdit()">Lưu</button>
-        <button class="secondary-btn" onclick="closeModal('edit-inventory-modal')">Hủy</button>
+    <!-- Tab: Thu Chi -->
+    <section id="revenue-expense" class="tabcontent">
+      <h2>Báo cáo Thu Chi</h2>
+      <div class="card">
+        <h3>Nhập báo cáo</h3>
+        <div class="input-group">
+          <input type="number" id="opening-balance" placeholder="Số dư đầu kỳ (VND)" min="0" />
+          <button class="primary-btn small" onclick="submitField('opening-balance')">Gửi</button>
+        </div>
+        <div class="input-group">
+          <input type="number" id="revenue" placeholder="Doanh thu (VND)" min="0" />
+          <button class="primary-btn small" onclick="submitField('revenue')">Gửi</button>
+        </div>
+        <div class="input-group">
+          <input type="text" id="expense-input" placeholder="Chi phí (VD: Mua nguyên liệu: 500000)" />
+          <button class="primary-btn small" onclick="submitField('expense-input')">Gửi</button>
+        </div>
+        <div class="input-group">
+          <input type="number" id="transfer-amount" placeholder="Tiền chuyển khoản (VND)" min="0" />
+          <button class="primary-btn small" onclick="submitField('transfer-amount')">Gửi</button>
+        </div>
+        <div class="input-group">
+          <input type="number" id="closing-balance" placeholder="Số dư cuối kỳ (VND)" min="0" />
+          <button class="primary-btn small" onclick="submitField('closing-balance')">Gửi</button>
+        </div>
+        <h4>Xuất hàng</h4>
+        <div id="report-product-list" class="product-list"></div>
+        <button class="primary-btn" onclick="submitInventoryReport()">Gửi Báo Cáo Tồn Kho</button>
       </div>
-    </div>
-  </div>
-</div>
 
-  <!-- Tab Cá nhân -->
-<div id="profile" class="tabcontent">
+      <div class="card">
+        <h3>Lọc Báo Cáo</h3>
+        <div class="input-group">
+          <input type="text" id="filter-range" placeholder="Chọn khoảng thời gian (VD: 25/07/2025 - 26/07/2025)" />
+          <button class="primary-btn" onclick="applyFilter()">Lọc</button>
+        </div>
+      </div>
+
+      <div id="revenue-expense-summary" class="card">
+        <h3>Tóm tắt Thu Chi</h3>
+      </div>
+
+      <div class="card table-section" id="shared-report-table">
+        <h3>Bảng Báo cáo Thu Chi</h3>
+      </div>
+
+      <div class="card table-section" id="transfer-details">
+        <h3>Chi tiết Giao dịch Chuyển khoản</h3>
+      </div>
+
+      <div class="card table-section" id="report-product-table">
+        <h3>Bảng Báo cáo Xuất Hàng</h3>
+      </div>
+
+      <div class="card table-section" id="history-table">
+        <h3>Lịch sử Thao tác</h3>
+      </div>
+    </section>
+
+    <!-- Tab: Quản lý Kho -->
+    <section id="inventory" class="tabcontent">
+      <div class="card">
+        <h2>Quản lý Kho</h2>
+
+        <h3>Thêm sản phẩm</h3>
+        <div class="input-group">
+          <input type="text" id="product-name" placeholder="Tên sản phẩm" />
+          <input type="number" id="product-quantity" placeholder="Số lượng" />
+          <input type="number" id="product-price" placeholder="Giá (VND)" />
+          <input type="number" id="product-low-stock-threshold" placeholder="Ngưỡng tồn thấp" />
+          <button class="primary-btn" onclick="addInventory()">Thêm sản phẩm</button>
+        </div>
+
+        <h3>Danh sách sản phẩm</h3>
+        <div id="inventory-list"></div>
+
+        <h3>Ngày mua hàng dự kiến</h3>
+        <div id="restock-schedule"></div>
+
+        <h3>Phân tích tỷ lệ bán ra</h3>
+        <div id="export-analysis"></div>
+        <canvas id="export-chart"></canvas>
+      </div>
+
+      <!-- Modal chỉnh sửa -->
+      <div id="edit-inventory-modal" class="modal">
+        <div class="modal-content">
+          <span class="close" onclick="closeModal('edit-inventory-modal')">×</span>
+          <h3>Chỉnh sửa sản phẩm</h3>
+          <input type="text" id="edit-product-name" placeholder="Tên sản phẩm" />
+          <input type="number" id="edit-product-quantity" placeholder="Số lượng" />
+          <input type="number" id="edit-product-price" placeholder="Giá (VND)" />
+          <input type="number" id="edit-product-low-stock-threshold" placeholder="Ngưỡng tồn thấp" />
+          <div class="button-group">
+            <button class="primary-btn" onclick="saveInventoryEdit()">Lưu</button>
+            <button class="secondary-btn" onclick="closeModal('edit-inventory-modal')">Hủy</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab: Cá nhân -->
+<section id="profile" class="tabcontent">
   <h2>Thông tin cá nhân</h2>
-  <div class="card">
-    <div class="input-group">
-      <label for="personal-employee-name">Họ tên:</label>
-      <input type="text" id="personal-employee-name" placeholder="Họ tên">
-      <label for="employee-address">Địa chỉ:</label>
-      <input type="text" id="employee-address" placeholder="Địa chỉ">
-      <label for="employee-phone">Số điện thoại:</label>
-      <input type="text" id="employee-phone" placeholder="Số điện thoại">
-      <label for="employee-note">Ghi chú:</label>
-      <input type="text" id="employee-note" placeholder="Ghi chú">
-    </div>
-    <div style="margin-top: 12px;">
-  <button class="primary-btn" onclick="updateEmployeeInfo()">💾 Cập nhật</button>
-</div>
-  </div>
+  
+  <!-- Lịch làm việc -->
   <div class="card">
     <h3>Lịch làm việc</h3>
     <div id="calendar"></div>
   </div>
+
+  <!-- Thông tin cá nhân -->
+  <div class="card">
+    <h3>Thông tin cá nhân</h3>
+    <div>
+  <label>Họ và tên:</label>
+  <input id="name-input" type="text" placeholder="Nhập tên">
+</div>
+<div>
+  <label>Số điện thoại:</label>
+  <input id="phone-input" type="text" placeholder="Nhập số điện thoại">
+</div>
+<div>
+  <label>Địa chỉ:</label>
+  <input id="address-input" type="text" placeholder="Nhập địa chỉ">
+</div>
+<button onclick="updateUserProfile()">Cập nhật</button>
+
+  <!-- Yêu cầu tạm ứng -->
   <div class="card">
     <h3>Yêu cầu tạm ứng</h3>
     <div class="input-group">
       <label for="advance-amount">Số tiền (VND):</label>
-      <input type="number" id="advance-amount" placeholder="Số tiền" min="0">
+      <input type="number" id="advance-amount" min="0" />
+    </div>
+    <div class="input-group">
       <label for="advance-reason">Lý do:</label>
-      <input type="text" id="advance-reason" placeholder="Lý do">
+      <input type="text" id="advance-reason" />
     </div>
-    <div class="button-group">
-      <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu</button>
-    </div>
+    <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu</button>
   </div>
+
+  <!-- Thống kê -->
   <div class="card">
-    <h3>Tổng lương</h3>
-    <div id="salary-summary"></div>
+  <h3>Tính lương tạm tính</h3>
+  <div class="input-group">
+    <input type="number" id="wage-per-hour" placeholder="Tiền/giờ (VND)" />
+    <input type="number" id="hours-per-day" placeholder="Giờ/ngày" />
+    <button onclick="calculateFutureSalary()">Tính</button>
   </div>
+  <div id="future-salary-result"></div>
+</div>
+
+  
   <div class="card">
     <h3>Ngày off và tăng ca</h3>
     <div id="off-and-overtime"></div>
   </div>
+  
   <div class="card">
     <h3>Lịch sử tạm ứng</h3>
     <div id="advance-history-container"></div>
   </div>
+  
   <div class="card">
     <h3>Trạng thái lịch làm việc</h3>
-    <div id="schedule-status-container">
-      <div class="calendar-header">
-        <button onclick="changeScheduleMonth(-1)">Trước</button>
-        <h3 id="schedule-month-title">Tháng 7/2025</h3>
-        <button onclick="changeScheduleMonth(1)">Sau</button>
-      </div>
-      <div id="schedule-status-list"></div>
-    </div>
+    <div id="schedule-status-list"></div>
   </div>
+  
+  <!-- Thông báo -->
   <div class="card">
     <h3>Thông báo</h3>
     <div id="notifications-container"></div>
   </div>
-  <div id="action-modal" class="modal">
-    <div id="action-modal-content" class="modal-content">
-      <span class="close" onclick="closeModal('action-modal')">×</span>
-      <div id="schedule-action-content"></div>
-    </div>
+</section>
+
+<!-- Modal hành động -->
+<div id="action-modal" class="modal" style="display:none;">
+  <div class="modal-content" id="action-modal-content">
+    <span class="close" onclick="closeModal('action-modal')">×</span>
+    <!-- Nội dung popup lịch sẽ được chèn tại đây bởi JS -->
   </div>
+<div id="toast-container"></div>
 </div>
-
-    <!-- Tab Báo cáo Kinh doanh -->
-    <div class="tabcontent" id="business-report">
-      <h2>Báo cáo Kinh doanh</h2>
-      <button id="filter-report-btn" onclick="filterReports()">Lọc Báo Cáo</button>
-      <h3>Danh sách Báo cáo Thu Chi</h3>
-      <div id="shared-report-table"></div>
-      <h3>Danh sách Báo cáo Xuất Hàng</h3>
-      <div id="report-product-table"></div>
-      <h3>Biểu đồ Doanh thu và Chi phí</h3>
-      <canvas id="growth-chart" style="max-height: 300px;"></canvas>
-      <h3>Tổng hợp Chi phí theo Danh mục</h3>
-      <div id="expense-category-summary"></div>
-      <div class="category-adjust">
-        <input type="text" id="custom-category" placeholder="Nhập danh mục (VD: Trái cây)">
-        <button class="primary-btn" onclick="adjustCategory()">Cập nhật danh mục</button>
-      </div>
-      <h3>Tổng Chi phí trừ Hàng Xuất Kho</h3>
-      <div id="expense-minus-inventory"></div>
-      <h3>Danh sách Chi phí</h3>
-      <div id="expense-summary-table"></div>
-      <button class="primary-btn" onclick="exportReportsToCSV()">Xuất CSV</button>
-    </div>
-
-    
-  <!-- Tab Quản lý Nhân viên -->
-<div id="employee-management" class="tabcontent">
-   <!-- Lịch làm việc -->
-  <div id="employee-calendar-section" class="mobile-section active">
-    <div class="card">
-      <div class="section-header">
-        <h3>Lịch làm việc</h3>
-             </div>
-      <div id="employee-calendar" class="mobile-calendar"></div>
-    </div>
-  </div>
-
-  <!-- Danh sách nhân viên -->
-  <div id="employee-list-section" class="mobile-section">
-    <div class="card">
-      <div class="section-header">
-        <h3>Danh sách nhân viên</h3>
-        <button class="primary-btn small" onclick="showAddEmployeeForm()">+ Thêm</button>
-      </div>
-      <div id="employee-list" class="mobile-list"></div>
-    </div>
-  </div>
-
-  <!-- Duyệt lịch làm việc -->
-  <div id="schedule-approval-section" class="mobile-section">
-    <div class="card">
-      <div class="section-header">
-        <h3>Yêu cầu lịch làm việc</h3>
-      </div>
-      <div id="schedule-approval-list" class="mobile-list"></div>
-    </div>
-    
-    <div class="card">
-      <div class="section-header">
-        <h3>Lịch sử duyệt lịch</h3>
-      </div>
-      <div id="schedule-history" class="mobile-list"></div>
-    </div>
-  </div>
-
-  <!-- Duyệt tạm ứng -->
-  <div id="advance-approval-section" class="mobile-section">
-    <div class="card">
-      <div class="section-header">
-        <h3>Yêu cầu tạm ứng</h3>
-      </div>
-      <div id="advance-approval-list" class="mobile-list"></div>
-    </div>
-    
-    <div class="card">
-      <div class="section-header">
-        <h3>Lịch sử tạm ứng</h3>
-      </div>
-      <div id="advance-history" class="mobile-list"></div>
-    </div>
-  </div>
-
-  <!-- Thông báo -->
-  <div id="notification-section" class="mobile-section">
-    <div class="card">
-      <div class="section-header">
-        <h3>Thông báo chung</h3>
-      </div>
-      <div class="input-group">
-        <textarea id="general-notification-text" placeholder="Nhập thông báo..."></textarea>
-        <button class="primary-btn small" onclick="sendGeneralNotification()">Gửi</button>
-      </div>
-      <div id="general-notification-list" class="notification-list"></div>
-    </div>
-  </div>
-
-  <!-- Chat -->
-  <div id="employee-chat-section" class="mobile-section">
-    <div class="card">
-      <div class="section-header">
-        <h3>Chat với nhân viên</h3>
-        <select id="chat-employee-select" onchange="loadEmployeeChat(this.value)" class="mobile-select">
-          <option value="">Chọn nhân viên</option>
-          ${globalEmployeeData.map(emp => `<option value="${emp.id}">${emp.name}</option>`).join('')}
-        </select>
-      </div>
-      <div id="chat-messages" class="chat-messages"></div>
-      <div class="chat-input">
-        <textarea id="employee-chat-text" placeholder="Nhập tin nhắn..."></textarea>
-        <button class="primary-btn" onclick="sendEmployeeChat()">Gửi</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal chi tiết ngày -->
-  <div id="employee-day-modal" class="modal mobile-modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('employee-day-modal')">&times;</span>
-      <div id="employee-day-modal-content"></div>
-    </div>
-  </div>
-
-  <!-- Modal thêm/chỉnh sửa nhân viên -->
- <div id="employee-modal" class="modal mobile-modal">
-  <div class="modal-content">
-    <span class="close" onclick="closeEmployeeForm()">&times;</span>
-    <div id="employee-modal-content">
-      <div class="employee-form">
-        <input type="hidden" id="employee-form-id">
-        <label for="employee-name">Tên nhân viên</label>
-        <input type="text" id="employee-name">
-        <label for="employee-email">Email</label>
-        <input type="email" id="employee-email">
-        <label for="employee-role">Vai trò</label>
-        <select id="employee-role">
-          <option value="employee">Nhân viên</option>
-          <option value="manager">Quản lý</option>
-        </select>
-        <div>
-          <button onclick="submitEmployeeForm()">💾 Lưu</button>
-          <button onclick="closeEmployeeForm()">❌ Hủy</button>
-        </div>
-      </div>
-    </div>
-  </div>
+<div id="day-details-modal" class="modal" style="display: none;">
+  <div id="day-details-content" class="modal-content"></div>
 </div>
-
-
-  </div>
-
-  <!-- Modal chi tiết tài chính nhân viên -->
-  <div id="employee-financial-modal" class="modal mobile-modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('employee-financial-modal')">&times;</span>
-      <div id="employee-financial-modal-content"></div>
+  <!-- Floating menu -->
+  <div class="floating-menu">
+    <button id="main-float-btn" onclick="toggleMenu()">☰</button>
+    <div id="float-options" class="float-options">
+      <button onclick="openTabBubble('revenue-expense')">Thu Chi</button>
+      <button onclick="openTabBubble('inventory')">Kho</button>
+      <button onclick="openTabBubble('profile')">Cá nhân</button>
     </div>
-  </div>
-
-  <!-- Modal duyệt/từ chối -->
-  <div id="approval-modal" class="modal mobile-modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('approval-modal')">&times;</span>
-      <div id="approval-modal-content"></div>
-    </div>
-  </div>
-</div>
-
-    <!-- Tab Chat -->
-    <div id="chat" class="tabcontent">
-      <div id="notification-list"></div>
-    </div>
-
-    <!-- Floating Menu -->
-    <div class="floating-menu">
-      <button id="main-float-btn" onclick="toggleMenu()">☰</button>
-      <div id="float-options" class="float-options">
-        <button onclick="openTabBubble('revenue-expense')">Thu Chi</button>
-        <button onclick="openTabBubble('inventory')">Kho</button>
-        <button onclick="openTabBubble('profile')">Cá nhân</button>
-        <button onclick="openTabBubble('business-report')">Báo cáo</button>
-        <button onclick="openTabBubble('employee-management')">Nhân viên</button>
-        <button onclick="openTabBubble('chat')">Chat</button>
-      </div>
-      <div id="general-notification-modal" class="modal">
-        <div id="general-notification-modal-content" class="modal-content">
-          <h3>Thông báo quan trọng</h3>
-          <div id="general-notification-modal-list"></div>
-          <button onclick="markGeneralNotificationsAsRead()">Đã đọc</button>
-          <button onclick="closeModal('general-notification-modal')">Tắt</button>
-        </div>
-      </div>
-      <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 2000;"></div>
-    </div>
-  </div>
-
+  <!-- Script -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
@@ -411,36 +231,26 @@
       projectId: "quanly-d7e54",
       storageBucket: "quanly-d7e54.firebasestorage.app",
       messagingSenderId: "482686011267",
-      appId: "1:482686011267:web:f2fe9d400fe618487a98b6"
+      appId: "1:482686011267:web:f2fe9d400fe618487a98b6",
     };
-
     try {
       firebase.initializeApp(firebaseConfig);
-      console.log("Firebase initialized successfully");
     } catch (err) {
-      console.error("Firebase initialization failed:", err);
+      console.error("Firebase init failed:", err);
     }
-
-    // Khởi tạo flatpickr cho lịch chọn khoảng thời gian
     document.addEventListener("DOMContentLoaded", () => {
       flatpickr("#filter-range", {
         mode: "range",
         dateFormat: "Y-m-d",
         defaultDate: [new Date(), new Date()],
-        locale: {
-          firstDayOfWeek: 1
-        }
+        locale: { firstDayOfWeek: 1 },
       });
     });
   </script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  
   <script src="revenue-expense.js"></script>
   <script src="inventory.js"></script>
   <script src="profile.js"></script>
-  <script src="business-report.js"></script>
-  <script src="employee-management.js"></script>
-  <script src="chat.js"></script>
-<script src="common.js"></script>
+  <script src="common.js"></script>
 </body>
 </html>

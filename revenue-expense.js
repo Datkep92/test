@@ -721,60 +721,56 @@ function renderHistory(startDate = null, endDate = null) {
       }`
     : new Date(today).toLocaleDateString("vi-VN");
 
-  let query = db.ref("history");
+  let historyArray = globalHistory || [];
   if (startDate) {
-    query = query.orderByChild("date").startAt(startDate).endAt(endDate || startDate);
+    historyArray = historyArray.filter(h => h.date >= startDate && h.date <= (endDate || startDate));
   } else {
-    query = query.orderByChild("date").equalTo(today);
+    historyArray = historyArray.filter(h => h.date === today);
   }
 
-  query.once("value").then(snapshot => {
-    const history = snapshot.val() || {};
-    const historyArray = Object.values(history).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    if (historyArray.length === 0) {
-      historyContainer.innerHTML = `
-        <h3>Lịch sử Thao tác (${displayDate})</h3>
-        <p>Chưa có thao tác trong khoảng thời gian này.</p>
-      `;
-      return;
-    }
-
-    const isExpanded = isExpandedStates.history || false;
-    const displayHistory = isExpanded ? historyArray : historyArray.slice(0, 3);
-
+  historyArray = historyArray.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  if (historyArray.length === 0) {
     historyContainer.innerHTML = `
       <h3>Lịch sử Thao tác (${displayDate})</h3>
-      <table class="table-style">
-        <thead><tr><th>Giờ</th><th>Nhân viên</th><th>Chi tiết</th><th>Ghi chú</th><th>Trước</th><th>Sau</th></tr></thead>
-        <tbody>${displayHistory
-          .map(
-            h => `
-            <tr>
-              <td>${new Date(h.timestamp).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</td>
-              <td>${h.employeeName || "Không xác định"}</td>
-              <td>${h.details || "Không có"}</td>
-              <td>${h.note || "Không có"}</td>
-              <td>${h.before || "Không có"}</td>
-              <td>${h.after || "Không có"}</td>
-            </tr>`
-          )
-          .join("")}</tbody>
-      </table>
+      <p>Chưa có thao tác trong khoảng thời gian này.</p>
     `;
+    return;
+  }
 
-    if (historyArray.length > 3) {
-      const expandBtn = document.createElement("button");
-      expandBtn.textContent = isExpanded ? "Thu gọn" : "Hiển thị thêm";
-      expandBtn.className = "expand-btn";
-      expandBtn.onclick = () => {
-        isExpandedStates.history = !isExpandedStates.history;
-        renderHistory(startDate, endDate);
-      };
-      historyContainer.appendChild(expandBtn);
-    }
-  }).catch(err => console.error("Lỗi khi tải lịch sử:", err));
+  const isExpanded = isExpandedStates.history || false;
+  const displayHistory = isExpanded ? historyArray : historyArray.slice(0, 3);
+
+  historyContainer.innerHTML = `
+    <h3>Lịch sử Thao tác (${displayDate})</h3>
+    <table class="table-style">
+      <thead><tr><th>Giờ</th><th>Nhân viên</th><th>Chi tiết</th><th>Ghi chú</th><th>Trước</th><th>Sau</th></tr></thead>
+      <tbody>${displayHistory
+        .map(
+          h => `
+          <tr>
+            <td>${new Date(h.timestamp).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</td>
+            <td>${h.employeeName || "Không xác định"}</td>
+            <td>${h.details || "Không có"}</td>
+            <td>${h.note || "Không có"}</td>
+            <td>${h.before || "Không có"}</td>
+            <td>${h.after || "Không có"}</td>
+          </tr>`
+        )
+        .join("")}</tbody>
+    </table>
+  `;
+
+  if (historyArray.length > 3) {
+    const expandBtn = document.createElement("button");
+    expandBtn.textContent = isExpanded ? "Thu gọn" : "Hiển thị thêm";
+    expandBtn.className = "expand-btn";
+    expandBtn.onclick = () => {
+      isExpandedStates.history = !isExpandedStates.history;
+      renderHistory(startDate, endDate);
+    };
+    historyContainer.appendChild(expandBtn);
+  }
 }
-
 
 // Chỉnh sửa sản phẩm trong báo cáo
 function editReportProduct(reportId, productId) {

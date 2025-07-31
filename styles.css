@@ -1,55 +1,108 @@
-/* ===== Mobile-Optimized CSS for Milano Coffee App ===== */
-
-/* Base Reset & Variables */
+/* ===== Modern Mobile-Optimized CSS ===== */
 :root {
-  /* Color Palette - Milano Coffee Theme */
+  /* Modern Color Palette */
   --primary: #6F4E37;        /* Coffee brown */
   --primary-dark: #5a3d2a;   /* Dark coffee */
   --primary-light: #8b6b4b;  /* Light coffee */
   --secondary: #C4A484;      /* Latte color */
   --accent: #D4AF37;         /* Gold accent */
-  --text: #333333;           /* Main text */
-  --text-light: #5a5a5a;     /* Secondary text */
-  --bg: #f9f5f0;             /* Creamy background */
-  --card-bg: #ffffff;        /* Card background */
+  
+  /* Neutral Colors */
+  --text: #2D3436;          /* Dark gray for text */
+  --text-light: #636E72;     /* Medium gray */
+  --bg: #FDF5E6;            /* Soft cream background */
+  --card-bg: #FFFFFF;        /* Pure white cards */
+  --border: #E0E0E0;        /* Light border color */
   
   /* Status Colors */
-  --success: #4CAF50;        /* Green */
-  --danger: #e74c3c;         /* Red */
-  --warning: #f39c12;        /* Orange */
-  --info: #3498db;           /* Blue */
+  --success: #27AE60;       /* Green */
+  --danger: #E74C3C;        /* Red */
+  --warning: #F39C12;       /* Orange */
+  --info: #3498DB;          /* Blue */
+  --pending: #FDCB6E;       /* Yellow */
   
-  /* UI Elements */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
-  --radius: 8px;             /* Default border radius */
-  --radius-lg: 12px;         /* Large border radius */
-  --transition: all 0.2s ease;
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+  
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  
+  /* Typography */
+  --text-xs: 0.75rem;     /* 12px */
+  --text-sm: 0.875rem;    /* 14px */
+  --text-base: 1rem;      /* 16px */
+  --text-lg: 1.125rem;    /* 18px */
+  --text-xl: 1.25rem;     /* 20px */
+  --text-2xl: 1.5rem;     /* 24px */
+  
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+  
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.45s ease;
 }
 
+/* ===== Base Reset ===== */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent; /* Remove tap highlight */
 }
 
-html, body {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
-  touch-action: pan-y; /* Disable zoom gestures */
+html {
+  -webkit-text-size-adjust: 100%; /* Prevent font scaling in landscape */
+  height: 100%;
 }
 
 body {
-  font-family: 'Segoe UI', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   background-color: var(--bg);
   color: var(--text);
-  line-height: 1.6;
+  line-height: 1.5;
+  min-height: 100%;
+  overflow-x: hidden;
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  touch-action: manipulation; /* Disable double-tap zoom */
 }
 
-/* ===== Layout Structure ===== */
+/* ===== Typography ===== */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.25;
+  margin-bottom: var(--space-sm);
+  color: var(--primary);
+}
+
+h2 {
+  font-size: var(--text-xl);
+  padding-bottom: var(--space-xs);
+  border-bottom: 2px solid var(--secondary);
+}
+
+h3 {
+  font-size: var(--text-lg);
+  margin: var(--space-md) 0 var(--space-sm);
+}
+
+p {
+  margin-bottom: var(--space-sm);
+}
+
+/* ===== Layout ===== */
 #main-page {
   display: none;
   min-height: 100vh;
@@ -63,17 +116,19 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
+  padding: var(--space-md);
   background-color: var(--primary);
   color: white;
   box-shadow: var(--shadow-md);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 /* ===== Tab System ===== */
 .tabcontent {
   display: none;
-  padding: 16px;
-  animation: fadeIn 0.3s ease;
+  padding: var(--space-md);
+  animation: fadeIn var(--transition-normal);
 }
 
 .tabcontent.active {
@@ -85,93 +140,39 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ===== Typography ===== */
-h2 {
-  font-size: 1.4rem;
-  color: var(--primary);
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid var(--secondary);
-}
-
-h3 {
-  font-size: 1.2rem;
-  color: var(--primary-light);
-  margin: 16px 0 12px;
-}
-
-/* ===== Tables - Mobile Optimized ===== */
-.table-container {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  margin: 16px 0;
-  border-radius: var(--radius);
+/* ===== Cards ===== */
+.card {
+  background-color: var(--card-bg);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
   box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-th, td {
-  padding: 10px 8px;
-  text-align: left;
-  border-bottom: 1px solid rgba(196, 164, 132, 0.2);
-  word-break: break-word; /* Ensure text wraps */
-  white-space: normal; /* Allow text wrapping */
-}
-
-th {
-  background-color: var(--primary);
-  color: white;
-  position: sticky;
-  top: 0;
-}
-
-tr:nth-child(even) {
-  background-color: rgba(196, 164, 132, 0.05);
-}
-
-tr:hover {
-  background-color: rgba(196, 164, 132, 0.1);
-}
-
-/* Compact table layout for mobile */
-@media (max-width: 768px) {
-  th, td {
-    padding: 8px 6px;
-    font-size: 0.85rem;
-  }
-  
-  /* Special handling for action columns */
-  .action-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  
-  .action-buttons button {
-    padding: 4px 8px;
-    font-size: 0.8rem;
-  }
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 /* ===== Forms & Inputs ===== */
 .input-group {
-  margin-bottom: 16px;
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  align-items: center;
 }
 
 input, select, textarea {
   width: 100%;
-  padding: 10px 12px;
-  margin: 6px 0;
-  border: 1px solid #ddd;
-  border-radius: var(--radius);
-  font-size: 1rem;
-  transition: var(--transition);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  background-color: var(--card-bg);
+  flex: 1;
+  min-width: 0;
 }
 
 input:focus, select:focus, textarea:focus {
@@ -180,31 +181,35 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 3px rgba(111, 78, 55, 0.1);
 }
 
-.button-group {
-  display: flex;
-  gap: 10px;
-  margin: 16px 0;
-}
-
 /* ===== Buttons ===== */
 button {
-  padding: 10px 16px;
+  padding: var(--space-sm) var(--space-md);
   border: none;
-  border-radius: var(--radius);
-  font-size: 1rem;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
   font-weight: 500;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .primary-btn {
   background-color: var(--primary);
   color: white;
+  box-shadow: var(--shadow-sm);
 }
 
-.primary-btn:hover {
+.primary-btn:hover:not(:disabled) {
   background-color: var(--primary-dark);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
 
@@ -213,201 +218,48 @@ button {
   color: white;
 }
 
+.secondary-btn:hover:not(:disabled) {
+  background-color: #B38B6D;
+  transform: translateY(-1px);
+}
+
 .small-btn {
-  padding: 6px 10px;
-  font-size: 0.85rem;
+  padding: var(--space-xs) var(--space-sm);
+  font-size: var(--text-sm);
 }
 
-/* === LỊCH LÀM VIỆC (LLV) === */
-
-/* ==== Layout chính ==== */
-.calendar-container {
-  margin-bottom: 1rem;
+/* ===== Tables ===== */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: var(--space-md) 0;
+  border-radius: var(--radius-md);
 }
 
-/* ==== Header Lịch ==== */
-.calendar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem;
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  min-width: 600px;
+}
+
+th, td {
+  padding: var(--space-sm);
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
   background-color: var(--primary);
   color: white;
-  border-radius: var(--radius);
-  margin-bottom: 0.5rem;
+  position: sticky;
+  top: 0;
+  font-weight: 500;
 }
 
-.calendar-header h3 {
-  font-size: 1rem;
-  margin: 0;
-  color: white; /* hoặc white nếu nền sẫm */
-}
-
-
-.calendar-header button {
-  padding: 0.5rem 0.75rem;
-  font-size: 0.85rem;
-  background-color: var(--secondary);
-  color: white;
-  border: none;
-  border-radius: var(--radius);
-  min-width: 44px;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.calendar-header button:hover {
-  background-color: var(--primary-light);
-}
-
-/* ==== Grid lịch ==== */
-.calendar {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
-}
-
-/* ==== Ô ngày ==== */
-.day {
-  aspect-ratio: 1 / 1;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: var(--radius);
-  text-align: center;
-  font-size: 0.85rem;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: var(--transition);
-  background-color: #fff;
-  color: var(--text);
-}
-
-.day.empty {
-  background-color: #f9f9f9;
-  color: var(--text-muted);
-  cursor: default;
-}
-
-/* ==== Trạng thái ngày ==== */
-.day.normal {
-  background-color: #fff;
-  color: var(--text);
-}
-
-.day.off {
-  background-color: #ff4d4d;
-  color: white;
-}
-
-.day.overtime {
-  background-color: #4caf50;
-  color: white;
-}
-
-.day.swap {
-  background-color: #2196f3;
-  color: white;
-}
-
-.day.pending {
-  background-color: #ffeb3b;
-  color: black;
-}
-
-/* ==== Hover ==== */
-.day:hover:not(.empty) {
-  opacity: 0.9;
-  transform: scale(1.05);
-}
-
-/* ==== Nhãn trạng thái nhỏ bên dưới (tuỳ chọn) ==== */
-.day-status {
-  position: absolute;
-  bottom: 4px;
-  font-size: 0.6rem;
-  display: flex;
-  gap: 2px;
-}
-
-/* ==== Nút thao tác trong modal ==== */
-#calendar-modal {
-  background: white;
-  padding: 16px;
-  box-sizing: border-box;
-  font-family: sans-serif;
-  width: 100%;
-  margin-top: 10px;
-}
-
-#calendar-modal button {
-  padding: 8px 14px;
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  margin-top: 12px;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-#calendar-modal button:hover {
-  background-color: var(--primary-dark);
-}
-
-/* ===== Prevent Horizontal Scroll & Zoom ===== */
-html, body {
-  overflow-x: hidden;
-  width: 100%;
-  max-width: 100%;
-  touch-action: pan-y; /* Disable zoom gestures */
-}
-
-/* Ensure all containers don't exceed viewport width */
-.tab-content-wrapper, 
-.tabcontent, 
-.modal-content, 
-.table-style,
-.calendar,
-.schedule-table,
-.advance-table,
-.report-table {
-  max-width: 100%;
-}
-
-/* Force table cells to wrap content */
-.table-style td, 
-.table-style th {
-  white-space: normal;
-  word-break: break-word;
-}
-
-  
-  /* Calendar adjustments */
-  .calendar {
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    font-size: 1rem;
-  }
-  
-  .day {
-    padding: 0.25rem;
-    font-size: 0.7rem;
-  }
-
-  
-
-
-
-/* ===== Cards ===== */
-.card {
-  background-color: var(--card-bg);
-  border-radius: var(--radius);
-  padding: 16px;
-  margin-bottom: 16px;
-  box-shadow: var(--shadow-sm);
+tr:nth-child(even) {
+  background-color: rgba(196, 164, 132, 0.05);
 }
 
 /* ===== Modals ===== */
@@ -416,53 +268,74 @@ html, body {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  right: 0;
+  bottom: 0;
   background-color: rgba(0,0,0,0.5);
   z-index: 1000;
   justify-content: center;
   align-items: center;
+  padding: var(--space-md);
+  animation: fadeIn var(--transition-normal);
 }
 
 .modal-content {
   background-color: white;
-  width: 95%;
+  width: 100%;
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
-  border-radius: var(--radius);
-  padding: 20px;
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
   position: relative;
+  box-shadow: var(--shadow-lg);
+  animation: slideUp var(--transition-normal);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .close {
   position: absolute;
-  top: 10px;
-  right: 15px;
-  font-size: 24px;
+  top: var(--space-md);
+  right: var(--space-md);
+  font-size: 1.5rem;
   cursor: pointer;
+  color: var(--text-light);
+  transition: color var(--transition-fast);
+}
+
+.close:hover {
+  color: var(--text);
 }
 
 /* ===== Floating Menu ===== */
 .floating-menu {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: var(--space-lg);
+  right: var(--space-lg);
   z-index: 100;
 }
 
 #main-float-btn {
   width: 56px;
   height: 56px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background-color: var(--primary);
   color: white;
-  font-size: 24px;
+  font-size: 1.5rem;
   display: flex;
   justify-content: center;
   align-items: center;
   box-shadow: var(--shadow-md);
   cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+#main-float-btn:hover {
+  transform: scale(1.1);
+  box-shadow: var(--shadow-lg);
 }
 
 .float-options {
@@ -471,185 +344,160 @@ html, body {
   bottom: 70px;
   right: 0;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-sm);
+  animation: fadeIn var(--transition-fast);
 }
 
 .float-options button {
   width: 56px;
   height: 56px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background-color: var(--primary);
   color: white;
-  font-size: 12px;
+  font-size: var(--text-xs);
   display: flex;
   justify-content: center;
   align-items: center;
   text-align: center;
   line-height: 1.2;
-  padding: 5px;
+  padding: var(--space-xs);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
 }
 
-/* ===== Inventory Specific ===== */
-.product-item {
+.float-options button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ===== Calendar ===== */
+.calendar-container {
+  margin-bottom: var(--space-md);
+}
+
+.calendar-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px;
-  margin-bottom: 8px;
-  background-color: white;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
+  padding: var(--space-sm);
+  background-color: var(--primary);
+  color: white;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-sm);
 }
 
-.product-controls {
+.calendar-header h3 {
+  font-size: var(--text-base);
+  margin: 0;
+  color: white;
+}
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--space-xs);
+}
+
+.day {
+  aspect-ratio: 1;
+  padding: var(--space-xs);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  transition: all var(--transition-fast);
+  background-color: var(--card-bg);
+}
+
+.day.empty {
+  background-color: transparent;
+  cursor: default;
+}
+
+.day-number {
+  font-weight: 500;
+}
+
+.mini-avatar-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  margin-top: var(--space-xs);
+}
+
+.mini-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  color: white;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  font-weight: bold;
 }
 
-/* ===== Employee Management ===== */
-.employee-card {
-  padding: 12px;
-  margin-bottom: 12px;
-  background-color: white;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-}
+/* ===== Status Indicators ===== */
+.status-pending { background-color: var(--pending); color: var(--text); }
+.status-approved { background-color: var(--success); color: white; }
+.status-rejected { background-color: var(--danger); color: white; }
+.status-off { background-color: var(--danger); color: white; }
+.status-overtime { background-color: var(--success); color: white; }
+.status-swap { background-color: var(--info); color: white; }
 
-/* ===== Responsive Adjustments ===== */
-@media (max-width: 480px) {
-  .input-group {
-    flex-direction: column;
-  }
-  
-  .button-group {
-    flex-direction: column;
-  }
-  
-  button {
-    width: 100%;
-  }
-  
-  /* Make calendar days smaller */
-  .day {
-    font-size: 0.7rem;
-  }
-  
-  /* Stack table headers on very small screens */
-  @media (max-width: 360px) {
-    table {
-      font-size: 0.8rem;
-    }
-    
-    th, td {
-      padding: 6px 4px;
-    }
-  }
-}
-
-/* ===== Utility Classes ===== */
-.hidden {
-  display: none !important;
-}
-
-.text-center {
-  text-align: center;
-}
-
-.mt-1 { margin-top: 4px; }
-.mt-2 { margin-top: 8px; }
-.mt-3 { margin-top: 12px; }
-.mt-4 { margin-top: 16px; }
-
-.mb-1 { margin-bottom: 4px; }
-.mb-2 { margin-bottom: 8px; }
-.mb-3 { margin-bottom: 12px; }
-.mb-4 { margin-bottom: 16px; }
-
-/* Status indicators */
-.status-pending { color: var(--warning); }
-.status-approved { color: var(--success); }
-.status-rejected { color: var(--danger); }
-.status-off { color: var(--danger); }
-.status-overtime { color: var(--success); }
-.status-swap { color: var(--info); }
-
-/* Toast notifications */
+/* ===== Toast Notifications ===== */
 .toast {
   position: fixed;
-  bottom: 20px;
+  bottom: var(--space-lg);
   left: 50%;
   transform: translateX(-50%);
   background-color: var(--primary);
   color: white;
-  padding: 12px 24px;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
   z-index: 1100;
-  animation: slideUp 0.3s ease;
+  animation: slideUp var(--transition-fast);
+  max-width: 90%;
+  text-align: center;
 }
 
-@keyframes slideUp {
-  from { transform: translateX(-50%) translateY(100%); }
-  to { transform: translateX(-50%) translateY(0); }
-}
-
-/* Disable pinch zoom */
-@viewport {
-  width: device-width;
-  zoom: 1.0;
-  min-zoom: 1.0;
-  max-zoom: 1.0;
-  user-zoom: fixed;
-}
-//
-/* Thêm vào file CSS */
-.input-group {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-  align-items: center;
-}
-
-.input-group input {
-  flex: 1;
-  min-width: 0; /* Cho phép co nhỏ */
-  margin: 0;
-}
-
-.input-group button {
-  white-space: nowrap;
-  padding: 10px 12px;
-}
-/* Login Page Styling */
+/* ===== Login Page ===== */
 #login-page {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: 20px;
-  background-color: var(--primary);
-  background-image: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  padding: var(--space-lg);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
 }
 
 #login-page h2 {
   color: white;
-  margin-bottom: 30px;
-  font-size: 1.8rem;
+  margin-bottom: var(--space-xl);
+  font-size: var(--text-2xl);
   text-align: center;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 #login-page input {
   width: 100%;
   max-width: 350px;
-  padding: 14px 16px;
-  margin-bottom: 16px;
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
   border: 2px solid rgba(255,255,255,0.2);
   border-radius: var(--radius-lg);
   background-color: rgba(255,255,255,0.9);
-  font-size: 1rem;
-  transition: var(--transition);
+  font-size: var(--text-base);
+  transition: all var(--transition-normal);
 }
 
 #login-page input:focus {
@@ -661,65 +509,164 @@ html, body {
 #login-page button {
   width: 100%;
   max-width: 350px;
-  padding: 14px;
+  padding: var(--space-md);
   background-color: var(--accent);
-  color: #333;
+  color: var(--text);
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: var(--text-base);
   border-radius: var(--radius-lg);
   border: none;
   cursor: pointer;
-  transition: var(--transition);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-md);
+  margin-top: var(--space-sm);
 }
 
 #login-page button:hover {
   background-color: #e6b800;
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+  box-shadow: var(--shadow-lg);
 }
 
 #login-page button:active {
   transform: translateY(0);
 }
 
-/* Thêm hiệu ứng loading khi nhấn nút */
-#login-page button.loading {
-  position: relative;
-  color: transparent;
-}
-
-#login-page button.loading::after {
-  content: "";
-  position: absolute;
+/* Loading Animation */
+.loading-spinner {
+  display: inline-block;
   width: 20px;
   height: 20px;
-  top: 50%;
-  left: 50%;
-  margin: -10px 0 0 -10px;
   border: 3px solid rgba(255,255,255,0.3);
+  border-radius: var(--radius-full);
   border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 1s linear infinite;
+  margin-right: var(--space-sm);
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-.modal {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
+/* ===== Responsive Adjustments ===== */
+@media (max-width: 480px) {
+  :root {
+    --space-md: 12px;
+    --space-lg: 16px;
+  }
+  
+  .input-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .button-group {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  
+  button {
+    width: 100%;
+  }
+  
+  .calendar-header h3 {
+    font-size: var(--text-sm);
+  }
+  
+  .day {
+    font-size: var(--text-xs);
+    padding: 2px;
+  }
+  
+  .mini-avatar {
+    width: 14px;
+    height: 14px;
+    font-size: 8px;
+  }
 }
-.modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  width: 90%;
-  max-width: 400px;
+
+/* ===== Utility Classes ===== */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.gap-1 { gap: var(--space-xs); }
+.gap-2 { gap: var(--space-sm); }
+.gap-3 { gap: var(--space-md); }
+.gap-4 { gap: var(--space-lg); }
+
+.mt-1 { margin-top: var(--space-xs); }
+.mt-2 { margin-top: var(--space-sm); }
+.mt-3 { margin-top: var(--space-md); }
+.mt-4 { margin-top: var(--space-lg); }
+
+.mb-1 { margin-bottom: var(--space-xs); }
+.mb-2 { margin-bottom: var(--space-sm); }
+.mb-3 { margin-bottom: var(--space-md); }
+.mb-4 { margin-bottom: var(--space-lg); }
+
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+.hidden { display: none !important; }
+
+/* Disable pinch zoom */
+@viewport {
+  width: device-width;
+  zoom: 1.0;
+  min-zoom: 1.0;
+  max-zoom: 1.0;
+  user-zoom: fixed;
+}
+/* CSS chỉ áp dụng trong phạm vi #revenue-expense */
+#revenue-expense .input-group {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+  border-spacing: 5px;
+  margin-bottom: 0; /* Ghi đè margin nếu cần */
+}
+
+#revenue-expense .input-group input {
+  display: table-cell;
+  width: 80%;
+  height: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+  background-color: white; /* Đảm bảo nền trắng */
+}
+
+#revenue-expense .input-group button.primary-btn.small {
+  /* Selector cụ thể để ghi đè */
+  display: table-cell;
+  width: 20%;
+  height: 100%;
+  white-space: nowrap;
+  padding: 6px 10px;
+  border: 1px solid #6F4E37 !important;
+  background-color: #6F4E37 !important;
+  color: white !important;
+  border-radius: 4px;
+  cursor: pointer;
+  box-sizing: border-box;
+  vertical-align: middle;
+  margin-left: 0; /* Ghi đè margin nếu có */
+}
+
+#revenue-expense .input-group button.primary-btn.small:hover {
+  background-color: #5a3d2a !important;
 }
