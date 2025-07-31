@@ -737,8 +737,8 @@ function renderAdvanceHistory() {
               ${isManager && a.status === 'pending' ? `
                 <td>
                   <div class="button-group">
-                    <button class="small-btn" onclick="approveAdvance('${a.id}')">✔️ Phê duyệt</button>
-                    <button class="small-btn" onclick="rejectAdvance('${a.id}')">❌ Từ chối</button>
+                    <button class="small-btn" onclick="approveAdvance('${a.id}')">✔️</button>
+                    <button class="small-btn" onclick="rejectAdvance('${a.id}')">❌ </button>
                   </div>
                 </td>
               ` : ''}

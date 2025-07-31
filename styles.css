@@ -620,7 +620,6 @@ tr:nth-child(even) {
 .text-center { text-align: center; }
 .text-right { text-align: right; }
 
-.hidden { display: none !important; }
 
 /* Disable pinch zoom */
 @viewport {
@@ -669,4 +668,108 @@ tr:nth-child(even) {
 
 #revenue-expense .input-group button.primary-btn.small:hover {
   background-color: #5a3d2a !important;
+}
+/* ===== Bảng lịch sử tạm ứng - Phiên bản responsive ===== */
+.advance-table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: var(--space-md) 0;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  background-color: var(--card-bg);
+}
+
+.advance-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  min-width: 600px; /* Chỉ áp dụng khi cần scroll */
+}
+
+.advance-table th, 
+.advance-table td {
+  padding: var(--space-sm);
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  word-break: break-word;
+}
+
+.advance-table th {
+  background-color: var(--primary);
+  color: white;
+  position: sticky;
+  top: 0;
+  font-weight: 500;
+}
+
+.advance-table tr:nth-child(even) {
+  background-color: rgba(196, 164, 132, 0.05);
+}
+
+.advance-table tr:hover {
+  background-color: rgba(196, 164, 132, 0.1);
+}
+
+/* Nút hành động */
+.advance-table .action-buttons {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+/* Màu trạng thái */
+.advance-table .status-pending {
+  background-color: var(--pending);
+  color: var(--text);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+}
+
+.advance-table .status-approved {
+  background-color: var(--success);
+  color: white;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+}
+
+.advance-table .status-rejected {
+  background-color: var(--danger);
+  color: white;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+}
+
+/* Responsive cho mobile */
+@media (max-width: 768px) {
+  .advance-table {
+    min-width: 100%; /* Cho phép co nhỏ hơn */
+    font-size: var(--text-xs);
+  }
+  
+  .advance-table th, 
+  .advance-table td {
+    padding: var(--space-xs) var(--space-sm);
+  }
+  
+  /* Cột ngày hiển thị gọn */
+  .advance-table td:first-child {
+    white-space: nowrap;
+    width: 1%;
+  }
+  
+  /* Nút hành động thành cột dọc */
+  .advance-table .action-buttons {
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+  
+  .advance-table .action-buttons button {
+    width: 100%;
+    padding: var(--space-xs);
+    font-size: var(--text-xs);
+  }
 }
