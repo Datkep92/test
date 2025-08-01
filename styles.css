@@ -228,40 +228,6 @@ button:disabled {
   font-size: var(--text-sm);
 }
 
-/* ===== Tables ===== */
-.table-container {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  margin: var(--space-md) 0;
-  border-radius: var(--radius-md);
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--text-sm);
-  min-width: 600px;
-}
-
-th, td {
-  padding: var(--space-sm);
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-}
-
-th {
-  background-color: var(--primary);
-  color: white;
-  position: sticky;
-  top: 0;
-  font-weight: 500;
-}
-
-tr:nth-child(even) {
-  background-color: rgba(196, 164, 132, 0.05);
-}
-
 /* ===== Modals ===== */
 .modal {
   display: none;
@@ -669,7 +635,263 @@ tr:nth-child(even) {
 #revenue-expense .input-group button.primary-btn.small:hover {
   background-color: #5a3d2a !important;
 }
-/* ===== Bảng lịch sử tạm ứng - Phiên bản responsive ===== */
+
+/* ===== Bảng kho (Inventory Table) - Phiên bản responsive ===== */
+.inventory-table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: var(--space-md) 0;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  background-color: var(--card-bg);
+}
+
+.inventory-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  min-width: 100%; /* Thay đổi từ 600px để phù hợp mobile */
+  table-layout: fixed; /* Quan trọng: Giúp cố định kích thước cột */
+}
+
+/* Thiết lập chiều rộng cột */
+.inventory-table th:nth-child(1),
+.inventory-table td:nth-child(1) {
+  width: 40%; /* Cột tên chiếm 40% */
+  min-width: 150px; /* Tối thiểu 150px */
+}
+
+.inventory-table th:nth-child(2),
+.inventory-table td:nth-child(2) {
+  width: 15%; /* Cột số lượng */
+}
+
+.inventory-table th:nth-child(3),
+.inventory-table td:nth-child(3) {
+  width: 15%; /* Cột đơn vị */
+}
+
+.inventory-table th:nth-child(4),
+.inventory-table td:nth-child(4) {
+  width: 15%; /* Cột trạng thái */
+}
+
+.inventory-table th:nth-child(5),
+.inventory-table td:nth-child(5) {
+  width: 15%; /* Cột điều chỉnh */
+}
+
+/* Style chung cho các ô */
+.inventory-table th, 
+.inventory-table td {
+  padding: var(--space-sm);
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inventory-table th {
+  background-color: var(--primary);
+  color: white;
+  position: sticky;
+  top: 0;
+  font-weight: 500;
+}
+
+/* Hiệu ứng và màu nền */
+.inventory-table tr:nth-child(even) {
+  background-color: rgba(196, 164, 132, 0.05);
+}
+
+.inventory-table tr:hover {
+  background-color: rgba(196, 164, 132, 0.1);
+}
+
+/* Control số lượng */
+.inventory-table .quantity-controls {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  justify-content: center;
+}
+
+.inventory-table .quantity-value {
+  min-width: 30px;
+  text-align: center;
+}
+
+/* Màu trạng thái */
+.inventory-table .status-low {
+  color: var(--danger);
+  font-weight: 500;
+}
+
+.inventory-table .status-normal {
+  color: var(--success);
+}
+
+.inventory-table .status-high {
+  color: var(--warning);
+}
+
+/* Responsive cho mobile */
+@media (max-width: 768px) {
+  .inventory-table {
+    font-size: var(--text-xs);
+  }
+  
+  .inventory-table th, 
+  .inventory-table td {
+    padding: var(--space-xs) var(--space-sm);
+  }
+  
+  /* Điều chỉnh lại chiều rộng cột trên mobile */
+  .inventory-table th:nth-child(1),
+  .inventory-table td:nth-child(1) {
+    width: 35%; /* Giảm bớt để nhường chỗ cho các cột khác */
+    min-width: 120px; /* Giảm tối thiểu */
+  }
+  
+  .inventory-table th:nth-child(2),
+  .inventory-table td:nth-child(2),
+  .inventory-table th:nth-child(3),
+  .inventory-table td:nth-child(3),
+  .inventory-table th:nth-child(4),
+  .inventory-table td:nth-child(4),
+  .inventory-table th:nth-child(5),
+  .inventory-table td:nth-child(5) {
+    width: auto; /* Cho phép co giãn tự do */
+    min-width: 60px; /* Độ rộng tối thiểu */
+  }
+  
+  /* Control số lượng thành hàng dọc */
+  .inventory-table .quantity-controls {
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .inventory-table .quantity-controls button {
+    padding: 2px 4px;
+    font-size: var(--text-xs);
+  }
+}
+
+/* ===== Bảng yêu cầu lịch làm việc - Phiên bản responsive ===== */
+.schedule-requests-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: var(--space-md) 0;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  background-color: var(--card-bg);
+}
+
+.schedule-requests-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  min-width: 500px;
+  table-layout: fixed;
+}
+
+/* Thiết lập chiều rộng cột */
+.schedule-requests-table th:nth-child(1),
+.schedule-requests-table td:nth-child(1) {
+  width: 20%; /* Cột Ngày/Tháng/Năm */
+  min-width: 80px;
+}
+.schedule-requests-table th:nth-child(2),
+.schedule-requests-table td:nth-child(2) {
+  width: 25%; /* Cột Nhân viên */
+  min-width: 100px;
+}
+.schedule-requests-table th:nth-child(3),
+.schedule-requests-table td:nth-child(3) {
+  width: 25%; /* Cột Loại */
+  min-width: 80px;
+}
+.schedule-requests-table th:nth-child(4),
+.schedule-requests-table td:nth-child(4) {
+  width: 30%; /* Cột Trạng thái/Hành động */
+  min-width: 100px;
+}
+
+/* Style chung */
+.schedule-requests-table th,
+.schedule-requests-table td {
+  padding: var(--space-sm);
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.schedule-requests-table th {
+  background-color: var(--primary);
+  color: white;
+  position: sticky;
+  top: 0;
+  font-weight: 500;
+}
+
+.schedule-requests-table tr:nth-child(even) {
+  background-color: rgba(196, 164, 132, 0.05);
+}
+
+.schedule-requests-table tr:hover {
+  background-color: rgba(196, 164, 132, 0.1);
+}
+
+/* Nút trạng thái/hành động */
+.schedule-requests-table .status-btn {
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  color: white;
+  border: none;
+  cursor: pointer;
+  width: 80px;
+  text-align: center;
+}
+
+.schedule-requests-table .status-pending,
+.schedule-requests-table .status-swapPending {
+  background-color: var(--pending);
+  color: var(--text);
+}
+.schedule-requests-table .status-approved {
+  background-color: var(--success);
+}
+.schedule-requests-table .status-rejected {
+  background-color: var(--danger);
+}
+
+/* Responsive cho mobile */
+@media (max-width: 768px) {
+  .schedule-requests-table {
+    min-width: 100%;
+    font-size: var(--text-xs);
+  }
+  .schedule-requests-table th,
+  .schedule-requests-table td {
+    padding: var(--space-xs) var(--space-sm);
+  }
+  .schedule-requests-table td:nth-child(1) {
+    white-space: nowrap;
+    width: 1%;
+  }
+  .schedule-requests-table .status-btn {
+    width: 100%;
+    padding: 2px 4px;
+  }
+}
+
+/* ===== Bảng yêu cầu tạm ứng - Cập nhật ===== */
 .advance-table-container {
   width: 100%;
   overflow-x: auto;
@@ -684,15 +906,46 @@ tr:nth-child(even) {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--text-sm);
-  min-width: 600px; /* Chỉ áp dụng khi cần scroll */
+  min-width: 500px;
+  table-layout: fixed;
 }
 
-.advance-table th, 
+/* Thiết lập chiều rộng cột */
+.advance-table th:nth-child(1),
+.advance-table td:nth-child(1) {
+  width: 20%; /* Cột Ngày/Tháng/Năm */
+  min-width: 80px;
+}
+.advance-table th:nth-child(2),
+.advance-table td:nth-child(2) {
+  width: 20%; /* Cột Nhân viên */
+  min-width: 80px;
+}
+.advance-table th:nth-child(3),
+.advance-table td:nth-child(3) {
+  width: 15%; /* Cột Số tiền */
+  min-width: 80px;
+}
+.advance-table th:nth-child(4),
+.advance-table td:nth-child(4) {
+  width: 25%; /* Cột Ghi chú */
+  min-width: 100px;
+}
+.advance-table th:nth-child(5),
+.advance-table td:nth-child(5) {
+  width: 20%; /* Cột Trạng thái/Hành động */
+  min-width: 100px;
+}
+
+/* Style chung */
+.advance-table th,
 .advance-table td {
   padding: var(--space-sm);
   text-align: left;
   border-bottom: 1px solid var(--border);
   word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .advance-table th {
@@ -711,65 +964,46 @@ tr:nth-child(even) {
   background-color: rgba(196, 164, 132, 0.1);
 }
 
-/* Nút hành động */
-.advance-table .action-buttons {
-  display: flex;
-  gap: var(--space-xs);
-  flex-wrap: wrap;
+/* Nút trạng thái/hành động */
+.advance-table .status-btn {
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  color: white;
+  border: none;
+  cursor: pointer;
+  width: 80px;
+  text-align: center;
 }
 
-/* Màu trạng thái */
 .advance-table .status-pending {
   background-color: var(--pending);
   color: var(--text);
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  display: inline-block;
 }
-
 .advance-table .status-approved {
   background-color: var(--success);
-  color: white;
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  display: inline-block;
 }
-
 .advance-table .status-rejected {
   background-color: var(--danger);
-  color: white;
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  display: inline-block;
 }
 
 /* Responsive cho mobile */
 @media (max-width: 768px) {
   .advance-table {
-    min-width: 100%; /* Cho phép co nhỏ hơn */
+    min-width: 100%;
     font-size: var(--text-xs);
   }
-  
-  .advance-table th, 
+  .advance-table th,
   .advance-table td {
     padding: var(--space-xs) var(--space-sm);
   }
-  
-  /* Cột ngày hiển thị gọn */
-  .advance-table td:first-child {
+  .advance-table td:nth-child(1) {
     white-space: nowrap;
     width: 1%;
   }
-  
-  /* Nút hành động thành cột dọc */
-  .advance-table .action-buttons {
-    flex-direction: column;
-    gap: var(--space-xs);
-  }
-  
-  .advance-table .action-buttons button {
+  .advance-table .status-btn {
     width: 100%;
-    padding: var(--space-xs);
-    font-size: var(--text-xs);
+    padding: 2px 4px;
   }
 }
+

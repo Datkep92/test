@@ -128,8 +128,7 @@
       </div>
     </section>
 
-    <!-- Tab: Cá nhân -->
-<section id="profile" class="tabcontent">
+    <section id="profile" class="tabcontent">
   <h2>Thông tin cá nhân</h2>
   
   <!-- Lịch làm việc -->
@@ -137,23 +136,23 @@
     <h3>Lịch làm việc</h3>
     <div id="calendar"></div>
   </div>
-
   <!-- Thông tin cá nhân -->
   <div class="card">
     <h3>Thông tin cá nhân</h3>
     <div>
-  <label>Họ và tên:</label>
-  <input id="name-input" type="text" placeholder="Nhập tên">
-</div>
-<div>
-  <label>Số điện thoại:</label>
-  <input id="phone-input" type="text" placeholder="Nhập số điện thoại">
-</div>
-<div>
-  <label>Địa chỉ:</label>
-  <input id="address-input" type="text" placeholder="Nhập địa chỉ">
-</div>
-<button onclick="updateUserProfile()">Cập nhật</button>
+      <label>Họ và tên:</label>
+      <input id="name-input" type="text" placeholder="Nhập tên">
+    </div>
+    <div>
+      <label>Số điện thoại:</label>
+      <input id="phone-input" type="text" placeholder="Nhập số điện thoại">
+    </div>
+    <div>
+      <label>Địa chỉ:</label>
+      <input id="address-input" type="text" placeholder="Nhập địa chỉ">
+    </div>
+    <button onclick="updateUserProfile()">Cập nhật</button>
+  </div>
 
   <!-- Yêu cầu tạm ứng -->
   <div class="card">
@@ -171,31 +170,32 @@
 
   <!-- Thống kê -->
   <div class="card">
-  <h3>Tính lương tạm tính</h3>
-  <div class="input-group">
-    <input type="number" id="wage-per-hour" placeholder="Tiền/giờ (VND)" />
-    <input type="number" id="hours-per-day" placeholder="Giờ/ngày" />
-    <button onclick="calculateFutureSalary()">Tính</button>
+    <h3>Tính lương tạm tính</h3>
+    <div class="input-group">
+      <input type="number" id="wage-per-hour" placeholder="Tiền/giờ (VND)" />
+      <input type="number" id="hours-per-day" placeholder="Giờ/ngày" />
+      <button onclick="calculateFutureSalary()">Tính</button>
+    </div>
+    <div id="future-salary-result"></div>
   </div>
-  <div id="future-salary-result"></div>
-</div>
 
-  
   <div class="card">
     <h3>Ngày off và tăng ca</h3>
     <div id="off-and-overtime"></div>
   </div>
-  
+
+  <section id="schedule-section">
+    <div id="schedule-requests-container">
+      <h3>Yêu Cầu Lịch Làm Việc</h3>
+      <table id="schedule-requests-table" class="table-style"></table>
+    </div>
+  </section>
+
   <div class="card">
     <h3>Lịch sử tạm ứng</h3>
     <div id="advance-history-container"></div>
   </div>
-  
-  <div class="card">
-    <h3>Trạng thái lịch làm việc</h3>
-    <div id="schedule-status-list"></div>
-  </div>
-  
+
   <!-- Thông báo -->
   <div class="card">
     <h3>Thông báo</h3>

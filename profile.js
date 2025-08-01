@@ -385,23 +385,17 @@ function rejectSchedule(scheduleId) {
 
 function submitScheduleRequest(date, status, targetEmployeeId = null) {
   const scheduleId = `${date}_${currentEmployeeId}`;
-
-  // Kiểm tra dữ liệu nhân viên đã được load
   if (!isEmployeeDataLoaded || !globalEmployeeData || globalEmployeeData.length === 0) {
     showToastNotification('Dữ liệu nhân viên chưa sẵn sàng. Vui lòng thử lại sau vài giây.');
     console.warn('globalEmployeeData not ready');
     return;
   }
-
-  // Tìm thông tin nhân viên hiện tại
   const employee = globalEmployeeData.find(e => e.id === currentEmployeeId);
   if (!employee || !employee.name) {
     showToastNotification('Lỗi: Không tìm thấy thông tin nhân viên hiện tại');
     console.error('Employee not found for ID:', currentEmployeeId);
     return;
   }
-
-  // Tạo dữ liệu lịch
   const scheduleData = {
     id: scheduleId,
     employeeId: currentEmployeeId,
@@ -412,20 +406,22 @@ function submitScheduleRequest(date, status, targetEmployeeId = null) {
     timestamp: Date.now(),
     ...(targetEmployeeId && { targetEmployeeId })
   };
-
-  // Gửi dữ liệu lên Firebase
   db.ref('schedules/' + scheduleId).set(scheduleData)
     .then(() => {
       showToastNotification(`✅ Đã gửi yêu cầu ${getScheduleTypeText(scheduleData)} thành công`);
-      closeModal('action-modal'); // Tự động đóng popup
-      renderScheduleStatusList(); // Cập nhật danh sách trạng thái
-      renderCalendar(); // Cập nhật lịch
-
-      // Thông báo cho quản lý
+      console.log("✅ Submitted schedule:", scheduleData);
+      console.log("Current globalScheduleData:", globalScheduleData);
+      closeModal('action-modal');
+      if (document.getElementById('schedule-status-list')) {
+        renderScheduleStatusList();
+      } else {
+        console.warn("Skipping renderScheduleStatusList, container not found");
+      }
+      renderCalendar();
+      renderScheduleRequests();
       const notificationMessage = status === 'swap' 
         ? `${employee.name} yêu cầu đổi ca ngày ${date} với ${getEmployeeName(targetEmployeeId)}`
         : `${employee.name} yêu cầu ${status === 'off' ? 'nghỉ' : 'tăng ca'} ngày ${date}`;
-
       db.ref('notifications/manager').push({
         message: notificationMessage,
         timestamp: Date.now(),
@@ -433,8 +429,6 @@ function submitScheduleRequest(date, status, targetEmployeeId = null) {
         scheduleId,
         isRead: false
       });
-
-      // Thông báo cho người được đổi ca (nếu có)
       if (status === 'swap' && targetEmployeeId) {
         db.ref(`notifications/${targetEmployeeId}`).push({
           message: `${employee.name} muốn đổi ca với bạn ngày ${date}`,
@@ -450,7 +444,6 @@ function submitScheduleRequest(date, status, targetEmployeeId = null) {
       console.error('Firebase error:', err);
     });
 }
-
 function updateEmployeeInfo() {
   const name = document.getElementById("personal-employee-name").value.trim();
   const address = document.getElementById("employee-address").value.trim();
@@ -626,18 +619,15 @@ function respondToSwapRequest(scheduleId, accept) {
 
 function renderScheduleStatusList() {
   const container = document.getElementById('schedule-status-list');
-  if (!container) return;
-
+  if (!container) {
+    console.warn("schedule-status-list not found, possibly profile tab not active");
+    return;
+  }
   const isManager = isCurrentUserManager();
   const schedules = isManager
     ? globalScheduleData.filter(s => s.approvalStatus === 'pending' || s.approvalStatus === 'swapPending')
-    : globalScheduleData.filter(s => 
-        s.employeeId === currentEmployeeId &&
-        s.date.startsWith(`${currentScheduleYear}-${String(currentScheduleMonth).padStart(2, '0')}`)
-      );
-
-  console.log('Schedules for render:', schedules); // Debug
-
+    : globalScheduleData.filter(s => s.employeeId === currentEmployeeId);
+  console.log("renderScheduleStatusList - isManager:", isManager, "currentEmployeeId:", currentEmployeeId, "schedules:", schedules);
   container.innerHTML = `
     <div class="schedule-header">
       <button onclick="changeScheduleMonth(-1)">❮</button>
@@ -652,17 +642,17 @@ function renderScheduleStatusList() {
             <div class="schedule-type">${getScheduleTypeText(s)}</div>
             <div class="schedule-status">${getScheduleStatusText(s)}${s.cancelRequested ? ' (Yêu cầu hủy)' : ''}</div>
             ${isManager && (s.approvalStatus === 'pending' || s.approvalStatus === 'swapPending') ? `
-              <button class="small-btn" onclick="showActionModal('${s.date}')">Xử lý</button>
-            ` : (s.approvalStatus === 'pending' || s.approvalStatus === 'swapPending') ? `
+              <button class="small-btn" onclick="showScheduleActionModal('${s.id}', 'process')">Xử lý</button>
+            ` : (s.approvalStatus === 'pending' || s.approvalStatus === 'swapPending' || s.approvalStatus === 'approved') ? `
               <button class="small-btn" onclick="cancelSchedule('${s.id}')">Hủy</button>
             ` : ''}
           </li>
         `).join('')}
       </ul>
-    ` : '<p>Không có lịch làm việc đặc biệt trong tháng này</p>'}
+    ` : '<p>Không có lịch làm việc đặc biệt</p>'}
   `;
+  container.style.display = 'block'; // Đảm bảo hiển thị
 }
-
 // ================ NOTIFICATION FUNCTIONS ================
 function renderNotifications() {
   const container = document.getElementById('notifications-container');
@@ -702,54 +692,179 @@ function markNotificationAsRead(notificationId) {
 }
 
 // ================ ADVANCE FUNCTIONS ================
+// Thêm vào profile.js, trước phần CALENDAR UI
+// Sửa hàm renderScheduleRequests
+function renderScheduleRequests() {
+  const container = document.getElementById("schedule-requests-container");
+  if (!container) {
+    console.error("schedule-requests-container not found");
+    return;
+  }
+  const isManager = isCurrentUserManager();
+  const requests = isManager
+    ? globalScheduleData.filter(s => s.approvalStatus === "pending" || s.approvalStatus === "swapPending" || s.cancelRequested)
+    : globalScheduleData.filter(s => s.employeeId === currentEmployeeId);
+  console.log("renderScheduleRequests - isManager:", isManager, "currentEmployeeId:", currentEmployeeId, "requests:", requests); // Debug
+  container.innerHTML = `
+    <h3>Yêu Cầu Lịch Làm Việc</h3>
+    ${requests.length > 0 ? `
+      <table class="schedule-requests-table table-style">
+        <thead>
+          <tr>
+            <th>Ngày</th>
+            <th>Nhân viên</th>
+            <th>Loại</th>
+            <th>Trạng thái/Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${requests.map((s, index) => `
+            <tr>
+              <td>${new Date(s.date).toLocaleDateString("vi-VN")}</td>
+              <td>${s.employeeName || "Không xác định"}</td>
+              <td>${getScheduleTypeText(s)}</td>
+              <td>
+                <button class="status-btn status-${s.approvalStatus}${s.cancelRequested ? ' cancel-requested' : ''}"
+                  ${isManager && (s.approvalStatus === "pending" || s.approvalStatus === "swapPending")
+                    ? `onclick="showScheduleActionModal('${s.id}', 'process')"`
+                    : isManager && s.cancelRequested
+                    ? `onclick="showScheduleActionModal('${s.id}', 'cancel')"`
+                    : s.employeeId === currentEmployeeId && (s.approvalStatus === "pending" || s.approvalStatus === "swapPending" || s.approvalStatus === "approved")
+                    ? `onclick="cancelSchedule('${s.id}')"`
+                    : "disabled"}
+                >
+                  ${s.cancelRequested && isManager ? "Xử lý hủy" : 
+                    s.approvalStatus === "pending" || s.approvalStatus === "swapPending" 
+                    ? (isManager ? "Xử lý" : "Hủy") 
+                    : getScheduleStatusText(s)}
+                </button>
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    ` : "<p>Chưa có yêu cầu lịch làm việc.</p>"}
+  `;
+}
+// Sửa hàm showScheduleActionModal
+function showScheduleActionModal(scheduleId, action) {
+  const modal = document.getElementById("action-modal");
+  const content = document.getElementById("action-modal-content");
+  if (!modal || !content) return;
+
+  const schedule = globalScheduleData.find(s => s.id === scheduleId);
+  if (!schedule) {
+    showToastNotification("Yêu cầu không tồn tại!");
+    return;
+  }
+
+  let contentHTML = `<h3>Xử lý yêu cầu lịch</h3>`;
+  if (action === "process") {
+    contentHTML += `
+      <p>Yêu cầu ${getScheduleTypeText(schedule)} ngày ${new Date(schedule.date).toLocaleDateString('vi-VN')} của ${schedule.employeeName}</p>
+      <div class="button-group">
+        <button class="primary-btn" onclick="approveSchedule('${scheduleId}')">Phê duyệt</button>
+        <button class="secondary-btn" onclick="rejectSchedule('${scheduleId}')">Từ chối</button>
+        <button class="secondary-btn" onclick="closeModal('action-modal')">Hủy</button>
+      </div>
+    `;
+  } else if (action === "cancel") {
+    contentHTML += `
+      <p>Yêu cầu hủy ${getScheduleTypeText(schedule)} ngày ${new Date(schedule.date).toLocaleDateString('vi-VN')} của ${schedule.employeeName}</p>
+      <div class="button-group">
+        <button class="primary-btn" onclick="approveCancelSchedule('${scheduleId}')">Đồng ý</button>
+        <button class="secondary-btn" onclick="rejectCancelSchedule('${scheduleId}')">Không đồng ý</button>
+        <button class="secondary-btn" onclick="closeModal('action-modal')">Hủy</button>
+      </div>
+    `;
+  }
+
+  content.innerHTML = contentHTML;
+  modal.style.display = "block";
+}
+// Sửa hàm renderAdvanceHistory
 function renderAdvanceHistory() {
-  const container = document.getElementById('advance-history-container');
+  const container = document.getElementById("advance-history-container");
   if (!container) return;
 
   const isManager = isCurrentUserManager();
   const requests = isManager
-    ? globalAdvanceRequests.filter(a => a.status === 'pending')
+    ? globalAdvanceRequests.filter(a => a.status === "pending")
     : globalAdvanceRequests.filter(a => a.employeeId === currentEmployeeId);
-
-  console.log('Advance requests for render:', requests); // Debug dữ liệu
-  console.log('Is manager:', isManager); // Debug vai trò
 
   container.innerHTML = `
     <h3>Lịch sử tạm ứng</h3>
     ${requests.length > 0 ? `
-      <table class="advance-table">
+      <table class="advance-table table-style">
         <thead>
           <tr>
             <th>Ngày</th>
+            <th>Nhân viên</th>
             <th>Số tiền</th>
-            <th>Lý do</th>
-            <th>Trạng thái</th>
-            ${isManager ? '<th>Hành động</th>' : ''}
+            <th>Ghi chú</th>
+            <th>Trạng thái/Hành động</th>
           </tr>
         </thead>
         <tbody>
           ${requests.map(a => `
             <tr>
-              <td>${new Date(a.date).toLocaleDateString('vi-VN')}</td>
-              <td>${!isNaN(Number(a.amount)) ? Number(a.amount).toLocaleString('vi-VN') : 'Không xác định'} VND</td>
-              <td>${a.reason || 'Không có'}</td>
-              <td class="${getAdvanceStatusClass(a)}">${getAdvanceStatusText(a)}</td>
-              ${isManager && a.status === 'pending' ? `
-                <td>
-                  <div class="button-group">
-                    <button class="small-btn" onclick="approveAdvance('${a.id}')">✔️</button>
-                    <button class="small-btn" onclick="rejectAdvance('${a.id}')">❌ </button>
-                  </div>
-                </td>
-              ` : ''}
+              <td>${new Date(a.date).toLocaleDateString("vi-VN")}</td>
+              <td>${a.employeeName || "Không xác định"}</td>
+              <td>${!isNaN(Number(a.amount)) ? Number(a.amount).toLocaleString("vi-VN") : "Không xác định"} VND</td>
+              <td>${a.reason || "Không có"}</td>
+              <td>
+                ${isManager && a.status === "pending" ? `
+                  <button class="status-btn status-pending" onclick="showAdvanceActionModal('${a.id}', 'process')">Xử lý</button>
+                ` : `
+                  <button class="status-btn status-${a.status === 'denied' ? 'rejected' : a.status}">${getAdvanceStatusText(a)}</button>
+                `}
+              </td>
             </tr>
-          `).join('')}
+          `).join("")}
         </tbody>
       </table>
-    ` : '<p>Chưa có yêu cầu tạm ứng nào</p>'}
+    ` : "<p>Chưa có yêu cầu tạm ứng nào</p>"}
   `;
 }
 
+// Thêm hàm showAdvanceActionModal
+function showAdvanceActionModal(advanceId, action) {
+  const modal = document.getElementById("action-modal");
+  const content = document.getElementById("action-modal-content");
+  if (!modal || !content) return;
+
+  const advance = globalAdvanceRequests.find(a => a.id === advanceId);
+  if (!advance) {
+    showToastNotification("Yêu cầu không tồn tại!");
+    return;
+  }
+
+  content.innerHTML = `
+    <h3>Xử lý yêu cầu tạm ứng</h3>
+    <p>Yêu cầu tạm ứng ${advance.amount.toLocaleString("vi-VN")} VND ngày ${advance.date} của ${advance.employeeName}</p>
+    <div class="button-group">
+      <button class="primary-btn" onclick="approveAdvance('${advanceId}')">Phê duyệt</button>
+      <button class="secondary-btn" onclick="rejectAdvance('${advanceId}')">Từ chối</button>
+      <button class="secondary-btn" onclick="closeModal('action-modal')">Hủy</button>
+    </div>
+  `;
+  modal.style.display = "block";
+}
+
+// Hàm hỗ trợ để lấy lớp CSS cho trạng thái lịch
+function getScheduleStatusClass(schedule) {
+  switch (schedule.approvalStatus) {
+    case "pending":
+    case "swapPending":
+      return "status-pending";
+    case "approved":
+      return "status-approved";
+    case "rejected":
+      return "status-rejected";
+    default:
+      return "";
+  }
+}
 function approveAdvance(advanceId) {
   if (!isCurrentUserManager()) {
     showToastNotification('Bạn không có quyền phê duyệt!');
@@ -1066,37 +1181,36 @@ function isCurrentUserManager() {
 function setupRealtimeListeners() {
   const isManager = isCurrentUserManager();
   const scheduleQuery = isManager
-    ? db.ref('schedules')
-    : db.ref('schedules').orderByChild('employeeId').equalTo(currentEmployeeId);
+    ? db.ref("schedules")
+    : db.ref("schedules").orderByChild("employeeId").equalTo(currentEmployeeId);
 
-  scheduleQuery.on('value', (snapshot) => {
-    globalScheduleData = snapshot.val() ? Object.keys(snapshot.val()).map(key => ({
-      id: key,
-      ...snapshot.val()[key]
-    })) : [];
-    console.log('Updated globalScheduleData:', globalScheduleData); // Debug
-    if (document.getElementById('calendar')) renderCalendar();
-    if (document.getElementById('schedule-status-list')) renderScheduleStatusList();
-    if (document.getElementById('off-and-overtime')) renderOffAndOvertime();
-    if (document.getElementById('salary-summary')) renderSalarySummary();
+  scheduleQuery.on("value", (snapshot) => {
+    globalScheduleData = snapshot.val()
+      ? Object.keys(snapshot.val()).map(key => ({ id: key, ...snapshot.val()[key] }))
+      : [];
+    console.log("Updated globalScheduleData:", globalScheduleData); // Debug
+    if (document.getElementById("calendar")) renderCalendar();
+    if (document.getElementById("schedule-status-list")) renderScheduleStatusList();
+    if (document.getElementById("off-and-overtime")) renderOffAndOvertime();
+    if (document.getElementById("salary-summary")) renderSalarySummary();
+    if (document.getElementById("schedule-requests-container")) renderScheduleRequests(); // Thêm dòng này
   });
 
   const advanceQuery = isManager
-    ? db.ref('advances')
-    : db.ref('advances').orderByChild('employeeId').equalTo(currentEmployeeId);
+    ? db.ref("advances")
+    : db.ref("advances").orderByChild("employeeId").equalTo(currentEmployeeId);
 
-  advanceQuery.on('value', (snapshot) => {
+  advanceQuery.on("value", (snapshot) => {
     globalAdvanceRequests = snapshot.val() ? Object.values(snapshot.val()) : [];
-    console.log('Updated globalAdvanceRequests:', globalAdvanceRequests); // Debug
-    if (document.getElementById('advance-history-container')) renderAdvanceHistory();
+    console.log("Updated globalAdvanceRequests:", globalAdvanceRequests); // Debug
+    if (document.getElementById("advance-history-container")) renderAdvanceHistory();
   });
 
-  db.ref(`notifications/${currentEmployeeId}`).on('value', (snapshot) => {
+  db.ref(`notifications/${currentEmployeeId}`).on("value", (snapshot) => {
     globalNotifications = snapshot.val() ? Object.values(snapshot.val()) : [];
-    if (document.getElementById('notifications-container')) renderNotifications();
+    if (document.getElementById("notifications-container")) renderNotifications();
   });
 }
-
 // ================ CALENDAR UI ================
 
 function changeMonth(offset) {

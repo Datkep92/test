@@ -31,20 +31,18 @@ function initApp() {
   auth.onAuthStateChanged(user => {
     if (user) {
       currentEmployeeId = user.uid;
+      console.log("initApp - currentEmployeeId:", currentEmployeeId); // Debug
       loadFirebaseData(() => {
         loadEmployeeInfo();
-        // Load lại tất cả tab khi vào trang
         renderReportProductList();
         renderRevenueExpenseData();
-        //renderRevenueExpenseSummary();
         renderInventory();
         renderAdvanceHistory();
         renderScheduleStatusList();
         renderCalendar();
-        //renderAllSchedule();
-        renderNotifications(); // Thay loadNotifications bằng renderNotifications
+        renderScheduleRequests();
+        renderNotifications();
         renderFilteredReports(getReportData());
-        // Mở tab mặc định
         openTabBubble('revenue-expense');
       });
       document.getElementById("login-page").style.display = "none";
@@ -59,22 +57,21 @@ function initApp() {
       globalScheduleData = [];
       globalNotifications = [];
       globalGeneralNotifications = [];
-      // Làm trống các container khi đăng xuất
       renderReportProductList();
       renderRevenueExpenseData();
-      renderRevenueExpenseSummary();
       renderInventory();
       renderAdvanceHistory();
       renderScheduleStatusList();
       renderCalendar();
-      //renderAllSchedule();
-      renderNotifications(); // Thay loadNotifications bằng renderNotifications
+      renderScheduleRequests();
+      renderNotifications();
       renderFilteredReports([]);
       document.getElementById("login-page").style.display = "flex";
       document.getElementById("main-page").style.display = "none";
     }
   });
 }
+
 let isEmployeeDataLoaded = false;
 
 function loadFirebaseData(callback) {

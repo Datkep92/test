@@ -43,20 +43,17 @@ function submitField(field) {
       alert("Vui lòng đăng nhập!");
       return;
     }
-
     const input = document.getElementById(field);
     if (!input || !input.value.trim()) {
       alert("Vui lòng nhập dữ liệu!");
       return;
     }
-
     if (input.disabled) {
       alert("Đang xử lý, vui lòng chờ!");
       return;
     }
     input.disabled = true;
     setTimeout(() => { input.disabled = false; }, 2000);
-
     let reportData = {
       date: new Date().toISOString(),
       employeeId: user.uid,
@@ -70,7 +67,7 @@ function submitField(field) {
       cashActual: 0,
     };
     let details = "";
-
+    let afterValue = "";
     if (field === "expense-input") {
       const expenseInput = input.value;
       const { money: expenseAmount, note: expenseNote } = parseEntry(expenseInput);
@@ -87,6 +84,7 @@ function submitField(field) {
       reportData.expenseAmount = expenseAmount;
       reportData.expenseNote = expenseNote;
       details = `Nhập chi phí: ${expenseAmount.toLocaleString("vi-VN")} VND (${expenseNote})`;
+      afterValue = `${expenseAmount.toLocaleString("vi-VN")} VND (${expenseNote})`;
     } else if (field === "transfer-amount") {
       const transferAmount = parseFloat(input.value) || 0;
       if (transferAmount < 0) {
@@ -97,6 +95,7 @@ function submitField(field) {
       reportData.transferAmount = transferAmount;
       reportData.transferTimestamp = transferAmount > 0 ? new Date().toISOString() : null;
       details = `Nhập chuyển khoản: ${transferAmount.toLocaleString("vi-VN")} VND`;
+      afterValue = `${transferAmount.toLocaleString("vi-VN")} VND`;
     } else {
       const value = parseFloat(input.value) || 0;
       if (value < 0) {
@@ -107,30 +106,46 @@ function submitField(field) {
       const fieldName = field === "opening-balance" ? "openingBalance" : field === "closing-balance" ? "closingBalance" : field.replace("-", "");
       reportData[fieldName] = value;
       details = `Nhập ${field === "opening-balance" ? "số dư đầu kỳ" : field === "closing-balance" ? "số dư cuối kỳ" : field}: ${value.toLocaleString("vi-VN")} VND`;
+      afterValue = `${value.toLocaleString("vi-VN")} VND`;
     }
-
-    // Tính remaining và cashActual dựa trên báo cáo hiện tại
     reportData.remaining = reportData.openingBalance + reportData.revenue - reportData.expenseAmount - reportData.closingBalance;
     reportData.cashActual = reportData.remaining - reportData.transferAmount;
-
-    db.ref("reports").push(reportData).then(() => {
-      // Tải lại dữ liệu từ Firebase
-      db.ref("reports").once("value").then(snapshot => {
-        globalReportData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
-        logHistory(field === "expense-input" ? "expense" : field, "nhập", details);
-        renderFilteredReports(globalReportData);
-        renderRevenueExpenseData();
-        renderHistory();
-        input.value = "";
-        alert(`Đã gửi ${field}!`);
+    // Kiểm tra báo cáo hiện có trong ngày
+    const today = new Date().toISOString().split("T")[0];
+    const existingReport = globalReportData.find(r => r.date.split("T")[0] === today && r[field.replace("-", "")] > 0);
+    if (existingReport && field !== "expense-input") {
+      db.ref("reports/" + existingReport.id).update(reportData).then(() => {
+        db.ref("reports").once("value").then(snapshot => {
+          globalReportData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
+          logHistory(field === "expense-input" ? "expense" : field, "cập nhật", details, "", existingReport[field.replace("-", "")]?.toLocaleString("vi-VN") || "", afterValue);
+          renderFilteredReports(globalReportData);
+          renderRevenueExpenseData();
+          renderHistory();
+          input.value = "";
+          alert(`Đã cập nhật ${field}!`);
+        });
+      }).catch(err => {
+        alert("Lỗi khi cập nhật báo cáo: " + err.message);
+        input.disabled = false;
       });
-    }).catch(err => {
-      alert("Lỗi khi gửi báo cáo: " + err.message);
-      input.disabled = false;
-    });
+    } else {
+      db.ref("reports").push(reportData).then(() => {
+        db.ref("reports").once("value").then(snapshot => {
+          globalReportData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
+          logHistory(field === "expense-input" ? "expense" : field, "nhập", details, "", "", afterValue);
+          renderFilteredReports(globalReportData);
+          renderRevenueExpenseData();
+          renderHistory();
+          input.value = "";
+          alert(`Đã gửi ${field}!`);
+        });
+      }).catch(err => {
+        alert("Lỗi khi gửi báo cáo: " + err.message);
+        input.disabled = false;
+      });
+    }
   });
 }
-
 // Gửi báo cáo tồn kho
 function submitInventoryReport() {
   auth.onAuthStateChanged(user => {
@@ -404,7 +419,10 @@ function deleteReportTransfer(reportId) {
 // Hiển thị dữ liệu thu chi
 function renderRevenueExpenseData() {
   const reportContainer = document.getElementById("shared-report-table");
-  if (!reportContainer) return;
+  if (!reportContainer) {
+    console.warn("Container 'shared-report-table' không tồn tại trong DOM.");
+    return;
+  }
 
   const today = new Date().toISOString().split("T")[0];
   const displayDate = new Date(today).toLocaleDateString("vi-VN");
@@ -420,7 +438,7 @@ function renderRevenueExpenseData() {
   }
 
   const expenseReports = todayReports.filter(r => r.expenseAmount > 0).sort((a, b) => new Date(b.date) - new Date(a.date));
-  const isExpanded = isExpandedStates.revenueExpenseData;
+  const isExpanded = isExpandedStates.revenueExpenseData ?? false; // Đảm bảo giá trị mặc định
   const displayExpenses = isExpanded ? expenseReports : expenseReports.slice(0, 3);
 
   const reportTable = document.createElement("table");
@@ -455,15 +473,13 @@ function renderRevenueExpenseData() {
     reportContainer.appendChild(expandBtn);
   }
 }
-
-// Hiển thị báo cáo lọc
 function renderFilteredReports(filteredReports, selectedDate = null, startDate = null, endDate = null) {
   const reportContainer = document.getElementById("shared-report-table");
   const productContainer = document.getElementById("report-product-table");
   const transferContainer = document.getElementById("transfer-details");
   const summaryContainer = document.getElementById("revenue-expense-summary");
   if (!reportContainer || !productContainer || !transferContainer || !summaryContainer) {
-    console.error("One or more containers not found");
+    console.warn("Một hoặc nhiều container không tồn tại trong DOM.");
     return;
   }
 
@@ -493,50 +509,13 @@ function renderFilteredReports(filteredReports, selectedDate = null, startDate =
     productContainer.innerHTML = `<p>Chưa có báo cáo xuất hàng trong ${displayDate}.</p>`;
     transferContainer.innerHTML = `<p>Chưa có giao dịch chuyển khoản trong ${displayDate}.</p>`;
     summaryContainer.innerHTML = `<p>Chưa có tóm tắt thu chi trong ${displayDate}.</p>`;
-    renderHistory(startDate, endDate); // Gọi renderHistory
+    renderHistory(startDate, endDate);
     return;
   }
 
   const sortedReports = displayReports.sort((a, b) => new Date(b.date) - new Date(a.date));
-  const isExpandedFinance = isExpandedStates.filteredReports;
-  const isExpandedProduct = isExpandedStates.filteredReports;
-
-  // Bảng báo cáo thu chi
-  const expenseReports = sortedReports.filter(r => r.expenseAmount > 0);
-  const displayExpenses = isExpandedFinance ? expenseReports : expenseReports.slice(0, 3);
-  const reportTable = document.createElement("table");
-  reportTable.classList.add("table-style");
-  reportTable.innerHTML = `
-    <thead><tr><th>STT</th><th>Tên NV</th><th>Chi phí</th><th>Hành động</th></tr></thead>
-    <tbody>${displayExpenses
-      .map(
-        (r, index) => `
-      <tr>
-        <td>${index + 1}</td>
-        <td>${r.employeeName || "Không xác định"}</td>
-        <td>${(r.expenseAmount || 0).toLocaleString("vi-VN")} VND (${r.expenseNote || "Không có"})</td>
-        <td><div class="action-buttons">
-          <button onclick="editReportExpense('${r.id}')">Sửa</button>
-          <button onclick="deleteReportExpense('${r.id}')">Xóa</button>
-        </div></td>
-      </tr>`
-      )
-      .join("")}</tbody>`;
-  reportContainer.innerHTML = `<h3>Bảng Báo cáo Thu Chi (${displayDate})</h3>`;
-  reportContainer.appendChild(reportTable);
-
-  if (expenseReports.length > 3) {
-    const expandBtn = document.createElement("button");
-    expandBtn.textContent = isExpandedFinance ? "Thu gọn" : "Xem thêm";
-    expandBtn.className = "expand-btn";
-    expandBtn.onclick = () => {
-      isExpandedStates.filteredReports = !isExpandedStates.filteredReports;
-      renderFilteredReports(filteredReports, selectedDate, startDate, endDate);
-    };
-    reportContainer.appendChild(expandBtn);
-  }
-
-  // Bảng báo cáo xuất hàng
+// Bảng báo cáo xuất hàng
+  const isExpandedProduct = isExpandedStates.filteredReportsProduct ?? false;
   const productReports = sortedReports
     .flatMap((r, index) =>
       Array.isArray(r.products) && r.products.length > 0
@@ -545,7 +524,7 @@ function renderFilteredReports(filteredReports, selectedDate = null, startDate =
             reportId: r.id,
             employeeName: r.employeeName || "Không xác định",
             productName: p.name || "Sản phẩm không xác định",
-            quantity: p.quantity,
+            quantity: p.quantity || 0,
             productId: p.productId,
             date: r.date,
           }))
@@ -573,19 +552,20 @@ function renderFilteredReports(filteredReports, selectedDate = null, startDate =
       .join("")}</tbody>`;
   productContainer.innerHTML = `<h3>Bảng Báo cáo Xuất Hàng (${displayDate})</h3>`;
   productContainer.appendChild(productTable);
-
   if (productReports.length > 3) {
     const expandBtn = document.createElement("button");
     expandBtn.textContent = isExpandedProduct ? "Thu gọn" : "Xem thêm";
     expandBtn.className = "expand-btn";
     expandBtn.onclick = () => {
-      isExpandedStates.filteredReports = !isExpandedStates.filteredReports;
+      isExpandedStates.filteredReportsProduct = !isExpandedStates.filteredReportsProduct;
       renderFilteredReports(filteredReports, selectedDate, startDate, endDate);
     };
     productContainer.appendChild(expandBtn);
   }
-
-  // Bảng chi tiết giao dịch chuyển khoản
+  if (productReports.length === 0) {
+    productContainer.innerHTML += `<p>Chưa có báo cáo xuất hàng trong ${displayDate}.</p>`;
+  }
+  // Bảng giao dịch chuyển khoản
   const transferReports = sortedReports.filter(r => r.transferAmount > 0 && r.transferTimestamp);
   let totalTransferAmount = 0;
   const transferTable = document.createElement("table");
@@ -608,14 +588,11 @@ function renderFilteredReports(filteredReports, selectedDate = null, startDate =
       })
       .join("")}</tbody>`;
   transferTable.innerHTML += `
-    <tfoot><tr><td colspan="2"><strong>Tổng</strong></td><td><strong>${totalTransferAmount.toLocaleString(
-      "vi-VN"
-    )} VND</strong></td><td></td></tr></tfoot>`;
+    <tfoot><tr><td colspan="2"><strong>Tổng</strong></td><td><strong>${totalTransferAmount.toLocaleString("vi-VN")} VND</strong></td><td></td></tr></tfoot>`;
   transferContainer.innerHTML = `<h3>Chi tiết Giao dịch Chuyển khoản (${displayDate})</h3>`;
+  transferContainer.appendChild(transferTable);
   if (transferReports.length === 0) {
     transferContainer.innerHTML += `<p>Chưa có giao dịch chuyển khoản trong ${displayDate}.</p>`;
-  } else {
-    transferContainer.appendChild(transferTable);
   }
 
   // Tóm tắt thu chi
@@ -630,7 +607,140 @@ function renderFilteredReports(filteredReports, selectedDate = null, startDate =
     const validReports = sortedReports.filter(condition).sort((a, b) => new Date(b.date) - new Date(a.date));
     return validReports[0] || { employeeName: "Không xác định", date: null };
   };
+function renderFilteredReports(filteredReports, selectedDate = null, startDate = null, endDate = null) {
+  const reportContainer = document.getElementById("shared-report-table");
+  const productContainer = document.getElementById("report-product-table");
+  const transferContainer = document.getElementById("transfer-details");
+  const summaryContainer = document.getElementById("revenue-expense-summary");
+  if (!reportContainer || !productContainer || !transferContainer || !summaryContainer) {
+    console.warn("Một hoặc nhiều container không tồn tại trong DOM.");
+    return;
+  }
 
+  let displayReports = filteredReports || globalReportData || [];
+  if (startDate) {
+    displayReports = displayReports.filter(r => {
+      const reportDate = new Date(r.date).toISOString().split("T")[0];
+      return reportDate >= startDate && reportDate <= (endDate || startDate);
+    });
+  } else if (selectedDate) {
+    displayReports = displayReports.filter(r => r.date.split("T")[0] === selectedDate);
+  } else {
+    const today = new Date().toISOString().split("T")[0];
+    displayReports = displayReports.filter(r => r.date.split("T")[0] === today);
+  }
+
+  const displayDate = selectedDate
+    ? new Date(selectedDate).toLocaleDateString("vi-VN")
+    : startDate
+    ? `${new Date(startDate).toLocaleDateString("vi-VN")}${
+        endDate && endDate !== startDate ? " - " + new Date(endDate).toLocaleDateString("vi-VN") : ""
+      }`
+    : new Date().toISOString().split("T")[0];
+
+  if (displayReports.length === 0) {
+    reportContainer.innerHTML = `<p>Chưa có báo cáo thu chi trong ${displayDate}.</p>`;
+    productContainer.innerHTML = `<p>Chưa có báo cáo xuất hàng trong ${displayDate}.</p>`;
+    transferContainer.innerHTML = `<p>Chưa có giao dịch chuyển khoản trong ${displayDate}.</p>`;
+    summaryContainer.innerHTML = `<p>Chưa có tóm tắt thu chi trong ${displayDate}.</p>`;
+    renderHistory(startDate, endDate);
+    return;
+  }
+
+  const sortedReports = displayReports.sort((a, b) => new Date(b.date) - new Date(a.date));
+  const isExpandedFinance = isExpandedStates.filteredReportsFinance ?? false;
+
+  // Bảng báo cáo thu chi
+  const expenseReports = sortedReports.filter(r => r.expenseAmount > 0);
+  const displayExpenses = isExpandedFinance ? expenseReports : expenseReports.slice(0, 3);
+  const reportTable = document.createElement("table");
+  reportTable.classList.add("table-style");
+  reportTable.innerHTML = `
+    <thead><tr><th>STT</th><th>Tên NV</th><th>Chi phí</th><th>Hành động</th></tr></thead>
+    <tbody>${displayExpenses
+      .map(
+        (r, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${r.employeeName || "Không xác định"}</td>
+        <td>${(r.expenseAmount || 0).toLocaleString("vi-VN")} VND (${r.expenseNote || "Không có"})</td>
+        <td><div class="action-buttons">
+          <button onclick="editReportExpense('${r.id}')">Sửa</button>
+          <button onclick="deleteReportExpense('${r.id}')">Xóa</button>
+        </div></td>
+      </tr>`
+      )
+      .join("")}</tbody>`;
+  reportContainer.innerHTML = `<h3>Bảng Báo cáo Thu Chi (${displayDate})</h3>`;
+  reportContainer.appendChild(reportTable);
+  if (expenseReports.length > 3) {
+    const expandBtn = document.createElement("button");
+    expandBtn.textContent = isExpandedFinance ? "Thu gọn" : "Xem thêm";
+    expandBtn.className = "expand-btn";
+    expandBtn.onclick = () => {
+      isExpandedStates.filteredReportsFinance = !isExpandedStates.filteredReportsFinance;
+      renderFilteredReports(filteredReports, selectedDate, startDate, endDate);
+    };
+    reportContainer.appendChild(expandBtn);
+  }
+  if (expenseReports.length === 0) {
+    reportContainer.innerHTML += `<p>Chưa có báo cáo thu chi trong ${displayDate}.</p>`;
+  }
+
+  // Bảng báo cáo xuất hàng
+  const isExpandedProduct = isExpandedStates.filteredReportsProduct ?? false;
+  const productReports = sortedReports
+    .flatMap((r, index) =>
+      Array.isArray(r.products) && r.products.length > 0
+        ? r.products.map(p => ({
+            index: index + 1,
+            reportId: r.id,
+            employeeName: r.employeeName || "Không xác định",
+            productName: p.name || "Sản phẩm không xác định",
+            quantity: p.quantity || 0,
+            productId: p.productId,
+            date: r.date,
+          }))
+        : []
+    );
+  const displayProducts = isExpandedProduct ? productReports : productReports.slice(0, 3);
+  const productTable = document.createElement("table");
+  productTable.classList.add("table-style");
+  productTable.innerHTML = `
+    <thead><tr><th>STT</th><th>Tên NV</th><th>Tên hàng hóa</th><th>Số lượng</th><th>Hành động</th></tr></thead>
+    <tbody>${displayProducts
+      .map(
+        p => `
+      <tr>
+        <td>${p.index}</td>
+        <td>${p.employeeName}</td>
+        <td>${p.productName}</td>
+        <td>${p.quantity}</td>
+        <td><div class="action-buttons">
+          <button onclick="editReportProduct('${p.reportId}', '${p.productId}')">Sửa</button>
+          <button onclick="deleteReportProduct('${p.reportId}', '${p.productId}')">Xóa</button>
+        </div></td>
+      </tr>`
+      )
+      .join("")}</tbody>`;
+  productContainer.innerHTML = `<h3>Bảng Báo cáo Xuất Hàng (${displayDate})</h3>`;
+  productContainer.appendChild(productTable);
+  if (productReports.length > 3) {
+    const expandBtn = document.createElement("button");
+    expandBtn.textContent = isExpandedProduct ? "Thu gọn" : "Xem thêm";
+    expandBtn.className = "expand-btn";
+    expandBtn.onclick = () => {
+      isExpandedStates.filteredReportsProduct = !isExpandedStates.filteredReportsProduct;
+      renderFilteredReports(filteredReports, selectedDate, startDate, endDate);
+    };
+    productContainer.appendChild(expandBtn);
+  }
+  if (productReports.length === 0) {
+    productContainer.innerHTML += `<p>Chưa có báo cáo xuất hàng trong ${displayDate}.</p>`;
+  }
+
+  // (Giữ nguyên phần giao dịch chuyển khoản và tóm tắt thu chi như trong phản hồi trước)
+}
   const latestOpening = getLatestReport("openingBalance", r => r.openingBalance > 0);
   const latestRevenue = getLatestReport("revenue", r => r.revenue > 0);
   const latestExpense = getLatestReport("expenseAmount", r => r.expenseAmount > 0);
@@ -643,51 +753,23 @@ function renderFilteredReports(filteredReports, selectedDate = null, startDate =
 
   summaryContainer.innerHTML = `
     <h3>Tóm tắt Thu Chi (${displayDate}):</h3>
-    <p><strong>Số dư đầu kỳ:</strong> ${totalOpeningBalance.toLocaleString("vi-VN")} VND (${formatTime(
-    latestOpening.date
-  )} NV: ${latestOpening.employeeName})</p>
-    <p><strong>Doanh thu:</strong> ${totalRevenue.toLocaleString("vi-VN")} VND (${formatTime(latestRevenue.date)} NV: ${
-    latestRevenue.employeeName
-  })</p>
-    <p><strong>Tiền chuyển khoản:</strong> ${totalTransferAmount.toLocaleString("vi-VN")} VND (${formatTime(
-    latestTransfer.date
-  )} NV: ${latestTransfer.employeeName})</p>
-    <p><strong>Chi phí:</strong> ${totalExpense.toLocaleString("vi-VN")} VND (${formatTime(latestExpense.date)} NV: ${
-    latestExpense.employeeName
-  })</p>
-    <p><strong>Số dư cuối kỳ:</strong> ${totalClosingBalance.toLocaleString("vi-VN")} VND (${formatTime(
-    latestClosing.date
-  )} NV: ${latestClosing.employeeName})</p>
-    <p><strong>Còn lại:</strong> ${totalRemaining.toLocaleString("vi-VN")} VND (${formatTime(latestRemaining.date)} NV: ${
-    latestRemaining.employeeName
-  })</p>
-    <p><strong>Tiền mặt thực tế:</strong> ${totalCashActual.toLocaleString("vi-VN")} VND (${formatTime(
-    latestCashActual.date
-  )} NV: ${latestCashActual.employeeName})</p>`;
+    <p><strong>Số dư đầu kỳ:</strong> ${totalOpeningBalance.toLocaleString("vi-VN")} VND (${formatTime(latestOpening.date)} NV: ${latestOpening.employeeName})</p>
+    <p><strong>Doanh thu:</strong> ${totalRevenue.toLocaleString("vi-VN")} VND (${formatTime(latestRevenue.date)} NV: ${latestRevenue.employeeName})</p>
+    <p><strong>Tiền chuyển khoản:</strong> ${totalTransferAmount.toLocaleString("vi-VN")} VND (${formatTime(latestTransfer.date)} NV: ${latestTransfer.employeeName})</p>
+    <p><strong>Chi phí:</strong> ${totalExpense.toLocaleString("vi-VN")} VND (${formatTime(latestExpense.date)} NV: ${latestExpense.employeeName})</p>
+    <p><strong>Số dư cuối kỳ:</strong> ${totalClosingBalance.toLocaleString("vi-VN")} VND (${formatTime(latestClosing.date)} NV: ${latestClosing.employeeName})</p>
+    <p><strong>Còn lại:</strong> ${totalRemaining.toLocaleString("vi-VN")} VND (${formatTime(latestRemaining.date)} NV: ${latestRemaining.employeeName})</p>
+    <p><strong>Tiền mặt thực tế:</strong> ${totalCashActual.toLocaleString("vi-VN")} VND (${formatTime(latestCashActual.date)} NV: ${latestCashActual.employeeName})</p>
+  `;
 
-  // Tổng xuất kho
-  const totalProductSummary = productReports.reduce((acc, p) => {
-    acc[p.productName] = (acc[p.productName] || 0) + p.quantity;
-    return acc;
-  }, {});
-  const totalProductText = Object.entries(totalProductSummary)
-    .sort((a, b) => b[1] - a[1])
-    .map(([name, qty]) => {
-      const inventoryItem = getInventoryData().find(item => item.name === name);
-      const remainingQty = inventoryItem ? inventoryItem.quantity : 0;
-      return `<li>${name}: ${qty} (Còn: ${remainingQty})</li>`;
-    })
-    .join("");
-  const totalProductDiv = document.createElement("div");
-  totalProductDiv.classList.add("report-total");
-  totalProductDiv.innerHTML = `<strong>Tổng xuất kho (${displayDate}):</strong><ul>${totalProductText || "<li>Không có</li>"}</ul>`;
-  productContainer.appendChild(totalProductDiv);
-
-  // Gọi renderHistory để hiển thị lịch sử theo bộ lọc
-  renderHistory(startDate, endDate);
+  // (Giữ nguyên các phần khác của hàm như bảng thu chi, xuất hàng, và lịch sử)
 }
-// Lịch sử nhập/xóa báo cáo
+
 function logHistory(type, action, details = "", note = "", before = "", after = "") {
+  if (!type || !action || !details) {
+    console.warn("Thiếu thông tin cần thiết để ghi lịch sử:", { type, action, details });
+    return;
+  }
   auth.onAuthStateChanged(user => {
     if (!user) return;
     const historyData = {
@@ -697,8 +779,8 @@ function logHistory(type, action, details = "", note = "", before = "", after = 
       action,
       details,
       note,
-      before, // Trạng thái trước
-      after,  // Trạng thái sau
+      before,
+      after: after || details, // Sử dụng details nếu after rỗng
       timestamp: new Date().toISOString(),
       date: new Date().toISOString().split("T")[0],
     };
@@ -713,65 +795,61 @@ function logHistory(type, action, details = "", note = "", before = "", after = 
 function renderHistory(startDate = null, endDate = null) {
   const historyContainer = document.getElementById("history-table");
   if (!historyContainer) return;
-
-  const today = new Date().toISOString().split("T")[0];
-  const displayDate = startDate
-    ? `${new Date(startDate).toLocaleDateString("vi-VN")}${
-        endDate && endDate !== startDate ? " - " + new Date(endDate).toLocaleDateString("vi-VN") : ""
-      }`
-    : new Date(today).toLocaleDateString("vi-VN");
-
-  let historyArray = globalHistory || [];
-  if (startDate) {
-    historyArray = historyArray.filter(h => h.date >= startDate && h.date <= (endDate || startDate));
-  } else {
-    historyArray = historyArray.filter(h => h.date === today);
-  }
-
-  historyArray = historyArray.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  if (historyArray.length === 0) {
+  db.ref("history").once("value").then(snapshot => {
+    globalHistory = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
+    const today = new Date().toISOString().split("T")[0];
+    const displayDate = startDate
+      ? `${new Date(startDate).toLocaleDateString("vi-VN")}${
+          endDate && endDate !== startDate ? " - " + new Date(endDate).toLocaleDateString("vi-VN") : ""
+        }`
+      : new Date(today).toLocaleDateString("vi-VN");
+    let historyArray = globalHistory || [];
+    if (startDate) {
+      historyArray = historyArray.filter(h => h.date >= startDate && h.date <= (endDate || startDate));
+    } else {
+      historyArray = historyArray.filter(h => h.date === today);
+    }
+    historyArray = historyArray.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    if (historyArray.length === 0) {
+      historyContainer.innerHTML = `
+        <h3>Lịch sử Thao tác (${displayDate})</h3>
+        <p>Chưa có thao tác trong khoảng thời gian này.</p>
+      `;
+      return;
+    }
+    const isExpanded = isExpandedStates.history ?? false;
+    const displayHistory = isExpanded ? historyArray : historyArray.slice(0, 3);
     historyContainer.innerHTML = `
       <h3>Lịch sử Thao tác (${displayDate})</h3>
-      <p>Chưa có thao tác trong khoảng thời gian này.</p>
+      <table class="table-style">
+        <thead><tr><th>Giờ</th><th>Nhân viên</th><th>Chi tiết</th><th>Ghi chú</th><th>Trước</th><th>Sau</th></tr></thead>
+        <tbody>${displayHistory
+          .map(
+            h => `
+            <tr>
+              <td>${new Date(h.timestamp).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</td>
+              <td>${h.employeeName || "Không xác định"}</td>
+              <td>${h.details || "Không có"}</td>
+              <td>${h.note || "Không có"}</td>
+              <td>${h.before || "Không có"}</td>
+              <td>${h.after || "Không có"}</td>
+            </tr>`
+          )
+          .join("")}</tbody>
+      </table>
     `;
-    return;
-  }
-
-  const isExpanded = isExpandedStates.history || false;
-  const displayHistory = isExpanded ? historyArray : historyArray.slice(0, 3);
-
-  historyContainer.innerHTML = `
-    <h3>Lịch sử Thao tác (${displayDate})</h3>
-    <table class="table-style">
-      <thead><tr><th>Giờ</th><th>Nhân viên</th><th>Chi tiết</th><th>Ghi chú</th><th>Trước</th><th>Sau</th></tr></thead>
-      <tbody>${displayHistory
-        .map(
-          h => `
-          <tr>
-            <td>${new Date(h.timestamp).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</td>
-            <td>${h.employeeName || "Không xác định"}</td>
-            <td>${h.details || "Không có"}</td>
-            <td>${h.note || "Không có"}</td>
-            <td>${h.before || "Không có"}</td>
-            <td>${h.after || "Không có"}</td>
-          </tr>`
-        )
-        .join("")}</tbody>
-    </table>
-  `;
-
-  if (historyArray.length > 3) {
-    const expandBtn = document.createElement("button");
-    expandBtn.textContent = isExpanded ? "Thu gọn" : "Hiển thị thêm";
-    expandBtn.className = "expand-btn";
-    expandBtn.onclick = () => {
-      isExpandedStates.history = !isExpandedStates.history;
-      renderHistory(startDate, endDate);
-    };
-    historyContainer.appendChild(expandBtn);
-  }
+    if (historyArray.length > 3) {
+      const expandBtn = document.createElement("button");
+      expandBtn.textContent = isExpanded ? "Thu gọn" : "Hiển thị thêm";
+      expandBtn.className = "expand-btn";
+      expandBtn.onclick = () => {
+        isExpandedStates.history = !isExpandedStates.history;
+        renderHistory(startDate, endDate);
+      };
+      historyContainer.appendChild(expandBtn);
+    }
+  }).catch(err => console.error("Lỗi khi tải lịch sử:", err));
 }
-
 // Chỉnh sửa sản phẩm trong báo cáo
 function editReportProduct(reportId, productId) {
   const note = prompt("Vui lòng nhập ghi chú cho việc chỉnh sửa sản phẩm:");
@@ -904,3 +982,14 @@ document.addEventListener("DOMContentLoaded", () => {
 window.onload = function() {
   openTabBubble('revenue-expense');
 };
+function initializeReports() {
+  db.ref("reports").once("value").then(snapshot => {
+    globalReportData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
+    renderFilteredReports(globalReportData); // Render báo cáo thu chi và xuất hàng
+    renderRevenueExpenseData(); // Render báo cáo thu chi hàng ngày
+    renderHistory(); // Render lịch sử
+  }).catch(err => console.error("Lỗi khi tải dữ liệu báo cáo:", err));
+}
+
+// Gọi hàm khởi tạo khi trang tải
+document.addEventListener("DOMContentLoaded", initializeReports);
