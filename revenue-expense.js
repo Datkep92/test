@@ -5,6 +5,8 @@
 // Gắn hàm vào window để common.js truy cập
 window.renderReportProductList = renderReportProductList;
 window.renderFilteredReports = renderFilteredReports;
+let totalGrabAmount = 0;
+
 
 // Hiển thị form nhập liệu với nút riêng cho mỗi ô
 function renderInputForm() {
@@ -52,8 +54,10 @@ function submitField(field) {
       alert("Đang xử lý, vui lòng chờ!");
       return;
     }
+
     input.disabled = true;
     setTimeout(() => { input.disabled = false; }, 2000);
+
     let reportData = {
       date: new Date().toISOString(),
       employeeId: user.uid,
@@ -63,21 +67,18 @@ function submitField(field) {
       expenseAmount: 0,
       closingBalance: 0,
       transferAmount: 0,
+      grabAmount: 0,
       remaining: 0,
       cashActual: 0,
     };
+
     let details = "";
     let afterValue = "";
+
     if (field === "expense-input") {
-      const expenseInput = input.value;
-      const { money: expenseAmount, note: expenseNote } = parseEntry(expenseInput);
-      if (expenseAmount < 0) {
-        alert("Chi phí không được âm!");
-        input.disabled = false;
-        return;
-      }
-      if (expenseAmount > 0 && !expenseNote) {
-        alert("Vui lòng nhập ghi chú cho chi phí!");
+      const { money: expenseAmount, note: expenseNote } = parseEntry(input.value);
+      if (expenseAmount < 0 || (expenseAmount > 0 && !expenseNote)) {
+        alert("Vui lòng nhập đúng chi phí và ghi chú!");
         input.disabled = false;
         return;
       }
@@ -86,16 +87,27 @@ function submitField(field) {
       details = `Nhập chi phí: ${expenseAmount.toLocaleString("vi-VN")} VND (${expenseNote})`;
       afterValue = `${expenseAmount.toLocaleString("vi-VN")} VND (${expenseNote})`;
     } else if (field === "transfer-amount") {
-      const transferAmount = parseFloat(input.value) || 0;
-      if (transferAmount < 0) {
-        alert("Số tiền chuyển khoản không được âm!");
+      const amount = parseFloat(input.value) || 0;
+      if (amount < 0) {
+        alert("Số tiền không được âm!");
         input.disabled = false;
         return;
       }
-      reportData.transferAmount = transferAmount;
-      reportData.transferTimestamp = transferAmount > 0 ? new Date().toISOString() : null;
-      details = `Nhập chuyển khoản: ${transferAmount.toLocaleString("vi-VN")} VND`;
-      afterValue = `${transferAmount.toLocaleString("vi-VN")} VND`;
+      reportData.transferAmount = amount;
+      reportData.transferTimestamp = amount > 0 ? new Date().toISOString() : null;
+      details = `Nhập chuyển khoản: ${amount.toLocaleString("vi-VN")} VND`;
+      afterValue = `${amount.toLocaleString("vi-VN")} VND`;
+    } else if (field === "grab-amount") {
+      const amount = parseFloat(input.value) || 0;
+      if (amount < 0) {
+        alert("Số tiền Grab không được âm!");
+        input.disabled = false;
+        return;
+      }
+      reportData.grabAmount = amount;
+      reportData.grabTimestamp = amount > 0 ? new Date().toISOString() : null;
+      details = `Nhập Grab: ${amount.toLocaleString("vi-VN")} VND`;
+      afterValue = `${amount.toLocaleString("vi-VN")} VND`;
     } else {
       const value = parseFloat(input.value) || 0;
       if (value < 0) {
@@ -103,46 +115,58 @@ function submitField(field) {
         input.disabled = false;
         return;
       }
-      const fieldName = field === "opening-balance" ? "openingBalance" : field === "closing-balance" ? "closingBalance" : field.replace("-", "");
+      const fieldName = field === "opening-balance" ? "openingBalance"
+                        : field === "closing-balance" ? "closingBalance"
+                        : field.replace("-", "");
       reportData[fieldName] = value;
-      details = `Nhập ${field === "opening-balance" ? "số dư đầu kỳ" : field === "closing-balance" ? "số dư cuối kỳ" : field}: ${value.toLocaleString("vi-VN")} VND`;
+      details = `Nhập ${field}: ${value.toLocaleString("vi-VN")} VND`;
       afterValue = `${value.toLocaleString("vi-VN")} VND`;
     }
+
+    // Tính lại: còn lại - ck - grab = tiền mặt thực tế
     reportData.remaining = reportData.openingBalance + reportData.revenue - reportData.expenseAmount - reportData.closingBalance;
-    reportData.cashActual = reportData.remaining - reportData.transferAmount;
-    // Kiểm tra báo cáo hiện có trong ngày
+    reportData.cashActual = reportData.remaining - reportData.transferAmount - reportData.grabAmount;
+
     const today = new Date().toISOString().split("T")[0];
     const existingReport = globalReportData.find(r => r.date.split("T")[0] === today && r[field.replace("-", "")] > 0);
-    if (existingReport && field !== "expense-input") {
-      db.ref("reports/" + existingReport.id).update(reportData).then(() => {
+
+    const saveData = (refId) => {
+      db.ref(refId).update(reportData).then(() => {
         db.ref("reports").once("value").then(snapshot => {
           globalReportData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
-          logHistory(field === "expense-input" ? "expense" : field, "cập nhật", details, "", existingReport[field.replace("-", "")]?.toLocaleString("vi-VN") || "", afterValue);
+          logHistory(
+            field,
+            existingReport ? "cập nhật" : "nhập",
+            details,
+            "",
+            existingReport?.[field.replace("-", "")]?.toLocaleString("vi-VN") || "",
+            afterValue
+          );
           renderFilteredReports(globalReportData);
           renderRevenueExpenseData();
           renderHistory();
           input.value = "";
-          alert(`Đã cập nhật ${field}!`);
+
+          // ✅ THAY alert BẰNG TOAST:
+          const label = field === "expense-input" ? "chi phí"
+                      : field === "transfer-amount" ? "chuyển khoản"
+                      : field === "grab-amount" ? "Grab"
+                      : field === "opening-balance" ? "số dư đầu kỳ"
+                      : field === "closing-balance" ? "số dư cuối kỳ"
+                      : field;
+          const action = existingReport ? "Cập nhật" : "Đã nhập";
+          showToastNotification(`${action} ${label}: ${afterValue}`);
         });
       }).catch(err => {
         alert("Lỗi khi cập nhật báo cáo: " + err.message);
         input.disabled = false;
       });
+    };
+
+    if (existingReport && field !== "expense-input") {
+      saveData("reports/" + existingReport.id);
     } else {
-      db.ref("reports").push(reportData).then(() => {
-        db.ref("reports").once("value").then(snapshot => {
-          globalReportData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
-          logHistory(field === "expense-input" ? "expense" : field, "nhập", details, "", "", afterValue);
-          renderFilteredReports(globalReportData);
-          renderRevenueExpenseData();
-          renderHistory();
-          input.value = "";
-          alert(`Đã gửi ${field}!`);
-        });
-      }).catch(err => {
-        alert("Lỗi khi gửi báo cáo: " + err.message);
-        input.disabled = false;
-      });
+      db.ref("reports").push(reportData).then(ref => saveData("reports/" + ref.key));
     }
   });
 }
@@ -473,140 +497,7 @@ function renderRevenueExpenseData() {
     reportContainer.appendChild(expandBtn);
   }
 }
-function renderFilteredReports(filteredReports, selectedDate = null, startDate = null, endDate = null) {
-  const reportContainer = document.getElementById("shared-report-table");
-  const productContainer = document.getElementById("report-product-table");
-  const transferContainer = document.getElementById("transfer-details");
-  const summaryContainer = document.getElementById("revenue-expense-summary");
-  if (!reportContainer || !productContainer || !transferContainer || !summaryContainer) {
-    console.warn("Một hoặc nhiều container không tồn tại trong DOM.");
-    return;
-  }
 
-  let displayReports = filteredReports;
-  if (startDate) {
-    displayReports = filteredReports.filter(r => {
-      const reportDate = new Date(r.date).toISOString().split("T")[0];
-      return reportDate >= startDate && reportDate <= (endDate || startDate);
-    });
-  } else if (selectedDate) {
-    displayReports = filteredReports.filter(r => r.date.split("T")[0] === selectedDate);
-  } else {
-    const today = new Date().toISOString().split("T")[0];
-    displayReports = filteredReports.filter(r => r.date.split("T")[0] === today);
-  }
-
-  const displayDate = selectedDate
-    ? new Date(selectedDate).toLocaleDateString("vi-VN")
-    : startDate
-    ? `${new Date(startDate).toLocaleDateString("vi-VN")}${
-        endDate && endDate !== startDate ? " - " + new Date(endDate).toLocaleDateString("vi-VN") : ""
-      }`
-    : new Date().toISOString().split("T")[0];
-
-  if (displayReports.length === 0) {
-    reportContainer.innerHTML = `<p>Chưa có báo cáo thu chi trong ${displayDate}.</p>`;
-    productContainer.innerHTML = `<p>Chưa có báo cáo xuất hàng trong ${displayDate}.</p>`;
-    transferContainer.innerHTML = `<p>Chưa có giao dịch chuyển khoản trong ${displayDate}.</p>`;
-    summaryContainer.innerHTML = `<p>Chưa có tóm tắt thu chi trong ${displayDate}.</p>`;
-    renderHistory(startDate, endDate);
-    return;
-  }
-
-  const sortedReports = displayReports.sort((a, b) => new Date(b.date) - new Date(a.date));
-// Bảng báo cáo xuất hàng
-  const isExpandedProduct = isExpandedStates.filteredReportsProduct ?? false;
-  const productReports = sortedReports
-    .flatMap((r, index) =>
-      Array.isArray(r.products) && r.products.length > 0
-        ? r.products.map(p => ({
-            index: index + 1,
-            reportId: r.id,
-            employeeName: r.employeeName || "Không xác định",
-            productName: p.name || "Sản phẩm không xác định",
-            quantity: p.quantity || 0,
-            productId: p.productId,
-            date: r.date,
-          }))
-        : []
-    );
-  const displayProducts = isExpandedProduct ? productReports : productReports.slice(0, 3);
-  const productTable = document.createElement("table");
-  productTable.classList.add("table-style");
-  productTable.innerHTML = `
-    <thead><tr><th>STT</th><th>Tên NV</th><th>Tên hàng hóa</th><th>Số lượng</th><th>Hành động</th></tr></thead>
-    <tbody>${displayProducts
-      .map(
-        p => `
-      <tr>
-        <td>${p.index}</td>
-        <td>${p.employeeName}</td>
-        <td>${p.productName}</td>
-        <td>${p.quantity}</td>
-        <td><div class="action-buttons">
-          <button onclick="editReportProduct('${p.reportId}', '${p.productId}')">Sửa</button>
-          <button onclick="deleteReportProduct('${p.reportId}', '${p.productId}')">Xóa</button>
-        </div></td>
-      </tr>`
-      )
-      .join("")}</tbody>`;
-  productContainer.innerHTML = `<h3>Bảng Báo cáo Xuất Hàng (${displayDate})</h3>`;
-  productContainer.appendChild(productTable);
-  if (productReports.length > 3) {
-    const expandBtn = document.createElement("button");
-    expandBtn.textContent = isExpandedProduct ? "Thu gọn" : "Xem thêm";
-    expandBtn.className = "expand-btn";
-    expandBtn.onclick = () => {
-      isExpandedStates.filteredReportsProduct = !isExpandedStates.filteredReportsProduct;
-      renderFilteredReports(filteredReports, selectedDate, startDate, endDate);
-    };
-    productContainer.appendChild(expandBtn);
-  }
-  if (productReports.length === 0) {
-    productContainer.innerHTML += `<p>Chưa có báo cáo xuất hàng trong ${displayDate}.</p>`;
-  }
-  // Bảng giao dịch chuyển khoản
-  const transferReports = sortedReports.filter(r => r.transferAmount > 0 && r.transferTimestamp);
-  let totalTransferAmount = 0;
-  const transferTable = document.createElement("table");
-  transferTable.classList.add("table-style");
-  transferTable.innerHTML = `
-    <thead><tr><th>STT</th><th>Giờ</th><th>Số tiền (VND)</th><th>Hành động</th></tr></thead>
-    <tbody>${transferReports
-      .map((r, index) => {
-        totalTransferAmount += r.transferAmount || 0;
-        return `
-      <tr>
-        <td>${index + 1}</td>
-        <td>${new Date(r.transferTimestamp).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</td>
-        <td>${(r.transferAmount || 0).toLocaleString("vi-VN")}</td>
-        <td><div class="action-buttons">
-          <button onclick="editReportTransfer('${r.id}')">Sửa</button>
-          <button onclick="deleteReportTransfer('${r.id}')">Xóa</button>
-        </div></td>
-      </tr>`;
-      })
-      .join("")}</tbody>`;
-  transferTable.innerHTML += `
-    <tfoot><tr><td colspan="2"><strong>Tổng</strong></td><td><strong>${totalTransferAmount.toLocaleString("vi-VN")} VND</strong></td><td></td></tr></tfoot>`;
-  transferContainer.innerHTML = `<h3>Chi tiết Giao dịch Chuyển khoản (${displayDate})</h3>`;
-  transferContainer.appendChild(transferTable);
-  if (transferReports.length === 0) {
-    transferContainer.innerHTML += `<p>Chưa có giao dịch chuyển khoản trong ${displayDate}.</p>`;
-  }
-
-  // Tóm tắt thu chi
-  const totalOpeningBalance = sortedReports.reduce((sum, r) => sum + (r.openingBalance || 0), 0);
-  const totalRevenue = sortedReports.reduce((sum, r) => sum + (r.revenue || 0), 0);
-  const totalExpense = sortedReports.reduce((sum, r) => sum + (r.expenseAmount || 0), 0);
-  const totalClosingBalance = sortedReports.reduce((sum, r) => sum + (r.closingBalance || 0), 0);
-  const totalRemaining = totalOpeningBalance + totalRevenue - totalExpense - totalClosingBalance;
-  const totalCashActual = totalRemaining - totalTransferAmount;
-
-  const getLatestReport = (field, condition) => {
-    const validReports = sortedReports.filter(condition).sort((a, b) => new Date(b.date) - new Date(a.date));
-    return validReports[0] || { employeeName: "Không xác định", date: null };
-  };
 function renderFilteredReports(filteredReports, selectedDate = null, startDate = null, endDate = null) {
   const reportContainer = document.getElementById("shared-report-table");
   const productContainer = document.getElementById("report-product-table");
@@ -650,7 +541,7 @@ function renderFilteredReports(filteredReports, selectedDate = null, startDate =
   const sortedReports = displayReports.sort((a, b) => new Date(b.date) - new Date(a.date));
   const isExpandedFinance = isExpandedStates.filteredReportsFinance ?? false;
 
-  // Bảng báo cáo thu chi
+  // ===== Bảng báo cáo thu chi =====
   const expenseReports = sortedReports.filter(r => r.expenseAmount > 0);
   const displayExpenses = isExpandedFinance ? expenseReports : expenseReports.slice(0, 3);
   const reportTable = document.createElement("table");
@@ -687,7 +578,7 @@ function renderFilteredReports(filteredReports, selectedDate = null, startDate =
     reportContainer.innerHTML += `<p>Chưa có báo cáo thu chi trong ${displayDate}.</p>`;
   }
 
-  // Bảng báo cáo xuất hàng
+  // ===== Bảng báo cáo xuất hàng =====
   const isExpandedProduct = isExpandedStates.filteredReportsProduct ?? false;
   const productReports = sortedReports
     .flatMap((r, index) =>
@@ -739,12 +630,62 @@ function renderFilteredReports(filteredReports, selectedDate = null, startDate =
     productContainer.innerHTML += `<p>Chưa có báo cáo xuất hàng trong ${displayDate}.</p>`;
   }
 
-  // (Giữ nguyên phần giao dịch chuyển khoản và tóm tắt thu chi như trong phản hồi trước)
-}
+  // ===== Bảng giao dịch chuyển khoản + Grab =====
+  const transferReports = sortedReports.filter(r => r.transferAmount > 0 || r.grabAmount > 0);
+  let totalTransferAmount = 0;
+  let totalGrabAmount = 0;
+  const transferTable = document.createElement("table");
+  transferTable.classList.add("table-style");
+  transferTable.innerHTML = `
+    <thead><tr><th>STT</th><th>Giờ</th><th>Grab</th><th>CK</th><th>Hành động</th></tr></thead>
+    <tbody>${transferReports
+      .map((r, index) => {
+        totalTransferAmount += r.transferAmount || 0;
+        totalGrabAmount += r.grabAmount || 0;
+        return `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${new Date(r.date).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</td>
+        <td>${(r.grabAmount || 0).toLocaleString("vi-VN")}</td>
+        <td>${(r.transferAmount || 0).toLocaleString("vi-VN")}</td>
+        <td><div class="action-buttons">
+          <button onclick="editReportTransfer('${r.id}')">Sửa</button>
+          <button onclick="deleteReportTransfer('${r.id}')">Xóa</button>
+        </div></td>
+      </tr>`;
+      }).join("")}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="2"><strong>Tổng</strong></td>
+        <td><strong>${totalGrabAmount.toLocaleString("vi-VN")} VND</strong></td>
+        <td><strong>${totalTransferAmount.toLocaleString("vi-VN")} VND</strong></td>
+        <td></td>
+      </tr>
+    </tfoot>`;
+  transferContainer.innerHTML = `<h3>Chi tiết Giao dịch Chuyển khoản (${displayDate})</h3>`;
+  transferContainer.appendChild(transferTable);
+  if (transferReports.length === 0) {
+    transferContainer.innerHTML += `<p>Chưa có giao dịch chuyển khoản trong ${displayDate}.</p>`;
+  }
+
+  // ===== Tóm tắt thu chi =====
+  const totalOpeningBalance = sortedReports.reduce((sum, r) => sum + (r.openingBalance || 0), 0);
+  const totalRevenue = sortedReports.reduce((sum, r) => sum + (r.revenue || 0), 0);
+  const totalExpense = sortedReports.reduce((sum, r) => sum + (r.expenseAmount || 0), 0);
+  const totalClosingBalance = sortedReports.reduce((sum, r) => sum + (r.closingBalance || 0), 0);
+  const totalRemaining = totalOpeningBalance + totalRevenue - totalExpense - totalClosingBalance;
+  const totalCashActual = totalRemaining - totalTransferAmount - totalGrabAmount;
+
+  const getLatestReport = (field, condition) => {
+    const validReports = sortedReports.filter(condition).sort((a, b) => new Date(b.date) - new Date(a.date));
+    return validReports[0] || { employeeName: "Không xác định", date: null };
+  };
   const latestOpening = getLatestReport("openingBalance", r => r.openingBalance > 0);
   const latestRevenue = getLatestReport("revenue", r => r.revenue > 0);
   const latestExpense = getLatestReport("expenseAmount", r => r.expenseAmount > 0);
   const latestTransfer = getLatestReport("transferAmount", r => r.transferAmount > 0);
+  const latestGrab = getLatestReport("grabAmount", r => r.grabAmount > 0);
   const latestClosing = getLatestReport("closingBalance", r => r.closingBalance > 0);
   const latestRemaining = getLatestReport("remaining", r => r.remaining !== 0);
   const latestCashActual = getLatestReport("cashActual", r => r.cashActual !== 0);
@@ -755,14 +696,13 @@ function renderFilteredReports(filteredReports, selectedDate = null, startDate =
     <h3>Tóm tắt Thu Chi (${displayDate}):</h3>
     <p><strong>Số dư đầu kỳ:</strong> ${totalOpeningBalance.toLocaleString("vi-VN")} VND (${formatTime(latestOpening.date)} NV: ${latestOpening.employeeName})</p>
     <p><strong>Doanh thu:</strong> ${totalRevenue.toLocaleString("vi-VN")} VND (${formatTime(latestRevenue.date)} NV: ${latestRevenue.employeeName})</p>
-    <p><strong>Tiền chuyển khoản:</strong> ${totalTransferAmount.toLocaleString("vi-VN")} VND (${formatTime(latestTransfer.date)} NV: ${latestTransfer.employeeName})</p>
     <p><strong>Chi phí:</strong> ${totalExpense.toLocaleString("vi-VN")} VND (${formatTime(latestExpense.date)} NV: ${latestExpense.employeeName})</p>
+    <p><strong>Tiền chuyển khoản:</strong> ${totalTransferAmount.toLocaleString("vi-VN")} VND (${formatTime(latestTransfer.date)} NV: ${latestTransfer.employeeName})</p>
+    <p><strong>Tiền Grab:</strong> ${totalGrabAmount.toLocaleString("vi-VN")} VND (${formatTime(latestGrab.date)} NV: ${latestGrab.employeeName})</p>
     <p><strong>Số dư cuối kỳ:</strong> ${totalClosingBalance.toLocaleString("vi-VN")} VND (${formatTime(latestClosing.date)} NV: ${latestClosing.employeeName})</p>
     <p><strong>Còn lại:</strong> ${totalRemaining.toLocaleString("vi-VN")} VND (${formatTime(latestRemaining.date)} NV: ${latestRemaining.employeeName})</p>
     <p><strong>Tiền mặt thực tế:</strong> ${totalCashActual.toLocaleString("vi-VN")} VND (${formatTime(latestCashActual.date)} NV: ${latestCashActual.employeeName})</p>
   `;
-
-  // (Giữ nguyên các phần khác của hàm như bảng thu chi, xuất hàng, và lịch sử)
 }
 
 function logHistory(type, action, details = "", note = "", before = "", after = "") {
