@@ -14,15 +14,15 @@
 <body>
   <!-- Đăng nhập -->
   <div id="login-page" class="center-screen">
-  <div class="login-container">
-    <h2>Đăng Nhập <br>Milano 259 Coffee</h2>
-    <div class="input-container">
-      <input type="email" id="email" placeholder="Email" autocomplete="username" />
-      <input type="password" id="password" placeholder="Mật khẩu" autocomplete="current-password" />
-      <button onclick="login()" id="login-btn">Đăng Nhập</button>
+    <div class="login-container">
+      <h2>Đăng Nhập <br>Milano 259 Coffee</h2>
+      <div class="input-container">
+        <input type="email" id="email" placeholder="Email" autocomplete="username" />
+        <input type="password" id="password" placeholder="Mật khẩu" autocomplete="current-password" />
+        <button onclick="login()" id="login-btn">Đăng Nhập</button>
+      </div>
     </div>
   </div>
-</div>
 
   <!-- Giao diện chính -->
   <div id="main-page" style="display: none;">
@@ -52,10 +52,10 @@
           <input type="number" id="transfer-amount" placeholder="Tiền chuyển khoản (VND)" min="0" />
           <button class="primary-btn small" onclick="submitField('transfer-amount')">Gửi</button>
         </div>
-<div class="input-group">
-  <input type="number" id="grab-amount" placeholder="Tiền Grab (VND)" min="0" />
-  <button class="primary-btn small" onclick="submitField('grab-amount')">Gửi</button>
-</div>
+        <div class="input-group">
+          <input type="number" id="grab-amount" placeholder="Tiền Grab (VND)" min="0" />
+          <button class="primary-btn small" onclick="submitField('grab-amount')">Gửi</button>
+        </div>
         <div class="input-group">
           <input type="number" id="closing-balance" placeholder="Số dư cuối kỳ (VND)" min="0" />
           <button class="primary-btn small" onclick="submitField('closing-balance')">Gửi</button>
@@ -136,108 +136,78 @@
       </div>
     </section>
 
+    <!-- Tab: Cá nhân -->
     <section id="profile" class="tabcontent">
-  <h2>Thông tin cá nhân</h2>
-  
-  <!-- Lịch làm việc -->
-  <div class="card">
-    <h3>Lịch làm việc</h3>
-    <div id="calendar"></div>
-  </div>
-  <!-- Thông tin cá nhân -->
-  <div class="card">
-    <h3>Thông tin cá nhân</h3>
-    <div>
-      <label>Họ và tên:</label>
-      <input id="name-input" type="text" placeholder="Nhập tên">
+      <h2>Thông tin cá nhân</h2>
+
+      <div class="card">
+        <h3>Lịch làm việc</h3>
+        <div id="calendar"></div>
+      </div>
+
+      <div class="card">
+        <h3>Thông tin cá nhân</h3>
+        <input id="name-input" type="text" placeholder="Nhập tên" />
+        <input id="phone-input" type="text" placeholder="Nhập số điện thoại" />
+        <input id="address-input" type="text" placeholder="Nhập địa chỉ" />
+        <button onclick="updateUserProfile()">Cập nhật</button>
+      </div>
+
+      <div class="card">
+        <h3>Yêu cầu tạm ứng</h3>
+        <input type="number" id="advance-amount" placeholder="Số tiền (VND)" />
+        <input type="text" id="advance-reason" placeholder="Lý do" />
+        <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu</button>
+      </div>
+
+      <div class="card">
+        <h3>Tính lương tạm tính</h3>
+        <input type="number" id="wage-per-hour" placeholder="Tiền/giờ (VND)" />
+        <input type="number" id="hours-per-day" placeholder="Giờ/ngày" />
+        <button onclick="calculateFutureSalary()">Tính</button>
+        <div id="future-salary-result"></div>
+      </div>
+
+      <div class="card">
+        <h3>Ngày off và tăng ca</h3>
+        <div id="off-and-overtime"></div>
+      </div>
+
+      <div class="card">
+        <h3>Lịch sử tạm ứng</h3>
+        <div id="advance-history-container"></div>
+      </div>
+
+      <div class="card">
+        <h3>Thông báo</h3>
+        <div id="notifications-container"></div>
+      </div>
+    </section>
+
+    <!-- Modal và Toast -->
+    <div id="action-modal" class="modal"><div id="action-modal-content" class="modal-content"></div></div>
+    <div id="day-details-modal" class="modal"><div id="day-details-content" class="modal-content"></div></div>
+    <div id="toast-container"></div>
+
+    <!-- Floating Menu -->
+    <div class="floating-menu">
+      <button id="main-float-btn" onclick="toggleMenu()">☰</button>
+      <div id="float-options" class="float-options">
+        <button onclick="openTabBubble('revenue-expense')">Thu Chi</button>
+        <button onclick="openTabBubble('inventory')">Kho</button>
+        <button onclick="openTabBubble('profile')">Cá nhân</button>
+      </div>
     </div>
-    <div>
-      <label>Số điện thoại:</label>
-      <input id="phone-input" type="text" placeholder="Nhập số điện thoại">
-    </div>
-    <div>
-      <label>Địa chỉ:</label>
-      <input id="address-input" type="text" placeholder="Nhập địa chỉ">
-    </div>
-    <button onclick="updateUserProfile()">Cập nhật</button>
   </div>
 
-  <!-- Yêu cầu tạm ứng -->
-  <div class="card">
-    <h3>Yêu cầu tạm ứng</h3>
-    <div class="input-group">
-      <label for="advance-amount">Số tiền (VND):</label>
-      <input type="number" id="advance-amount" min="0" />
-    </div>
-    <div class="input-group">
-      <label for="advance-reason">Lý do:</label>
-      <input type="text" id="advance-reason" />
-    </div>
-    <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu</button>
-  </div>
-
-  <!-- Thống kê -->
-  <div class="card">
-    <h3>Tính lương tạm tính</h3>
-    <div class="input-group">
-      <input type="number" id="wage-per-hour" placeholder="Tiền/giờ (VND)" />
-      <input type="number" id="hours-per-day" placeholder="Giờ/ngày" />
-      <button onclick="calculateFutureSalary()">Tính</button>
-    </div>
-    <div id="future-salary-result"></div>
-  </div>
-
-  <div class="card">
-    <h3>Ngày off và tăng ca</h3>
-    <div id="off-and-overtime"></div>
-  </div>
-
-  <section id="schedule-section">
-    <div id="schedule-requests-container">
-      <h3>Yêu Cầu Lịch Làm Việc</h3>
-      <table id="schedule-requests-table" class="table-style"></table>
-    </div>
-  </section>
-
-  <div class="card">
-    <h3>Lịch sử tạm ứng</h3>
-    <div id="advance-history-container"></div>
-  </div>
-
-  <!-- Thông báo -->
-  <div class="card">
-    <h3>Thông báo</h3>
-    <div id="notifications-container"></div>
-  </div>
-</section>
-
-<!-- Modal hành động -->
-<div id="action-modal" class="modal" style="display:none;">
-  <div class="modal-content" id="action-modal-content">
-    <span class="close" onclick="closeModal('action-modal')">×</span>
-    <!-- Nội dung popup lịch sẽ được chèn tại đây bởi JS -->
-  </div>
-<div id="toast-container"></div>
-</div>
-<div id="day-details-modal" class="modal" style="display: none;">
-  <div id="day-details-content" class="modal-content"></div>
-</div>
-  <!-- Floating menu -->
-  <div class="floating-menu">
-    <button id="main-float-btn" onclick="toggleMenu()">☰</button>
-    <div id="float-options" class="float-options">
-      <button onclick="openTabBubble('revenue-expense')">Thu Chi</button>
-      <button onclick="openTabBubble('inventory')">Kho</button>
-      <button onclick="openTabBubble('profile')">Cá nhân</button>
-    </div>
-  <!-- Script -->
+  <!-- Scripts -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
       authDomain: "quanly-d7e54.firebaseapp.com",
       databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com",
       projectId: "quanly-d7e54",
-      storageBucket: "quanly-d7e54.firebasestorage.app",
+      storageBucket: "quanly-d7e54.appspot.com",
       messagingSenderId: "482686011267",
       appId: "1:482686011267:web:f2fe9d400fe618487a98b6",
     };
@@ -246,6 +216,7 @@
     } catch (err) {
       console.error("Firebase init failed:", err);
     }
+
     document.addEventListener("DOMContentLoaded", () => {
       flatpickr("#filter-range", {
         mode: "range",
