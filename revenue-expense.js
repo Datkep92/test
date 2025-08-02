@@ -38,20 +38,21 @@ function renderInputForm() {
 
 // Gửi dữ liệu từng ô nhập liệu
 
-
 function submitField(field) {
   auth.onAuthStateChanged(user => {
     if (!user) {
-      alert("Vui lòng đăng nhập!");
+      showToastNotification("Vui lòng đăng nhập!");
       return;
     }
+
     const input = document.getElementById(field);
     if (!input || !input.value.trim()) {
-      alert("Vui lòng nhập dữ liệu!");
+      showToastNotification("Vui lòng nhập dữ liệu!");
       return;
     }
+
     if (input.disabled) {
-      alert("Đang xử lý, vui lòng chờ!");
+      showToastNotification("Đang xử lý, vui lòng chờ!");
       return;
     }
 
@@ -78,7 +79,7 @@ function submitField(field) {
     if (field === "expense-input") {
       const { money: expenseAmount, note: expenseNote } = parseEntry(input.value);
       if (expenseAmount < 0 || (expenseAmount > 0 && !expenseNote)) {
-        alert("Vui lòng nhập đúng chi phí và ghi chú!");
+        showToastNotification("Vui lòng nhập đúng chi phí và ghi chú!");
         input.disabled = false;
         return;
       }
@@ -89,41 +90,44 @@ function submitField(field) {
     } else if (field === "transfer-amount") {
       const amount = parseFloat(input.value) || 0;
       if (amount < 0) {
-        alert("Số tiền không được âm!");
+        showToastNotification("Số tiền không được âm!");
         input.disabled = false;
         return;
       }
-      reportData.transferAmount = amount;
-      reportData.transferTimestamp = amount > 0 ? new Date().toISOString() : null;
-      details = `Nhập chuyển khoản: ${amount.toLocaleString("vi-VN")} VND`;
-      afterValue = `${amount.toLocaleString("vi-VN")} VND`;
+      const realAmount = amount * 1000;
+      reportData.transferAmount = realAmount;
+      reportData.transferTimestamp = realAmount > 0 ? new Date().toISOString() : null;
+      details = `Nhập chuyển khoản: ${realAmount.toLocaleString("vi-VN")} VND`;
+      afterValue = `${realAmount.toLocaleString("vi-VN")} VND`;
     } else if (field === "grab-amount") {
       const amount = parseFloat(input.value) || 0;
       if (amount < 0) {
-        alert("Số tiền Grab không được âm!");
+        showToastNotification("Số tiền Grab không được âm!");
         input.disabled = false;
         return;
       }
-      reportData.grabAmount = amount;
-      reportData.grabTimestamp = amount > 0 ? new Date().toISOString() : null;
-      details = `Nhập Grab: ${amount.toLocaleString("vi-VN")} VND`;
-      afterValue = `${amount.toLocaleString("vi-VN")} VND`;
+      const realAmount = amount * 1000;
+      reportData.grabAmount = realAmount;
+      reportData.grabTimestamp = realAmount > 0 ? new Date().toISOString() : null;
+      details = `Nhập Grab: ${realAmount.toLocaleString("vi-VN")} VND`;
+      afterValue = `${realAmount.toLocaleString("vi-VN")} VND`;
     } else {
       const value = parseFloat(input.value) || 0;
       if (value < 0) {
-        alert("Giá trị không được âm!");
+        showToastNotification("Giá trị không được âm!");
         input.disabled = false;
         return;
       }
+      const realValue = value * 1000;
       const fieldName = field === "opening-balance" ? "openingBalance"
                         : field === "closing-balance" ? "closingBalance"
                         : field.replace("-", "");
-      reportData[fieldName] = value;
-      details = `Nhập ${field}: ${value.toLocaleString("vi-VN")} VND`;
-      afterValue = `${value.toLocaleString("vi-VN")} VND`;
+      reportData[fieldName] = realValue;
+      details = `Nhập ${field}: ${realValue.toLocaleString("vi-VN")} VND`;
+      afterValue = `${realValue.toLocaleString("vi-VN")} VND`;
     }
 
-    // Tính lại: còn lại - ck - grab = tiền mặt thực tế
+    // Cập nhật lại các giá trị tính toán
     reportData.remaining = reportData.openingBalance + reportData.revenue - reportData.expenseAmount - reportData.closingBalance;
     reportData.cashActual = reportData.remaining - reportData.transferAmount - reportData.grabAmount;
 
@@ -147,7 +151,7 @@ function submitField(field) {
           renderHistory();
           input.value = "";
 
-          // ✅ THAY alert BẰNG TOAST:
+          // ✅ Toast sau khi cập nhật thành công
           const label = field === "expense-input" ? "chi phí"
                       : field === "transfer-amount" ? "chuyển khoản"
                       : field === "grab-amount" ? "Grab"
@@ -158,7 +162,7 @@ function submitField(field) {
           showToastNotification(`${action} ${label}: ${afterValue}`);
         });
       }).catch(err => {
-        alert("Lỗi khi cập nhật báo cáo: " + err.message);
+        showToastNotification("Lỗi khi cập nhật báo cáo: " + err.message);
         input.disabled = false;
       });
     };
@@ -170,6 +174,7 @@ function submitField(field) {
     }
   });
 }
+
 // Gửi báo cáo tồn kho
 function submitInventoryReport() {
   auth.onAuthStateChanged(user => {
