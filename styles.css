@@ -1053,3 +1053,54 @@ button:disabled {
   opacity: 0.95;
   transform: translateX(0);
 }
+
+///
+/* === Bảng hiển thị chung === */
+.table-style {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 14px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* Header */
+.table-style thead {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+.table-style th,
+.table-style td {
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+/* Hàng xen kẽ màu */
+.table-style tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+/* Hover */
+.table-style tbody tr:hover {
+  background-color: #eef6ff;
+  transition: background-color 0.2s ease;
+}
+
+/* Hành động */
+.table-style .action-buttons button {
+  margin-right: 5px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+/* Bo tròn góc bảng */
+.card.table-section {
+  border-radius: 8px;
+  overflow: hidden;
+}
