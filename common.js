@@ -244,10 +244,6 @@ function openTabBubble(tabId) {
 
 function showToastNotification(message) {
   const container = document.getElementById("toast-container");
-  if (!container) {
-    console.error("Toast container not found!");
-    return;
-  }
   const toast = document.createElement("div");
   toast.className = "toast";
   toast.textContent = message;
@@ -256,8 +252,9 @@ function showToastNotification(message) {
   setTimeout(() => {
     toast.classList.remove("show");
     setTimeout(() => container.removeChild(toast), 500);
-  }, 5000);
+  }, 4000);
 }
+
 function closeModal(modalId) {
   document.getElementById(modalId).style.display = "none";
 }
@@ -283,21 +280,32 @@ function parseEntry(text) {
   if (!text || typeof text !== 'string' || text.trim() === '') {
     return { money: 0, note: "", error: false };
   }
+
   const match = text.match(/([\d.,]+)\s*(k|nghìn|tr|triệu)?/i);
   if (!match) {
     return { money: 0, note: text.trim(), error: false };
   }
+
   let num = parseFloat(match[1].replace(/,/g, ''));
   if (isNaN(num) || num <= 0) {
     return { money: 0, note: text.trim(), error: false };
   }
+
   const unit = match[2] ? match[2].toLowerCase() : '';
+
   if (unit.includes('tr')) {
-    num *= 1000000;
+    num *= 1_000_000;
   } else if (unit.includes('k') || unit.includes('nghìn')) {
-    num *= 1000;
+    num *= 1_000;
+  } else {
+    num *= 1_000;  // ✅ Trường hợp không có đơn vị → mặc định là nghìn
   }
-  return { money: Math.round(num), note: text.replace(match[0], '').trim(), error: false };
+
+  return {
+    money: Math.round(num),
+    note: text.replace(match[0], '').trim(),
+    error: false
+  };
 }
 
 function getInventoryData() { return globalInventoryData; }
