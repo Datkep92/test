@@ -36,8 +36,6 @@ function renderInputForm() {
   `;
 }
 
-// Gửi dữ liệu từng ô nhập liệu
-
 function submitField(field) {
   auth.onAuthStateChanged(user => {
     if (!user) {
@@ -45,13 +43,11 @@ function submitField(field) {
       return;
     }
     const employeeName = globalEmployeeData.find(emp => emp.id === user.uid)?.name || "Không xác định";
-
     const input = document.getElementById(field);
     if (!input || !input.value.trim()) {
       showToastNotification("Vui lòng nhập dữ liệu!");
       return;
     }
-
     if (input.disabled) {
       showToastNotification("Đang xử lý, vui lòng chờ!");
       return;
@@ -78,6 +74,9 @@ function submitField(field) {
     let details = "";
     let afterValue = "";
 
+    const today = new Date().toISOString().split("T")[0];
+    const existingReport = globalReportData.find(r => r.date.split("T")[0] === today && r[field.replace("-", "")] > 0);
+
     if (field === "expense-input") {
       const { money: expenseAmount, note: expenseNote } = parseEntry(input.value);
       if (expenseAmount < 0 || (expenseAmount > 0 && !expenseNote)) {
@@ -103,7 +102,7 @@ function submitField(field) {
       }
       const realAmount = amount * 1000;
       reportData.transferAmount = realAmount;
-      reportData.grabAmount = 0; // ⚠️ Reset Grab nếu nhập CK
+      reportData.grabAmount = 0;
       reportData.transferTimestamp = realAmount > 0 ? new Date().toISOString() : null;
       details = `Nhập chuyển khoản: ${realAmount.toLocaleString("vi-VN")} VND`;
       afterValue = `${realAmount.toLocaleString("vi-VN")} VND`;
@@ -121,7 +120,7 @@ function submitField(field) {
       }
       const realAmount = amount * 1000;
       reportData.grabAmount = realAmount;
-      reportData.transferAmount = 0; // ⚠️ Reset CK nếu nhập Grab
+      reportData.transferAmount = 0;
       reportData.grabTimestamp = realAmount > 0 ? new Date().toISOString() : null;
       details = `Nhập Grab: ${realAmount.toLocaleString("vi-VN")} VND`;
       afterValue = `${realAmount.toLocaleString("vi-VN")} VND`;
@@ -141,9 +140,18 @@ function submitField(field) {
       const fieldName = field === "opening-balance" ? "openingBalance"
                         : field === "closing-balance" ? "closingBalance"
                         : field.replace("-", "");
-      reportData[fieldName] = realValue;
-      details = `Nhập ${field}: ${realValue.toLocaleString("vi-VN")} VND`;
-      afterValue = `${realValue.toLocaleString("vi-VN")} VND`;
+
+      if (fieldName === "revenue" && existingReport) {
+        // Cộng dồn doanh thu nếu đã có trong ngày
+        reportData.revenue = (existingReport.revenue || 0) + realValue;
+        details = `Nhập ${field}: ${realValue.toLocaleString("vi-VN")} VND (tổng: ${reportData.revenue.toLocaleString("vi-VN")} VND)`;
+        afterValue = `${realValue.toLocaleString("vi-VN")} VND (tổng: ${reportData.revenue.toLocaleString("vi-VN")} VND)`;
+      } else {
+        reportData[fieldName] = realValue;
+        details = `Nhập ${field}: ${realValue.toLocaleString("vi-VN")} VND`;
+        afterValue = `${realValue.toLocaleString("vi-VN")} VND`;
+      }
+
       reportData.history.push({
         timestamp: new Date().toISOString(),
         employeeName,
@@ -153,9 +161,6 @@ function submitField(field) {
 
     reportData.remaining = reportData.openingBalance + reportData.revenue - reportData.expenseAmount - reportData.closingBalance;
     reportData.cashActual = reportData.remaining - reportData.transferAmount - reportData.grabAmount;
-
-    const today = new Date().toISOString().split("T")[0];
-    const existingReport = globalReportData.find(r => r.date.split("T")[0] === today && r[field.replace("-", "")] > 0);
 
     const saveData = (refId) => {
       db.ref(refId).update(reportData).then(() => {
