@@ -1104,3 +1104,131 @@ button:disabled {
   border-radius: 8px;
   overflow: hidden;
 }
+//
+/* ===== Edit Popups for Revenue, Opening & Closing Balances ===== */
+.modal .modal-content h3 {
+  font-size: var(--text-lg);
+  color: var(--primary);
+  margin-bottom: var(--space-md);
+}
+
+.modal .modal-content input,
+.modal .modal-content textarea {
+  width: 100%;
+  margin-bottom: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  font-size: var(--text-base);
+  background-color: var(--card-bg);
+  resize: vertical;
+}
+
+.modal .modal-content ul {
+  padding-left: var(--space-md);
+  margin-bottom: var(--space-sm);
+  font-size: var(--text-sm);
+  color: var(--text-light);
+}
+
+.modal .modal-content ul li {
+  margin-bottom: var(--space-xs);
+  line-height: 1.4;
+}
+
+.modal .modal-content h4 {
+  font-size: var(--text-base);
+  color: var(--primary);
+  margin-top: var(--space-md);
+  margin-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: var(--space-xs);
+}
+
+/* Button Group in Modal */
+.modal .button-group {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+@media (max-width: 480px) {
+  .modal .modal-content {
+    padding: var(--space-md);
+    max-height: 95vh;
+  }
+
+  .modal .button-group {
+    flex-direction: column;
+  }
+
+  .modal .modal-content ul {
+    font-size: var(--text-xs);
+  }
+
+  .modal .modal-content input,
+  .modal .modal-content textarea {
+    font-size: var(--text-sm);
+  }
+}
+/* ===== Highlight thủ công chỉnh sửa ===== */
+.edited-field {
+  color: #e67e22;        /* Cam đậm dễ nhận biết */
+  font-weight: bold;
+  font-style: italic;
+  cursor: pointer;
+}
+.popup-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+  font-size: var(--text-base);
+  gap: 1rem;
+}
+
+.popup-history {
+  list-style: disc inside;
+  margin-top: var(--space-sm);
+  font-size: var(--text-sm);
+  color: var(--text-light);
+}
+.popup-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+  font-size: var(--text-base);
+  gap: 1rem;
+}
+
+.popup-row strong {
+  color: var(--text-dark);
+}
+
+.popup-history {
+  list-style: disc inside;
+  margin-top: var(--space-sm);
+  font-size: var(--text-sm);
+  color: var(--text-light);
+}
+
+.modal-content h3 {
+  margin-bottom: var(--space-md);
+  color: var(--primary);
+}
+
+.status-deleted {
+  color: #dc3545; /* đỏ */
+  font-style: italic;
+  font-weight: bold;
+}
+
+.status-edited {
+  color: #e67e22; /* cam */
+  font-style: italic;
+}
+.status-deleted {
+  color: #dc3545; /* đỏ tươi */
+  font-weight: bold;
+  font-style: italic;
+}
