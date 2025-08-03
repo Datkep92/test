@@ -199,6 +199,80 @@
       </div>
     </div>
   </div>
+<!-- ========== Modal chỉnh sửa Doanh thu ========= -->
+<div id="edit-revenue-modal" class="modal">
+  <div class="modal-content">
+    <h3>Chỉnh sửa Doanh thu</h3>
+    <p><strong>Giá trị hiện tại:</strong> <span class="current-value"></span></p>
+    <input type="number" placeholder="Giá trị mới (VND)" />
+    <textarea placeholder="Lý do chỉnh sửa"></textarea>
+
+    <h4>Lịch sử nhập lẻ</h4>
+    <ul class="log-preview"></ul>
+    <button onclick="toggleRevenueLog()">Xem thêm</button>
+
+    <div class="history-container" style="display: none;">
+      <h4>Lịch sử chỉnh sửa</h4>
+      <ul class="history-preview"></ul>
+      <button onclick="toggleRevenueHistory()">Xem thêm</button>
+    </div>
+
+    <div class="button-group">
+      <button class="primary-btn" onclick="saveRevenueEdit()">Lưu</button>
+      <button class="secondary-btn" onclick="closeModal('edit-revenue-modal')">Hủy</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Modal chỉnh sửa Số dư đầu kỳ ========= -->
+<div id="edit-openingBalance-modal" class="modal">
+  <div class="modal-content">
+    <h3>Chỉnh sửa Số dư đầu kỳ</h3>
+    <p><strong>Giá trị hiện tại:</strong> <span class="current-value"></span></p>
+    <input type="number" placeholder="Giá trị mới (VND)" />
+    <textarea placeholder="Lý do chỉnh sửa"></textarea>
+
+    <h4>Lịch sử nhập lẻ</h4>
+    <ul class="log-preview"></ul>
+    <button onclick="toggleOpeningLog()">Xem thêm</button>
+
+    <div class="history-container" style="display: none;">
+      <h4>Lịch sử chỉnh sửa</h4>
+      <ul class="history-preview"></ul>
+      <button onclick="toggleOpeningHistory()">Xem thêm</button>
+    </div>
+
+    <div class="button-group">
+      <button class="primary-btn" onclick="saveOpeningEdit()">Lưu</button>
+      <button class="secondary-btn" onclick="closeModal('edit-openingBalance-modal')">Hủy</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Modal chỉnh sửa Số dư cuối kỳ ========= -->
+<div id="edit-closingBalance-modal" class="modal">
+  <div class="modal-content">
+    <h3>Chỉnh sửa Số dư cuối kỳ</h3>
+    <p><strong>Giá trị hiện tại:</strong> <span class="current-value"></span></p>
+    <input type="number" placeholder="Giá trị mới (VND)" />
+    <textarea placeholder="Lý do chỉnh sửa"></textarea>
+
+    <h4>Lịch sử nhập lẻ</h4>
+    <ul class="log-preview"></ul>
+    <button onclick="toggleClosingLog()">Xem thêm</button>
+
+    <div class="history-container" style="display: none;">
+      <h4>Lịch sử chỉnh sửa</h4>
+      <ul class="history-preview"></ul>
+      <button onclick="toggleClosingHistory()">Xem thêm</button>
+    </div>
+
+    <div class="button-group">
+      <button class="primary-btn" onclick="saveClosingEdit()">Lưu</button>
+      <button class="secondary-btn" onclick="closeModal('edit-closingBalance-modal')">Hủy</button>
+    </div>
+  </div>
+</div>
 
   <!-- Scripts -->
   <script>
