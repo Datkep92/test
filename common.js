@@ -74,97 +74,6 @@ function initApp() {
 
 let isEmployeeDataLoaded = false;
 
-function loadFirebaseData(callback) {
-  auth.onAuthStateChanged(user => {
-    if (!user) {
-      console.log("User not logged in");
-      return;
-    }
-
-    const userId = user.uid;
-
-    // Tải dữ liệu users
-    db.ref("users").once("value").then(snapshot => {
-      globalEmployeeData = [];
-      snapshot.forEach(child => {
-        globalEmployeeData.push({ id: child.key, ...child.val() });
-      });
-      const found = globalEmployeeData.find(e => e.id === userId);
-      if (!found) {
-        const newUser = {
-          id: userId,
-          name: user.displayName || "Chưa rõ tên",
-          email: user.email || "",
-          role: "employee",
-          active: true
-        };
-        db.ref(`users/${userId}`).set(newUser)
-          .then(() => {
-            globalEmployeeData.push(newUser);
-            console.log("✅ Added new user to /users:", newUser);
-          })
-          .catch(err => {
-            console.error("❌ Error adding user to /users:", err.message);
-          });
-      }
-      isEmployeeDataLoaded = true;
-      console.log("✅ Loaded employee data:", globalEmployeeData);
-
-      if (document.getElementById('profile') && document.getElementById('profile').style.display !== 'none') {
-        loadEmployeeInfo();
-      }
-
-      if (typeof callback === "function") callback();
-    }).catch(err => {
-      console.error("❌ Error loading users:", err.message);
-    });
-
-    // Tải dữ liệu schedules
-    db.ref("schedules").once("value").then(snapshot => {
-      globalScheduleData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
-      if (typeof renderCalendar === "function") renderCalendar();
-    }).catch(err => {
-      console.error("❌ Error loading schedules:", err.message);
-    });
-
-    // Tải dữ liệu inventory
-    db.ref("inventory").once("value").then(snapshot => {
-      globalInventoryData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
-      if (typeof renderInventory === "function") renderInventory();
-    }).catch(err => {
-      console.error("❌ Error loading inventory:", err.message);
-    });
-
-    // Tải dữ liệu advanceRequests
-    db.ref("advanceRequests").once("value").then(snapshot => {
-      globalAdvanceRequests = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
-
-      // Nhân viên xem lịch sử tạm ứng của họ
-      if (typeof renderAdvanceHistory === "function") renderAdvanceHistory();
-
-      // Quản lý xem tất cả yêu cầu tạm ứng
-      if (isCurrentUserManager() && typeof renderAdvanceRequests === "function") {
-        renderAdvanceRequests();
-        const container = document.getElementById("advance-request-list");
-        if (container) {
-          container.classList.remove("hidden");
-          container.style.display = "block";
-        }
-      }
-
-    }).catch(err => {
-      console.error("❌ Error loading advance requests:", err.message);
-    });
-
-    // Tải dữ liệu reports
-    db.ref("reports").once("value").then(snapshot => {
-      globalReportData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
-      if (typeof renderFilteredReports === "function") renderFilteredReports(globalReportData);
-    }).catch(err => {
-      console.error("❌ Error loading reports:", err.message);
-    });
-  });
-}
 
 // Thêm hàm để đánh dấu thông báo là đã đọc
 function markNotificationAsRead(notificationId, employeeId) {
@@ -337,19 +246,18 @@ function sendNotification(recipient, message) {
 function loadFirebaseData(callback) {
   auth.onAuthStateChanged(user => {
     if (!user) {
-      console.log("❌ User not logged in");
+      console.log("User not logged in");
       return;
     }
 
     const userId = user.uid;
 
-    // Load users
+    // Tải dữ liệu users
     db.ref("users").once("value").then(snapshot => {
       globalEmployeeData = [];
       snapshot.forEach(child => {
         globalEmployeeData.push({ id: child.key, ...child.val() });
       });
-
       const found = globalEmployeeData.find(e => e.id === userId);
       if (!found) {
         const newUser = {
@@ -359,14 +267,15 @@ function loadFirebaseData(callback) {
           role: "employee",
           active: true
         };
-        db.ref(`users/${userId}`).set(newUser).then(() => {
-          globalEmployeeData.push(newUser);
-          console.log("✅ Added new user to /users:", newUser);
-        }).catch(err => {
-          console.error("❌ Error adding user:", err.message);
-        });
+        db.ref(`users/${userId}`).set(newUser)
+          .then(() => {
+            globalEmployeeData.push(newUser);
+            console.log("✅ Added new user to /users:", newUser);
+          })
+          .catch(err => {
+            console.error("❌ Error adding user to /users:", err.message);
+          });
       }
-
       isEmployeeDataLoaded = true;
       console.log("✅ Loaded employee data:", globalEmployeeData);
 
@@ -379,7 +288,7 @@ function loadFirebaseData(callback) {
       console.error("❌ Error loading users:", err.message);
     });
 
-    // Load schedules
+    // Tải dữ liệu schedules
     db.ref("schedules").once("value").then(snapshot => {
       globalScheduleData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
       if (typeof renderCalendar === "function") renderCalendar();
@@ -387,42 +296,37 @@ function loadFirebaseData(callback) {
       console.error("❌ Error loading schedules:", err.message);
     });
 
-    // Load inventory
+    // Tải dữ liệu inventory
     db.ref("inventory").once("value").then(snapshot => {
       globalInventoryData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
       if (typeof renderInventory === "function") renderInventory();
+      if (typeof renderReportProductList === "function") renderReportProductList(); // ✅ Gọi tại đây
     }).catch(err => {
       console.error("❌ Error loading inventory:", err.message);
     });
 
-    // ✅ Load advances (tạm ứng)
-    db.ref("advances").once("value").then(snapshot => {
-      globalAdvanceRequests = Object.entries(snapshot.val() || {}).map(([id, data]) => ({
-        id,
-        ...data
-      }));
+    // Tải dữ liệu advanceRequests
+    db.ref("advanceRequests").once("value").then(snapshot => {
+      globalAdvanceRequests = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
 
-      console.log("✅ Loaded advances:", globalAdvanceRequests);
-
-      // Nhân viên
+      // Nhân viên xem lịch sử tạm ứng của họ
       if (typeof renderAdvanceHistory === "function") renderAdvanceHistory();
 
-      // Quản lý
+      // Quản lý xem tất cả yêu cầu tạm ứng
       if (isCurrentUserManager() && typeof renderAdvanceRequests === "function") {
         renderAdvanceRequests();
-
-        // Hiển thị container nếu bị ẩn
         const container = document.getElementById("advance-request-list");
         if (container) {
           container.classList.remove("hidden");
           container.style.display = "block";
         }
       }
+
     }).catch(err => {
-      console.error("❌ Error loading advances:", err.message);
+      console.error("❌ Error loading advance requests:", err.message);
     });
 
-    // Load reports
+    // Tải dữ liệu reports
     db.ref("reports").once("value").then(snapshot => {
       globalReportData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
       if (typeof renderFilteredReports === "function") renderFilteredReports(globalReportData);
@@ -431,6 +335,8 @@ function loadFirebaseData(callback) {
     });
   });
 }
+
+
 function showDayDetails(date) {
   const modal = document.getElementById('day-details-modal');
   const content = document.getElementById('day-details-content');
