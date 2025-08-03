@@ -14,7 +14,7 @@ function renderInputForm() {
   if (!form) return;
   form.innerHTML = `
     <div class="input-group">
-      <input type="number" id="opening-balance" placeholder="Dư đầu kỳ" min="0">
+      <input type="number" id="opening-balance" placeholder="Số dư đầu kỳ" min="0">
       <button onclick="submitField('opening-balance')">Gửi</button>
     </div>
     <div class="input-group">
