@@ -138,7 +138,6 @@ function showActionModal(date, schedule = null, targetEmployeeId = null) {
   if (!modal || !content) return;
 
   const viewingEmployeeId = targetEmployeeId || currentEmployeeId;
-
   const allSchedulesForDate = globalScheduleData.filter(s => s.date === date);
   const currentUser = globalEmployeeData.find(e => e.id === currentEmployeeId);
 
@@ -179,7 +178,7 @@ function showActionModal(date, schedule = null, targetEmployeeId = null) {
             </div>`;
         }
       }
-      // Nếu là yêu cầu của chính nhân viên hiện tại & (chờ duyệt hoặc đã duyệt)
+      // Nếu là yêu cầu của chính nhân viên hiện tại
       else if (
         s.employeeId === currentEmployeeId &&
         (s.approvalStatus === 'pending' || s.approvalStatus === 'swapPending' || s.approvalStatus === 'approved')
@@ -203,6 +202,25 @@ function showActionModal(date, schedule = null, targetEmployeeId = null) {
         <button onclick="submitScheduleRequest('${date}', 'off')">🛌 Xin nghỉ</button>
         <button onclick="submitScheduleRequest('${date}', 'overtime')">🕒 Tăng ca</button>
         <button onclick="prepareSwapRequest('${date}')">🔁 Đổi ca</button>
+      </div>
+    `;
+  }
+
+  // ✅ Nếu là quản lý → hiển thị form xếp lịch trực tiếp
+  if (isCurrentUserManager()) {
+    const activeEmployees = globalEmployeeData.filter(e => e.active);
+    contentHTML += `
+      <hr>
+      <div class="schedule-actions">
+        <p><strong>Quản lý:</strong> Xếp lịch trực tiếp cho nhân viên:</p>
+        <select id="assign-employee-id">
+          ${activeEmployees.map(e => `<option value="${e.id}">${e.name}</option>`).join("")}
+        </select>
+        <div class="button-group" style="margin-top: 6px;">
+          <button onclick="assignSchedule('${date}', 'off')" class="small-btn">🛌 Nghỉ</button>
+          <button onclick="assignSchedule('${date}', 'overtime')" class="small-btn">🕒 Tăng ca</button>
+          <button onclick="assignSchedule('${date}', 'swap')" class="small-btn">🔁 Đổi ca</button>
+        </div>
       </div>
     `;
   }
@@ -623,11 +641,16 @@ function renderScheduleStatusList() {
     console.warn("schedule-status-list not found, possibly profile tab not active");
     return;
   }
+
   const isManager = isCurrentUserManager();
-  const schedules = isManager
-    ? globalScheduleData.filter(s => s.approvalStatus === 'pending' || s.approvalStatus === 'swapPending')
-    : globalScheduleData.filter(s => s.employeeId === currentEmployeeId);
-  console.log("renderScheduleStatusList - isManager:", isManager, "currentEmployeeId:", currentEmployeeId, "schedules:", schedules);
+
+  // Hiển thị tất cả lịch trong tháng hiện tại cho cả nhân viên và quản lý
+  const schedules = globalScheduleData.filter(s => {
+    const d = new Date(s.date);
+    return d.getMonth() + 1 === currentScheduleMonth &&
+           d.getFullYear() === currentScheduleYear;
+  });
+
   container.innerHTML = `
     <div class="schedule-header">
       <button onclick="changeScheduleMonth(-1)">❮</button>
@@ -641,9 +664,13 @@ function renderScheduleStatusList() {
             <div class="schedule-date">${new Date(s.date).toLocaleDateString('vi-VN')}</div>
             <div class="schedule-type">${getScheduleTypeText(s)}</div>
             <div class="schedule-status">${getScheduleStatusText(s)}${s.cancelRequested ? ' (Yêu cầu hủy)' : ''}</div>
+
             ${isManager && (s.approvalStatus === 'pending' || s.approvalStatus === 'swapPending') ? `
               <button class="small-btn" onclick="showScheduleActionModal('${s.id}', 'process')">Xử lý</button>
-            ` : (s.approvalStatus === 'pending' || s.approvalStatus === 'swapPending' || s.approvalStatus === 'approved') ? `
+            ` : isManager && s.cancelRequested ? `
+              <button class="small-btn" onclick="showScheduleActionModal('${s.id}', 'cancel')">Xử lý hủy</button>
+            ` : s.employeeId === currentEmployeeId && 
+                 (s.approvalStatus === 'pending' || s.approvalStatus === 'swapPending' || s.approvalStatus === 'approved') ? `
               <button class="small-btn" onclick="cancelSchedule('${s.id}')">Hủy</button>
             ` : ''}
           </li>
@@ -651,7 +678,8 @@ function renderScheduleStatusList() {
       </ul>
     ` : '<p>Không có lịch làm việc đặc biệt</p>'}
   `;
-  container.style.display = 'block'; // Đảm bảo hiển thị
+
+  container.style.display = 'block';
 }
 // ================ NOTIFICATION FUNCTIONS ================
 function renderNotifications() {
@@ -696,15 +724,17 @@ function markNotificationAsRead(notificationId) {
 // Sửa hàm renderScheduleRequests
 function renderScheduleRequests() {
   const container = document.getElementById("schedule-requests-container");
-  if (!container) {
-    console.error("schedule-requests-container not found");
-    return;
-  }
+  if (!container) return;
+
   const isManager = isCurrentUserManager();
   const requests = isManager
-    ? globalScheduleData.filter(s => s.approvalStatus === "pending" || s.approvalStatus === "swapPending" || s.cancelRequested)
+    ? globalScheduleData.filter(s =>
+        s.approvalStatus === "pending" ||
+        s.approvalStatus === "swapPending" ||
+        s.cancelRequested
+      )
     : globalScheduleData.filter(s => s.employeeId === currentEmployeeId);
-  console.log("renderScheduleRequests - isManager:", isManager, "currentEmployeeId:", currentEmployeeId, "requests:", requests); // Debug
+
   container.innerHTML = `
     <h3>Yêu Cầu Lịch Làm Việc</h3>
     ${requests.length > 0 ? `
@@ -714,33 +744,39 @@ function renderScheduleRequests() {
             <th>Ngày</th>
             <th>Nhân viên</th>
             <th>Loại</th>
-            <th>Trạng thái/Hành động</th>
+            <th>Trạng thái</th>
           </tr>
         </thead>
         <tbody>
-          ${requests.map((s, index) => `
-            <tr>
-              <td>${new Date(s.date).toLocaleDateString("vi-VN")}</td>
-              <td>${s.employeeName || "Không xác định"}</td>
-              <td>${getScheduleTypeText(s)}</td>
-              <td>
-                <button class="status-btn status-${s.approvalStatus}${s.cancelRequested ? ' cancel-requested' : ''}"
-                  ${isManager && (s.approvalStatus === "pending" || s.approvalStatus === "swapPending")
-                    ? `onclick="showScheduleActionModal('${s.id}', 'process')"`
-                    : isManager && s.cancelRequested
-                    ? `onclick="showScheduleActionModal('${s.id}', 'cancel')"`
-                    : s.employeeId === currentEmployeeId && (s.approvalStatus === "pending" || s.approvalStatus === "swapPending" || s.approvalStatus === "approved")
-                    ? `onclick="cancelSchedule('${s.id}')"`
-                    : "disabled"}
-                >
-                  ${s.cancelRequested && isManager ? "Xử lý hủy" : 
-                    s.approvalStatus === "pending" || s.approvalStatus === "swapPending" 
-                    ? (isManager ? "Xử lý" : "Hủy") 
-                    : getScheduleStatusText(s)}
-                </button>
-              </td>
-            </tr>
-          `).join("")}
+          ${requests.map(s => {
+            const typeLabel = s.cancelRequested
+              ? `Yêu cầu hủy ${getScheduleTypeText(s).toLowerCase()}`
+              : `Yêu cầu ${getScheduleTypeText(s).toLowerCase()}`;
+
+            const isPending = s.approvalStatus === 'pending' || s.approvalStatus === 'swapPending';
+
+            let statusHTML = '';
+
+            if (isPending && isManager) {
+              const actionType = s.cancelRequested ? 'cancel' : 'process';
+              statusHTML = `<button class="status-btn status-pending" onclick="showScheduleActionModal('${s.id}', '${actionType}')">⏳ Chờ duyệt</button>`;
+            } else if (s.approvalStatus === 'approved') {
+              statusHTML = `<span class="status-approved">✔️ Phê duyệt</span>`;
+            } else if (s.approvalStatus === 'rejected') {
+              statusHTML = `<span class="status-rejected">❌ Từ chối: ${s.rejectReason || 'Không rõ lý do'}</span>`;
+            } else {
+              statusHTML = `<span class="status-pending">⏳ Chờ duyệt</span>`;
+            }
+
+            return `
+              <tr>
+                <td>${new Date(s.date).toLocaleDateString("vi-VN")}</td>
+                <td>${s.employeeName || "Không xác định"}</td>
+                <td>${typeLabel}</td>
+                <td>${statusHTML}</td>
+              </tr>
+            `;
+          }).join("")}
         </tbody>
       </table>
     ` : "<p>Chưa có yêu cầu lịch làm việc.</p>"}
