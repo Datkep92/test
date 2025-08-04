@@ -175,7 +175,6 @@ function submitField(field) {
             afterValue
           );
           renderFilteredReports(globalReportData);
-          renderRevenueExpenseData();
           renderHistory();
           input.value = "";
           const label = field === "expense-input" ? "chi phí"
@@ -263,7 +262,7 @@ function submitInventoryReport() {
             renderFilteredReports(globalReportData);
             renderReportProductList();
             renderHistory();
-            alert("Báo cáo tồn kho đã được gửi!");
+            showToastNotification("Báo cáo tồn kho đã được gửi!");
           });
         });
       }).catch(err => {
@@ -1091,7 +1090,6 @@ function applyFilter() {
 document.addEventListener("DOMContentLoaded", () => {
   renderInputForm();
   renderReportProductList();
-  renderRevenueExpenseData();
   renderFilteredReports(getReportData());
   renderHistory();
   document.getElementById("filter-range")?.addEventListener("change", applyFilter);
@@ -1105,7 +1103,6 @@ function initializeReports() {
   db.ref("reports").once("value").then(snapshot => {
     globalReportData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
     renderFilteredReports(globalReportData); // Render báo cáo thu chi và xuất hàng
-    renderRevenueExpenseData(); // Render báo cáo thu chi hàng ngày
     renderHistory(); // Render lịch sử
   }).catch(err => console.error("Lỗi khi tải dữ liệu báo cáo:", err));
 }
@@ -1670,7 +1667,6 @@ function saveEdit(field) {
     db.ref("reports").once("value").then(snapshot => {
       globalReportData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
       renderFilteredReports(globalReportData);
-      renderRevenueExpenseData?.();
       renderHistory?.();
     });
   });
@@ -1733,81 +1729,6 @@ function getFieldLabel(field) {
   }[field] || field;
 }
 
-function renderRevenueExpenseData() {
-  const container = document.getElementById("shared-report-table");
-  if (!container) return;
-
-  const today = new Date().toISOString().split("T")[0];
-  const reports = getReportData().filter(r => r.date?.startsWith(today));
-
-  if (reports.length === 0) {
-    container.innerHTML = "<p>Chưa có dữ liệu hôm nay.</p>";
-    return;
-  }
-
-  const isExpanded = isExpandedStates.revenueExpenseData ?? false;
-  const displayReports = isExpanded ? reports : reports.slice(0, 3);
-
-  const table = document.createElement("table");
-  table.className = "table-style";
-  table.innerHTML = `
-    <thead>
-      <tr>
-        <th>STT</th>
-        <th>Nhân viên</th>
-        <th>Chi phí</th>
-        <th>Doanh thu</th>
-        <th>Số dư đầu kỳ</th>
-        <th>Số dư cuối kỳ</th>
-        <th>Chuyển khoản</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${displayReports.map((r, i) => `
-        <tr>
-          <td>${i + 1}</td>
-          <td>${r.employeeName || "Ẩn danh"}</td>
-          <td onclick="showReportDetails('${r.id}')">
-            ${(r.expenseAmount || 0).toLocaleString("vi-VN")} VND (${r.expenseNote || "Không có"})
-          </td>
-          <td onclick="showReportDetails('${r.id}')">
-            <span class="${isFieldEdited(r, 'revenue') ? 'edited-field' : ''}">
-              ${(r.revenue || 0).toLocaleString("vi-VN")} VND
-            </span>
-          </td>
-          <td onclick="showReportDetails('${r.id}')">
-            <span class="${isFieldEdited(r, 'openingBalance') ? 'edited-field' : ''}">
-              ${(r.openingBalance || 0).toLocaleString("vi-VN")} VND
-            </span>
-          </td>
-          <td onclick="showReportDetails('${r.id}')">
-            <span class="${isFieldEdited(r, 'closingBalance') ? 'edited-field' : ''}">
-              ${(r.closingBalance || 0).toLocaleString("vi-VN")} VND
-            </span>
-          </td>
-          <td onclick="showReportDetails('${r.id}')">
-            ${(r.transferAmount || 0).toLocaleString("vi-VN")} VND
-            ${r.grabAmount > 0 ? `(Grab: ${r.grabAmount.toLocaleString("vi-VN")} VND)` : ""}
-          </td>
-        </tr>
-      `).join("")}
-    </tbody>
-  `;
-
-  container.innerHTML = `<h3>Bảng Báo cáo Thu Chi (${today.split("-").reverse().join("/")})</h3>`;
-  container.appendChild(table);
-
-  if (reports.length > 3) {
-    const btn = document.createElement("button");
-    btn.textContent = isExpanded ? "Thu gọn" : "Xem thêm";
-    btn.className = "expand-btn";
-    btn.onclick = () => {
-      isExpandedStates.revenueExpenseData = !isExpandedStates.revenueExpenseData;
-      renderRevenueExpenseData();
-    };
-    container.appendChild(btn);
-  }
-}
 
 function showReportDetails(reportId) {
   const report = getReportData().find(r => r.id === reportId);
