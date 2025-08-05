@@ -167,14 +167,14 @@ function showActionModal(date, schedule = null, targetEmployeeId = null) {
         if (s.cancelRequested) {
           contentHTML += `
             <div class="button-group" style="margin-top: 4px;">
-              <button onclick="approveCancelSchedule('${s.id}')" class="primary-btn">✔️ Phê duyệt hủy</button>
-              <button onclick="rejectCancelSchedule('${s.id}')" class="secondary-btn">❌ Từ chối hủy</button>
+              <button onclick="approveCancelSchedule('${s.id}')" class="primary-btn">✔️ Duyệt hủy</button>
+              <button onclick="rejectCancelSchedule('${s.id}')" class="secondary-btn">❌  hủy</button>
             </div>`;
         } else {
           contentHTML += `
             <div class="button-group" style="margin-top: 4px;">
-              <button onclick="approveSchedule('${s.id}')" class="primary-btn">✔️ Phê duyệt</button>
-              <button onclick="rejectSchedule('${s.id}')" class="secondary-btn">❌ Từ chối</button>
+              <button onclick="approveSchedule('${s.id}')" class="primary-btn">✔️ Duyệt</button>
+              <button onclick="rejectSchedule('${s.id}')" class="secondary-btn">❌ </button>
             </div>`;
         }
       }
@@ -721,66 +721,16 @@ function markNotificationAsRead(notificationId) {
 
 // ================ ADVANCE FUNCTIONS ================
 // Thêm vào profile.js, trước phần CALENDAR UI
-// Sửa hàm renderScheduleRequests
-function renderScheduleRequests() {
+
+
+
+
+
+function toggleRequestList() {
   const container = document.getElementById("schedule-requests-container");
   if (!container) return;
-
-  const isManager = isCurrentUserManager();
-  const requests = isManager
-    ? globalScheduleData.filter(s =>
-        s.approvalStatus === "pending" ||
-        s.approvalStatus === "swapPending" ||
-        s.cancelRequested
-      )
-    : globalScheduleData.filter(s => s.employeeId === currentEmployeeId);
-
-  container.innerHTML = `
-    <h3>Yêu Cầu Lịch Làm Việc</h3>
-    ${requests.length > 0 ? `
-      <table class="schedule-requests-table table-style">
-        <thead>
-          <tr>
-            <th>Ngày</th>
-            <th>Nhân viên</th>
-            <th>Loại</th>
-            <th>Trạng thái</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${requests.map(s => {
-            const typeLabel = s.cancelRequested
-              ? `Yêu cầu hủy ${getScheduleTypeText(s).toLowerCase()}`
-              : `Yêu cầu ${getScheduleTypeText(s).toLowerCase()}`;
-
-            const isPending = s.approvalStatus === 'pending' || s.approvalStatus === 'swapPending';
-
-            let statusHTML = '';
-
-            if (isPending && isManager) {
-              const actionType = s.cancelRequested ? 'cancel' : 'process';
-              statusHTML = `<button class="status-btn status-pending" onclick="showScheduleActionModal('${s.id}', '${actionType}')">⏳ Chờ duyệt</button>`;
-            } else if (s.approvalStatus === 'approved') {
-              statusHTML = `<span class="status-approved">✔️ Phê duyệt</span>`;
-            } else if (s.approvalStatus === 'rejected') {
-              statusHTML = `<span class="status-rejected">❌ Từ chối: ${s.rejectReason || 'Không rõ lý do'}</span>`;
-            } else {
-              statusHTML = `<span class="status-pending">⏳ Chờ duyệt</span>`;
-            }
-
-            return `
-              <tr>
-                <td>${new Date(s.date).toLocaleDateString("vi-VN")}</td>
-                <td>${s.employeeName || "Không xác định"}</td>
-                <td>${typeLabel}</td>
-                <td>${statusHTML}</td>
-              </tr>
-            `;
-          }).join("")}
-        </tbody>
-      </table>
-    ` : "<p>Chưa có yêu cầu lịch làm việc.</p>"}
-  `;
+  container.dataset.expanded = container.dataset.expanded === "true" ? "false" : "true";
+  renderScheduleRequests();
 }
 // Sửa hàm showScheduleActionModal
 function showScheduleActionModal(scheduleId, action) {
@@ -1259,4 +1209,354 @@ function changeMonth(offset) {
     currentYear++;
   }
   renderCalendar();
+}
+//////-----///////
+function showEmployeePayrollPopup(employeeId) {
+  const employee = globalEmployeeData.find(e => e.id === employeeId);
+  if (!employee) return;
+
+  const today = new Date();
+  const currentMonth = today.getMonth() + 1;
+  const currentYear = today.getFullYear();
+
+  const content = document.getElementById("employee-payroll-content");
+  content.innerHTML = renderPayrollContent(employee, currentMonth, currentYear);
+
+  document.getElementById("employee-payroll-modal").style.display = "block";
+}
+
+function changePayrollMonth(employeeId) {
+  const m = parseInt(document.getElementById("payroll-month-select").value);
+  const y = parseInt(document.getElementById("payroll-year-select").value);
+  const employee = globalEmployeeData.find(e => e.id === employeeId);
+  if (!employee) return;
+
+  const content = document.getElementById("employee-payroll-content");
+  content.innerHTML = renderPayrollContent(employee, m, y);
+}
+
+function renderPayrollContent(employee, month, year) {
+  const schedules = globalScheduleData.filter(s =>
+    s.employeeId === employee.id &&
+    new Date(s.date).getMonth() + 1 === month &&
+    new Date(s.date).getFullYear() === year
+  );
+
+  const totalOff = schedules.filter(s => s.status === 'off' && s.approvalStatus === 'approved').length;
+  const totalOvertime = schedules.filter(s => s.status === 'overtime' && s.approvalStatus === 'approved').length;
+
+  window.__off = totalOff;
+  window.__ot = totalOvertime;
+
+  const monthOptions = Array.from({ length: 12 }, (_, i) => {
+    const m = i + 1;
+    return `<option value="${m}" ${m === month ? 'selected' : ''}>Tháng ${m}</option>`;
+  }).join("");
+
+  return `
+    <h3>Bảng tính lương: ${employee.name}</h3>
+    <div style="margin-bottom: 8px;">
+      <label>Chọn tháng: 
+        <select id="payroll-month-select" onchange="changePayrollMonth(${employee.id})">
+          ${monthOptions}
+        </select>
+        <select id="payroll-year-select" onchange="changePayrollMonth(${employee.id})">
+          ${[year - 1, year, year + 1].map(y => `<option value="${y}" ${y === year ? 'selected' : ''}>${y}</option>`).join("")}
+        </select>
+      </label>
+    </div>
+
+    <div class="payroll-summary">
+      <p>🛌 Ngày nghỉ: <strong>${totalOff}</strong></p>
+      <p>🕒 Tăng ca: <strong>${totalOvertime}</strong></p>
+    </div>
+
+    <div class="payroll-inputs">
+      <label>Giờ công cơ bản: <input type="number" id="baseHour" value="0" oninput="calculatePayroll()"></label>
+      <label>Đơn giá/giờ: <input type="number" id="baseRate" value="60000" oninput="calculatePayroll()"></label>
+
+      <fieldset style="grid-column: span 2;">
+        <legend>⚖️ Chế tài</legend>
+        <label><input type="checkbox" id="penalty-late" onchange="togglePenalty()"> Đi trễ</label>
+        <input type="number" id="penalty-late-amount" value="0" oninput="calculatePayroll()" disabled>
+
+        <label><input type="checkbox" id="penalty-other" onchange="togglePenalty()"> Vi phạm khác</label>
+        <input type="number" id="penalty-other-amount" value="0" oninput="calculatePayroll()" disabled>
+      </fieldset>
+
+      <fieldset style="grid-column: span 2;">
+        <legend>🎁 Thưởng</legend>
+        <label><input type="checkbox" id="bonus-diligence" onchange="toggleBonus()"> Chuyên cần</label>
+        <input type="number" id="bonus-diligence-amount" value="0" oninput="calculatePayroll()" disabled>
+
+        <label><input type="checkbox" id="bonus-birthday" onchange="toggleBonus()"> Sinh nhật</label>
+        <input type="number" id="bonus-birthday-amount" value="0" oninput="calculatePayroll()" disabled>
+      </fieldset>
+
+      <label style="grid-column: span 2;">± Khoản khác: <input type="number" id="extra" value="0" oninput="calculatePayroll()"></label>
+    </div>
+
+    <div id="payroll-total" class="payroll-total">
+      💰 Tổng tạm tính: <strong>0</strong> đ
+    </div>
+
+    <div class="button-group">
+      <button onclick="savePayroll(${employee.id}, ${month}, ${year})" class="primary-btn">💾 Lưu</button>
+      <button onclick="printPayroll()" class="primary-btn">🖨 In</button>
+      <button onclick="closeModal('employee-payroll-modal')" class="secondary-btn">Đóng</button>
+    </div>
+
+    <script>
+      setTimeout(() => calculatePayroll(), 10);
+    </script>
+  `;
+}
+
+function calculatePayroll() {
+  const overtime = window.__ot || 0;
+  const off = window.__off || 0;
+
+  const hour = parseFloat(document.getElementById("baseHour").value) || 0;
+  const rate = parseFloat(document.getElementById("baseRate").value) || 0;
+  const extra = parseFloat(document.getElementById("extra").value) || 0;
+
+  const penalty =
+    (document.getElementById("penalty-late").checked ? parseFloat(document.getElementById("penalty-late-amount").value) || 0 : 0) +
+    (document.getElementById("penalty-other").checked ? parseFloat(document.getElementById("penalty-other-amount").value) || 0 : 0);
+
+  const bonus =
+    (document.getElementById("bonus-diligence").checked ? parseFloat(document.getElementById("bonus-diligence-amount").value) || 0 : 0) +
+    (document.getElementById("bonus-birthday").checked ? parseFloat(document.getElementById("bonus-birthday-amount").value) || 0 : 0);
+
+  const totalHour = hour + overtime - off;
+  const salary = totalHour * rate + bonus - penalty + extra;
+
+  const totalDiv = document.getElementById("payroll-total");
+  if (totalDiv) {
+    totalDiv.innerHTML = `💰 Tổng tạm tính: <strong>${salary.toLocaleString("vi-VN")}</strong> đ`;
+  }
+}
+
+function togglePenalty() {
+  document.getElementById("penalty-late-amount").disabled = !document.getElementById("penalty-late").checked;
+  document.getElementById("penalty-other-amount").disabled = !document.getElementById("penalty-other").checked;
+  calculatePayroll();
+}
+
+function toggleBonus() {
+  document.getElementById("bonus-diligence-amount").disabled = !document.getElementById("bonus-diligence").checked;
+  document.getElementById("bonus-birthday-amount").disabled = !document.getElementById("bonus-birthday").checked;
+  calculatePayroll();
+}
+
+function savePayroll(employeeId, month, year) {
+  const hour = parseFloat(document.getElementById("baseHour").value) || 0;
+  const rate = parseFloat(document.getElementById("baseRate").value) || 0;
+  const extra = parseFloat(document.getElementById("extra").value) || 0;
+
+  const penalty =
+    (document.getElementById("penalty-late").checked ? parseFloat(document.getElementById("penalty-late-amount").value) || 0 : 0) +
+    (document.getElementById("penalty-other").checked ? parseFloat(document.getElementById("penalty-other-amount").value) || 0 : 0);
+
+  const bonus =
+    (document.getElementById("bonus-diligence").checked ? parseFloat(document.getElementById("bonus-diligence-amount").value) || 0 : 0) +
+    (document.getElementById("bonus-birthday").checked ? parseFloat(document.getElementById("bonus-birthday-amount").value) || 0 : 0);
+
+  const totalHour = hour + (window.__ot || 0) - (window.__off || 0);
+  const salary = totalHour * rate + bonus - penalty + extra;
+
+  const data = {
+    employeeId,
+    month,
+    year,
+    hour, rate, penalty, bonus, extra,
+    totalHour, salary,
+    savedAt: new Date().toISOString()
+  };
+
+  firebase.database().ref(`payrolls/${employeeId}/${year}-${String(month).padStart(2, '0')}`).set(data)
+    .then(() => alert("💾 Đã lưu bảng lương."))
+    .catch(err => alert("❌ Lỗi khi lưu: " + err.message));
+}
+
+function printPayroll() {
+  const name = document.querySelector("#employee-payroll-content h3").innerText;
+  const month = document.getElementById("payroll-month-select").value;
+  const year = document.getElementById("payroll-year-select").value;
+  const content = document.getElementById("employee-payroll-content").innerHTML;
+
+  const printWindow = window.open("", "_blank");
+  printWindow.document.write(`
+    <html>
+    <head>
+      <title>${name} - Lương ${month}/${year}</title>
+      <style>
+        body { font-family: Arial; padding: 20px; }
+        h3 { margin-top: 0; }
+        .payroll-summary, .payroll-inputs, .payroll-total {
+          margin-bottom: 12px;
+        }
+        label { display: block; margin-bottom: 6px; }
+        .payroll-inputs input {
+          width: 120px;
+          padding: 3px;
+          margin-left: 8px;
+          text-align: right;
+        }
+      </style>
+    </head>
+    <body>
+      ${content}
+      <script>window.print(); setTimeout(() => window.close(), 500);</script>
+    </body>
+    </html>
+  `);
+}
+
+function initManagerPayrollAccess() {
+  if (currentUserRole === 'admin') {
+    document.getElementById("manager-payroll-section").style.display = "block";
+
+    const select = document.getElementById("payroll-employee-select");
+    select.innerHTML = '<option value="">-- Chọn nhân viên --</option>' +
+      globalEmployeeData.map(emp => `<option value="${emp.id}">${emp.name}</option>`).join('');
+  }
+}
+function initManagerPayrollAccess() {
+  const current = globalEmployeeData.find(e => e.id === currentEmployeeId);
+  if (!current || current.role !== 'admin') return;
+
+  const section = document.getElementById("manager-payroll-section");
+  if (section) section.style.display = "block";
+
+  const select = document.getElementById("payroll-employee-select");
+  if (select) {
+    select.innerHTML = '<option value="">-- Chọn nhân viên --</option>' +
+      globalEmployeeData.map(emp => `<option value="${emp.id}">${emp.name}</option>`).join('');
+  }
+}
+
+
+function renderAllScheduleRequests() {
+  const container = document.getElementById("schedule-requests-preview");
+  const btnViewAll = document.getElementById("view-all-schedule-requests");
+  const isManager = isCurrentUserManager();
+
+  const allRequests = isManager
+    ? globalScheduleData.filter(s => s.requestType)
+    : globalScheduleData.filter(s => s.employeeId === currentEmployeeId && s.requestType);
+
+  const requests = allRequests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const statusMap = {
+    off: "🛌 Nghỉ",
+    overtime: "🕒 Tăng ca",
+    swap: "🔁 Đổi ca",
+    "cancel-off": "🚫 Huỷ nghỉ",
+    "cancel-overtime": "🚫 Huỷ tăng ca",
+    "cancel-swap": "🚫 Huỷ đổi ca"
+  };
+
+  container.innerHTML = `
+    <table class="table-style">
+      <thead>
+        <tr>
+          <th>Ngày</th>
+          <th>Nhân viên</th>
+          <th>Loại</th>
+          <th>Trạng thái</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${requests.map(req => {
+          const emp = globalEmployeeData.find(e => e.id === req.employeeId);
+          const name = emp?.name || req.employeeName || "Không rõ";
+          const typeText = statusMap[req.status] || "❓";
+          const date = new Date(req.date).toLocaleDateString("vi-VN");
+          const status = req.approvalStatus === "approved"
+            ? "✅ Đã duyệt"
+            : req.approvalStatus === "rejected"
+            ? "❌ Từ chối"
+            : "⏳ Chờ duyệt";
+
+          return `
+            <tr>
+              <td>${date}</td>
+              <td>${name}</td>
+              <td>${typeText}</td>
+              <td>${status}</td>
+            </tr>
+          `;
+        }).join("")}
+      </tbody>
+    </table>
+  `;
+
+  btnViewAll.style.display = "none"; // Ẩn lại sau khi mở rộng
+}
+
+function renderScheduleRequests() {
+  const container = document.getElementById("schedule-requests-preview");
+  const btnViewAll = document.getElementById("view-all-schedule-requests");
+  const isManager = isCurrentUserManager();
+
+  const allRequests = isManager
+    ? globalScheduleData.filter(s => s.requestType)
+    : globalScheduleData.filter(s => s.employeeId === currentEmployeeId && s.requestType);
+
+  const requests = allRequests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  if (requests.length === 0) {
+    container.innerHTML = "<p>Không có yêu cầu lịch làm việc nào.</p>";
+    btnViewAll.style.display = "none";
+    return;
+  }
+
+  const statusMap = {
+    off: "🛌 Nghỉ",
+    overtime: "🕒 Tăng ca",
+    swap: "🔁 Đổi ca",
+    "cancel-off": "🚫 Huỷ nghỉ",
+    "cancel-overtime": "🚫 Huỷ tăng ca",
+    "cancel-swap": "🚫 Huỷ đổi ca"
+  };
+
+  const previewList = requests.slice(0, 3);
+
+  container.innerHTML = `
+    <table class="table-style">
+      <thead>
+        <tr>
+          <th>Ngày</th>
+          <th>Nhân viên</th>
+          <th>Loại</th>
+          <th>Trạng thái</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${previewList.map(req => {
+          const emp = globalEmployeeData.find(e => e.id === req.employeeId);
+          const name = emp?.name || req.employeeName || "Không rõ";
+          const typeText = statusMap[req.status] || "❓";
+          const date = new Date(req.date).toLocaleDateString("vi-VN");
+          const status = req.approvalStatus === "approved"
+            ? "✅ Đã duyệt"
+            : req.approvalStatus === "rejected"
+            ? "❌ Từ chối"
+            : "⏳ Chờ duyệt";
+
+          return `
+            <tr>
+              <td>${date}</td>
+              <td>${name}</td>
+              <td>${typeText}</td>
+              <td>${status}</td>
+            </tr>
+          `;
+        }).join("")}
+      </tbody>
+    </table>
+  `;
+
+  btnViewAll.style.display = requests.length > 3 ? "inline-block" : "none";
 }
