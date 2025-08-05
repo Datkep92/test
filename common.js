@@ -267,6 +267,7 @@ function loadFirebaseData(callback) {
           role: "employee",
           active: true
         };
+
         db.ref(`users/${userId}`).set(newUser)
           .then(() => {
             globalEmployeeData.push(newUser);
@@ -304,6 +305,11 @@ function loadFirebaseData(callback) {
     }).catch(err => {
       console.error("❌ Error loading inventory:", err.message);
     });
+db.ref("inventory").once("value").then(snapshot => {
+  globalInventoryData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
+  renderInventory(); // nếu có
+  renderProductGrid(); // ✅ gọi tại đây để vẽ giao diện mới
+});
 
     // Tải dữ liệu advanceRequests
     db.ref("advanceRequests").once("value").then(snapshot => {
@@ -333,6 +339,15 @@ function loadFirebaseData(callback) {
     }).catch(err => {
       console.error("❌ Error loading reports:", err.message);
     });
+
+    // ✅ Tải dữ liệu lịch sử thao tác
+    db.ref("history").once("value").then(snapshot => {
+      globalHistory = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
+      if (typeof renderHistory === "function") renderHistory();
+    }).catch(err => {
+      console.error("❌ Error loading history:", err.message);
+    });
+
   });
 }
 
