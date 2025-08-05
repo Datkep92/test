@@ -145,11 +145,17 @@ function openTabBubble(tabId) {
     renderReportProductList();
     renderRevenueExpenseData();
     renderFilteredReports(getReportData());
-  } else if (tabId === 'profile') {
-    initProfile(); // Đảm bảo gọi initProfile khi mở tab
-  } else if (tabId === 'employee') {
+  }
+
+  if (tabId === "profile" && isCurrentUserManager()) {
+    renderEmployeeList();
+  }
+
+  if (tabId === 'employee') {
+    // ... thêm logic nếu có tab employee riêng
   }
 }
+
 
 function showToastNotification(message) {
   const container = document.getElementById("toast-container");
@@ -169,6 +175,8 @@ function closeModal(modalId) {
 }
 
 function loadEmployeeInfo() {
+  console.log("🔍 Đang load thông tin nhân viên...");
+
   const user = auth.currentUser;
   if (!user) return;
   db.ref(`users/${user.uid}`).once("value").then(snapshot => {
@@ -179,8 +187,13 @@ function loadEmployeeInfo() {
       const phoneInput = document.getElementById("phone-input");
 
       if (nameInput) nameInput.value = data.name || "";
-      if (addressInput) addressInput.value = data.andess || "";
+      else console.warn("Không tìm thấy phần tử name-input");
+
+      if (addressInput) addressInput.value = data.address || "";
+      else console.warn("Không tìm thấy phần tử address-input");
+
       if (phoneInput) phoneInput.value = data.sdt || "";
+      else console.warn("Không tìm thấy phần tử phone-input");
     }
   }).catch(err => console.error("Lỗi khi load thông tin nhân viên:", err));
 }
@@ -252,42 +265,61 @@ function loadFirebaseData(callback) {
 
     const userId = user.uid;
 
-    // Tải dữ liệu users
-    db.ref("users").once("value").then(snapshot => {
-      globalEmployeeData = [];
-      snapshot.forEach(child => {
-        globalEmployeeData.push({ id: child.key, ...child.val() });
-      });
-      const found = globalEmployeeData.find(e => e.id === userId);
-      if (!found) {
-        const newUser = {
-          id: userId,
-          name: user.displayName || "Chưa rõ tên",
-          email: user.email || "",
-          role: "employee",
-          active: true
-        };
+    // Trong loadFirebaseData()
+db.ref("users").once("value").then(snapshot => {
+  globalEmployeeData = [];
 
-        db.ref(`users/${userId}`).set(newUser)
-          .then(() => {
-            globalEmployeeData.push(newUser);
-            console.log("✅ Added new user to /users:", newUser);
-          })
-          .catch(err => {
-            console.error("❌ Error adding user to /users:", err.message);
-          });
-      }
-      isEmployeeDataLoaded = true;
-      console.log("✅ Loaded employee data:", globalEmployeeData);
-
-      if (document.getElementById('profile') && document.getElementById('profile').style.display !== 'none') {
-        loadEmployeeInfo();
-      }
-
-      if (typeof callback === "function") callback();
-    }).catch(err => {
-      console.error("❌ Error loading users:", err.message);
+  snapshot.forEach(child => {
+    const data = child.val();
+    globalEmployeeData.push({
+      id: child.key,
+      name: data.name || "Không tên",
+      email: data.email || "",
+      role: data.role || "employee",
+      phone: data.sdt || data.phone || "",
+      address: data.andess || data.address || "",
+      active: data.active || false,
+      online: data.online || false
     });
+  });
+
+  const found = globalEmployeeData.find(e => e.id === userId);
+  if (!found) {
+    const newUser = {
+      id: userId,
+      name: user.displayName || "Chưa rõ tên",
+      email: user.email || "",
+      role: "employee",
+      active: true
+    };
+
+    db.ref(`users/${userId}`).set(newUser)
+      .then(() => {
+        globalEmployeeData.push(newUser);
+        console.log("✅ Added new user to /users:", newUser);
+      })
+      .catch(err => {
+        console.error("❌ Error adding user to /users:", err.message);
+      });
+  }
+
+  isEmployeeDataLoaded = true;
+  console.log("✅ Loaded employee data:", globalEmployeeData);
+
+  // Gọi sau khi DOM hiển thị
+  setTimeout(() => {
+    const profileTab = document.getElementById('profile');
+    const isVisible = profileTab && window.getComputedStyle(profileTab).display !== 'none';
+    if (isVisible) {
+      loadEmployeeInfo();
+    }
+  }, 300);
+
+  if (typeof callback === "function") callback();
+}).catch(err => {
+  console.error("❌ Error loading users:", err.message);
+});
+
 
     // Tải dữ liệu schedules
     db.ref("schedules").once("value").then(snapshot => {
