@@ -1525,7 +1525,7 @@ function submitInventoryReport() {
             renderFilteredReports(globalReportData);
             renderReportProductList();
             renderHistory();
-            alert("Báo cáo tồn kho đã được gửi!");
+            showToastNotification("Báo cáo tồn kho đã được gửi!");
           });
         });
       }).catch(err => {
