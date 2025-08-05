@@ -1614,6 +1614,7 @@ function showEmployeeDetails(employeeId) {
 
   modal.style.display = "block";
 }
+
 function showEmployeePopup(employeeId) {
   const emp = globalEmployeeData.find(e => e.id === employeeId);
   if (!emp) return;
@@ -1646,46 +1647,46 @@ function showEmployeePopup(employeeId) {
   const rewards = window.globalRewardData?.filter(r => r.employeeId === employeeId) || [];
   const punishments = window.globalPunishmentData?.filter(p => p.employeeId === employeeId) || [];
 
-  let rewardAmount = rewards.reduce((sum, r) => sum + (r.amount || 0), 0);
-  let punishmentAmount = punishments.reduce((sum, p) => sum + (p.amount || 0), 0);
-
-  let rewardHtml = `<ul>` + rewards.map(r => `
-    <li>🎁 ${r.reason}: +${r.amount.toLocaleString('vi-VN')}đ</li>
-  `).join('') + `</ul>`;
-  if (rewards.length === 0) rewardHtml = '<p>Không có</p>';
-
-  let punishmentHtml = `<ul>` + punishments.map(p => `
-    <li>⚠️ ${p.reason}: -${p.amount.toLocaleString('vi-VN')}đ</li>
-  `).join('') + `</ul>`;
-  if (punishments.length === 0) punishmentHtml = '<p>Không có</p>';
+  const rewardHtml = rewards.map(r => `<tr><td>${r.reason}</td><td>+${r.amount.toLocaleString('vi-VN')}đ</td></tr>`).join('') || '<tr><td colspan="2">Không có</td></tr>';
+  const punishmentHtml = punishments.map(p => `<tr><td>${p.reason}</td><td>-${p.amount.toLocaleString('vi-VN')}đ</td></tr>`).join('') || '<tr><td colspan="2">Không có</td></tr>';
 
   content.innerHTML = `
-    <h3>👤 Thông tin nhân viên</h3>
+    <h3>👤 BẢNG LƯƠNG NHÂN VIÊN</h3>
     <p><strong>Tên:</strong> ${emp.name}</p>
-    <p><strong>Email:</strong> ${emp.email || 'Chưa có'}</p>
-    <p><strong>SĐT:</strong> ${emp.phone || emp.sdt || 'Chưa có'}</p>
-    <p><strong>Địa chỉ:</strong> ${emp.address || emp.andess || 'Chưa có'}</p>
+    <p><strong>Email:</strong> ${emp.email || 'Chưa có'} | <strong>SĐT:</strong> ${emp.phone || emp.sdt || 'Chưa có'} | <strong>Địa chỉ:</strong> ${emp.address || emp.andess || 'Chưa có'}</p>
+    <p><strong>Tháng:</strong> ${currentMonth + 1}/${currentYear}</p>
 
-    <h4>📅 Thống kê tháng ${currentMonth + 1}/${currentYear}</h4>
-    <p>🛌 Ngày nghỉ: <strong>${totalOff}</strong></p>
-    <p>🕒 Tăng ca: <strong>${totalOvertime}</strong></p>
-
+    <hr>
     <div class="input-group">
       <label>Giờ/ngày:</label>
-      <input id="input-hours-${employeeId}" type="number" value="${defaultHours}" min="1" oninput="updateLiveSalary('${employeeId}', ${defaultWorkingDays}, ${totalOff}, ${totalOvertime}, ${rewardAmount}, ${punishmentAmount})" />
+      <input id="input-hours-${employeeId}" type="number" value="${defaultHours}" min="1" oninput="updateLiveSalary('${employeeId}', ${defaultWorkingDays}, ${totalOff}, ${totalOvertime})" />
     </div>
     <div class="input-group">
       <label>Tiền/giờ (VND):</label>
-      <input id="input-wage-${employeeId}" type="number" value="${defaultWage}" min="1000" oninput="updateLiveSalary('${employeeId}', ${defaultWorkingDays}, ${totalOff}, ${totalOvertime}, ${rewardAmount}, ${punishmentAmount})" />
+      <input id="input-wage-${employeeId}" type="number" value="${defaultWage}" min="1000" oninput="updateLiveSalary('${employeeId}', ${defaultWorkingDays}, ${totalOff}, ${totalOvertime})" />
     </div>
 
+    <p><strong>Ngày làm thực tế:</strong> ${defaultWorkingDays - totalOff + totalOvertime}</p>
+    <p><strong>Ngày nghỉ:</strong> ${totalOff} | <strong>Tăng ca:</strong> ${totalOvertime}</p>
+
     <h4>🎁 Thưởng</h4>
-    ${rewardHtml}
+    <table><tbody id="reward-table-${employeeId}">${rewardHtml}</tbody></table>
+    <div class="input-group">
+      <input id="new-reward-${employeeId}" type="number" placeholder="Nhập tiền thưởng" oninput="updateLiveSalary('${employeeId}', ${defaultWorkingDays}, ${totalOff}, ${totalOvertime})" />
+      <input id="new-reward-reason-${employeeId}" type="text" placeholder="Lý do" />
+      <button onclick="addTempReward('${employeeId}')">➕ Thêm</button>
+    </div>
 
     <h4>⚠️ Chế tài</h4>
-    ${punishmentHtml}
+    <table><tbody id="punishment-table-${employeeId}">${punishmentHtml}</tbody></table>
+    <div class="input-group">
+      <input id="new-punish-${employeeId}" type="number" placeholder="Nhập tiền phạt" oninput="updateLiveSalary('${employeeId}', ${defaultWorkingDays}, ${totalOff}, ${totalOvertime})" />
+      <input id="new-punish-reason-${employeeId}" type="text" placeholder="Lý do" />
+      <button onclick="addTempPunishment('${employeeId}')">➕ Thêm</button>
+    </div>
 
-    <p id="salary-result-${employeeId}" class="live-salary">💰 Lương tạm tính: <strong>0</strong> đ</p>
+    <h4>💰 Lương thực tính</h4>
+    <div id="salary-result-${employeeId}" class="live-salary"></div>
 
     <div class="button-group">
       <button class="secondary-btn" onclick="printSalaryPopup('${employeeId}')">🖨️ In bảng lương</button>
@@ -1694,24 +1695,42 @@ function showEmployeePopup(employeeId) {
   `;
 
   modal.style.display = "block";
-  updateLiveSalary(employeeId, defaultWorkingDays, totalOff, totalOvertime, rewardAmount, punishmentAmount);
+  updateLiveSalary(employeeId, defaultWorkingDays, totalOff, totalOvertime);
 }
 
-function updateLiveSalary(employeeId, totalDaysInMonth, totalOff, totalOvertime, rewards = 0, punishments = 0) {
-  const hoursInput = document.getElementById(`input-hours-${employeeId}`);
-  const wageInput = document.getElementById(`input-wage-${employeeId}`);
-  const resultField = document.getElementById(`salary-result-${employeeId}`);
+function updateLiveSalary(employeeId, totalDaysInMonth, totalOff, totalOvertime) {
+  const hours = parseFloat(document.getElementById(`input-hours-${employeeId}`)?.value || '0') || 0;
+  const wage = parseFloat(document.getElementById(`input-wage-${employeeId}`)?.value || '0') || 0;
+  const tempReward = parseFloat(document.getElementById(`new-reward-${employeeId}`)?.value || '0') || 0;
+  const tempPunish = parseFloat(document.getElementById(`new-punish-${employeeId}`)?.value || '0') || 0;
 
-  if (!hoursInput || !wageInput || !resultField) return;
+  const rewards = window.globalRewardData?.filter(r => r.employeeId === employeeId) || [];
+  const punishments = window.globalPunishmentData?.filter(p => p.employeeId === employeeId) || [];
 
-  const hours = parseFloat(hoursInput.value) || 0;
-  const wage = parseFloat(wageInput.value) || 0;
+  const rewardAmount = rewards.reduce((sum, r) => sum + (r.amount || 0), 0) + tempReward;
+  const punishmentAmount = punishments.reduce((sum, p) => sum + (p.amount || 0), 0) + tempPunish;
 
   const workingDays = totalDaysInMonth - totalOff + totalOvertime;
   const baseSalary = workingDays * hours * wage;
-  const totalSalary = baseSalary + rewards - punishments;
+  const totalSalary = baseSalary + rewardAmount - punishmentAmount;
 
-  resultField.innerHTML = `💰 Lương tạm tính: <strong>${totalSalary.toLocaleString('vi-VN')} đ</strong>`;
+  const resultField = document.getElementById(`salary-result-${employeeId}`);
+  if (resultField) {
+    resultField.innerHTML = `
+      <p><strong>Lương cơ bản:</strong> ${baseSalary.toLocaleString('vi-VN')}đ</p>
+      <p><strong>+ Thưởng:</strong> ${rewardAmount.toLocaleString('vi-VN')}đ</p>
+      <p><strong>- Chế tài:</strong> ${punishmentAmount.toLocaleString('vi-VN')}đ</p>
+      <p><strong>= Lương thực nhận:</strong> <span style="color:green; font-size: 1.2em">${totalSalary.toLocaleString('vi-VN')}đ</span></p>
+    `;
+  }
+}
+
+function addTempReward(employeeId) {
+  updateLiveSalary(employeeId);
+}
+
+function addTempPunishment(employeeId) {
+  updateLiveSalary(employeeId);
 }
 
 function printSalaryPopup(employeeId) {
@@ -1720,7 +1739,7 @@ function printSalaryPopup(employeeId) {
   printWindow.document.write(`
     <html>
       <head><title>Bảng lương</title></head>
-      <body>${modalContent.innerHTML}</body>
+      <body style="font-family:sans-serif; padding:20px">${modalContent.innerHTML}</body>
     </html>
   `);
   printWindow.document.close();
