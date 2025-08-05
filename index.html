@@ -61,19 +61,17 @@
           <button class="primary-btn small" onclick="submitField('closing-balance')">Gửi</button>
         </div>
         <h4>Xuất hàng</h4>
-        <div id="report-product-list"></div>
-<button onclick="submitInventoryReport()">Gửi Báo Cáo Tồn Kho</button>
+        <div id="report-product-list" class="product-list"></div>
+        <button class="primary-btn" onclick="submitInventoryReport()">Gửi Báo Cáo Tồn Kho</button>
       </div>
 
       <div class="card">
-  <h3>Lọc Báo Cáo</h3>
-  <div class="input-group">
-    <input type="text" id="filter-range" placeholder="Chọn khoảng thời gian (VD: 25/07/2025 - 26/07/2025)" />
-    <button class="primary-btn" onclick="applyFilter()">Lọc</button>
-    <button class="secondary-btn" onclick="clearHistoryFilter()" style="margin-left: 6px;">Xóa lọc</button>
-  </div>
-</div>
-
+        <h3>Lọc Báo Cáo</h3>
+        <div class="input-group">
+          <input type="text" id="filter-range" placeholder="Chọn khoảng thời gian (VD: 25/07/2025 - 26/07/2025)" />
+          <button class="primary-btn" onclick="applyFilter()">Lọc</button>
+        </div>
+      </div>
 
       <div id="revenue-expense-summary" class="card">
         <h3>Tóm tắt Thu Chi</h3>
@@ -148,6 +146,12 @@
         <h3>Lịch làm việc</h3>
         <div id="calendar"></div>
       </div>
+<div id="employee-list-container"></div>
+
+<!-- Popup -->
+<div id="employee-details-modal" class="modal">
+  <div id="employee-details-content" class="modal-content"></div>
+</div>
 
       <div class="card">
         <h3>Thông tin cá nhân</h3>
@@ -156,6 +160,10 @@
         <input id="address-input" type="text" placeholder="Nhập địa chỉ" />
         <button onclick="updateUserProfile()">Cập nhật</button>
       </div>
+<div class="card" id="employee-list-section">
+  <h3>Danh sách nhân viên</h3>
+  <div id="employee-list"></div>
+</div>
 
       <div class="card">
         <h3>Yêu cầu tạm ứng</h3>
@@ -176,6 +184,8 @@
         <h3>Ngày off và tăng ca</h3>
         <div id="off-and-overtime"></div>
       </div>
+<div id="schedule-requests-preview"></div>
+<button id="view-all-schedule-requests">Xem tất cả</button>
 
       <div class="card">
         <h3>Lịch sử tạm ứng</h3>
