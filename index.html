@@ -61,17 +61,19 @@
           <button class="primary-btn small" onclick="submitField('closing-balance')">Gửi</button>
         </div>
         <h4>Xuất hàng</h4>
-        <div id="report-product-list" class="product-list"></div>
-        <button class="primary-btn" onclick="submitInventoryReport()">Gửi Báo Cáo Tồn Kho</button>
+        <div id="report-product-list"></div>
+<button onclick="submitInventoryReport()">Gửi Báo Cáo Tồn Kho</button>
       </div>
 
       <div class="card">
-        <h3>Lọc Báo Cáo</h3>
-        <div class="input-group">
-          <input type="text" id="filter-range" placeholder="Chọn khoảng thời gian (VD: 25/07/2025 - 26/07/2025)" />
-          <button class="primary-btn" onclick="applyFilter()">Lọc</button>
-        </div>
-      </div>
+  <h3>Lọc Báo Cáo</h3>
+  <div class="input-group">
+    <input type="text" id="filter-range" placeholder="Chọn khoảng thời gian (VD: 25/07/2025 - 26/07/2025)" />
+    <button class="primary-btn" onclick="applyFilter()">Lọc</button>
+    <button class="secondary-btn" onclick="clearHistoryFilter()" style="margin-left: 6px;">Xóa lọc</button>
+  </div>
+</div>
+
 
       <div id="revenue-expense-summary" class="card">
         <h3>Tóm tắt Thu Chi</h3>
@@ -89,9 +91,11 @@
         <h3>Bảng Báo cáo Xuất Hàng</h3>
       </div>
 
-      <div class="card table-section" id="history-table">
-        <h3>Lịch sử Thao tác</h3>
-      </div>
+      <div class="card table-section">
+  <h3>Lịch sử Thao tác</h3>
+  <div id="history-table"></div>
+</div>
+
     </section>
 
     <!-- Tab: Quản lý Kho -->
