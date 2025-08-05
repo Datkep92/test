@@ -1498,6 +1498,13 @@ function renderAllScheduleRequests() {
 function renderScheduleRequests() {
   const container = document.getElementById("schedule-requests-preview");
   const btnViewAll = document.getElementById("view-all-schedule-requests");
+
+  // Nếu container không tồn tại, không tiếp tục
+  if (!container || !btnViewAll) {
+    console.warn("⚠️ schedule-requests-preview hoặc view-all-schedule-requests không tồn tại trong DOM.");
+    return;
+  }
+
   const isManager = isCurrentUserManager();
 
   const allRequests = isManager
@@ -1559,4 +1566,165 @@ function renderScheduleRequests() {
   `;
 
   btnViewAll.style.display = requests.length > 3 ? "inline-block" : "none";
+}
+
+function renderEmployeeList() {
+  const container = document.getElementById("employee-list-container");
+  if (!container) return;
+
+  const rows = globalEmployeeData.map(emp => `
+    <tr onclick="showEmployeePopup('${emp.id}')">
+      <td>${emp.name}</td>
+      <td>${emp.phone || "Không rõ"}</td>
+      <td>${emp.role}</td>
+    </tr>
+  `).join("");
+
+  container.innerHTML = `
+    <table class="table-style">
+      <thead>
+        <tr>
+          <th>Tên</th>
+          <th>SĐT</th>
+          <th>Vai trò</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+
+function showEmployeeDetails(employeeId) {
+  const emp = globalEmployeeData.find(e => e.id === employeeId);
+  if (!emp) return;
+
+  const modal = document.getElementById("employee-details-modal");
+  const content = document.getElementById("employee-details-content");
+  if (!modal || !content) return;
+
+  content.innerHTML = `
+    <h3>Thông tin nhân viên</h3>
+    <p><strong>Tên:</strong> ${emp.name}</p>
+    <p><strong>Vai trò:</strong> ${emp.role}</p>
+    <p><strong>Email:</strong> ${emp.email}</p>
+    <p><strong>Điện thoại:</strong> ${emp.phone || "Chưa có"}</p>
+    <p><strong>Địa chỉ:</strong> ${emp.address || "Chưa có"}</p>
+  `;
+
+  modal.style.display = "block";
+}
+function showEmployeePopup(employeeId) {
+  const emp = globalEmployeeData.find(e => e.id === employeeId);
+  if (!emp) return;
+
+  const modal = document.getElementById("action-modal");
+  const content = document.getElementById("action-modal-content");
+  if (!modal || !content) return;
+
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const totalDaysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  const schedules = globalScheduleData.filter(s => {
+    const date = new Date(s.date);
+    return (
+      s.employeeId === employeeId &&
+      date.getMonth() === currentMonth &&
+      date.getFullYear() === currentYear
+    );
+  });
+
+  const totalOff = schedules.filter(s => s.status === 'off' && s.approvalStatus === 'approved').length;
+  const totalOvertime = schedules.filter(s => s.status === 'overtime' && s.approvalStatus === 'approved').length;
+
+  const defaultHours = 8;
+  const defaultWage = 20000;
+  const defaultWorkingDays = totalDaysInMonth;
+
+  const rewards = window.globalRewardData?.filter(r => r.employeeId === employeeId) || [];
+  const punishments = window.globalPunishmentData?.filter(p => p.employeeId === employeeId) || [];
+
+  let rewardAmount = rewards.reduce((sum, r) => sum + (r.amount || 0), 0);
+  let punishmentAmount = punishments.reduce((sum, p) => sum + (p.amount || 0), 0);
+
+  let rewardHtml = `<ul>` + rewards.map(r => `
+    <li>🎁 ${r.reason}: +${r.amount.toLocaleString('vi-VN')}đ</li>
+  `).join('') + `</ul>`;
+  if (rewards.length === 0) rewardHtml = '<p>Không có</p>';
+
+  let punishmentHtml = `<ul>` + punishments.map(p => `
+    <li>⚠️ ${p.reason}: -${p.amount.toLocaleString('vi-VN')}đ</li>
+  `).join('') + `</ul>`;
+  if (punishments.length === 0) punishmentHtml = '<p>Không có</p>';
+
+  content.innerHTML = `
+    <h3>👤 Thông tin nhân viên</h3>
+    <p><strong>Tên:</strong> ${emp.name}</p>
+    <p><strong>Email:</strong> ${emp.email || 'Chưa có'}</p>
+    <p><strong>SĐT:</strong> ${emp.phone || emp.sdt || 'Chưa có'}</p>
+    <p><strong>Địa chỉ:</strong> ${emp.address || emp.andess || 'Chưa có'}</p>
+
+    <h4>📅 Thống kê tháng ${currentMonth + 1}/${currentYear}</h4>
+    <p>🛌 Ngày nghỉ: <strong>${totalOff}</strong></p>
+    <p>🕒 Tăng ca: <strong>${totalOvertime}</strong></p>
+
+    <div class="input-group">
+      <label>Giờ/ngày:</label>
+      <input id="input-hours-${employeeId}" type="number" value="${defaultHours}" min="1" oninput="updateLiveSalary('${employeeId}', ${defaultWorkingDays}, ${totalOff}, ${totalOvertime}, ${rewardAmount}, ${punishmentAmount})" />
+    </div>
+    <div class="input-group">
+      <label>Tiền/giờ (VND):</label>
+      <input id="input-wage-${employeeId}" type="number" value="${defaultWage}" min="1000" oninput="updateLiveSalary('${employeeId}', ${defaultWorkingDays}, ${totalOff}, ${totalOvertime}, ${rewardAmount}, ${punishmentAmount})" />
+    </div>
+
+    <h4>🎁 Thưởng</h4>
+    ${rewardHtml}
+
+    <h4>⚠️ Chế tài</h4>
+    ${punishmentHtml}
+
+    <p id="salary-result-${employeeId}" class="live-salary">💰 Lương tạm tính: <strong>0</strong> đ</p>
+
+    <div class="button-group">
+      <button class="secondary-btn" onclick="printSalaryPopup('${employeeId}')">🖨️ In bảng lương</button>
+      <button class="secondary-btn" onclick="closeModal('action-modal')">Đóng</button>
+    </div>
+  `;
+
+  modal.style.display = "block";
+  updateLiveSalary(employeeId, defaultWorkingDays, totalOff, totalOvertime, rewardAmount, punishmentAmount);
+}
+
+function updateLiveSalary(employeeId, totalDaysInMonth, totalOff, totalOvertime, rewards = 0, punishments = 0) {
+  const hoursInput = document.getElementById(`input-hours-${employeeId}`);
+  const wageInput = document.getElementById(`input-wage-${employeeId}`);
+  const resultField = document.getElementById(`salary-result-${employeeId}`);
+
+  if (!hoursInput || !wageInput || !resultField) return;
+
+  const hours = parseFloat(hoursInput.value) || 0;
+  const wage = parseFloat(wageInput.value) || 0;
+
+  const workingDays = totalDaysInMonth - totalOff + totalOvertime;
+  const baseSalary = workingDays * hours * wage;
+  const totalSalary = baseSalary + rewards - punishments;
+
+  resultField.innerHTML = `💰 Lương tạm tính: <strong>${totalSalary.toLocaleString('vi-VN')} đ</strong>`;
+}
+
+function printSalaryPopup(employeeId) {
+  const modalContent = document.getElementById("action-modal-content");
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`
+    <html>
+      <head><title>Bảng lương</title></head>
+      <body>${modalContent.innerHTML}</body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.print();
+  printWindow.close();
 }
