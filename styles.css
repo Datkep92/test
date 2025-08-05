@@ -591,6 +591,118 @@ button:disabled {
   user-zoom: fixed;
 }
 
+/* ===== Bảng yêu cầu lịch làm việc - Phiên bản responsive ===== */
+.schedule-requests-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: var(--space-md) 0;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  background-color: var(--card-bg);
+}
+
+.schedule-requests-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  min-width: 500px;
+  table-layout: fixed;
+}
+
+/* Thiết lập chiều rộng cột */
+.schedule-requests-table th:nth-child(1),
+.schedule-requests-table td:nth-child(1) {
+  width: 20%; /* Cột Ngày/Tháng/Năm */
+  min-width: 80px;
+}
+.schedule-requests-table th:nth-child(2),
+.schedule-requests-table td:nth-child(2) {
+  width: 25%; /* Cột Nhân viên */
+  min-width: 100px;
+}
+.schedule-requests-table th:nth-child(3),
+.schedule-requests-table td:nth-child(3) {
+  width: 25%; /* Cột Loại */
+  min-width: 80px;
+}
+.schedule-requests-table th:nth-child(4),
+.schedule-requests-table td:nth-child(4) {
+  width: 30%; /* Cột Trạng thái/Hành động */
+  min-width: 100px;
+}
+
+/* Style chung */
+.schedule-requests-table th,
+.schedule-requests-table td {
+  padding: var(--space-sm);
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.schedule-requests-table th {
+  background-color: var(--primary);
+  color: white;
+  position: sticky;
+  top: 0;
+  font-weight: 500;
+}
+
+.schedule-requests-table tr:nth-child(even) {
+  background-color: rgba(196, 164, 132, 0.05);
+}
+
+.schedule-requests-table tr:hover {
+  background-color: rgba(196, 164, 132, 0.1);
+}
+
+/* Nút trạng thái/hành động */
+.schedule-requests-table .status-btn {
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  color: white;
+  border: none;
+  cursor: pointer;
+  width: 80px;
+  text-align: center;
+}
+
+.schedule-requests-table .status-pending,
+.schedule-requests-table .status-swapPending {
+  background-color: var(--pending);
+  color: var(--text);
+}
+.schedule-requests-table .status-approved {
+  background-color: var(--success);
+}
+.schedule-requests-table .status-rejected {
+  background-color: var(--danger);
+}
+
+/* Responsive cho mobile */
+@media (max-width: 768px) {
+  .schedule-requests-table {
+    min-width: 100%;
+    font-size: var(--text-xs);
+  }
+  .schedule-requests-table th,
+  .schedule-requests-table td {
+    padding: var(--space-xs) var(--space-sm);
+  }
+  .schedule-requests-table td:nth-child(1) {
+    white-space: nowrap;
+    width: 1%;
+  }
+  .schedule-requests-table .status-btn {
+    width: 100%;
+    padding: 2px 4px;
+  }
+}
+
 /* ===== Bảng yêu cầu tạm ứng - Cập nhật ===== */
 .advance-table-container {
   width: 100%;
@@ -749,7 +861,7 @@ button:disabled {
   transform: translateX(0);
 }
 
-
+///
 /* === Bảng hiển thị chung === */
 .table-style {
   width: 100%;
@@ -942,6 +1054,7 @@ button:disabled {
 }
 
 .product-item {
+  width: 60px; /* Thủ công để được 5 ô/dòng */
   height: 100px;
   background: white;
   border-radius: 8px;
