@@ -155,6 +155,31 @@ p {
   box-shadow: var(--shadow-md);
 }
 
+/* ===== Forms & Inputs ===== */
+.input-group {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  align-items: center;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  background-color: var(--card-bg);
+  flex: 1;
+  min-width: 0;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(111, 78, 55, 0.1);
+}
 
 /* ===== Buttons ===== */
 button {
@@ -505,6 +530,42 @@ button:disabled {
   gap: 15px;
 }
 
+/* ===== Responsive Adjustments ===== */
+@media (max-width: 480px) {
+  :root {
+    --space-md: 12px;
+    --space-lg: 16px;
+  }
+  
+  .input-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .button-group {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  
+  button {
+    width: 100%;
+  }
+  
+  .calendar-header h3 {
+    font-size: var(--text-sm);
+  }
+  
+  .day {
+    font-size: var(--text-xs);
+    padding: 2px;
+  }
+  
+  .mini-avatar {
+    width: 14px;
+    height: 14px;
+    font-size: 8px;
+  }
+}
 
 /* ===== Utility Classes ===== */
 .flex {
@@ -973,6 +1034,17 @@ button:disabled {
   align-items: flex-end;
 }
 
+/* === Toast Notification === */
+#toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
 .toast {
   background-color: var(--primary, #333);
   color: white;
@@ -1171,41 +1243,7 @@ button:disabled {
   font-weight: bold;
   font-style: italic;
 }
-//
-.input-group {
-  display: flex;
-  align-items: center;
-  gap: 12px; /* ✅ Tạo khoảng cách giữa input và nút */
-  margin-bottom: 12px;
-}
 
-.input-group input {
-  flex: 1;
-  padding: 8px 12px;
-  font-size: 14px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-}
-
-.input-group button {
-  padding: 8px 16px;
-  font-size: 14px;
-  white-space: nowrap;
-}
-
-@media (max-width: 480px) {
-  .input-group {
-    gap: 10px;
-  }
-  .input-group input {
-    font-size: 13px;
-    padding: 7px 10px;
-  }
-  .input-group button {
-    font-size: 13px;
-    padding: 7px 12px;
-  }
-}
 //
 /* ================================ GIAO DIỆN HÀNG HÓA 4 Ô CÂN ĐỐI ========================= */
 
