@@ -147,10 +147,13 @@ function openTabBubble(tabId) {
     renderFilteredReports(getReportData());
   }
 
-  if (tabId === "profile" && isCurrentUserManager()) {
-    renderEmployeeList();
+  if (tabId === "profile") {
+  if (isCurrentUserManager()) {
+    renderEmployeeList(); // Quản lý xem tất cả
+  } else {
+    renderMyselfOnly(); // Nhân viên chỉ xem chính mình
   }
-
+}
   if (tabId === 'employee') {
     // ... thêm logic nếu có tab employee riêng
   }
@@ -266,60 +269,59 @@ function loadFirebaseData(callback) {
     const userId = user.uid;
 
     // Trong loadFirebaseData()
-db.ref("users").once("value").then(snapshot => {
-  globalEmployeeData = [];
+    db.ref("users").once("value").then(snapshot => {
+      globalEmployeeData = [];
 
-  snapshot.forEach(child => {
-    const data = child.val();
-    globalEmployeeData.push({
-      id: child.key,
-      name: data.name || "Không tên",
-      email: data.email || "",
-      role: data.role || "employee",
-      phone: data.sdt || data.phone || "",
-      address: data.andess || data.address || "",
-      active: data.active || false,
-      online: data.online || false
-    });
-  });
-
-  const found = globalEmployeeData.find(e => e.id === userId);
-  if (!found) {
-    const newUser = {
-      id: userId,
-      name: user.displayName || "Chưa rõ tên",
-      email: user.email || "",
-      role: "employee",
-      active: true
-    };
-
-    db.ref(`users/${userId}`).set(newUser)
-      .then(() => {
-        globalEmployeeData.push(newUser);
-        console.log("✅ Added new user to /users:", newUser);
-      })
-      .catch(err => {
-        console.error("❌ Error adding user to /users:", err.message);
+      snapshot.forEach(child => {
+        const data = child.val();
+        globalEmployeeData.push({
+          id: child.key,
+          name: data.name || "Không tên",
+          email: data.email || "",
+          role: data.role || "employee",
+          phone: data.sdt || data.phone || "",
+          address: data.andess || data.address || "",
+          active: data.active || false,
+          online: data.online || false
+        });
       });
-  }
 
-  isEmployeeDataLoaded = true;
-  console.log("✅ Loaded employee data:", globalEmployeeData);
+      const found = globalEmployeeData.find(e => e.id === userId);
+      if (!found) {
+        const newUser = {
+          id: userId,
+          name: user.displayName || "Chưa rõ tên",
+          email: user.email || "",
+          role: "employee",
+          active: true
+        };
 
-  // Gọi sau khi DOM hiển thị
-  setTimeout(() => {
-    const profileTab = document.getElementById('profile');
-    const isVisible = profileTab && window.getComputedStyle(profileTab).display !== 'none';
-    if (isVisible) {
-      loadEmployeeInfo();
-    }
-  }, 300);
+        db.ref(`users/${userId}`).set(newUser)
+          .then(() => {
+            globalEmployeeData.push(newUser);
+            console.log("✅ Added new user to /users:", newUser);
+          })
+          .catch(err => {
+            console.error("❌ Error adding user to /users:", err.message);
+          });
+      }
 
-  if (typeof callback === "function") callback();
-}).catch(err => {
-  console.error("❌ Error loading users:", err.message);
-});
+      isEmployeeDataLoaded = true;
+      console.log("✅ Loaded employee data:", globalEmployeeData);
 
+      // Gọi sau khi DOM hiển thị
+      setTimeout(() => {
+        const profileTab = document.getElementById('profile');
+        const isVisible = profileTab && window.getComputedStyle(profileTab).display !== 'none';
+        if (isVisible) {
+          loadEmployeeInfo();
+        }
+      }, 300);
+
+      if (typeof callback === "function") callback();
+    }).catch(err => {
+      console.error("❌ Error loading users:", err.message);
+    });
 
     // Tải dữ liệu schedules
     db.ref("schedules").once("value").then(snapshot => {
@@ -333,24 +335,23 @@ db.ref("users").once("value").then(snapshot => {
     db.ref("inventory").once("value").then(snapshot => {
       globalInventoryData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
       if (typeof renderInventory === "function") renderInventory();
-      if (typeof renderReportProductList === "function") renderReportProductList(); // ✅ Gọi tại đây
+      if (typeof renderReportProductList === "function") renderReportProductList();
     }).catch(err => {
       console.error("❌ Error loading inventory:", err.message);
     });
-db.ref("inventory").once("value").then(snapshot => {
-  globalInventoryData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
-  renderInventory(); // nếu có
-  renderProductGrid(); // ✅ gọi tại đây để vẽ giao diện mới
-});
+
+    db.ref("inventory").once("value").then(snapshot => {
+      globalInventoryData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
+      renderInventory();
+      renderProductGrid();
+    });
 
     // Tải dữ liệu advanceRequests
     db.ref("advanceRequests").once("value").then(snapshot => {
       globalAdvanceRequests = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
 
-      // Nhân viên xem lịch sử tạm ứng của họ
       if (typeof renderAdvanceHistory === "function") renderAdvanceHistory();
 
-      // Quản lý xem tất cả yêu cầu tạm ứng
       if (isCurrentUserManager() && typeof renderAdvanceRequests === "function") {
         renderAdvanceRequests();
         const container = document.getElementById("advance-request-list");
@@ -372,14 +373,13 @@ db.ref("inventory").once("value").then(snapshot => {
       console.error("❌ Error loading reports:", err.message);
     });
 
-    // ✅ Tải dữ liệu lịch sử thao tác
+    // Tải dữ liệu lịch sử thao tác
     db.ref("history").once("value").then(snapshot => {
       globalHistory = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
       if (typeof renderHistory === "function") renderHistory();
     }).catch(err => {
       console.error("❌ Error loading history:", err.message);
     });
-
   });
 }
 
