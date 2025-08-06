@@ -101,6 +101,13 @@ h3 {
 p {
   margin-bottom: var(--space-sm);
 }
+#schedule-requests-container {
+  overflow-x: auto;
+  background: var(--card-bg);
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
 
 /* ===== Layout ===== */
 #main-page {
@@ -591,233 +598,6 @@ button:disabled {
   user-zoom: fixed;
 }
 
-/* ===== Bảng yêu cầu lịch làm việc - Phiên bản responsive ===== */
-.schedule-requests-container {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  margin: var(--space-md) 0;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  background-color: var(--card-bg);
-}
-
-.schedule-requests-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--text-sm);
-  min-width: 500px;
-  table-layout: fixed;
-}
-
-/* Thiết lập chiều rộng cột */
-.schedule-requests-table th:nth-child(1),
-.schedule-requests-table td:nth-child(1) {
-  width: 20%; /* Cột Ngày/Tháng/Năm */
-  min-width: 80px;
-}
-.schedule-requests-table th:nth-child(2),
-.schedule-requests-table td:nth-child(2) {
-  width: 25%; /* Cột Nhân viên */
-  min-width: 100px;
-}
-.schedule-requests-table th:nth-child(3),
-.schedule-requests-table td:nth-child(3) {
-  width: 25%; /* Cột Loại */
-  min-width: 80px;
-}
-.schedule-requests-table th:nth-child(4),
-.schedule-requests-table td:nth-child(4) {
-  width: 30%; /* Cột Trạng thái/Hành động */
-  min-width: 100px;
-}
-
-/* Style chung */
-.schedule-requests-table th,
-.schedule-requests-table td {
-  padding: var(--space-sm);
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  word-break: break-word;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.schedule-requests-table th {
-  background-color: var(--primary);
-  color: white;
-  position: sticky;
-  top: 0;
-  font-weight: 500;
-}
-
-.schedule-requests-table tr:nth-child(even) {
-  background-color: rgba(196, 164, 132, 0.05);
-}
-
-.schedule-requests-table tr:hover {
-  background-color: rgba(196, 164, 132, 0.1);
-}
-
-/* Nút trạng thái/hành động */
-.schedule-requests-table .status-btn {
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
-  color: white;
-  border: none;
-  cursor: pointer;
-  width: 80px;
-  text-align: center;
-}
-
-.schedule-requests-table .status-pending,
-.schedule-requests-table .status-swapPending {
-  background-color: var(--pending);
-  color: var(--text);
-}
-.schedule-requests-table .status-approved {
-  background-color: var(--success);
-}
-.schedule-requests-table .status-rejected {
-  background-color: var(--danger);
-}
-
-/* Responsive cho mobile */
-@media (max-width: 768px) {
-  .schedule-requests-table {
-    min-width: 100%;
-    font-size: var(--text-xs);
-  }
-  .schedule-requests-table th,
-  .schedule-requests-table td {
-    padding: var(--space-xs) var(--space-sm);
-  }
-  .schedule-requests-table td:nth-child(1) {
-    white-space: nowrap;
-    width: 1%;
-  }
-  .schedule-requests-table .status-btn {
-    width: 100%;
-    padding: 2px 4px;
-  }
-}
-
-/* ===== Bảng yêu cầu tạm ứng - Cập nhật ===== */
-.advance-table-container {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  margin: var(--space-md) 0;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  background-color: var(--card-bg);
-}
-
-.advance-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--text-sm);
-  min-width: 500px;
-  table-layout: fixed;
-}
-
-/* Thiết lập chiều rộng cột */
-.advance-table th:nth-child(1),
-.advance-table td:nth-child(1) {
-  width: 20%; /* Cột Ngày/Tháng/Năm */
-  min-width: 80px;
-}
-.advance-table th:nth-child(2),
-.advance-table td:nth-child(2) {
-  width: 20%; /* Cột Nhân viên */
-  min-width: 80px;
-}
-.advance-table th:nth-child(3),
-.advance-table td:nth-child(3) {
-  width: 15%; /* Cột Số tiền */
-  min-width: 80px;
-}
-.advance-table th:nth-child(4),
-.advance-table td:nth-child(4) {
-  width: 25%; /* Cột Ghi chú */
-  min-width: 100px;
-}
-.advance-table th:nth-child(5),
-.advance-table td:nth-child(5) {
-  width: 20%; /* Cột Trạng thái/Hành động */
-  min-width: 100px;
-}
-
-/* Style chung */
-.advance-table th,
-.advance-table td {
-  padding: var(--space-sm);
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  word-break: break-word;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.advance-table th {
-  background-color: var(--primary);
-  color: white;
-  position: sticky;
-  top: 0;
-  font-weight: 500;
-}
-
-.advance-table tr:nth-child(even) {
-  background-color: rgba(196, 164, 132, 0.05);
-}
-
-.advance-table tr:hover {
-  background-color: rgba(196, 164, 132, 0.1);
-}
-
-/* Nút trạng thái/hành động */
-.advance-table .status-btn {
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
-  color: white;
-  border: none;
-  cursor: pointer;
-  width: 80px;
-  text-align: center;
-}
-
-.advance-table .status-pending {
-  background-color: var(--pending);
-  color: var(--text);
-}
-.advance-table .status-approved {
-  background-color: var(--success);
-}
-.advance-table .status-rejected {
-  background-color: var(--danger);
-}
-
-/* Responsive cho mobile */
-@media (max-width: 768px) {
-  .advance-table {
-    min-width: 100%;
-    font-size: var(--text-xs);
-  }
-  .advance-table th,
-  .advance-table td {
-    padding: var(--space-xs) var(--space-sm);
-  }
-  .advance-table td:nth-child(1) {
-    white-space: nowrap;
-    width: 1%;
-  }
-  .advance-table .status-btn {
-    width: 100%;
-    padding: 2px 4px;
-  }
-}
 
 /* === Toast Notification === */
 #toast-container {
@@ -1159,3 +939,135 @@ button:disabled {
     font-size: 14px;
   }
 }
+
+/* Container giữ bảng */
+.schedule-requests-container {
+  width: 100%;
+  margin: var(--space-md) 0;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  background-color: var(--card-bg);
+  padding: 8px;
+  max-width: 100%;
+  overflow: hidden; /* ✅ Không cho scroll ngang */
+}
+
+/* Bảng */
+.schedule-requests-table {
+  width: 100% !important; /* ✅ Ép 100% màn hình */
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  table-layout: fixed; /* ✅ Cố định layout để ép các cột chia đều */
+  word-wrap: break-word; /* ✅ Tự xuống dòng nếu text dài */
+}
+
+/* Th và Td chia đều chiều rộng */
+.schedule-requests-table th,
+.schedule-requests-table td {
+  width: auto !important; /* ✅ Cho phép co giãn */
+  padding: var(--space-sm);
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: normal !important; /* ✅ Xuống dòng khi cần */
+  word-break: break-word !important; /* ✅ Bẻ chữ nếu dài */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Header */
+.schedule-requests-table th {
+  background-color: var(--primary);
+  color: white;
+  font-weight: 500;
+}
+
+/* Hàng xen kẽ */
+.schedule-requests-table tr:nth-child(even) {
+  background-color: rgba(196, 164, 132, 0.05);
+}
+
+.schedule-requests-table tr:hover {
+  background-color: rgba(196, 164, 132, 0.1);
+}
+
+/* Badge trạng thái */
+.badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  color: #fff;
+}
+.badge-success { background-color: var(--success); }
+.badge-danger { background-color: var(--danger); }
+.badge-warning { background-color: var(--pending); color: var(--text); }
+
+/* Responsive cho mobile */
+@media (max-width: 768px) {
+  .schedule-requests-table {
+    font-size: var(--text-xs);
+  }
+  .schedule-requests-table th,
+  .schedule-requests-table td {
+    padding: 4px 2px;
+  }
+}
+
+////////////////
+.payroll-edit-section {
+  background: #fff;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 16px;
+}
+
+.edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.edit-row input[type="text"], 
+.edit-row input[type="number"] {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+.edit-row button {
+  background: var(--danger);
+  color: #fff;
+  border: none;
+  padding: 4px 8px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.payroll-edit-section button {
+  margin-top: 6px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.payroll-edit-section button:hover {
+  background: var(--primary-dark);
+}
+
+@media (max-width: 768px) {
+  .edit-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
