@@ -9,6 +9,8 @@ let globalHistory = [];
 // Common Variables
 let globalInventoryData = [];
 let globalReportData = [];
+let globalPayrollData = {}; // Lưu dữ liệu bảng lương
+
 let globalEmployeeData = [];
 let globalAdvanceRequests = [];
 let globalMessages = { group: [], manager: [] };
@@ -37,8 +39,8 @@ function initApp() {
         renderReportProductList();
         renderRevenueExpenseData();
         renderInventory();
-        renderAdvanceHistory();
-        renderScheduleStatusList();
+        renderAdvanceRequests();
+        renderScheduleRequests();
         renderCalendar();
         renderScheduleRequests();
         renderNotifications();
@@ -60,8 +62,8 @@ function initApp() {
       renderReportProductList();
       renderRevenueExpenseData();
       renderInventory();
-      renderAdvanceHistory();
-      renderScheduleStatusList();
+      renderAdvanceRequests();
+      renderScheduleRequests();
       renderCalendar();
       renderScheduleRequests();
       renderNotifications();
@@ -147,13 +149,15 @@ function openTabBubble(tabId) {
     renderFilteredReports(getReportData());
   }
 
-  if (tabId === "profile") {
-  if (isCurrentUserManager()) {
-    renderEmployeeList(); // Quản lý xem tất cả
-  } else {
-    renderMyselfOnly(); // Nhân viên chỉ xem chính mình
-  }
+ if (tabId === "profile") {
+  renderEmployeeList(); // Tất cả đều xem danh sách
+  renderCalendar();     // Tất cả đều thấy lịch
+  renderScheduleRequests();
+  renderAdvanceRequests();
 }
+
+
+
   if (tabId === 'employee') {
     // ... thêm logic nếu có tab employee riêng
   }
@@ -324,12 +328,22 @@ function loadFirebaseData(callback) {
     });
 
     // Tải dữ liệu schedules
-    db.ref("schedules").once("value").then(snapshot => {
-      globalScheduleData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
-      if (typeof renderCalendar === "function") renderCalendar();
-    }).catch(err => {
-      console.error("❌ Error loading schedules:", err.message);
-    });
+db.ref("schedules").once("value").then(snapshot => {
+  globalScheduleData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
+  
+  if (typeof renderCalendar === "function") renderCalendar();
+  if (typeof renderScheduleRequests === "function") renderScheduleRequests(); // ✅ Thêm dòng này
+}).catch(err => {
+  console.error("❌ Error loading schedules:", err.message);
+});
+db.ref("payroll").on("value", snapshot => {
+  const data = snapshot.val() || {};
+  globalPayrollData = data;
+  console.log("✅ Updated globalPayrollData:", globalPayrollData);
+}, err => {
+  console.error("❌ Error loading payroll:", err.message);
+});
+
 
     // Tải dữ liệu inventory
     db.ref("inventory").once("value").then(snapshot => {
@@ -350,7 +364,7 @@ function loadFirebaseData(callback) {
     db.ref("advanceRequests").once("value").then(snapshot => {
       globalAdvanceRequests = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
 
-      if (typeof renderAdvanceHistory === "function") renderAdvanceHistory();
+      if (typeof renderAdvanceRequests === "function") renderAdvanceRequests();
 
       if (isCurrentUserManager() && typeof renderAdvanceRequests === "function") {
         renderAdvanceRequests();
