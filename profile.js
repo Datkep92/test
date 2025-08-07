@@ -419,16 +419,16 @@ function renderEmployeeList() {
       <tr onclick="showPayrollModal('${emp.id}')">
         <td>${emp.name}</td>
         <td>${emp.phone || "Không rõ"}</td>
-        <td>${emp.role}</td>
+        <td>${emp.address}</td>
       </tr>
     `).join("");
   } else {
     // ✅ Nhân viên chỉ xem chính mình
     rows = `
-      <tr onclick="showEmployeePopup('${currentEmployee.id}')">
+      <tr onclick="showPayrollModal('${currentEmployee.id}')">
         <td>${currentEmployee.name}</td>
         <td>${currentEmployee.phone || "Không rõ"}</td>
-        <td>${currentEmployee.role}</td>
+        <td>${currentEmployee.address}</td>
       </tr>
     `;
   }
@@ -439,7 +439,7 @@ function renderEmployeeList() {
         <tr>
           <th>Tên</th>
           <th>SĐT</th>
-          <th>Vai trò</th>
+          <th>Địa chỉ</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -461,7 +461,7 @@ function updateUserProfile() {
   const updatedData = {
     name: nameInput.value.trim() || "Chưa rõ tên",
     sdt: phoneInput.value.trim() || "",
-    andess: addressInput.value.trim() || ""
+    address: addressInput.value.trim() || ""
   };
   if (noteInput) updatedData.note = noteInput.value.trim() || "";
 
@@ -890,6 +890,10 @@ function markNotificationAsRead(notificationId) {
   })
   .catch(err => console.error('Lỗi đánh dấu thông báo đã đọc:', err));
 }
+function isManagerView(employeeId) {
+  return currentEmployee?.role === "manager" || currentEmployee?.role === "admin";
+}
+let currentEmployee = null;
 
 // ================ ADVANCE FUNCTIONS ================
 // Thêm vào profile.js, trước phần CALENDAR UI
@@ -1353,6 +1357,7 @@ function calculateFutureSalary() {
 // ================ HELPER FUNCTIONS ================
 function getEmployeeName(employeeId) {
   const employee = globalEmployeeData.find(e => e.id === employeeId);
+  
   return employee ? employee.name : "Không rõ";
 }
 
@@ -1510,6 +1515,10 @@ function showPayrollModal(employeeId, month, year) {
   if (!modal || !content) return;
 
   const employee = globalEmployeeData.find(e => e.id === employeeId);
+  if (!currentEmployee && auth.currentUser) {
+    currentEmployee = globalEmployeeData.find(e => e.id === auth.currentUser.uid);
+  }
+
   if (!employee) return;
 
   const payrollKey = `${employeeId}_${month}_${year}`;
@@ -1528,89 +1537,108 @@ function showPayrollModal(employeeId, month, year) {
 
   const salaryCalc = calculateSalary(actualWorkingDays, hoursPerDay, wagePerHour, bonuses, penalties);
 
-  const bonusRows = bonuses.map((b, i) => `
-    <div class="edit-row">
-      <input type="text" placeholder="Nội dung" value="${b.note}" oninput="updateRow('bonus', ${i}, 'note', this.value)" />
-      <input type="number" placeholder="Số tiền" value="${b.amount}" oninput="updateRow('bonus', ${i}, 'amount', this.value)" />
-      <button onclick="removeRow('bonus', ${i})">❌</button>
-    </div>
-  `).join("");
+  const isManager = currentEmployee?.role === 'manager' || currentEmployee?.role === 'admin';
+  const isSelf = employeeId === currentEmployee?.id;
+  const isManagerView = isManager && !isSelf;
 
-  const penaltyRows = penalties.map((p, i) => `
-    <div class="edit-row">
-      <input type="text" placeholder="Nội dung" value="${p.note}" oninput="updateRow('penalty', ${i}, 'note', this.value)" />
-      <input type="number" placeholder="Số tiền" value="${p.amount}" oninput="updateRow('penalty', ${i}, 'amount', this.value)" />
-      <button onclick="removeRow('penalty', ${i})">❌</button>
+  const managerEditSection = isManagerView ? `
+    <div class="edit-row" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+      <label style="width: 120px;">Ngày công:</label>
+      <input type="number" id="edit-actual-days" value="${actualWorkingDays}" min="0" max="${totalDaysInMonth}" oninput="recalculateSalary()" style="border: 1px solid #ccc; padding: 4px 6px; width: 100px;" />
     </div>
-  `).join("");
+    <div class="edit-row" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+      <label style="width: 120px;">Giờ công/ngày:</label>
+      <input type="number" id="edit-hours-day" value="${hoursPerDay}" min="1" oninput="recalculateSalary()" style="border: 1px solid #ccc; padding: 4px 6px; width: 100px;" />
+    </div>
+    <div class="edit-row" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+      <label style="width: 120px;">Tiền công/giờ:</label>
+      <input type="number" id="edit-wage-hour" value="${wagePerHour}" min="0" oninput="recalculateSalary()" style="border: 1px solid #ccc; padding: 4px 6px; width: 100px;" />
+    </div>` : '';
 
   content.innerHTML = `
-    <h3>💼 BẢNG LƯƠNG NHÂN VIÊN</h3>
-    <p><strong>Họ tên:</strong> ${employee.name}</p>
-    <p><strong>Tháng:</strong> ${month}/${year}</p>
-    <hr>
-
-    <div class="payroll-edit-section">
-      <h4>Phần nhập liệu của quản lý</h4>
-      <div class="edit-row">
-        <label>Ngày công:</label>
-        <input type="number" id="edit-actual-days" value="${actualWorkingDays}" min="0" max="${totalDaysInMonth}" oninput="recalculateSalary()" />
-      </div>
-      <div class="edit-row">
-        <label>Giờ công/ngày:</label>
-        <input type="number" id="edit-hours-day" value="${hoursPerDay}" min="1" oninput="recalculateSalary()" />
-      </div>
-      <div class="edit-row">
-        <label>Tiền công/giờ:</label>
-        <input type="number" id="edit-wage-hour" value="${wagePerHour}" min="0" oninput="recalculateSalary()" />
-      </div>
-
-      <h5>⚠️ Chế tài:</h5>
-      <div id="penalty-list">${penaltyRows}</div>
-      <button onclick="addPenaltyRow()">➕ Thêm chế tài</button>
-
-      <h5>🎁 Thưởng:</h5>
-      <div id="bonus-list">${bonusRows}</div>
-      <button onclick="addBonusRow()">➕ Thêm thưởng</button>
-
-      <div class="button-group" style="margin-top:10px;">
-        <button class="primary-btn" onclick="saveFullPayroll('${payrollKey}', ${month}, ${year}, '${employeeId}')">💾 Lưu bảng lương</button>
-        <button class="secondary-btn" onclick="closePayrollModal()">Đóng</button>
-      </div>
+    <div style="display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+      <p style="margin: 0;"><strong>Họ tên:</strong> ${employee.name}</p>
+      <p style="margin: 0;"><strong>Tháng:</strong> ${month}/${year}</p>
     </div>
-
+    <button onclick="showEditPersonalPopup('${employeeId}')" style="margin: 10px 0; padding: 6px 12px; border: 1px solid #ccc; background: #eee; cursor: pointer;">✏️ Sửa thông tin cá nhân</button>
     <hr>
-    <p>🔢 Tổng ngày trong tháng: <strong>${totalDaysInMonth}</strong></p>
-    <p>❌ Ngày nghỉ đã duyệt: <strong>${approvedOffDays}</strong></p>
-    <p>⏫ Ngày tăng ca đã duyệt: <strong>${approvedOvertimeDays}</strong></p>
+    ${managerEditSection}
+    <hr>
+    <p>Tổng ngày trong tháng: <strong>${totalDaysInMonth}</strong></p>
+    <p>Ngày nghỉ đã duyệt: <strong>${approvedOffDays}</strong></p>
+    <p>Ngày tăng ca đã duyệt: <strong>${approvedOvertimeDays}</strong></p>
     <p>✅ Ngày công thực tế: <strong id="display-actual-days">${actualWorkingDays}</strong></p>
     <hr>
     <p>🕒 Giờ công/ngày: <strong id="display-hours-day">${hoursPerDay}</strong></p>
     <p>💵 Tiền công/giờ: <strong id="display-wage-hour">${wagePerHour.toLocaleString('vi-VN')}</strong></p>
-
     <div class="bonus-detail">
-      <h4>🎁 Thưởng:</h4>
       <ul>${bonuses.map(b => `<li>${b.note}: ${b.amount.toLocaleString('vi-VN')} VND</li>`).join('') || '<li>Không có</li>'}</ul>
-      <p><strong>Tổng cộng:</strong> <span id="display-bonus">${salaryCalc.totalBonus.toLocaleString('vi-VN')}</span> VND</p>
+      <p><strong>Cộng:</strong> <span id="display-bonus">${salaryCalc.totalBonus.toLocaleString('vi-VN')}</span> VND</p>
     </div>
-
     <div class="penalty-detail">
-      <h4>⚠️ Chế tài:</h4>
       <ul>${penalties.map(p => `<li>${p.note}: ${p.amount.toLocaleString('vi-VN')} VND</li>`).join('') || '<li>Không có</li>'}</ul>
-      <p><strong>Tổng trừ:</strong> <span id="display-penalty">${salaryCalc.totalPenalty.toLocaleString('vi-VN')}</span> VND</p>
+      <p><strong>Trừ:</strong> <span id="display-penalty">${salaryCalc.totalPenalty.toLocaleString('vi-VN')}</span> VND</p>
     </div>
-
     <p><strong>💰 Lương thực lãnh:</strong> <span id="display-salary">${salaryCalc.finalSalary.toLocaleString('vi-VN')} VND</span></p>
+    <button class="secondary-btn" onclick="closePayrollModal()" style="padding: 6px 12px; background: #ccc; color: black; border: none; border-radius: 4px; cursor: pointer;">Đóng</button>
   `;
 
   modal.style.display = "block";
-
   modal.dataset.employeeId = employeeId;
   modal.dataset.month = month;
   modal.dataset.year = year;
   modal.dataset.payrollKey = payrollKey;
   modal.bonuses = [...bonuses];
   modal.penalties = [...penalties];
+}
+
+// ======================= POPUP THÔNG TIN CÁ NHÂN ===========================
+function showEditPersonalPopup(employeeId) {
+  const employee = globalEmployeeData.find(e => e.id === employeeId);
+  if (!employee) return;
+
+  const modal = document.getElementById("action-modal");
+  const content = document.getElementById("action-modal-content");
+  if (!modal || !content) return;
+
+  content.innerHTML = `
+    <h3>🔧 Cập nhật thông tin cá nhân</h3>
+    <input id="name-input" type="text" placeholder="Nhập tên" />
+        <input id="phone-input" type="text" placeholder="Nhập số điện thoại" />
+        <input id="address-input" type="text" placeholder="Nhập địa chỉ" />
+        <button onclick="updateUserProfile()">Cập nhật</button>
+    <button onclick="showPayrollModal('${employeeId}')" style="margin-left: 10px;">↩️ Quay lại</button>
+  `;
+  modal.style.display = "block";
+}
+
+// ======================= GHI ĐÈ THÔNG TIN CÁ NHÂN ===========================
+function submitPersonalInfo(employeeId) {
+  const name = document.getElementById("name-input")?.value.trim();
+  const phone = document.getElementById("phone-input")?.value.trim();
+  const address = document.getElementById("address-input")?.value.trim();
+
+  if (!name || !phone || !address) {
+    showToastNotification("⚠️ Vui lòng điền đầy đủ thông tin!");
+    return;
+  }
+
+  const updatedData = {
+    name,
+    sdt: phone,
+    phone,
+    address
+  };
+
+  db.ref(`users/${employeeId}`).update(updatedData)
+    .then(() => {
+      showToastNotification("✅ Đã cập nhật thông tin cá nhân!");
+      loadFirebaseData(() => showEditPersonalPopup(employeeId));
+    })
+    .catch((err) => {
+      console.error("❌ Lỗi khi ghi đè thông tin:", err);
+      showToastNotification("❌ Lỗi khi lưu thông tin cá nhân!");
+    });
 }
 
 // ======================= XỬ LÝ THÊM/XÓA DÒNG ===========================
