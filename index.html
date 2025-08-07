@@ -62,8 +62,14 @@
         </div>
         <h4>Xuất hàng</h4>
         <div id="report-product-list" class="product-list"></div>
-        <button class="primary-btn" onclick="submitInventoryReport()">Gửi Báo Cáo Tồn Kho</button>
-      </div>
+<button class="primary-btn"
+        style="width: 80%; margin: -5px auto 0; display: block;"
+        onclick="submitInventoryReport()">
+  Gửi Báo Cáo Tồn Kho
+</button>
+
+ 
+</div>
 
       <div class="card">
         <h3>Lọc Báo Cáo</h3>
@@ -153,41 +159,87 @@
   <div id="employee-details-content" class="modal-content"></div>
 </div>
 
-      <div class="card">
-        <h3>Thông tin cá nhân</h3>
-        <input id="name-input" type="text" placeholder="Nhập tên" />
-        <input id="phone-input" type="text" placeholder="Nhập số điện thoại" />
-        <input id="address-input" type="text" placeholder="Nhập địa chỉ" />
-        <button onclick="updateUserProfile()">Cập nhật</button>
-      </div>
+    <!-- THÔNG TIN CÁ NHÂN -->
+<div class="card">
+  <div class="toggle-header toggle-title" id="toggle-personal" onclick="toggleSection('personal')">
+     Thông tin cá nhân
+  </div>
+  <div class="toggle-body" id="section-personal">
+    <label>Tên</label>
+    <input id="name-input" type="text" placeholder="Nhập tên" />
+    <label>SĐT</label>
+    <input id="phone-input" type="text" placeholder="Nhập số điện thoại" />
+    <label>Địa chỉ</label>
+    <input id="address-input" type="text" placeholder="Nhập địa chỉ" />
+    <button onclick="updateUserProfile()">Cập nhật</button>
+  </div>
+</div>
 
+<!-- TẠM ỨNG -->
+<div class="card">
+  <div class="toggle-header toggle-title" id="toggle-advance" onclick="toggleSection('advance')">
+     Tạm ứng
+  </div>
+  <div class="toggle-body" id="section-advance">
+    <label>Số tiền</label>
+    <input type="number" id="advance-amount" placeholder="Số tiền (VND)" />
+    <label>Lý do</label>
+    <input type="text" id="advance-reason" placeholder="Lý do" />
+    <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu</button>
+  </div>
+</div>
 
-      <div class="card">
-        <h3>Yêu cầu tạm ứng</h3>
-        <input type="number" id="advance-amount" placeholder="Số tiền (VND)" />
-        <input type="text" id="advance-reason" placeholder="Lý do" />
-        <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu</button>
-      </div>
-
-    
-
-      <div class="card">
-        <h3>Ngày off và tăng ca</h3>
-        <div id="off-and-overtime"></div>
-      </div>
-<div id="schedule-requests-preview"></div>
-<button id="view-all-schedule-requests">Xem tất cả</button>
+<!-- NGÀY OFF VÀ TĂNG CA -->
+<div class="card">
+  <div class="toggle-header toggle-title" id="toggle-off" onclick="toggleSection('off')">
+     Ngày off và tăng ca
+  </div>
+  <div class="toggle-body" id="section-off">
+    <div id="off-and-overtime"></div>
+  </div>
+</div>
 
       <div class="card">
   <div id="advance-requests-container" data-expanded="false"></div>
 </div>
-
-      
       <div class="card">
   <div id="schedule-requests-container"></div>
 </div>
 
     </section>
+<!-- Thêm tab "Báo Cáo" vào giao diện HTML -->
+<div id="report-tab" class="tabcontent" style="display:none">
+  <h2>Báo cáo</h2>
+
+  <!-- PHẦN 1: DOANH THU - CHI PHÍ -->
+  <div class="report-section">
+    <h3>Phần 1: Doanh thu - Chi phí</h3>
+    <div id="report-revenue-expense"></div>
+
+    <!-- Gộp nhóm chi phí thủ công -->
+    <div style="margin-top: 10px">
+      <h4>Gộp nhóm chi phí thủ công</h4>
+      <input id="group-keyword" placeholder="Nhập từ khóa ví dụ: đá lạnh" />
+      <input id="group-target" placeholder="Gộp vào nhóm: đá" />
+      <button onclick="addManualCostGroup()">Gộp từ khóa</button>
+    </div>
+
+    <!-- Biểu đồ thu chi -->
+    <canvas id="chart-profit" height="200"></canvas>
+  </div>
+
+  <!-- PHẦN 2: TỒN KHO -->
+  <div class="report-section">
+    <h3>Phần 2: Tồn kho</h3>
+    <div id="report-inventory"></div>
+  </div>
+
+  <!-- PHẦN 3: LƯơNG NHÂN VIÊN -->
+  <div class="report-section">
+    <h3>Phần 3: Lương nhân viên</h3>
+    <div id="report-payroll"></div>
+  </div>
+</div>
 
     <!-- Modal và Toast -->
     <div id="action-modal" class="modal"><div id="action-modal-content" class="modal-content"></div></div>
@@ -201,7 +253,8 @@
         <button onclick="openTabBubble('revenue-expense')">Thu Chi</button>
         <button onclick="openTabBubble('inventory')">Kho</button>
         <button onclick="openTabBubble('profile')">Cá nhân</button>
-      </div>
+        <button onclick="openTabBubble('report-tab')">Báo cáo</button>
+</div>
     </div>
   </div>
 
@@ -231,10 +284,12 @@
       });
     });
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="revenue-expense.js"></script>
-  <script src="inventory.js"></script>
-  <script src="profile.js"></script>
-  <script src="common.js"></script>
+<script src="inventory.js"></script>
+<script src="profile.js"></script>
+<script src="report-tab.js"></script>
+<script src="common.js"></script>
 </body>
 </html>
