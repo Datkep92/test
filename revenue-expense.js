@@ -394,7 +394,7 @@ function decrementProductCount(productId) {
     quantitySpan.textContent = currentQuantity - 1;
   }
 }
-
+/*
 // Hiển thị danh sách sản phẩm
 // Chỉnh sửa chi phí
 function editReportExpense(reportId) {
@@ -469,7 +469,7 @@ document.getElementById("history-details-modal") && closeModal("history-details-
   });
 }
 
-
+*/
 // Chỉnh sửa giao dịch chuyển khoản
 function editReportTransfer(reportId) {
   auth.onAuthStateChanged(user => {
@@ -695,7 +695,7 @@ function showReportDetails(reportId) {
       <h4>Lịch sử chỉnh sửa/xóa</h4>
       <div>${historyHtml}</div>
       <div class="action-buttons">
-        ${canEdit ? `<button style="color: #6c757d;" onclick="editReportExpense('${reportId}')">[Sửa]</button>` : ""}
+        ${canEdit ? `<button style="color: #6c757d;" onclick="editReportField('${reportId}')">[Sửa]</button>` : ""}
                <button onclick="closeModal('history-details-modal')">[Đóng]</button>
       </div>
     </div>
