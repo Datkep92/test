@@ -551,7 +551,7 @@ button:disabled {
     height: 14px;
     font-size: 8px;
   }
-}
+
 
 /* ===== Utility Classes ===== */
 .flex {
@@ -641,7 +641,7 @@ button:disabled {
   transform: translateX(0);
 }
 
-///
+
 /* === Bảng hiển thị chung === */
 .table-style {
   width: 100%;
@@ -691,7 +691,7 @@ button:disabled {
   border-radius: 8px;
   overflow: hidden;
 }
-//
+
 /* ===== Edit Popups for Revenue, Opening & Closing Balances ===== */
 .modal .modal-content h3 {
   font-size: var(--text-lg);
@@ -894,64 +894,9 @@ button:disabled {
   }
 }
 
-////////////////
-.payroll-edit-section {
-  background: #fff;
-  padding: 16px;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  margin-bottom: 16px;
-}
 
-.edit-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
-}
 
-.edit-row input[type="text"], 
-.edit-row input[type="number"] {
-  flex: 1;
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-}
-
-.edit-row button {
-  background: var(--danger);
-  color: #fff;
-  border: none;
-  padding: 4px 8px;
-  font-size: var(--text-xs);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-}
-
-.payroll-edit-section button {
-  margin-top: 6px;
-  background: var(--primary);
-  color: #fff;
-  border: none;
-  padding: 6px 12px;
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  cursor: pointer;
-}
-
-.payroll-edit-section button:hover {
-  background: var(--primary-dark);
-}
-
-@media (max-width: 768px) {
-  .edit-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-//
+/*/
 //
 //
 
@@ -1089,3 +1034,4 @@ button:disabled {
     font-size: 9px !important;
   }
 }
+
