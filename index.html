@@ -172,13 +172,7 @@
         <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu</button>
       </div>
 
-      <div class="card">
-        <h3>Tính lương tạm tính</h3>
-        <input type="number" id="wage-per-hour" placeholder="Tiền/giờ (VND)" />
-        <input type="number" id="hours-per-day" placeholder="Giờ/ngày" />
-        <button onclick="calculateFutureSalary()">Tính</button>
-        <div id="future-salary-result"></div>
-      </div>
+    
 
       <div class="card">
         <h3>Ngày off và tăng ca</h3>
@@ -215,6 +209,7 @@
       </div>
     </div>
   </div>
+
 <!-- ========== Modal chỉnh sửa Doanh thu ========= -->
 <div id="edit-revenue-modal" class="modal">
   <div class="modal-content">
@@ -289,7 +284,6 @@
     </div>
   </div>
 </div>
-
   <!-- Scripts -->
   <script>
     const firebaseConfig = {
