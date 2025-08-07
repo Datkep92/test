@@ -7,6 +7,7 @@ window.renderReportProductList = renderReportProductList;
 window.renderFilteredReports = renderFilteredReports;
 let totalGrabAmount = 0;
 
+let selectedInventory = {};
 
 // Hiển thị form nhập liệu với nút riêng cho mỗi ô
 function renderInputForm() {
@@ -372,28 +373,19 @@ function submitField(field) {
 
 // Tăng số lượng sản phẩm
 function incrementProductCount(productId) {
-  const productItem = document.querySelector(`.product-item[data-product-id="${productId}"]`);
-  if (!productItem) return;
-  const quantitySpan = productItem.querySelector(".quantity");
-  const currentQuantity = parseInt(quantitySpan.textContent) || 0;
-  const inventoryItem = getInventoryData().find(item => item.id === productId);
-  if (!inventoryItem || currentQuantity >= inventoryItem.quantity) {
-    alert("Không đủ hàng trong kho!");
-    return;
-  }
-  quantitySpan.textContent = currentQuantity + 1;
+  selectedInventory[productId] = (selectedInventory[productId] || 0) + 1;
+  renderReportProductList();
 }
+
 
 // Giảm số lượng sản phẩm
 function decrementProductCount(productId) {
-  const productItem = document.querySelector(`.product-item[data-product-id="${productId}"]`);
-  if (!productItem) return;
-  const quantitySpan = productItem.querySelector(".quantity");
-  const currentQuantity = parseInt(quantitySpan.textContent) || 0;
-  if (currentQuantity > 0) {
-    quantitySpan.textContent = currentQuantity - 1;
+  if (selectedInventory[productId] > 0) {
+    selectedInventory[productId]--;
+    renderReportProductList();
   }
 }
+
 /*
 // Hiển thị danh sách sản phẩm
 // Chỉnh sửa chi phí
@@ -1669,7 +1661,8 @@ function submitInventoryReport() {
       .map(item => {
         const productId = item.dataset.productId;
         const name = item.querySelector(".product-name")?.textContent.split(" (")[0];
-        const quantity = parseInt(item.querySelector(".quantity")?.textContent) || 0;
+const quantityText = item.querySelector(".quantity")?.textContent || "";
+const quantity = parseInt(quantityText.split("/")[0].trim()) || 0;
         return quantity > 0 ? { productId, name, quantity } : null;
       })
       .filter(p => p);
@@ -1732,17 +1725,22 @@ function renderReportProductList() {
   const items = getInventoryData();
   productList.innerHTML = `
     <div class="product-grid">
-      ${items.map(item => `
-        <div class="product-tile product-item" data-product-id="${item.id}">
-          <div class="product-name" onclick="incrementProductCount('${item.id}')">
-            ${item.name}
+      ${items.map(item => {
+        const selected = selectedInventory[item.id] || 0;
+        const total = item.quantity || 0;
+
+        return `
+          <div class="product-tile product-item" data-product-id="${item.id}">
+            <div class="product-name" onclick="incrementProductCount('${item.id}')">
+              ${item.name}
+            </div>
+            <div class="product-controls">
+              <span class="quantity">${selected} / ${total}</span>
+              <button class="minus-btn" onclick="decrementProductCount('${item.id}')">−</button>
+            </div>
           </div>
-          <div class="product-controls">
-            <span class="quantity">0</span>
-            <button class="minus-btn" onclick="decrementProductCount('${item.id}')">−</button>
-          </div>
-        </div>
-      `).join("")}
+        `;
+      }).join("")}
     </div>
   `;
 }
