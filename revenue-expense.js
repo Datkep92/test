@@ -35,7 +35,7 @@ function renderInputForm() {
     </div>
   `;
 }
-
+/*
 function submitField(field) {
   auth.onAuthStateChanged(user => {
     if (!user) return showToastNotification("Vui lòng đăng nhập!");
@@ -180,6 +180,170 @@ function submitField(field) {
           );
           renderFilteredReports(globalReportData);
           renderRevenueExpenseData();
+          renderHistory();
+          input.value = "";
+          const label = field === "expense-input" ? "chi phí"
+                      : field === "transfer-amount" ? "chuyển khoản"
+                      : field === "grab-amount" ? "Grab"
+                      : field === "opening-balance" ? "số dư đầu kỳ"
+                      : field === "closing-balance" ? "số dư cuối kỳ"
+                      : field;
+          const action = existingReport ? "Cập nhật" : "Đã nhập";
+          showToastNotification(`${action} ${label}: ${afterValue}`);
+        });
+      }).catch(err => {
+        showToastNotification("Lỗi khi cập nhật báo cáo: " + err.message);
+        input.disabled = false;
+      });
+    };
+
+    if (existingReport && field !== "expense-input") {
+      saveData("reports/" + existingReport.id);
+    } else {
+      db.ref("reports").push(reportData).then(ref => saveData("reports/" + ref.key));
+    }
+  });
+}
+*/
+function submitField(field) {
+  auth.onAuthStateChanged(user => {
+    if (!user) {
+      showToastNotification("Vui lòng đăng nhập!");
+      return;
+    }
+    const employeeName = globalEmployeeData.find(emp => emp.id === user.uid)?.name || "Không xác định";
+    const input = document.getElementById(field);
+    if (!input || !input.value.trim()) {
+      showToastNotification("Vui lòng nhập dữ liệu!");
+      return;
+    }
+    if (input.disabled) {
+      showToastNotification("Đang xử lý, vui lòng chờ!");
+      return;
+    }
+
+    input.disabled = true;
+    setTimeout(() => { input.disabled = false; }, 2000);
+
+    let reportData = {
+      date: new Date().toISOString(),
+      employeeId: user.uid,
+      employeeName,
+      openingBalance: 0,
+      revenue: 0,
+      expenseAmount: 0,
+      closingBalance: 0,
+      transferAmount: 0,
+      grabAmount: 0,
+      remaining: 0,
+      cashActual: 0,
+      history: []
+    };
+
+    let details = "";
+    let afterValue = "";
+
+    const today = new Date().toISOString().split("T")[0];
+    const existingReport = globalReportData.find(r => r.date.split("T")[0] === today && r[field.replace("-", "")] > 0);
+
+    if (field === "expense-input") {
+      const { money: expenseAmount, note: expenseNote } = parseEntry(input.value);
+      if (expenseAmount < 0 || (expenseAmount > 0 && !expenseNote)) {
+        showToastNotification("Vui lòng nhập đúng chi phí và ghi chú!");
+        input.disabled = false;
+        return;
+      }
+      reportData.expenseAmount = expenseAmount;
+      reportData.expenseNote = expenseNote;
+      details = `Nhập chi phí: ${expenseAmount.toLocaleString("vi-VN")} VND (${expenseNote})`;
+      afterValue = `${expenseAmount.toLocaleString("vi-VN")} VND (${expenseNote})`;
+      reportData.history.push({
+        timestamp: new Date().toISOString(),
+        employeeName,
+        action: `Nhập chi phí: ${afterValue}`
+      });
+    } else if (field === "transfer-amount") {
+      const amount = parseFloat(input.value) || 0;
+      if (amount < 0) {
+        showToastNotification("Số tiền không được âm!");
+        input.disabled = false;
+        return;
+      }
+      const realAmount = amount * 1000;
+      reportData.transferAmount = realAmount;
+      reportData.grabAmount = 0;
+      reportData.transferTimestamp = realAmount > 0 ? new Date().toISOString() : null;
+      details = `Nhập chuyển khoản: ${realAmount.toLocaleString("vi-VN")} VND`;
+      afterValue = `${realAmount.toLocaleString("vi-VN")} VND`;
+      reportData.history.push({
+        timestamp: new Date().toISOString(),
+        employeeName,
+        action: `Nhập chuyển khoản: ${afterValue}`
+      });
+    } else if (field === "grab-amount") {
+      const amount = parseFloat(input.value) || 0;
+      if (amount < 0) {
+        showToastNotification("Số tiền Grab không được âm!");
+        input.disabled = false;
+        return;
+      }
+      const realAmount = amount * 1000;
+      reportData.grabAmount = realAmount;
+      reportData.transferAmount = 0;
+      reportData.grabTimestamp = realAmount > 0 ? new Date().toISOString() : null;
+      details = `Nhập Grab: ${realAmount.toLocaleString("vi-VN")} VND`;
+      afterValue = `${realAmount.toLocaleString("vi-VN")} VND`;
+      reportData.history.push({
+        timestamp: new Date().toISOString(),
+        employeeName,
+        action: `Nhập Grab: ${afterValue}`
+      });
+    } else {
+      const value = parseFloat(input.value) || 0;
+      if (value < 0) {
+        showToastNotification("Giá trị không được âm!");
+        input.disabled = false;
+        return;
+      }
+      const realValue = value * 1000;
+      const fieldName = field === "opening-balance" ? "openingBalance"
+                        : field === "closing-balance" ? "closingBalance"
+                        : field.replace("-", "");
+
+      if (fieldName === "revenue" && existingReport) {
+        // Cộng dồn doanh thu nếu đã có trong ngày
+        reportData.revenue = (existingReport.revenue || 0) + realValue;
+        details = `Nhập ${field}: ${realValue.toLocaleString("vi-VN")} VND (tổng: ${reportData.revenue.toLocaleString("vi-VN")} VND)`;
+        afterValue = `${realValue.toLocaleString("vi-VN")} VND (tổng: ${reportData.revenue.toLocaleString("vi-VN")} VND)`;
+      } else {
+        reportData[fieldName] = realValue;
+        details = `Nhập ${field}: ${realValue.toLocaleString("vi-VN")} VND`;
+        afterValue = `${realValue.toLocaleString("vi-VN")} VND`;
+      }
+
+      reportData.history.push({
+        timestamp: new Date().toISOString(),
+        employeeName,
+        action: `Nhập ${field}: ${afterValue}`
+      });
+    }
+
+    reportData.remaining = reportData.openingBalance + reportData.revenue - reportData.expenseAmount - reportData.closingBalance;
+    reportData.cashActual = reportData.remaining - reportData.transferAmount - reportData.grabAmount;
+
+    const saveData = (refId) => {
+      db.ref(refId).update(reportData).then(() => {
+        db.ref("reports").once("value").then(snapshot => {
+          globalReportData = Object.entries(snapshot.val() || {}).map(([id, data]) => ({ id, ...data }));
+          logHistory(
+            field,
+            existingReport ? "cập nhật" : "nhập",
+            details,
+            "",
+            existingReport?.[field.replace("-", "")]?.toLocaleString("vi-VN") || "",
+            afterValue
+          );
+          renderFilteredReports(globalReportData);
           renderHistory();
           input.value = "";
           const label = field === "expense-input" ? "chi phí"
@@ -421,7 +585,7 @@ function renderRevenueExpenseData() {
   const reportTable = document.createElement("table");
   reportTable.classList.add("table-style");
   reportTable.innerHTML = `
-    <thead><tr><th>STT</th><th>Tên NV</th><th>Chi phí</th></tr></thead>
+    <thead><tr><th>STT</th><th>Tên </th><th>Chi phí</th></tr></thead>
     <tbody>${displayExpenses
       .map((r, index) => `
         <tr>
@@ -439,7 +603,8 @@ function renderRevenueExpenseData() {
     </tbody>
   `;
 
-  reportContainer.innerHTML = `<h3>Bảng Báo cáo Thu Chi (${displayDate})</h3>`;
+  reportContainer.innerHTML = `<h3>Bảng Báo cáo Chi Phí</h3>
+ <h3>(${displayDate})</h3>`;
   reportContainer.appendChild(reportTable);
 
   if (expenseReports.length > 3) {
@@ -696,7 +861,7 @@ reportContainer.innerHTML = `
       <tr>
         <th>STT</th>
         <th>Giờ</th>
-        <th>Tên NV</th>
+        <th>Tên</th>
         <th>Chi phí</th>
       </tr>
     </thead>
@@ -759,13 +924,14 @@ const productReports = sortedReports
 const displayProducts = isExpandedProduct ? productReports : productReports.slice(0, 3);
 
 productContainer.innerHTML = `
-  <h3>Bảng Báo Cáo Xuất Hàng (${displayDate})</h3>
+  <h3>Bảng Báo Cáo Xuất Hàng</h3>
+ <h3>(${displayDate})</h3>
   <table class="table-style">
     <thead>
       <tr>
         <th>STT</th>
         <th>Giờ</th>
-        <th>Tên NV</th>
+        <th>Tên</th>
         <th>Tên hàng hóa</th>
         <th>Số lượng</th>
       </tr>
@@ -833,7 +999,7 @@ transferContainer.innerHTML = `
       <tr>
         <th>STT</th>
         <th>Giờ</th>
-        <th>Tên NV</th>
+        <th>Tên</th>
         <th>Số tiền</th>
       </tr>
     </thead>
@@ -922,19 +1088,17 @@ if (transferReports.length === 0) {
 summaryContainer.innerHTML = `
   <h3>Tóm tắt Thu Chi (${displayDate}):</h3>
 
-  <p>
-  <strong>Dư đầu kỳ:</strong> 
-  ${formatAmount(totalOpeningBalance, isEdited(latestOpening))}
-  (${formatTime(latestOpening.date)} ${latestOpening.employeeName})
-  <button onclick="editReportField('${latestOpening.id}', 'openingBalance')">✏️</button>
-</p>
+  <p onclick="editReportField('${latestOpening.id}', 'openingBalance')">
+    <strong>Dư đầu kỳ:</strong> 
+    ${formatAmount(totalOpeningBalance, isEdited(latestOpening))}
+    (${formatTime(latestOpening.date)} ${latestOpening.employeeName})
+  </p>
 
-  <p>
-  <strong>Doanh thu:</strong> 
-  ${formatAmount(totalRevenue, isEdited(latestRevenue))} 
-  (${formatTime(latestRevenue.date)} ${latestRevenue.employeeName})
-  <button onclick="editReportField('${latestRevenue.id}', 'revenue')">✏️</button>
-</p>
+  <p onclick="editReportField('${latestRevenue.id}', 'revenue')">
+    <strong>Doanh thu:</strong> 
+    ${formatAmount(totalRevenue, isEdited(latestRevenue))} 
+    (${formatTime(latestRevenue.date)} ${latestRevenue.employeeName})
+  </p>
 
   <p><strong>Chi phí:</strong> ${totalExpense.toLocaleString("vi-VN")} VND
     (${formatTime(latestExpense.date)} ${latestExpense.employeeName})
@@ -948,12 +1112,11 @@ summaryContainer.innerHTML = `
     (${formatTime(latestGrab.date)} ${latestGrab.employeeName})
   </p>
 
-  <p>
-  <strong>Dư cuối kỳ:</strong> 
-  ${formatAmount(totalClosingBalance, isEdited(latestClosing))}
-  (${formatTime(latestClosing.date)} ${latestClosing.employeeName})
-  <button onclick="editReportField('${latestClosing.id}', 'closingBalance')">✏️</button>
-</p>
+  <p onclick="editReportField('${latestClosing.id}', 'closingBalance')">
+    <strong>Dư cuối kỳ:</strong> 
+    ${formatAmount(totalClosingBalance, isEdited(latestClosing))}
+    (${formatTime(latestClosing.date)} ${latestClosing.employeeName})
+  </p>
 
   <p><strong>Còn lại:</strong> ${totalRemaining.toLocaleString("vi-VN")} VND
     (${formatTime(latestRemaining.date)} ${latestRemaining.employeeName})
@@ -964,7 +1127,6 @@ summaryContainer.innerHTML = `
   </p>
 `;
 
-
 }
 const formatAmount = (amount, isEdited) => {
   return isEdited
@@ -972,7 +1134,7 @@ const formatAmount = (amount, isEdited) => {
     : `${amount.toLocaleString("vi-VN")} VND`;
 };
 
-function renderHistory(startDate = null, endDate = null) {
+function renderHistory(startDate = null, endDate = null, showAll = false) {
   const container = document.getElementById("history-table");
   if (!container) return;
 
@@ -984,7 +1146,7 @@ function renderHistory(startDate = null, endDate = null) {
     if (Array.isArray(report.history)) {
       report.history.forEach(h => {
         if (["openingBalance", "revenue", "closingBalance"].includes(h.field)) {
-const hDate = toLocalDateStringISO(h.timestamp);
+          const hDate = toLocalDateStringISO(h.timestamp);
           if (
             (!startDate && !endDate) ||
             (hDate >= startDate && hDate <= (endDate || startDate))
@@ -1011,6 +1173,9 @@ const hDate = toLocalDateStringISO(h.timestamp);
 
   // Sắp xếp mới nhất lên đầu
   allHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  // Chỉ lấy 3 bản ghi đầu nếu không phải showAll
+  const displayedHistory = showAll ? allHistory : allHistory.slice(0, 3);
 
   let labelHtml = "";
   if (isValidDate(startDate)) {
@@ -1041,7 +1206,7 @@ const hDate = toLocalDateStringISO(h.timestamp);
         </tr>
       </thead>
       <tbody>
-        ${allHistory
+        ${displayedHistory
           .map(
             h => `
           <tr>
@@ -1055,7 +1220,28 @@ const hDate = toLocalDateStringISO(h.timestamp);
           .join("")}
       </tbody>
     </table>
+    ${!showAll && allHistory.length > 3 ? `
+      <div style="text-align: center; margin-top: 15px;">
+        <button onclick="renderHistory(null, null, true)" 
+                style="padding: 5px 15px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 4px;">
+          ▼ Xem thêm ${allHistory.length - 3} bản ghi
+        </button>
+      </div>
+    ` : ''}
+    ${showAll ? `
+      <div style="text-align: center; margin-top: 15px;">
+        <button onclick="renderHistory(null, null, false)" 
+                style="padding: 5px 15px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 4px;">
+          ▲ Thu gọn
+        </button>
+      </div>
+    ` : ''}
   `;
+}
+
+// Hàm clear filter cần update để reset showAll
+function clearHistoryFilter() {
+  renderHistory(null, null, false);
 }
 function toLocalDateStringISO(dateInput) {
   const d = new Date(dateInput);
