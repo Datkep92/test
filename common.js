@@ -158,9 +158,11 @@ function openTabBubble(tabId) {
 
 
 
-  if (tabId === 'employee') {
-    // ... thêm logic nếu có tab employee riêng
-  }
+  if (tabId === 'report-tab') {
+  renderReportRevenueExpense(); // Phần 1
+  renderReportInventory();      // Phần 2
+  renderReportPayroll();        // Phần 3
+}
 }
 
 
@@ -396,7 +398,26 @@ db.ref("payroll").on("value", snapshot => {
     });
   });
 }
+// Toggle ẩn/hiện nội dung
+  function toggleSection(key) {
+    const body = document.getElementById(`section-${key}`);
+    const header = body.previousElementSibling;
+    const isOpen = body.style.display === 'block';
 
+    body.style.display = isOpen ? 'none' : 'block';
+    header.innerText = `[${isOpen ? '>' : 'v'}] ` + header.innerText.slice(4);
+  }
+
+  // Mặc định ẩn khi load
+  window.addEventListener('DOMContentLoaded', () => {
+    const sections = ['personal', 'advance', 'off'];
+    sections.forEach(key => {
+      const body = document.getElementById(`section-${key}`);
+      const header = body.previousElementSibling;
+      body.style.display = 'none';
+      header.innerText = `[>] ` + header.innerText.slice(4);
+    });
+  });
 
 function showDayDetails(date) {
   const modal = document.getElementById('day-details-modal');
@@ -436,3 +457,6 @@ function showDayDetails(date) {
 }
 
 initApp();
+///////////////////////////////////////////
+//////////////////////////////////////////
+
