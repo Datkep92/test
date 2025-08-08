@@ -158,7 +158,7 @@ function openTabBubble(tabId) {
 
 
 
-  if (tabId === 'report-tab') {
+  if (tabId === "report-tab") {
   renderReportRevenueExpense(); // Phần 1
   renderReportInventory();      // Phần 2
   renderReportPayroll();        // Phần 3

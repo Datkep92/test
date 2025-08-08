@@ -30,7 +30,7 @@ function addInventory() {
       document.getElementById("product-price").value = "";
       document.getElementById("product-low-stock-threshold").value = "";
       renderInventory();
-      checkLowStock(newProduct);
+     // checkLowStock(newProduct);
     })
     .catch(err => alert("Lỗi khi thêm sản phẩm: " + err.message));
 }
@@ -97,12 +97,12 @@ table.innerHTML = `
   }
 
   // Kiểm tra tồn kho thấp
-  globalInventoryData.forEach(item => checkLowStock(item));
+  //globalInventoryData.forEach(item => checkLowStock(item));
 }
-
+/*
 function checkLowStock(item) {
   if (item.quantity < item.lowStockThreshold) {
-    showToastNotification(`Cảnh báo: ${item.name} chỉ còn ${item.quantity} đơn vị!`);
+    //showToastNotification(`Cảnh báo: ${item.name} chỉ còn ${item.quantity} đơn vị!`);
     const user = auth.currentUser;
     if (user) {
       db.ref("notifications/general").push({
@@ -113,7 +113,7 @@ function checkLowStock(item) {
     }
   }
 }
-
+*/
 function openEditInventoryModal(productId) {
   const product = globalInventoryData.find(p => p.id === productId);
   if (!product) {
@@ -160,7 +160,7 @@ function saveInventoryEdit() {
       alert("Cập nhật sản phẩm thành công!");
       closeModal("edit-inventory-modal");
       renderInventory();
-      checkLowStock(updatedProduct);
+      //checkLowStock(updatedProduct);
     })
     .catch(err => alert("Lỗi khi cập nhật sản phẩm: " + err.message));
 }

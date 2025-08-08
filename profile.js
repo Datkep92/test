@@ -1,3 +1,5 @@
+// Khai báo global để lưu các instance flatpickr
+var flatpickrInstanceMap = {};
 
 // Thêm ở đầu file
 document.addEventListener('DOMContentLoaded', function() {
@@ -1493,20 +1495,692 @@ function safeNumber(value, defaultValue = 0) {
   return isNaN(Number(value)) ? defaultValue : Number(value);
 }
 
-function calculateSalary(days, hours, wage, bonuses, penalties) {
-  const baseSalary = safeNumber(days) * safeNumber(hours) * safeNumber(wage);
-  const totalBonus = bonuses.reduce((sum, b) => sum + safeNumber(b.amount), 0);
-  const totalPenalty = penalties.reduce((sum, p) => sum + safeNumber(p.amount), 0);
-  return {
-    baseSalary,
-    totalBonus,
-    totalPenalty,
-    finalSalary: baseSalary + totalBonus - totalPenalty
-  };
+function calculateSalary(actualWorkingDays, hoursPerDay, wagePerHour, bonuses, penalties) {
+  bonuses = Array.isArray(bonuses) ? bonuses : [];
+  penalties = Array.isArray(penalties) ? penalties : [];
+
+  const totalBonus = bonuses.reduce((sum, b) => sum + Number(b.amount || 0), 0);
+  const totalPenalty = penalties.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+
+  const baseSalary = actualWorkingDays * hoursPerDay * wagePerHour;
+  const finalSalary = baseSalary + totalBonus - totalPenalty;
+
+  return { totalBonus, totalPenalty, finalSalary };
 }
 
-// ======================= POPUP HIỂN THỊ ===========================
+
+
+
+
+// ======================= XỬ LÝ THÊM/XÓA DÒNG ===========================
+function addBonusRow() {
+  const modal = document.getElementById("action-modal");
+  if (!modal.bonuses) modal.bonuses = [];
+  modal.bonuses.push({
+    date: new Date().toISOString().slice(0,10),
+    note: '',
+    amount: 0
+  });
+  renderBonusList();
+}
+
+function addPenaltyRow() {
+  const modal = document.getElementById("action-modal");
+  if (!modal.penalties) modal.penalties = [];
+  modal.penalties.push({
+    date: new Date().toISOString().slice(0,10),
+    note: '',
+    amount: 0
+  });
+  renderPenaltyList();
+}
+function initPayrollRealtime(employeeId) {
+  if (!employeeId) return;
+
+  // Lắng nghe settings
+  firebase.database().ref(`employeeSettings/${employeeId}`).on('value', snap => {
+    globalEmployeeSettings = globalEmployeeSettings || {};
+    globalEmployeeSettings[employeeId] = snap.val() || {};
+    refreshPayrollUI(employeeId);
+  });
+
+  // Lắng nghe bảng lương tháng
+  firebase.database().ref(`payrolls/${employeeId}`).on('value', snap => {
+    globalPayrollData = globalPayrollData || {};
+    Object.keys(snap.val() || {}).forEach(key => {
+      globalPayrollData[`${employeeId}_${key}`] = snap.val()[key];
+    });
+    refreshPayrollUI(employeeId);
+  });
+
+  // Lắng nghe thưởng/phạt từng ngày
+  firebase.database().ref(`payrolls_daily/${employeeId}`).on('value', snap => {
+    globalPayrollsDaily = globalPayrollsDaily || {};
+    globalPayrollsDaily[employeeId] = snap.val() || {};
+    refreshPayrollUI(employeeId);
+  });
+
+  // Lắng nghe tạm ứng
+  firebase.database().ref(`advanceRequests`).on('value', snap => {
+    globalAdvanceRequests = Object.values(snap.val() || {});
+    refreshPayrollUI(employeeId);
+  });
+
+  // Lắng nghe lịch làm việc
+  firebase.database().ref(`schedule`).on('value', snap => {
+    globalScheduleData = Object.values(snap.val() || {});
+    refreshPayrollUI(employeeId);
+  });
+}
+
+function refreshPayrollUI(employeeId) {
+  // Nếu modal lương đang mở → cập nhật cả tháng & ngày
+  const detailsModal = document.getElementById("employee-details-modal");
+  if (detailsModal && detailsModal.style.display === "block") {
+    const start = detailsModal.dataset.dailyStart;
+    const end = detailsModal.dataset.dailyEnd;
+    if (start && end) {
+      loadDailyPayroll(employeeId, start, end);
+    }
+    loadPayrollDetails(employeeId);
+  }
+}
+
+
+function removeRow(type, index) {
+  const modal = document.getElementById("action-modal");
+
+  if (type === 'bonus') {
+    modal.bonuses.splice(index, 1);
+    document.getElementById("bonus-list").children[index].remove();
+  } else {
+    modal.penalties.splice(index, 1);
+    document.getElementById("penalty-list").children[index].remove();
+  }
+
+  recalculateSalary();
+}
+
+function updateRow(type, index, field, value) {
+  const modal = document.getElementById("action-modal");
+  if (type === 'bonus') {
+    modal.bonuses[index][field] = value;
+  } else if (type === 'penalty') {
+    modal.penalties[index][field] = value;
+  }
+}
+
+
+// ======================= TÍNH TOÁN REALTIME ===========================
+function recalculateSalary() {
+  const modal = document.getElementById("action-modal");
+  const actualDays = safeNumber(document.getElementById("edit-actual-days").value);
+  const hoursDay = safeNumber(document.getElementById("edit-hours-day").value);
+  const wageHour = safeNumber(document.getElementById("edit-wage-hour").value);
+  const bonuses = modal.bonuses;
+  const penalties = modal.penalties;
+
+  const salaryCalc = calculateSalary(actualDays, hoursDay, wageHour, bonuses, penalties);
+
+  document.getElementById("display-actual-days").innerText = actualDays;
+  document.getElementById("display-hours-day").innerText = hoursDay;
+  document.getElementById("display-wage-hour").innerText = wageHour.toLocaleString('vi-VN');
+  document.getElementById("display-bonus").innerText = salaryCalc.totalBonus.toLocaleString('vi-VN');
+  document.getElementById("display-penalty").innerText = salaryCalc.totalPenalty.toLocaleString('vi-VN');
+  document.getElementById("display-salary").innerText = salaryCalc.finalSalary.toLocaleString('vi-VN') + " VND";
+}
+/*
+// ======================= LƯU LÊN FIREBASE ===========================
+// Hàm lưu full payroll
+function saveFullPayroll(payrollKey, month, year, employeeId) {
+  const modal = document.getElementById("action-modal");
+  const actualDays = safeNumber(document.getElementById("edit-actual-days").value);
+  const hoursDay = safeNumber(document.getElementById("edit-hours-day").value);
+  const wageHour = safeNumber(document.getElementById("edit-wage-hour").value);
+  const bonuses = modal?.bonuses || [];
+  const penalties = modal?.penalties || [];
+
+  const salaryCalc = calculateSalary(actualDays, hoursDay, wageHour, bonuses, penalties);
+
+  const payrollData = {
+    employeeId,
+    month,
+    year,
+    actualWorkingDays: actualDays,
+    hoursPerDay: hoursDay,
+    wagePerHour: wageHour,
+    bonuses,
+    penalties,
+    bonusTotal: salaryCalc.totalBonus,
+    penaltyTotal: salaryCalc.totalPenalty,
+    totalSalary: salaryCalc.finalSalary,
+    updatedAt: Date.now()
+  };
+
+  // Lưu payroll tháng (đổi path cho đồng bộ)
+  const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+  db.ref(`payrolls/${employeeId}/${monthKey}`).set(payrollData)
+    .then(() => {
+      // Đồng bộ wage/hours
+      db.ref(`employeeSettings/${employeeId}/wagePerHour`).set(wageHour);
+      db.ref(`employeeSettings/${employeeId}/hoursPerDay`).set(hoursDay);
+
+      if (!globalPayrollsDaily[employeeId]) {
+        globalPayrollsDaily[employeeId] = {};
+      }
+
+      // Thưởng
+      bonuses.forEach(b => {
+        const dateStr = b.date || new Date().toISOString().slice(0, 10);
+        db.ref(`payrolls_daily/${employeeId}/${dateStr}`).update({
+          bonus: Number(b.amount) || 0,
+          bonusNote: b.note || '',
+          updatedAt: Date.now()
+        });
+        globalPayrollsDaily[employeeId][dateStr] = {
+          ...(globalPayrollsDaily[employeeId][dateStr] || {}),
+          bonus: Number(b.amount) || 0
+        };
+      });
+
+      // Phạt
+      penalties.forEach(p => {
+        const dateStr = p.date || new Date().toISOString().slice(0, 10);
+        db.ref(`payrolls_daily/${employeeId}/${dateStr}`).update({
+          penalty: Number(p.amount) || 0,
+          penaltyNote: p.note || '',
+          updatedAt: Date.now()
+        });
+        globalPayrollsDaily[employeeId][dateStr] = {
+          ...(globalPayrollsDaily[employeeId][dateStr] || {}),
+          penalty: Number(p.amount) || 0
+        };
+      });
+
+      // Refresh tab ngày
+      const detailsModal = document.getElementById("employee-details-modal");
+      if (detailsModal && detailsModal.style.display === "block") {
+        const start = detailsModal.dataset.dailyStart || `${monthKey}-01`;
+        const end = detailsModal.dataset.dailyEnd || start;
+        loadDailyPayroll(employeeId, start, end);
+      }
+
+      showToastNotification("✅ Đã lưu bảng lương & thưởng/phạt ngày!");
+    })
+    .catch(err => {
+      showToastNotification(`Lỗi khi lưu bảng lương: ${err.message}`);
+    });
+}
+*/
+function saveFullPayroll(payrollKey, month, year, employeeId) {
+  const modal = document.getElementById("action-modal");
+  const actualDays = safeNumber(document.getElementById("edit-actual-days").value);
+  const hoursDay = safeNumber(document.getElementById("edit-hours-day").value);
+  const wageHour = safeNumber(document.getElementById("edit-wage-hour").value);
+  const bonuses = modal?.bonuses || [];
+  const penalties = modal?.penalties || [];
+
+  const salaryCalc = calculateSalary(actualDays, hoursDay, wageHour, bonuses, penalties);
+
+  const payrollData = {
+    employeeId,
+    month,
+    year,
+    actualWorkingDays: actualDays,
+    hoursPerDay: hoursDay,
+    wagePerHour: wageHour,
+    bonuses,
+    penalties,
+    bonusTotal: salaryCalc.totalBonus,
+    penaltyTotal: salaryCalc.totalPenalty,
+    totalSalary: salaryCalc.finalSalary,
+    updatedAt: Date.now()
+  };
+
+  const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+
+  // 1️⃣ Lưu payroll tháng
+  firebase.database().ref(`payrolls/${employeeId}/${monthKey}`).set(payrollData)
+    .then(() => {
+      // 2️⃣ Cập nhật settings
+      firebase.database().ref(`employeeSettings/${employeeId}/wagePerHour`).set(wageHour);
+      firebase.database().ref(`employeeSettings/${employeeId}/hoursPerDay`).set(hoursDay);
+
+      // 3️⃣ Lưu thưởng/phạt từng ngày
+      bonuses.forEach(b => {
+        if (b.date) {
+          firebase.database().ref(`payrolls_daily/${employeeId}/${b.date}`).update({
+            bonus: Number(b.amount) || 0,
+            updatedAt: Date.now()
+          });
+        }
+      });
+
+      penalties.forEach(p => {
+        if (p.date) {
+          firebase.database().ref(`payrolls_daily/${employeeId}/${p.date}`).update({
+            penalty: Number(p.amount) || 0,
+            updatedAt: Date.now()
+          });
+        }
+      });
+
+      showToastNotification("✅ Đã lưu bảng lương và thưởng/phạt!");
+
+      // 4️⃣ Reload lại từ Firebase
+      reloadPayrollFromFirebase(employeeId, monthKey);
+    })
+    .catch(err => {
+      showToastNotification(`❌ Lỗi khi lưu: ${err.message}`);
+    });
+}
+
+function reloadPayrollFromFirebase(employeeId, monthKey) {
+  Promise.all([
+    firebase.database().ref(`payrolls/${employeeId}/${monthKey}`).once('value'),
+    firebase.database().ref(`payrolls_daily/${employeeId}`).once('value')
+  ]).then(([payrollSnap, dailySnap]) => {
+    globalPayrollData[`${employeeId}_${monthKey}`] = payrollSnap.val() || {};
+    globalPayrollsDaily[employeeId] = dailySnap.val() || {};
+    refreshPayrollUI(employeeId);
+  });
+}
+
+
+function renderBonusList() {
+  const modal = document.getElementById("action-modal");
+  const bonuses = modal?.bonuses || [];
+  const bonusList = document.getElementById("bonus-list");
+  if (!bonusList) return;
+
+  bonusList.innerHTML = bonuses.map((b, i) => `
+    <div class="edit-row">
+      <input type="date" value="${b.date || new Date().toISOString().slice(0,10)}"
+             onchange="updateRow('bonus', ${i}, 'date', this.value)" />
+      <input type="text" value="${b.note || ''}"
+             oninput="updateRow('bonus', ${i}, 'note', this.value)" placeholder="Ghi chú" />
+      <input type="number" value="${b.amount || 0}"
+             oninput="updateRow('bonus', ${i}, 'amount', this.value)" placeholder="Số tiền" />
+      <button onclick="removeRow('bonus', ${i})">❌</button>
+    </div>
+  `).join('');
+}
+
+function renderPenaltyList() {
+  const modal = document.getElementById("action-modal");
+  const penalties = modal?.penalties || [];
+  const penaltyList = document.getElementById("penalty-list");
+  if (!penaltyList) return;
+
+  penaltyList.innerHTML = penalties.map((p, i) => `
+    <div class="edit-row">
+      <input type="date" value="${p.date || new Date().toISOString().slice(0,10)}"
+             onchange="updateRow('penalty', ${i}, 'date', this.value)" />
+      <input type="text" value="${p.note || ''}"
+             oninput="updateRow('penalty', ${i}, 'note', this.value)" placeholder="Ghi chú" />
+      <input type="number" value="${p.amount || 0}"
+             oninput="updateRow('penalty', ${i}, 'amount', this.value)" placeholder="Số tiền" />
+      <button onclick="removeRow('penalty', ${i})">❌</button>
+    </div>
+  `).join('');
+}
+
+
+
+// Hàm lấy ngày nghỉ đã duyệt
+function getApprovedOffDays(employeeId, month, year) {
+  return globalScheduleData.filter(s => 
+    s.employeeId === employeeId &&
+    s.approvalStatus === "approved" &&
+    s.status === "off" &&
+    new Date(s.date).getMonth() + 1 === month &&
+    new Date(s.date).getFullYear() === year
+  ).length;
+}
+
+// Hàm lấy ngày tăng ca đã duyệt
+function getApprovedOvertimeDays(employeeId, month, year) {
+  return globalScheduleData.filter(s => 
+    s.employeeId === employeeId &&
+    s.approvalStatus === "approved" &&
+    s.status === "overtime" &&
+    new Date(s.date).getMonth() + 1 === month &&
+    new Date(s.date).getFullYear() === year
+  ).length;
+}
+/////////////////////////////////
+////////////////////////////////
+/* ===========================
+   PROFILE.JS - PAYROLL EXTENSIONS
+   - Thêm tab LƯƠNG NGÀY realtime
+   - Sửa popup LƯƠNG để có 2 tab (tháng / ngày)
+   - Popup nhập THƯỞNG / PHẠT có chọn ngày -> lưu cả tháng + payrolls_daily
+   - Lưu ý: giữ nguyên hàm loadPayrollDetails(employeeId) (lương tháng)
+   - Khi dán: Xóa/ghi đè các hàm cũ tương ứng
+   =========================== */
+
+/* ===========================
+   0. Biến toàn cục dùng trong file
+   (Nếu đã có ở file gốc thì an toàn - nhưng xóa biến trùng nếu cần)
+   =========================== */
+let globalPayrollsDaily = {};      // cache realtime payrolls_daily per employee
+let payrollDailyListeners = {};    // track firebase listeners to cleanup
+
+
+
+
+
+/* ===========================
+   3. Chuyển tab
+   =========================== */
+function switchPayrollTab(tab) {
+  document.getElementById("tab-monthly").style.display = (tab === "monthly") ? "block" : "none";
+  document.getElementById("tab-daily").style.display = (tab === "daily") ? "block" : "none";
+  document.getElementById("tab-monthly-btn").classList.toggle("active", tab === "monthly");
+  document.getElementById("tab-daily-btn").classList.toggle("active", tab === "daily");
+
+  if (tab === "daily") {
+    const empId = document.getElementById("action-modal").dataset.employeeId;
+    filterDailyPayroll(empId); // Gọi hàm load dữ liệu ngày
+  }
+}
+
+
+/* ===========================
+   4. Bộ lọc Lương ngày
+   =========================== */
+function filterDailyPayroll(employeeId) {
+  const startInput = document.getElementById("daily-start");
+  const endInput = document.getElementById("daily-end");
+  const start = startInput ? startInput.value : null;
+  const end = endInput ? (endInput.value || start) : start;
+
+  if (!start) {
+    alert("Vui lòng chọn ngày hoặc khoảng ngày");
+    return;
+  }
+
+  const modal = document.getElementById("employee-details-modal");
+  if (modal) {
+    modal.dataset.dailyStart = start;
+    modal.dataset.dailyEnd = end;
+  }
+
+  loadDailyPayroll(employeeId, start, end);
+}
+
+
+
+/* ===========================
+   6. Render bảng Lương ngày
+   =========================== */
+function renderDailyPayrollTable(rows, totalSalary) {
+  const container = document.getElementById("daily-payroll-container");
+  if (!container) return;
+
+  if (!rows || rows.length === 0) {
+    container.innerHTML = "<p style='color:#b00;'>⚠ Không có dữ liệu</p>";
+    return;
+  }
+
+  let html = `
+    <table class="table-style" style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:6px;">Ngày</th>
+          <th style="text-align:left;padding:6px;">Loại ca</th>
+          <th style="text-align:right;padding:6px;">Lương cơ bản</th>
+          <th style="text-align:right;padding:6px;">OT</th>
+          <th style="text-align:right;padding:6px;">Thưởng</th>
+          <th style="text-align:right;padding:6px;">Phạt</th>
+          <th style="text-align:right;padding:6px;">Tạm ứng</th>
+          <th style="text-align:right;padding:6px;">Tổng</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  rows.forEach(r => {
+    html += `
+      <tr>
+        <td style="padding:6px;">${r.date}</td>
+        <td style="padding:6px;">${r.type}</td>
+        <td style="padding:6px;text-align:right;">${Number(r.baseSalary).toLocaleString()} VND</td>
+        <td style="padding:6px;text-align:right;">${Number(r.overtimePay).toLocaleString()} VND</td>
+        <td style="padding:6px;text-align:right;">${Number(r.bonus).toLocaleString()} VND</td>
+        <td style="padding:6px;text-align:right;">${Number(r.penalty).toLocaleString()} VND</td>
+        <td style="padding:6px;text-align:right;">${Number(r.advanceTotal).toLocaleString()} VND</td>
+        <td style="padding:6px;text-align:right;"><strong>${Number(r.total).toLocaleString()} VND</strong></td>
+      </tr>
+    `;
+  });
+
+  html += `
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="7" style="padding:8px;text-align:right;"><strong>Tổng cộng</strong></td>
+          <td style="padding:8px;text-align:right;"><strong style="color:green;">${Number(totalSalary).toLocaleString()} VND</strong></td>
+        </tr>
+      </tfoot>
+    </table>
+  `;
+
+  // Render bảng
+container.innerHTML = html;
+
+// Nếu là quản lý, thêm nút quản lý thưởng/phạt/tạm ứng
+if (typeof currentUserRole !== "undefined" && currentUserRole === "admin") {
+  const modal = document.getElementById("employee-details-modal");
+  const employeeId = modal?.dataset.payrollEmployee || "";
+  const monthKey = (modal?.dataset.dailyStart || new Date().toISOString().slice(0,10)).slice(0,7);
+
+  const manageHtml = `
+    <div style="margin-top:15px; border-top:1px solid #ddd; padding-top:10px;">
+      <h4>Quản lý</h4>
+      <button class="primary-btn" onclick="showBonusModal('${employeeId}', '${monthKey}')">+ Thưởng</button>
+      <button class="primary-btn" onclick="showPenaltyModal('${employeeId}', '${monthKey}')">+ Phạt</button>
+      <button class="primary-btn" onclick="showAdvanceModal('${employeeId}', '${monthKey}')">+ Tạm ứng</button>
+    </div>
+  `;
+  container.insertAdjacentHTML("beforeend", manageHtml);
+}
+
+}
+
+/* ===========================
+   7. Lưu thưởng/phạt theo ngày (dùng khi admin lưu)
+   - Hàm này ghi node payrolls_daily/{employeeId}/{YYYY-MM-DD}
+   - Nếu muốn lưu nhiều khoản cùng ngày, có thể mở rộng thành mảng
+   =========================== */
+function saveDailyBonusPenalty(employeeId, date, bonus, penalty, bonusNote, penaltyNote) {
+  if (!employeeId || !date) return Promise.reject(new Error("employeeId/date required"));
+  const payload = {
+    bonus: Number(bonus) || 0,
+    penalty: Number(penalty) || 0,
+    bonusNote: bonusNote || "",
+    penaltyNote: penaltyNote || "",
+    updatedAt: Date.now()
+  };
+  const updates = {};
+  updates[`payrolls_daily/${employeeId}/${date}`] = payload;
+  return db.ref().update(updates);
+}
+
+/* ===========================
+   8. Popup Thưởng (show + save)
+   - Nếu file gốc đã có modal elements, đảm bảo id tồn tại:
+     - #bonus-modal, #bonus-modal-content
+   =========================== */
+function showBonusModal(employeeId, monthKey) {
+  const today = new Date().toISOString().slice(0,10);
+  const modal = document.getElementById("bonus-modal");
+  const content = document.getElementById("bonus-modal-content");
+  if (!modal || !content) {
+    alert("Không tìm thấy modal thưởng. Vui lòng kiểm tra HTML (bonus-modal, bonus-modal-content).");
+    return;
+  }
+  content.innerHTML = `
+    <h3>Thêm thưởng</h3>
+    <div style="margin-bottom:8px;">
+      <input type="number" id="bonus-amount" placeholder="Số tiền thưởng" />
+    </div>
+    <div style="margin-bottom:8px;">
+      <textarea id="bonus-note" placeholder="Ghi chú"></textarea>
+    </div>
+    <div style="margin-bottom:8px;">
+      <label>Ngày áp dụng:</label><br/>
+      <input type="date" id="bonus-date" value="${today}" />
+    </div>
+    <div style="text-align:right;">
+      <button class="primary-btn" onclick="saveBonus('${employeeId}','${monthKey}')">Lưu</button>
+      <button class="secondary-btn" onclick="closeBonusModal()">Hủy</button>
+    </div>
+  `;
+  modal.style.display = "block";
+}
+
+function saveBonus(employeeId, monthKey) {
+  const bonus = Number(document.getElementById("bonus-amount").value) || 0;
+  const note = document.getElementById("bonus-note").value || "";
+  const date = document.getElementById("bonus-date").value || new Date().toISOString().slice(0,10);
+
+  // 1) Lưu tổng tháng
+  db.ref(`payrolls/${employeeId}/${monthKey}/bonus`).set(bonus);
+  db.ref(`payrolls/${employeeId}/${monthKey}/bonusNote`).set(note);
+
+  // 2) Lưu chi tiết ngày (realtime)
+  const dailyPath = `payrolls_daily/${employeeId}/${date}`;
+  db.ref(dailyPath).update({
+    bonus: bonus,
+    bonusNote: note,
+    updatedAt: Date.now()
+  }).then(() => {
+    showToastNotification('✅ Đã lưu thưởng!');
+    closeBonusModal();
+    // reload ngay lập tức để bảng lương ngày cập nhật
+    const modal = document.getElementById("employee-details-modal");
+    if (modal && modal.dataset.dailyStart) {
+      loadDailyPayroll(employeeId, modal.dataset.dailyStart, modal.dataset.dailyEnd);
+    }
+  }).catch(err => {
+    console.error("Lỗi lưu thưởng:", err);
+    showToastNotification('❌ Lỗi khi lưu thưởng');
+  });
+}
+
+function savePenalty(employeeId, monthKey) {
+  const penalty = Number(document.getElementById("penalty-amount").value) || 0;
+  const note = document.getElementById("penalty-note").value || "";
+  const date = document.getElementById("penalty-date").value || new Date().toISOString().slice(0,10);
+
+  // 1) Lưu tổng tháng
+  db.ref(`payrolls/${employeeId}/${monthKey}/penalty`).set(penalty);
+  db.ref(`payrolls/${employeeId}/${monthKey}/penaltyNote`).set(note);
+
+  // 2) Lưu chi tiết ngày (realtime)
+  const dailyPath = `payrolls_daily/${employeeId}/${date}`;
+  db.ref(dailyPath).update({
+    penalty: penalty,
+    penaltyNote: note,
+    updatedAt: Date.now()
+  }).then(() => {
+    showToastNotification('✅ Đã lưu phạt!');
+    closePenaltyModal();
+    // reload ngay lập tức để bảng lương ngày cập nhật
+    const modal = document.getElementById("employee-details-modal");
+    if (modal && modal.dataset.dailyStart) {
+      loadDailyPayroll(employeeId, modal.dataset.dailyStart, modal.dataset.dailyEnd);
+    }
+  }).catch(err => {
+    console.error("Lỗi lưu phạt:", err);
+    showToastNotification('❌ Lỗi khi lưu phạt');
+  });
+}
+
+
+function closeBonusModal() {
+  const modal = document.getElementById("bonus-modal");
+  if (!modal) return;
+  modal.style.display = "none";
+  const content = document.getElementById("bonus-modal-content");
+  if (content) content.innerHTML = "";
+}
+
+
+
+function closePenaltyModal() {
+  const modal = document.getElementById("penalty-modal");
+  if (!modal) return;
+  modal.style.display = "none";
+  const content = document.getElementById("penalty-modal-content");
+  if (content) content.innerHTML = "";
+}
+
+/* ===========================
+   10. KHUYẾN NGHỊ TEST & CHECKLIST
+   - Có DOM elements:
+     - #employee-details-modal, #employee-details-content
+     - #bonus-modal, #bonus-modal-content
+     - #penalty-modal, #penalty-modal-content
+   - Phải load trước:
+     - db (firebase.database()), globalScheduleData, globalAdvanceRequests, globalEmployeeData
+     - loadPayrollDetails(employeeId) phải tồn tại (không bị xóa)
+   - Test:
+     - Mở payroll modal -> tab monthly hiển thị loadPayrollDetails
+     - Chuyển tab daily -> chọn ngày -> xem kết quả
+     - Mở bonus modal -> chọn ngày khác -> lưu -> KTra firebase path payrolls_daily/{employeeId}/{date} có record
+     - Khi payrolls_daily thay đổi -> bảng Lương ngày đang mở cập nhật ngay
+   =========================== */
+   // ====== CACHE & LISTENER (thay thế phiên bản cũ) ======
+
+
+function startPayrollDailyListener(employeeId) {
+  if (!employeeId) return;
+  if (payrollDailyListeners[employeeId]) return; // đã lắng nghe
+
+  const ref = db.ref(`payrolls_daily/${employeeId}`);
+  const callback = snapshot => {
+    globalPayrollsDaily[employeeId] = snapshot.val() || {};
+    // Nếu modal đang mở cho employee này và tab daily visible => reload
+    const modal = document.getElementById("action-modal") || document.getElementById("employee-details-modal");
+    if (modal && modal.style.display === "block" && (modal.dataset.employeeId === employeeId || modal.dataset.payrollEmployee === employeeId)) {
+      const tabDaily = document.getElementById("tab-daily");
+      const activeTab = tabDaily && tabDaily.style.display !== "none";
+      if (activeTab) {
+        const start = modal.dataset.dailyStart || new Date().toISOString().slice(0,10);
+        const end = modal.dataset.dailyEnd || start;
+        loadDailyPayroll(employeeId, start, end);
+      }
+    }
+  };
+
+  ref.on("value", callback);
+  payrollDailyListeners[employeeId] = { ref, callback };
+}
+/*
+const cleanArray = arr => arr.map(item => ({
+  note: item.note ?? "",   // thay undefined thành chuỗi rỗng
+  amount: Number(item.amount) || 0
+}));
+
+const bonusesClean = cleanArray(modal.bonuses || []);
+const penaltiesClean = cleaArrna(modal.penalties || []);
+
+db.ref(`payroll/${payrollKey}/bonuses`).set(bonusesClean);
+db.ref(`payroll/${payrollKey}/penalties`).set(penaltiesClean);y
+*/
+function stopPayrollDailyListener(employeeId) {
+  const entry = payrollDailyListeners[employeeId];
+  if (!entry) return;
+  entry.ref.off("value", entry.callback);
+  delete payrollDailyListeners[employeeId];
+  delete globalPayrollsDaily[employeeId];
+}
+
+// ====== SHOW PAYROLL MODAL (phiên bản dùng action-modal) ======
 function showPayrollModal(employeeId, month, year) {
+  // (giữ nguyên logic cũ bạn có, chỉ thêm dataset + start listener)
   month = safeNumber(month, new Date().getMonth() + 1);
   year = safeNumber(year, new Date().getFullYear());
 
@@ -1520,6 +2194,7 @@ function showPayrollModal(employeeId, month, year) {
   }
   if (!employee) return;
 
+  // --- (giữ phần tính payroll tháng như bạn có) ---
   const payrollKey = `${employeeId}_${month}_${year}`;
   const payrollData = globalPayrollData?.[payrollKey] || {};
 
@@ -1531,30 +2206,33 @@ function showPayrollModal(employeeId, month, year) {
   const hoursPerDay = safeNumber(payrollData.hoursPerDay || employee.defaultHoursPerDay || 8);
   const wagePerHour = safeNumber(payrollData.wagePerHour || employee.defaultWagePerHour || 20000);
 
-  const bonuses = payrollData.bonuses || [];
-  const penalties = payrollData.penalties || [];
+const bonuses = Array.isArray(payrollData.bonuses) ? payrollData.bonuses : [];
+const penalties = Array.isArray(payrollData.penalties) ? payrollData.penalties : [];
 
-  // === LẤY CÁC DÒNG TRỪ ỨNG LƯƠNG (tự động) ===
+modal.bonuses = JSON.parse(JSON.stringify(bonuses));  // clone sâu an toàn
+modal.penalties = JSON.parse(JSON.stringify(penalties));
+
+
+
   const monthStr = `${year}-${String(month).padStart(2, '0')}`;
   const employeeAdvances = globalAdvanceRequests.filter(a =>
     a.employeeId === employeeId &&
     a.status === 'approved' &&
     a.date.startsWith(monthStr)
   );
-  const advanceDeductions = employeeAdvances.map((a, i) => ({
-    note: `Trừ ứng lương lần ${i + 1}: ${new Date(a.date).toLocaleDateString('vi-VN')}`,
-    amount: safeNumber(a.amount)
-  }));
+  const advanceDeductions = (employeeAdvances || []).map((a, i) => ({
+  note: `Trừ ứng lương lần ${i + 1}: ${new Date(a.date).toLocaleDateString('vi-VN')}`,
+  amount: safeNumber(a.amount)
+}));
+
 
   const allPenalties = [...penalties, ...advanceDeductions];
-
   const salaryCalc = calculateSalary(actualWorkingDays, hoursPerDay, wagePerHour, bonuses, allPenalties);
 
   const isManager = currentEmployee?.role === 'manager' || currentEmployee?.role === 'admin';
   const isSelf = employeeId === currentEmployee?.id;
   const isManagerView = isManager && !isSelf;
 
-  // === Form chỉnh sửa chỉ dành cho quản lý ===
   const managerEditSection = isManagerView ? `
     <div class="edit-row"><label>Ngày công:</label>
       <input type="number" id="edit-actual-days" value="${actualWorkingDays}" oninput="recalculateSalary()" />
@@ -1585,172 +2263,188 @@ function showPayrollModal(employeeId, month, year) {
     </div>
   ` : '';
 
+  const today = new Date().toISOString().slice(0, 10);
+  // Thiết lập dataset dùng chung (dùng cả hai key để tương thích)
+  modal.dataset.employeeId = employeeId;
+  modal.dataset.payrollEmployee = employeeId;
+  modal.dataset.dailyStart = today;
+  modal.dataset.dailyEnd = today;
+
+  // HTML (giữ logic bạn có, thêm tabs)
   content.innerHTML = `
-    <div style="display: flex; justify-content: space-between;">
-      <p><strong>Họ tên:</strong> ${employee.name}</p>
-      <p><strong>Tháng:</strong> ${month}/${year}</p>
+    <div class="payroll-tabs" style="margin-bottom:8px;">
+      <button id="tab-monthly-btn" class="active" onclick="switchPayrollTab('monthly')">Lương tháng</button>
+      <button id="tab-daily-btn" onclick="switchPayrollTab('daily')">Lương ngày</button>
     </div>
-    <hr>
-    ${managerEditSection}
-    <hr>
-    <p>Tổng ngày trong tháng: <strong>${totalDaysInMonth}</strong></p>
-    <p>Ngày nghỉ đã duyệt: <strong>${approvedOffDays}</strong></p>
-    <p>Ngày tăng ca đã duyệt: <strong>${approvedOvertimeDays}</strong></p>
-    <p>✅ Ngày công thực tế: <strong id="display-actual-days">${actualWorkingDays}</strong></p>
-    <hr>
-    <p>🕒 Giờ/ngày: <strong id="display-hours-day">${hoursPerDay}</strong></p>
-    <p>💵 Tiền/giờ: <strong id="display-wage-hour">${wagePerHour.toLocaleString('vi-VN')}</strong></p>
-    <hr>
-    <p><strong>🎁 Thưởng:</strong></p>
-    <ul>${bonuses.map(b => `<li>${b.note}: ${b.amount.toLocaleString('vi-VN')} VND</li>`).join('') || '<li>Không có</li>'}</ul>
-    <p><strong>Cộng:</strong> <span id="display-bonus">${salaryCalc.totalBonus.toLocaleString('vi-VN')}</span> VND</p>
-    <p><strong>⚠️ Trừ:</strong></p>
-    <ul>${allPenalties.map(p => `<li>${p.note}: ${p.amount.toLocaleString('vi-VN')} VND</li>`).join('') || '<li>Không có</li>'}</ul>
-    <p><strong>Trừ tổng:</strong> <span id="display-penalty">${salaryCalc.totalPenalty.toLocaleString('vi-VN')}</span> VND</p>
-    <hr>
-    <p><strong>💰 Lương thực lãnh:</strong> <span id="display-salary">${salaryCalc.finalSalary.toLocaleString('vi-VN')} VND</span></p>
-    <button onclick="closePayrollModal()">Đóng</button>
+
+    <div id="tab-monthly" class="payroll-tab-content">
+      <div style="display: flex; justify-content: space-between;">
+        <p><strong>Họ tên:</strong> ${employee.name}</p>
+        <p><strong>Tháng:</strong> ${month}/${year}</p>
+      </div>
+      <hr>
+      ${managerEditSection}
+      <hr>
+      <p>Tổng ngày trong tháng: <strong>${totalDaysInMonth}</strong></p>
+      <p>Ngày nghỉ đã duyệt: <strong>${approvedOffDays}</strong></p>
+      <p>Ngày tăng ca đã duyệt: <strong>${approvedOvertimeDays}</strong></p>
+      <p>✅ Ngày công thực tế: <strong id="display-actual-days">${actualWorkingDays}</strong></p>
+      <hr>
+      <p>🕒 Giờ/ngày: <strong id="display-hours-day">${hoursPerDay}</strong></p>
+      <p>💵 Tiền/giờ: <strong id="display-wage-hour">${wagePerHour.toLocaleString('vi-VN')}</strong></p>
+      <hr>
+      <p><strong>🎁 Thưởng:</strong></p>
+      <ul>${bonuses.map(b => `<li>${b.note}: ${b.amount.toLocaleString('vi-VN')} VND</li>`).join('') || '<li>Không có</li>'}</ul>
+      <p><strong>Cộng:</strong> <span id="display-bonus">${salaryCalc.totalBonus.toLocaleString('vi-VN')}</span> VND</p>
+      <p><strong>⚠️ Trừ:</strong></p>
+      <ul>${allPenalties.map(p => `<li>${p.note}: ${p.amount.toLocaleString('vi-VN')} VND</li>`).join('') || '<li>Không có</li>'}</ul>
+      <p><strong>Trừ tổng:</strong> <span id="display-penalty">${salaryCalc.totalPenalty.toLocaleString('vi-VN')}</span> VND</p>
+      <hr>
+      <p><strong>💰 Lương thực lãnh:</strong> <span id="display-salary">${salaryCalc.finalSalary.toLocaleString('vi-VN')} VND</span></p>
+    </div>
+
+    <div id="tab-daily" class="payroll-tab-content" style="display:none;">
+      <div class="input-group" style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+        <div>
+          <label style="font-size:12px;">Từ</label><br/>
+          <input type="date" id="daily-start" value="${today}" />
+        </div>
+        <div>
+          <label style="font-size:12px;">Đến</label><br/>
+          <input type="date" id="daily-end" value="${today}" />
+        </div>
+        <div style="align-self:flex-end;">
+          <button class="primary-btn" onclick="filterDailyPayroll('${employeeId}')">Xem</button>
+        </div>
+      </div>
+      <div id="daily-payroll-container"></div>
+    </div>
+
+    <div style="text-align:right;margin-top:12px;">
+      <button class="secondary-btn" onclick="closePayrollModal()">Đóng</button>
+    </div>
   `;
 
   modal.style.display = "block";
-  modal.dataset.employeeId = employeeId;
-  modal.dataset.month = month;
-  modal.dataset.year = year;
-  modal.dataset.payrollKey = payrollKey;
-  modal.bonuses = [...bonuses];
-  modal.penalties = [...penalties];
+
+  // Bắt listener realtime (quan trọng)
+  startPayrollDailyListener(employeeId);
+
+  // load mặc định tab tháng (giữ nguyên)
+  if (typeof loadPayrollDetails === "function") {
+    loadPayrollDetails(employeeId);
+  }
 }
 
-
-
-// ======================= XỬ LÝ THÊM/XÓA DÒNG ===========================
-function addBonusRow() {
-  const modal = document.getElementById("action-modal");
-  modal.bonuses.push({ note: "", amount: 0 });
-  
-  const bonusList = document.getElementById("bonus-list");
-  const index = modal.bonuses.length - 1;
-  const row = document.createElement("div");
-  row.className = "edit-row";
-  row.innerHTML = `
-    <input type="text" placeholder="Nội dung" oninput="updateRow('bonus', ${index}, 'note', this.value)" />
-    <input type="number" placeholder="Số tiền" oninput="updateRow('bonus', ${index}, 'amount', this.value)" />
-    <button onclick="removeRow('bonus', ${index})">❌</button>
-  `;
-  bonusList.appendChild(row);
+// ====== Đóng modal (dọn listener) ======
+function closePayrollModal() {
+  const modal = document.getElementById("action-modal") || document.getElementById("employee-details-modal");
+  if (!modal) return;
+  const employeeId = modal.dataset.employeeId || modal.dataset.payrollEmployee;
+  modal.style.display = "none";
+  delete modal.dataset.employeeId;
+  delete modal.dataset.payrollEmployee;
+  delete modal.dataset.dailyStart;
+  delete modal.dataset.dailyEnd;
+  if (employeeId) stopPayrollDailyListener(employeeId);
 }
 
-function addPenaltyRow() {
-  const modal = document.getElementById("action-modal");
-  modal.penalties.push({ note: "", amount: 0 });
+// ====== LOAD LƯƠNG NGÀY: nếu cache trống thì fetch + kết hợp dữ liệu payrolls_daily ======
+function loadDailyPayroll(employeeId, startDate, endDate) {
+  const container = document.getElementById("daily-payroll-container");
+  if (!container) return;
 
-  const penaltyList = document.getElementById("penalty-list");
-  const index = modal.penalties.length - 1;
-  const row = document.createElement("div");
-  row.className = "edit-row";
-  row.innerHTML = `
-    <input type="text" placeholder="Nội dung" oninput="updateRow('penalty', ${index}, 'note', this.value)" />
-    <input type="number" placeholder="Số tiền" oninput="updateRow('penalty', ${index}, 'amount', this.value)" />
-    <button onclick="removeRow('penalty', ${index})">❌</button>
-  `;
-  penaltyList.appendChild(row);
-}
-
-function removeRow(type, index) {
-  const modal = document.getElementById("action-modal");
-
-  if (type === 'bonus') {
-    modal.bonuses.splice(index, 1);
-    document.getElementById("bonus-list").children[index].remove();
-  } else {
-    modal.penalties.splice(index, 1);
-    document.getElementById("penalty-list").children[index].remove();
+  const emp = (globalEmployeeData || []).find(e => e.id === employeeId);
+  if (!emp) {
+    container.innerHTML = "<p style='color:red;'>Không tìm thấy nhân viên</p>";
+    return;
   }
 
-  recalculateSalary();
-}
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (isNaN(start) || isNaN(end) || end < start) {
+    container.innerHTML = "<p style='color:red;'>Khoảng ngày không hợp lệ</p>";
+    return;
+  }
 
-function updateRow(type, index, field, value) {
-  const modal = document.getElementById("action-modal");
-  if (type === 'bonus') modal.bonuses[index][field] = field === 'amount' ? safeNumber(value) : value;
-  if (type === 'penalty') modal.penalties[index][field] = field === 'amount' ? safeNumber(value) : value;
-  recalculateSalary();
-}
+  firebase.database().ref(`employeeSettings/${employeeId}`).once('value').then(settingSnap => {
+    const settings = settingSnap.val() || {};
+    const wage = Number(settings.wagePerHour) || 20000;
+    const hours = Number(settings.hoursPerDay) || 8;
+    const defaultOtHours = Number(settings.overtimeHours) || 2;
 
-// ======================= TÍNH TOÁN REALTIME ===========================
-function recalculateSalary() {
-  const modal = document.getElementById("action-modal");
-  const actualDays = safeNumber(document.getElementById("edit-actual-days").value);
-  const hoursDay = safeNumber(document.getElementById("edit-hours-day").value);
-  const wageHour = safeNumber(document.getElementById("edit-wage-hour").value);
-  const bonuses = modal.bonuses;
-  const penalties = modal.penalties;
+    const rows = [];
+    let totalSalary = 0;
 
-  const salaryCalc = calculateSalary(actualDays, hoursDay, wageHour, bonuses, penalties);
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().slice(0,10);
 
-  document.getElementById("display-actual-days").innerText = actualDays;
-  document.getElementById("display-hours-day").innerText = hoursDay;
-  document.getElementById("display-wage-hour").innerText = wageHour.toLocaleString('vi-VN');
-  document.getElementById("display-bonus").innerText = salaryCalc.totalBonus.toLocaleString('vi-VN');
-  document.getElementById("display-penalty").innerText = salaryCalc.totalPenalty.toLocaleString('vi-VN');
-  document.getElementById("display-salary").innerText = salaryCalc.finalSalary.toLocaleString('vi-VN') + " VND";
-}
+      // Lấy lịch làm việc đã duyệt
+      const schedule = (globalScheduleData || []).find(s =>
+        s.employeeId === employeeId && 
+        s.date === dateStr &&
+        s.approvalStatus === "approved"
+      );
 
-// ======================= LƯU LÊN FIREBASE ===========================
-function saveFullPayroll(payrollKey, month, year, employeeId) {
-  const modal = document.getElementById("action-modal");
-  const actualDays = safeNumber(document.getElementById("edit-actual-days").value);
-  const hoursDay = safeNumber(document.getElementById("edit-hours-day").value);
-  const wageHour = safeNumber(document.getElementById("edit-wage-hour").value);
-  const bonuses = modal.bonuses;
-  const penalties = modal.penalties;
+      let baseSalary = 0;
+      let overtimePay = 0;
+      let type = "Bình thường"; // mặc định là làm
 
-  const salaryCalc = calculateSalary(actualDays, hoursDay, wageHour, bonuses, penalties);
+      if (schedule) {
+        if (schedule.status === "off") {
+          type = "Nghỉ";
+          baseSalary = 0;
+        } 
+        else if (schedule.status === "overtime" || Number(schedule.overtimeHours) > 0) {
+          type = "Tăng ca";
+          baseSalary = wage * hours;
+          const otHours = Number(schedule.overtimeHours) || defaultOtHours;
+          overtimePay = wage * otHours;
+        } 
+        else {
+          baseSalary = wage * hours;
+        }
+      } else {
+        // Không có record lịch => coi như làm bình thường
+        baseSalary = wage * hours;
+      }
 
-  const payrollData = {
-    employeeId,
-    month,
-    year,
-    actualWorkingDays: actualDays,
-    hoursPerDay: hoursDay,
-    wagePerHour: wageHour,
-    bonuses,
-    penalties,
-    bonusTotal: salaryCalc.totalBonus,
-    penaltyTotal: salaryCalc.totalPenalty,
-    totalSalary: salaryCalc.finalSalary,
-    updatedAt: Date.now()
-  };
+      // Bonus / Penalty trong payrolls_daily
+      const dailyRecord = (globalPayrollsDaily[employeeId] || {})[dateStr] || {};
+      let bonus = 0, penalty = 0;
+      if (Array.isArray(dailyRecord)) {
+        dailyRecord.forEach(it => { bonus += Number(it.bonus||0); penalty += Number(it.penalty||0); });
+      } else if (typeof dailyRecord === 'object') {
+        bonus = Number(dailyRecord.bonus || 0);
+        penalty = Number(dailyRecord.penalty || 0);
+      }
 
-  db.ref(`payroll/${payrollKey}`).set(payrollData)
-    .then(() => {
-      showToastNotification("✅ Đã lưu bảng lương!");
-      closePayrollModal();
-    })
-    .catch(err => showToastNotification(`Lỗi khi lưu bảng lương: ${err.message}`));
-}
+      // Tạm ứng (approved hoặc done)
+      const advances = (globalAdvanceRequests || []).filter(a =>
+        a.employeeId === employeeId &&
+        a.date === dateStr &&
+        (a.status === "approved" || a.status === "done")
+      );
+      const advanceTotal = advances.reduce((s, a) => s + Number(a.amount || 0), 0);
 
-function closePayrollModal() {
-  document.getElementById("action-modal").style.display = "none";
-}
-// Hàm lấy ngày nghỉ đã duyệt
-function getApprovedOffDays(employeeId, month, year) {
-  return globalScheduleData.filter(s => 
-    s.employeeId === employeeId &&
-    s.approvalStatus === "approved" &&
-    s.status === "off" &&
-    new Date(s.date).getMonth() + 1 === month &&
-    new Date(s.date).getFullYear() === year
-  ).length;
-}
+      const dailyTotal = baseSalary + overtimePay + bonus - penalty - advanceTotal;
+      totalSalary += dailyTotal;
 
-// Hàm lấy ngày tăng ca đã duyệt
-function getApprovedOvertimeDays(employeeId, month, year) {
-  return globalScheduleData.filter(s => 
-    s.employeeId === employeeId &&
-    s.approvalStatus === "approved" &&
-    s.status === "overtime" &&
-    new Date(s.date).getMonth() + 1 === month &&
-    new Date(s.date).getFullYear() === year
-  ).length;
+      rows.push({
+        date: dateStr,
+        type,
+        baseSalary,
+        overtimePay,
+        bonus,
+        penalty,
+        advanceTotal,
+        total: dailyTotal
+      });
+    }
+
+    renderDailyPayrollTable(rows, totalSalary);
+  }).catch(err => {
+    console.error("Lỗi khi load employeeSettings:", err);
+    container.innerHTML = "<p style='color:red;'>Lỗi khi tải cài đặt nhân viên</p>";
+  });
 }

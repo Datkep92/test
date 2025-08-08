@@ -206,41 +206,47 @@
   <div id="schedule-requests-container"></div>
 </div>
 
-    </section>
-<!-- Thêm tab "Báo Cáo" vào giao diện HTML -->
-<div id="report-tab" class="tabcontent" style="display:none">
-  <h2>Báo cáo</h2>
+    <!-- Tab: Báo cáo -->
+<section id="report-tab" >
 
-  <!-- PHẦN 1: DOANH THU - CHI PHÍ -->
-  <div class="report-section">
-    <h3>Phần 1: Doanh thu - Chi phí</h3>
-    <div id="report-revenue-expense"></div>
-
-    <!-- Gộp nhóm chi phí thủ công -->
-    <div style="margin-top: 10px">
-      <h4>Gộp nhóm chi phí thủ công</h4>
-      <input id="group-keyword" placeholder="Nhập từ khóa ví dụ: đá lạnh" />
-      <input id="group-target" placeholder="Gộp vào nhóm: đá" />
-      <button onclick="addManualCostGroup()">Gộp từ khóa</button>
-    </div>
-
-    <!-- Biểu đồ thu chi -->
-    <canvas id="chart-profit" height="200"></canvas>
+  <!-- BỘ LỌC THỜI GIAN -->
+  <div class="filter-section" style="margin-bottom: 20px;">
+    <label for="report-filter-range">Chọn khoảng thời gian:</label><br />
+    <input type="text" id="report-filter-range" placeholder="VD: 2025-08-01 to 2025-08-08" />
+    <button onclick="applyReportFilter()">Lọc</button>
   </div>
 
-  <!-- PHẦN 2: TỒN KHO -->
+  <!-- PHẦN 1: Doanh thu & Chi phí -->
+  <div class="report-section">
+    <h3>Phần 1: Doanh thu & Chi phí</h3>
+    <div id="report-summary-table"></div>
+    <div id="report-expense-detail"></div>
+    <canvas id="chart-profit" height="100"></canvas>
+  </div>
+
+  <!-- PHẦN 2: Tồn kho -->
   <div class="report-section">
     <h3>Phần 2: Tồn kho</h3>
     <div id="report-inventory"></div>
   </div>
 
-  <!-- PHẦN 3: LƯơNG NHÂN VIÊN -->
+  <!-- PHẦN 3: Lương nhân viên -->
   <div class="report-section">
     <h3>Phần 3: Lương nhân viên</h3>
     <div id="report-payroll"></div>
   </div>
-</div>
 
+  <!-- VÙNG DEBUG (Hiển thị trong iOS nếu không có console) -->
+  <pre id="debug-log" style="display:none;"></pre>
+
+</section>
+
+
+  <!-- VÙNG DEBUG (Hiển thị trong iOS nếu không có console) -->
+<pre id="debug-log" style="display:none;"></pre>
+
+ 
+</section>
     <!-- Modal và Toast -->
     <div id="action-modal" class="modal"><div id="action-modal-content" class="modal-content"></div></div>
     <div id="day-details-modal" class="modal"><div id="day-details-content" class="modal-content"></div></div>
@@ -276,13 +282,17 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-      flatpickr("#filter-range", {
-        mode: "range",
-        dateFormat: "Y-m-d",
-        defaultDate: [new Date(), new Date()],
-        locale: { firstDayOfWeek: 1 },
-      });
-    });
+  const inputId = "report-filter-range";
+  const el = document.getElementById(inputId);
+  if (el) {
+    const instance = flatpickr(el, { mode: "range", dateFormat: "Y-m-d" });
+    flatpickrInstanceMap[inputId] = instance;
+  }
+  fetchAllReportData();
+});
+
+
+
   </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
