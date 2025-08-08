@@ -1,0 +1,487 @@
+/* ===========================
+   PROFILE.JS - PAYROLL EXTENSIONS
+   - Thêm tab LƯƠNG NGÀY realtime
+   - Sửa popup LƯƠNG để có 2 tab (tháng / ngày)
+   - Popup nhập THƯỞNG / PHẠT có chọn ngày -> lưu cả tháng + payrolls_daily
+   - Lưu ý: giữ nguyên hàm loadPayrollDetails(employeeId) (lương tháng)
+   - Khi dán: Xóa/ghi đè các hàm cũ tương ứng
+   =========================== */
+
+/* ===========================
+   0. Biến toàn cục dùng trong file
+   (Nếu đã có ở file gốc thì an toàn - nhưng xóa biến trùng nếu cần)
+   =========================== */
+let globalPayrollsDaily = {};      // cache realtime payrolls_daily per employee
+let payrollDailyListeners = {};    // track firebase listeners to cleanup
+
+/* ===========================
+   1. Realtime listener cho payrolls_daily
+   =========================== */
+function startPayrollDailyListener(employeeId) {
+  if (!employeeId) return;
+  if (payrollDailyListeners[employeeId]) return; // đã lắng nghe
+
+  const ref = db.ref(`payrolls_daily/${employeeId}`);
+  const callback = snapshot => {
+    globalPayrollsDaily[employeeId] = snapshot.val() || {};
+    // Nếu modal đang mở cho employee này và tab daily visible => reload
+    const modal = document.getElementById("employee-details-modal");
+    if (modal && modal.style.display === "block" && modal.dataset.payrollEmployee === employeeId) {
+      const tabDaily = document.getElementById("tab-daily");
+      const activeTab = tabDaily && tabDaily.style.display !== "none";
+      if (activeTab) {
+        const start = modal.dataset.dailyStart || new Date().toISOString().slice(0,10);
+        const end = modal.dataset.dailyEnd || start;
+        loadDailyPayroll(employeeId, start, end);
+      }
+    }
+  };
+
+  ref.on("value", callback);
+  payrollDailyListeners[employeeId] = { ref, callback };
+}
+
+function stopPayrollDailyListener(employeeId) {
+  const entry = payrollDailyListeners[employeeId];
+  if (!entry) return;
+  entry.ref.off("value", entry.callback);
+  delete payrollDailyListeners[employeeId];
+  delete globalPayrollsDaily[employeeId];
+}
+
+/* ===========================
+   2. Popup Bảng Lương (thay thế showPayrollModal cũ)
+   - Hiển thị 2 tab: LƯƠNG THÁNG (loadPayrollDetails) + LƯƠNG NGÀY (filter & realtime)
+   - Ghi modal.dataset để lưu filter cho listener
+   =========================== */
+function showPayrollModal(employeeId) {
+  const modal = document.getElementById("employee-details-modal");
+  const content = document.getElementById("employee-details-content");
+  if (!modal || !content) {
+    console.error("Modal payroll elements not found");
+    return;
+  }
+
+  modal.dataset.payrollEmployee = employeeId;
+  const today = new Date().toISOString().slice(0,10);
+  modal.dataset.dailyStart = today;
+  modal.dataset.dailyEnd = today;
+
+  content.innerHTML = `
+    <h2>Bảng Lương</h2>
+    <div class="payroll-tabs" style="margin-bottom:8px;">
+      <button id="tab-monthly-btn" class="active" onclick="switchPayrollTab('monthly', '${employeeId}')">Lương tháng</button>
+      <button id="tab-daily-btn" onclick="switchPayrollTab('daily', '${employeeId}')">Lương ngày</button>
+    </div>
+
+    <div id="tab-monthly" class="payroll-tab-content">
+      <div id="payroll-details-container"></div>
+    </div>
+
+    <div id="tab-daily" class="payroll-tab-content" style="display:none;">
+      <div class="input-group" style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+        <div>
+          <label style="font-size:12px;">Từ</label><br/>
+          <input type="date" id="daily-start" value="${today}" />
+        </div>
+        <div>
+          <label style="font-size:12px;">Đến</label><br/>
+          <input type="date" id="daily-end" value="${today}" />
+        </div>
+        <div style="align-self:flex-end;">
+          <button class="primary-btn" onclick="filterDailyPayroll('${employeeId}')">Xem</button>
+        </div>
+      </div>
+
+      <div id="daily-payroll-container"></div>
+    </div>
+
+    <div style="text-align:right;margin-top:12px;">
+      <button class="secondary-btn" onclick="closePayrollModal()">Đóng</button>
+    </div>
+  `;
+
+  modal.style.display = "block";
+  // Bắt listener realtime
+  startPayrollDailyListener(employeeId);
+  // Load mặc định tab tháng
+  loadPayrollDetails(employeeId);
+}
+
+/* Hàm đóng modal và cleanup listener */
+function closePayrollModal() {
+  const modal = document.getElementById("employee-details-modal");
+  if (!modal) return;
+  const employeeId = modal.dataset.payrollEmployee;
+  modal.style.display = "none";
+
+  // xóa dataset
+  delete modal.dataset.payrollEmployee;
+  delete modal.dataset.dailyStart;
+  delete modal.dataset.dailyEnd;
+
+  // tắt listener realtime (option: có thể để nếu muốn)
+  if (employeeId) stopPayrollDailyListener(employeeId);
+}
+
+/* ===========================
+   3. Chuyển tab
+   =========================== */
+function switchPayrollTab(tab, employeeId) {
+  const tabMonthly = document.getElementById("tab-monthly");
+  const tabDaily = document.getElementById("tab-daily");
+  const btnMonthly = document.getElementById("tab-monthly-btn");
+  const btnDaily = document.getElementById("tab-daily-btn");
+
+  if (tabMonthly) tabMonthly.style.display = tab === "monthly" ? "block" : "none";
+  if (tabDaily) tabDaily.style.display = tab === "daily" ? "block" : "none";
+  if (btnMonthly) btnMonthly.classList.toggle("active", tab === "monthly");
+  if (btnDaily) btnDaily.classList.toggle("active", tab === "daily");
+
+  if (tab === "monthly") {
+    // dùng hàm lương tháng hiện tại (giữ nguyên)
+    try { loadPayrollDetails(employeeId); } catch (e) { console.error(e); }
+  } else {
+    // tab day: nếu có bộ lọc hiện sẵn thì tính luôn
+    const modal = document.getElementById("employee-details-modal");
+    const start = modal?.dataset.dailyStart || document.getElementById("daily-start")?.value || new Date().toISOString().slice(0,10);
+    const end = modal?.dataset.dailyEnd || document.getElementById("daily-end")?.value || start;
+    loadDailyPayroll(employeeId, start, end);
+  }
+}
+
+/* ===========================
+   4. Bộ lọc Lương ngày
+   =========================== */
+function filterDailyPayroll(employeeId) {
+  const startInput = document.getElementById("daily-start");
+  const endInput = document.getElementById("daily-end");
+  const start = startInput ? startInput.value : null;
+  const end = endInput ? (endInput.value || start) : start;
+
+  if (!start) {
+    alert("Vui lòng chọn ngày hoặc khoảng ngày");
+    return;
+  }
+
+  const modal = document.getElementById("employee-details-modal");
+  if (modal) {
+    modal.dataset.dailyStart = start;
+    modal.dataset.dailyEnd = end;
+  }
+
+  loadDailyPayroll(employeeId, start, end);
+}
+
+/* ===========================
+   5. Tính & Load Lương ngày
+   - Dùng globalScheduleData, globalAdvanceRequests, globalPayrollsDaily
+   - Lấy cài đặt từ employeeSettings/{employeeId}
+   =========================== */
+function loadDailyPayroll(employeeId, startDate, endDate) {
+  const container = document.getElementById("daily-payroll-container");
+  if (!container) return;
+
+  const emp = (globalEmployeeData || []).find(e => e.id === employeeId);
+  if (!emp) {
+    container.innerHTML = "<p style='color:red;'>Không tìm thấy nhân viên</p>";
+    return;
+  }
+
+  // parse dates
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) {
+    container.innerHTML = "<p style='color:red;'>Khoảng ngày không hợp lệ</p>";
+    return;
+  }
+
+  // lấy settings (1 lần)
+  firebase.database().ref(`employeeSettings/${employeeId}`).once('value').then(settingSnap => {
+    const settings = settingSnap.val() || {};
+    const wage = Number(settings.wagePerHour) || 20000;
+    const hours = Number(settings.hoursPerDay) || 8;
+    const defaultOtHours = Number(settings.overtimeHours) || 2;
+
+    const rows = [];
+    let totalSalary = 0;
+
+    // iterate dates inclusive
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().slice(0,10);
+
+      // schedule (approved) for that date
+      const schedule = (globalScheduleData || []).find(s => s.employeeId === employeeId && s.date === dateStr && s.approvalStatus === "approved");
+
+      let baseSalary = 0;
+      let overtimePay = 0;
+      let type = "Không làm";
+
+      if (schedule) {
+        if (schedule.status === "off") {
+          type = "Nghỉ";
+        } else if (schedule.status === "overtime") {
+          type = "Tăng ca";
+          baseSalary = wage * hours;
+          const otHours = Number(schedule.overtimeHours) || defaultOtHours;
+          overtimePay = wage * otHours;
+        } else {
+          type = "Bình thường";
+          baseSalary = wage * hours;
+        }
+      }
+
+      // bonus/penalty từ payrolls_daily cache
+      const dailyRecord = (globalPayrollsDaily[employeeId] || {})[dateStr] || {};
+      let bonus = 0, penalty = 0;
+      if (Array.isArray(dailyRecord)) {
+        dailyRecord.forEach(it => { bonus += Number(it.bonus||0); penalty += Number(it.penalty||0); });
+      } else if (dailyRecord && typeof dailyRecord === 'object') {
+        bonus = Number(dailyRecord.bonus || 0);
+        penalty = Number(dailyRecord.penalty || 0);
+      }
+
+      // advances trong ngày (approved/done)
+      const advances = (globalAdvanceRequests || []).filter(a => a.employeeId === employeeId && a.date === dateStr && (a.status === "approved" || a.status === "done"));
+      const advanceTotal = advances.reduce((s, a) => s + Number(a.amount || 0), 0);
+
+      const dailyTotal = baseSalary + overtimePay + bonus - penalty - advanceTotal;
+      totalSalary += dailyTotal;
+
+      rows.push({
+        date: dateStr,
+        type,
+        baseSalary,
+        overtimePay,
+        bonus,
+        penalty,
+        advanceTotal,
+        total: dailyTotal
+      });
+    }
+
+    renderDailyPayrollTable(rows, totalSalary);
+  }).catch(err => {
+    console.error("Lỗi khi load employeeSettings:", err);
+    container.innerHTML = "<p style='color:red;'>Lỗi khi tải cài đặt nhân viên</p>";
+  });
+}
+
+/* ===========================
+   6. Render bảng Lương ngày
+   =========================== */
+function renderDailyPayrollTable(rows, totalSalary) {
+  const container = document.getElementById("daily-payroll-container");
+  if (!container) return;
+
+  if (!rows || rows.length === 0) {
+    container.innerHTML = "<p style='color:#b00;'>⚠ Không có dữ liệu</p>";
+    return;
+  }
+
+  let html = `
+    <table class="table-style" style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:6px;">Ngày</th>
+          <th style="text-align:left;padding:6px;">Loại ca</th>
+          <th style="text-align:right;padding:6px;">Lương cơ bản</th>
+          <th style="text-align:right;padding:6px;">OT</th>
+          <th style="text-align:right;padding:6px;">Thưởng</th>
+          <th style="text-align:right;padding:6px;">Phạt</th>
+          <th style="text-align:right;padding:6px;">Tạm ứng</th>
+          <th style="text-align:right;padding:6px;">Tổng</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  rows.forEach(r => {
+    html += `
+      <tr>
+        <td style="padding:6px;">${r.date}</td>
+        <td style="padding:6px;">${r.type}</td>
+        <td style="padding:6px;text-align:right;">${Number(r.baseSalary).toLocaleString()} VND</td>
+        <td style="padding:6px;text-align:right;">${Number(r.overtimePay).toLocaleString()} VND</td>
+        <td style="padding:6px;text-align:right;">${Number(r.bonus).toLocaleString()} VND</td>
+        <td style="padding:6px;text-align:right;">${Number(r.penalty).toLocaleString()} VND</td>
+        <td style="padding:6px;text-align:right;">${Number(r.advanceTotal).toLocaleString()} VND</td>
+        <td style="padding:6px;text-align:right;"><strong>${Number(r.total).toLocaleString()} VND</strong></td>
+      </tr>
+    `;
+  });
+
+  html += `
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="7" style="padding:8px;text-align:right;"><strong>Tổng cộng</strong></td>
+          <td style="padding:8px;text-align:right;"><strong style="color:green;">${Number(totalSalary).toLocaleString()} VND</strong></td>
+        </tr>
+      </tfoot>
+    </table>
+  `;
+
+  container.innerHTML = html;
+}
+
+/* ===========================
+   7. Lưu thưởng/phạt theo ngày (dùng khi admin lưu)
+   - Hàm này ghi node payrolls_daily/{employeeId}/{YYYY-MM-DD}
+   - Nếu muốn lưu nhiều khoản cùng ngày, có thể mở rộng thành mảng
+   =========================== */
+function saveDailyBonusPenalty(employeeId, date, bonus, penalty, bonusNote, penaltyNote) {
+  if (!employeeId || !date) return Promise.reject(new Error("employeeId/date required"));
+  const payload = {
+    bonus: Number(bonus) || 0,
+    penalty: Number(penalty) || 0,
+    bonusNote: bonusNote || "",
+    penaltyNote: penaltyNote || "",
+    updatedAt: Date.now()
+  };
+  const updates = {};
+  updates[`payrolls_daily/${employeeId}/${date}`] = payload;
+  return db.ref().update(updates);
+}
+
+/* ===========================
+   8. Popup Thưởng (show + save)
+   - Nếu file gốc đã có modal elements, đảm bảo id tồn tại:
+     - #bonus-modal, #bonus-modal-content
+   =========================== */
+function showBonusModal(employeeId, monthKey) {
+  const today = new Date().toISOString().slice(0,10);
+  const modal = document.getElementById("bonus-modal");
+  const content = document.getElementById("bonus-modal-content");
+  if (!modal || !content) {
+    alert("Không tìm thấy modal thưởng. Vui lòng kiểm tra HTML (bonus-modal, bonus-modal-content).");
+    return;
+  }
+  content.innerHTML = `
+    <h3>Thêm thưởng</h3>
+    <div style="margin-bottom:8px;">
+      <input type="number" id="bonus-amount" placeholder="Số tiền thưởng" />
+    </div>
+    <div style="margin-bottom:8px;">
+      <textarea id="bonus-note" placeholder="Ghi chú"></textarea>
+    </div>
+    <div style="margin-bottom:8px;">
+      <label>Ngày áp dụng:</label><br/>
+      <input type="date" id="bonus-date" value="${today}" />
+    </div>
+    <div style="text-align:right;">
+      <button class="primary-btn" onclick="saveBonus('${employeeId}','${monthKey}')">Lưu</button>
+      <button class="secondary-btn" onclick="closeBonusModal()">Hủy</button>
+    </div>
+  `;
+  modal.style.display = "block";
+}
+
+function saveBonus(employeeId, monthKey) {
+  const bonus = Number(document.getElementById("bonus-amount").value) || 0;
+  const note = document.getElementById("bonus-note").value || "";
+  const date = document.getElementById("bonus-date").value || new Date().toISOString().slice(0,10);
+
+  // 1) Lưu tổng tháng (giữ hành vi cũ)
+  db.ref(`payrolls/${employeeId}/${monthKey}/bonus`).set(bonus);
+  db.ref(`payrolls/${employeeId}/${monthKey}/bonusNote`).set(note);
+
+  // 2) Lưu chi tiết ngày (realtime)
+  saveDailyBonusPenalty(employeeId, date, bonus, 0, note, "")
+    .then(() => {
+      showToastNotification('Đã lưu thưởng theo ngày');
+    })
+    .catch(err => {
+      console.error("Lỗi lưu payrolls_daily:", err);
+      showToastNotification('Lỗi khi lưu thưởng theo ngày');
+    });
+
+  closeBonusModal();
+}
+
+function closeBonusModal() {
+  const modal = document.getElementById("bonus-modal");
+  if (!modal) return;
+  modal.style.display = "none";
+  const content = document.getElementById("bonus-modal-content");
+  if (content) content.innerHTML = "";
+}
+
+/* ===========================
+   9. Popup Phạt (show + save)
+   - Nếu file gốc đã có modal elements, đảm bảo id tồn tại:
+     - #penalty-modal, #penalty-modal-content
+   =========================== */
+function showPenaltyModal(employeeId, monthKey) {
+  const today = new Date().toISOString().slice(0,10);
+  const modal = document.getElementById("penalty-modal");
+  const content = document.getElementById("penalty-modal-content");
+  if (!modal || !content) {
+    alert("Không tìm thấy modal phạt. Vui lòng kiểm tra HTML (penalty-modal, penalty-modal-content).");
+    return;
+  }
+  content.innerHTML = `
+    <h3>Thêm phạt</h3>
+    <div style="margin-bottom:8px;">
+      <input type="number" id="penalty-amount" placeholder="Số tiền phạt" />
+    </div>
+    <div style="margin-bottom:8px;">
+      <textarea id="penalty-note" placeholder="Ghi chú"></textarea>
+    </div>
+    <div style="margin-bottom:8px;">
+      <label>Ngày áp dụng:</label><br/>
+      <input type="date" id="penalty-date" value="${today}" />
+    </div>
+    <div style="text-align:right;">
+      <button class="primary-btn" onclick="savePenalty('${employeeId}','${monthKey}')">Lưu</button>
+      <button class="secondary-btn" onclick="closePenaltyModal()">Hủy</button>
+    </div>
+  `;
+  modal.style.display = "block";
+}
+
+function savePenalty(employeeId, monthKey) {
+  const penalty = Number(document.getElementById("penalty-amount").value) || 0;
+  const note = document.getElementById("penalty-note").value || "";
+  const date = document.getElementById("penalty-date").value || new Date().toISOString().slice(0,10);
+
+  // 1) Lưu tổng tháng (giữ hành vi cũ)
+  db.ref(`payrolls/${employeeId}/${monthKey}/penalty`).set(penalty);
+  db.ref(`payrolls/${employeeId}/${monthKey}/penaltyNote`).set(note);
+
+  // 2) Lưu chi tiết ngày (realtime)
+  saveDailyBonusPenalty(employeeId, date, 0, penalty, "", note)
+    .then(() => {
+      showToastNotification('Đã lưu phạt theo ngày');
+    })
+    .catch(err => {
+      console.error("Lỗi lưu payrolls_daily:", err);
+      showToastNotification('Lỗi khi lưu phạt theo ngày');
+    });
+
+  closePenaltyModal();
+}
+
+function closePenaltyModal() {
+  const modal = document.getElementById("penalty-modal");
+  if (!modal) return;
+  modal.style.display = "none";
+  const content = document.getElementById("penalty-modal-content");
+  if (content) content.innerHTML = "";
+}
+
+/* ===========================
+   10. KHUYẾN NGHỊ TEST & CHECKLIST
+   - Có DOM elements:
+     - #employee-details-modal, #employee-details-content
+     - #bonus-modal, #bonus-modal-content
+     - #penalty-modal, #penalty-modal-content
+   - Phải load trước:
+     - db (firebase.database()), globalScheduleData, globalAdvanceRequests, globalEmployeeData
+     - loadPayrollDetails(employeeId) phải tồn tại (không bị xóa)
+   - Test:
+     - Mở payroll modal -> tab monthly hiển thị loadPayrollDetails
+     - Chuyển tab daily -> chọn ngày -> xem kết quả
+     - Mở bonus modal -> chọn ngày khác -> lưu -> KTra firebase path payrolls_daily/{employeeId}/{date} có record
+     - Khi payrolls_daily thay đổi -> bảng Lương ngày đang mở cập nhật ngay
+   =========================== */
