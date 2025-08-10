@@ -1744,3 +1744,4 @@ function renderReportProductList() {
     </div>
   `;
 }
+window.globalEmployeeSettings = window.globalEmployeeSettings || {};

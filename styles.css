@@ -1,3 +1,199 @@
+:root {
+  --bg: #f7f8fb;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --accent: #2b7cff;
+  --success: #2e7d32;
+  --danger: #d32f2f;
+  --shadow: 0 4px 12px rgba(24, 39, 75, 0.06);
+  --radius: 8px;
+  --gap: 14px;
+  font-family: Inter, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+/* PAGE CONTAINER */
+.report-page {
+  padding: 12px;
+  background: var(--bg);
+  box-sizing: border-box;
+}
+
+/* HEADER */
+.report-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.report-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.report-header-right {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-label input {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #e3e7ee;
+  min-width: 160px;
+}
+
+/* BUTTONS */
+.btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  font-size: 14px;
+}
+.btn.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid rgba(43, 124, 255, 0.3);
+}
+.btn.small {
+  padding: 6px 8px;
+  font-size: 13px;
+  border-radius: 6px;
+}
+
+/* CARDS */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 12px;
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
+}
+.card-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-style {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  table-layout: fixed; /* Chia đều chiều rộng */
+  word-break: break-word; /* Xuống dòng khi dài */
+}
+
+.table-style th,
+.table-style td {
+  border-bottom: 1px solid #eef2f6;
+  padding: 8px 10px;
+  vertical-align: top;
+}
+
+.table-style thead th {
+  background: transparent;
+  text-align: left;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.table-style td {
+  text-align: right;
+}
+.table-style td:first-child,
+.table-style th:first-child {
+  text-align: left; /* Cột đầu căn trái */
+}
+
+/* LAYOUT MOBILE (default) */
+.report-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.report-top,
+.report-middle {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.chart-wrapper {
+  min-height: 220px;
+  position: relative;
+}
+
+/* FOOTER CONTROLS */
+.report-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+.report-footer .left,
+.report-footer .right {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* TOAST */
+.toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  background: #111;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  display: none;
+}
+
+/* ================= TABLET ================= */
+@media (min-width: 601px) {
+  .report-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .report-top {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .report-middle {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .report-footer {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+/* ================= DESKTOP ================= */
+@media (min-width: 1025px) {
+  .report-top {
+    grid-template-columns: 360px 1fr;
+  }
+}
+
+
 /* ===== Modern Mobile-Optimized CSS ===== */
 :root {
   /* Modern Color Palette */
@@ -131,21 +327,6 @@ p {
   -webkit-backdrop-filter: blur(10px);
 }
 
-/* ===== Tab System ===== */
-.tabcontent {
-  display: none;
-  padding: var(--space-md);
-  animation: fadeIn var(--transition-normal);
-}
-
-.tabcontent.active {
-  display: block;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
 
 /* ===== Cards ===== */
 .card {

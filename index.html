@@ -144,113 +144,163 @@
       </div>
     </section>
 
-    <!-- Tab: Cá nhân -->
-    <section id="profile" class="tabcontent">
-  
+<!-- Tab: Cá nhân -->
+<section id="profile" class="tabcontent">
+  <div class="card">
+    <h3>Lịch làm việc</h3>
+    <div id="calendar"></div>
+  </div>
+  <div id="employee-list-container"></div>
 
-      <div class="card">
-        <h3>Lịch làm việc</h3>
-        <div id="calendar"></div>
+  <!-- Popup -->
+  <div id="employee-details-modal" class="modal">
+    <div id="employee-details-content" class="modal-content"></div>
+  </div>
+
+  <!-- THÔNG TIN CÁ NHÂN -->
+  <div class="card">
+    <div class="toggle-header toggle-title" id="toggle-personal" onclick="toggleSection('personal')">
+      Thông tin cá nhân
+    </div>
+    <div class="toggle-body" id="section-personal">
+      <label>Tên</label>
+      <input id="name-input" type="text" placeholder="Nhập tên" />
+      <label>SĐT</label>
+      <input id="phone-input" type="text" placeholder="Nhập số điện thoại" />
+      <label>Địa chỉ</label>
+      <input id="address-input" type="text" placeholder="Nhập địa chỉ" />
+      <button onclick="updateUserProfile()">Cập nhật</button>
+    </div>
+  </div>
+
+  <!-- TẠM ỨNG -->
+  <div class="card">
+    <div class="toggle-header toggle-title" id="toggle-advance" onclick="toggleSection('advance')">
+      Tạm ứng
+    </div>
+    <div class="toggle-body" id="section-advance">
+      <label>Số tiền</label>
+      <input type="number" id="advance-amount" placeholder="Số tiền (VND)" />
+      <label>Lý do</label>
+      <input type="text" id="advance-reason" placeholder="Lý do" />
+      <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu</button>
+    </div>
+  </div>
+
+  <!-- NGÀY OFF VÀ TĂNG CA -->
+  <div class="card">
+    <div class="toggle-header toggle-title" id="toggle-off" onclick="toggleSection('off')">
+      Ngày off và tăng ca
+    </div>
+    <div class="toggle-body" id="section-off">
+      <div id="off-and-overtime"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="advance-requests-container" data-expanded="false"></div>
+  </div>
+  <div class="card">
+    <div id="schedule-requests-container"></div>
+  </div>
+</section>
+
+<!-- HTML: Báo cáo Thu - Chi -->
+<section id="report-page" class="report-page">
+
+  <header class="report-header">
+    <h2>Báo cáo Thu - Chi</h2>
+    <div class="report-header-right">
+      <label class="filter-label">Khoảng ngày:
+        <input id="report-filter-range" placeholder="Chọn khoảng ngày" />
+      </label>
+      <button id="refresh-report-btn" class="btn" onclick="fetchAllReportData()">🔄 Làm mới</button>
+      <div id="report-date-range" class="filter-info"></div>
+    </div>
+  </header>
+
+  <main class="report-main">
+
+    <!-- TOP: Tổng quan + Biểu đồ -->
+    <section class="report-top">
+      <div id="report-summary-table" class="card summary-card">
+        <!-- Bảng tổng sẽ được render vào đây -->
+        <p class="muted">Đang tải tổng quan...</p>
       </div>
-<div id="employee-list-container"></div>
 
-<!-- Popup -->
-<div id="employee-details-modal" class="modal">
-  <div id="employee-details-content" class="modal-content"></div>
-</div>
+      <div class="card chart-card">
+        <div class="card-title">Biểu đồ tổng quan</div>
+        <div class="chart-wrapper">
+          <canvas id="chart-profit" height="220"></canvas>
+        </div>
+      </div>
+    </section>
 
-    <!-- THÔNG TIN CÁ NHÂN -->
-<div class="card">
-  <div class="toggle-header toggle-title" id="toggle-personal" onclick="toggleSection('personal')">
-     Thông tin cá nhân
-  </div>
-  <div class="toggle-body" id="section-personal">
-    <label>Tên</label>
-    <input id="name-input" type="text" placeholder="Nhập tên" />
-    <label>SĐT</label>
-    <input id="phone-input" type="text" placeholder="Nhập số điện thoại" />
-    <label>Địa chỉ</label>
-    <input id="address-input" type="text" placeholder="Nhập địa chỉ" />
-    <button onclick="updateUserProfile()">Cập nhật</button>
-  </div>
-</div>
+    <!-- MIDDLE: Chi phí tháng + Inventory + Payroll -->
+    <section class="report-middle">
+      <div id="report-expense-detail" class="card month-cost-card">
+        <!-- Bảng chi phí tháng (so sánh trung bình) -->
+        <p class="muted">Đang tải chi phí tháng...</p>
+      </div>
+<!-- Bảng xuất kho -->
+<section id="report-inventory-export" class="card"></section>
 
-<!-- TẠM ỨNG -->
-<div class="card">
-  <div class="toggle-header toggle-title" id="toggle-advance" onclick="toggleSection('advance')">
-     Tạm ứng
-  </div>
-  <div class="toggle-body" id="section-advance">
-    <label>Số tiền</label>
-    <input type="number" id="advance-amount" placeholder="Số tiền (VND)" />
-    <label>Lý do</label>
-    <input type="text" id="advance-reason" placeholder="Lý do" />
-    <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu</button>
-  </div>
-</div>
+<!-- Cảnh báo tồn kho thấp -->
+<section id="low-stock-warning" class="card"></section>
+      <div id="report-inventory" class="card inventory-card">
+        <div class="card-title">Kho hàng</div>
+        <p class="muted">Đang tải kho...</p>
+      </div>
 
-<!-- NGÀY OFF VÀ TĂNG CA -->
-<div class="card">
-  <div class="toggle-header toggle-title" id="toggle-off" onclick="toggleSection('off')">
-     Ngày off và tăng ca
-  </div>
-  <div class="toggle-body" id="section-off">
-    <div id="off-and-overtime"></div>
-  </div>
-</div>
+      <div id="report-payroll" class="card payroll-card">
+        <div class="card-title">Bảng lương</div>
+        <p class="muted">Đang tải lương...</p>
+      </div>
+    </section>
 
-      <div class="card">
-  <div id="advance-requests-container" data-expanded="false"></div>
-</div>
-      <div class="card">
-  <div id="schedule-requests-container"></div>
-</div>
+    <!-- BOTTOM: Bảng chi phí theo ngày (áp dụng filter) -->
+    <section class="report-bottom card" id="report-expense-daily-wrapper">
+      <div class="card-title">Chi phí theo ngày (áp dụng bộ lọc)</div>
+      <div id="report-expense-daily">
+        <p class="muted">Áp dụng bộ lọc ngày để hiển thị chi tiết theo ngày.</p>
+      </div>
+    </section>
 
-    <!-- Tab: Báo cáo -->
-<section id="report-tab" >
+  </main>
 
-  <!-- BỘ LỌC THỜI GIAN -->
-  <div class="filter-section" style="margin-bottom: 20px;">
-    <label for="report-filter-range">Chọn khoảng thời gian:</label><br />
-    <input type="text" id="report-filter-range" placeholder="VD: 2025-08-01 to 2025-08-08" />
-    <button onclick="applyReportFilter()">Lọc</button>
-  </div>
+  <!-- FOOTER / small controls -->
+  <footer class="report-footer">
+    <div class="left">
+      <input id="group-keyword" placeholder="Từ khóa gộp (ví dụ: sửa)" />
+      <input id="group-target" placeholder="Gộp vào (ví dụ: sửa máy)" />
+      <button class="btn" onclick="addManualCostGroup()">Thêm/Áp dụng gộp</button>
+    </div>
 
-  <!-- PHẦN 1: Doanh thu & Chi phí -->
-  <div class="report-section">
-    <h3>Phần 1: Doanh thu & Chi phí</h3>
-    <div id="report-summary-table"></div>
-    <div id="report-expense-detail"></div>
-    <canvas id="chart-profit" height="100"></canvas>
-  </div>
-
-  <!-- PHẦN 2: Tồn kho -->
-  <div class="report-section">
-    <h3>Phần 2: Tồn kho</h3>
-    <div id="report-inventory"></div>
-  </div>
-
-  <!-- PHẦN 3: Lương nhân viên -->
-  <div class="report-section">
-    <h3>Phần 3: Lương nhân viên</h3>
-    <div id="report-payroll"></div>
-  </div>
-
-  <!-- VÙNG DEBUG (Hiển thị trong iOS nếu không có console) -->
-  <pre id="debug-log" style="display:none;"></pre>
+    <div class="right">
+      <button class="btn secondary" onclick="openAddMonthlyCostModal()">＋ Thêm dòng chi phí tháng</button>
+      <button class="btn" onclick="renderAllReportSections()">Hiển thị mặc định</button>
+    </div>
+  </footer>
 
 </section>
 
+<!-- MODAL containers (script sẽ tìm by id) -->
+<div id="group-edit-modal" class="modal" style="display:none;"></div>
+<div id="add-monthly-cost-modal" class="modal" style="display:none;"></div>
 
-  <!-- VÙNG DEBUG (Hiển thị trong iOS nếu không có console) -->
-<pre id="debug-log" style="display:none;"></pre>
+<!-- OPTIONAL: placeholder for toast messages (if you have showToastNotification) -->
+<div id="app-toast" class="toast" style="display:none;"></div>
 
- 
-</section>
-    <!-- Modal và Toast -->
-    <div id="action-modal" class="modal"><div id="action-modal-content" class="modal-content"></div></div>
-    <div id="day-details-modal" class="modal"><div id="day-details-content" class="modal-content"></div></div>
-    <div id="toast-container"></div>
+
+
+<!-- Modal và Toast -->
+<div id="action-modal" class="modal">
+  <div id="action-modal-content" class="modal-content"></div>
+</div>
+<div id="day-details-modal" class="modal">
+  <div id="day-details-content" class="modal-content"></div>
+</div>
+<div id="toast-container"></div>
 
     <!-- Floating Menu -->
     <div class="floating-menu">

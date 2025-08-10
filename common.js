@@ -159,12 +159,38 @@ function openTabBubble(tabId) {
 
 
   if (tabId === "report-tab") {
-  renderReportRevenueExpense(); // Phần 1
-  renderReportInventory();      // Phần 2
-  renderReportPayroll();        // Phần 3
-}
-}
+  // Load tất cả dữ liệu cần cho report trước
+  loadPayrollReportData(() => {
+    // Lấy ngày lọc từ input
+    const rangeInput = document.getElementById("report-filter-range");
+    let startDate, endDate;
 
+    if (rangeInput && rangeInput.value) {
+      const parts = rangeInput.value.split(/\s+to\s+|\s*-\s*/i).map(s => s.trim());
+      if (parts.length === 1) {
+        startDate = parts[0];
+        endDate = parts[0];
+      } else if (parts.length === 2) {
+        startDate = parts[0];
+        endDate = parts[1];
+      }
+    } else {
+      // Nếu chưa chọn thì mặc định 7 ngày gần nhất
+      const end = new Date();
+      const start = new Date();
+      start.setDate(end.getDate() - 6);
+      startDate = start.toISOString().slice(0, 10);
+      endDate = end.toISOString().slice(0, 10);
+    }
+
+    renderRevenueExpenseSection(globalReportRaw);
+    renderInventorySection();
+    renderReportPayrollTable(startDate, endDate); // <-- áp dụng lọc
+    renderInventoryExportReport();
+    renderLowStockWarning();
+  });
+}
+}
 
 function showToastNotification(message) {
   const container = document.getElementById("toast-container");

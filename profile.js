@@ -2448,3 +2448,102 @@ function loadDailyPayroll(employeeId, startDate, endDate) {
     container.innerHTML = "<p style='color:red;'>Lỗi khi tải cài đặt nhân viên</p>";
   });
 }
+//
+// Hàm bọc logic tính lương theo ngày, dùng cho báo cáo
+// Hàm bọc lại logic tính lương ngày cho nhân viên, lấy đúng settings cá nhân theo employeeId
+function getDailyPayrollFromProfile(employeeId, startDate, endDate) {
+  if (!employeeId) return { rows: [], totalSalary: 0 };
+
+  const emp = (globalEmployeeData || []).find(e => e.id === employeeId);
+  if (!emp) return { rows: [], totalSalary: 0 };
+
+  // Lấy cài đặt cá nhân của nhân viên này (ưu tiên employeeSettings nếu có)
+  const settings = (typeof globalEmployeeSettings !== 'undefined' && globalEmployeeSettings[employeeId])
+    ? globalEmployeeSettings[employeeId]
+    : {};
+
+  // Lấy lương giờ và giờ công từ settings hoặc từ data nhân viên, fallback mặc định
+  const wage = Number(settings.wagePerHour ?? emp.wagePerHour ?? 20000);
+  const hoursPerDay = Number(settings.hoursPerDay ?? emp.hoursPerDay ?? 8);
+  const defaultOtHours = Number(settings.overtimeHours ?? 2);
+
+  const rows = [];
+  let totalSalary = 0;
+
+  // Chuẩn hóa ngày bắt đầu và kết thúc (bỏ giờ, phút)
+  const s = new Date(startDate);
+  const e = new Date(endDate);
+  s.setHours(0,0,0,0);
+  e.setHours(0,0,0,0);
+
+  for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+    const dateStr = d.toISOString().slice(0, 10); // YYYY-MM-DD
+
+    // Tìm lịch làm việc đã duyệt cho ngày này và nhân viên này
+    const schedule = (globalScheduleData || []).find(sch =>
+      sch.employeeId === employeeId &&
+      sch.date === dateStr &&
+      sch.approvalStatus === "approved"
+    );
+
+    let baseSalary = 0;
+    let overtimePay = 0;
+    let type = "Bình thường";
+
+    if (schedule) {
+      if (schedule.status === "off") {
+        type = "Nghỉ";
+        baseSalary = 0;
+      } else if (schedule.status === "overtime" || Number(schedule.overtimeHours) > 0) {
+        type = "Tăng ca";
+        baseSalary = wage * hoursPerDay;
+        const otHours = Number(schedule.overtimeHours) || defaultOtHours;
+        overtimePay = wage * otHours;
+      } else {
+        type = "Bình thường";
+        baseSalary = wage * hoursPerDay;
+      }
+    } else {
+      // Nếu không có lịch duyệt thì coi làm bình thường
+      baseSalary = wage * hoursPerDay;
+    }
+
+    // Lấy phần thưởng và phạt trong payrolls_daily
+    const dailyRecord = ((globalPayrollsDaily || {})[employeeId] || {})[dateStr] || {};
+    let bonus = 0, penalty = 0;
+    if (Array.isArray(dailyRecord)) {
+      dailyRecord.forEach(it => {
+        bonus += Number(it.bonus || 0);
+        penalty += Number(it.penalty || 0);
+      });
+    } else if (typeof dailyRecord === 'object') {
+      bonus = Number(dailyRecord.bonus || 0);
+      penalty = Number(dailyRecord.penalty || 0);
+    }
+
+    // Lấy tạm ứng đã duyệt hoặc hoàn thành
+    const advances = (globalAdvanceRequests || []).filter(a =>
+      a.employeeId === employeeId &&
+      a.date === dateStr &&
+      (a.status === "approved" || a.status === "done")
+    );
+    const advanceTotal = advances.reduce((sum, a) => sum + Number(a.amount || 0), 0);
+
+    // Tính tổng lương ngày
+    const dailyTotal = baseSalary + overtimePay + bonus - penalty - advanceTotal;
+    totalSalary += dailyTotal;
+
+    rows.push({
+      date: dateStr,
+      type,
+      baseSalary,
+      overtimePay,
+      bonus,
+      penalty,
+      advanceTotal,
+      total: dailyTotal
+    });
+  }
+
+  return { rows, totalSalary };
+}
