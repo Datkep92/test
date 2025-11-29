@@ -1,355 +1,875 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Đăng Nhập - Milano 259</title>
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Quản Lý Thiết Bị Y Tế</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        
+        /* Layout */
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { background: #2c3e50; color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        
+        /* Tabs */
+        .tabs { display: flex; background: #34495e; border-radius: 5px; margin-bottom: 20px; }
+        .tab { padding: 15px 20px; color: white; cursor: pointer; border-radius: 5px; }
+        .tab.active { background: #3498db; }
+        
+        /* Cards & Grid */
+        .card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .grid { display: grid; gap: 20px; }
+        .grid-2 { grid-template-columns: 1fr 1fr; }
+        .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+        
+        /* Form Elements */
+        input, select, button { padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin: 5px; }
+        button { background: #3498db; color: white; border: none; cursor: pointer; }
+        button:hover { background: #2980b9; }
+        
+        /* Tables */
+        .table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
+        .table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        .table th { background: #34495e; color: white; }
+        .table tr:hover { background: #f8f9fa; }
+        
+        /* Status Badges */
+        .badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; }
+        .status-active { background: #d4edda; color: #155724; }
+        .status-maintenance { background: #fff3cd; color: #856404; }
+        .status-broken { background: #f8d7da; color: #721c24; }
+        
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 5% auto; padding: 20px; border-radius: 10px; width: 90%; max-width: 800px; max-height: 80vh; overflow-y: auto; }
+        
+        /* Search & Filter */
+        .search-box { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .filter-group { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+    </style>
 </head>
 <body>
-  <!-- Đăng nhập -->
-  <div id="login-page" class="center-screen">
-    <div class="login-container">
-      <h2>Đăng Nhập <br>Milano 259 Coffee</h2>
-      <div class="input-container">
-        <input type="email" id="email" placeholder="Email" autocomplete="username" />
-        <input type="password" id="password" placeholder="Mật khẩu" autocomplete="current-password" />
-        <button onclick="login()" id="login-btn">Đăng Nhập</button>
-      </div>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🏥 HỆ THỐNG QUẢN LÝ THIẾT BỊ Y TẾ</h1>
+            <p>Khoa Gây Mê Hồi Sức - Bệnh viện Tỉnh Ninh Thuận</p>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('import')">📤 IMPORT EXCEL</div>
+            <div class="tab" onclick="showTab('classify')">🏷️ PHÂN LOẠI</div>
+            <div class="tab" onclick="showTab('search')">🔍 TRA CỨU</div>
+            <div class="tab" onclick="showTab('dashboard')">📊 DASHBOARD</div>
+        </div>
+
+        <!-- Tab Contents -->
+        <div id="import" class="tab-content">
+            <!-- Excel Import Interface -->
+        </div>
+
+        <div id="classify" class="tab-content" style="display: none;">
+            <!-- Classification Interface -->
+        </div>
+
+        <div id="search" class="tab-content" style="display: none;">
+            <!-- Search Interface -->
+        </div>
+
+        <div id="dashboard" class="tab-content" style="display: none;">
+            <!-- Dashboard Interface -->
+        </div>
     </div>
-  </div>
 
-  <!-- Giao diện chính -->
-  <div id="main-page" style="display: none;">
-    <header class="app-header">
-      <span>Milano 259</span>
-      <button class="logout-btn" onclick="logout()">Đăng Xuất</button>
-    </header>
-
-    <!-- Tab: Thu Chi -->
-    <section id="revenue-expense" class="tabcontent">
-      <h2>Báo cáo Thu Chi</h2>
-      <div class="card">
-        <h3>Nhập báo cáo</h3>
-        <div class="input-group">
-          <input type="number" id="opening-balance" placeholder="Số dư đầu kỳ (VND)" min="0" />
-          <button class="primary-btn small" onclick="submitField('opening-balance')">Gửi</button>
-        </div>
-        <div class="input-group">
-          <input type="number" id="revenue" placeholder="Doanh thu (VND)" min="0" />
-          <button class="primary-btn small" onclick="submitField('revenue')">Gửi</button>
-        </div>
-        <div class="input-group">
-          <input type="text" id="expense-input" placeholder="Chi phí (VD: Mua nguyên liệu: 500000)" />
-          <button class="primary-btn small" onclick="submitField('expense-input')">Gửi</button>
-        </div>
-        <div class="input-group">
-          <input type="number" id="transfer-amount" placeholder="Tiền chuyển khoản (VND)" min="0" />
-          <button class="primary-btn small" onclick="submitField('transfer-amount')">Gửi</button>
-        </div>
-        <div class="input-group">
-          <input type="number" id="grab-amount" placeholder="Tiền Grab (VND)" min="0" />
-          <button class="primary-btn small" onclick="submitField('grab-amount')">Gửi</button>
-        </div>
-        <div class="input-group">
-          <input type="number" id="closing-balance" placeholder="Số dư cuối kỳ (VND)" min="0" />
-          <button class="primary-btn small" onclick="submitField('closing-balance')">Gửi</button>
-        </div>
-        <h4>Xuất hàng</h4>
-        <div id="report-product-list" class="product-list"></div>
-<button class="primary-btn"
-        style="width: 80%; margin: -5px auto 0; display: block;"
-        onclick="submitInventoryReport()">
-  Gửi Báo Cáo Tồn Kho
-</button>
-
- 
-</div>
-
-      <div class="card">
-        <h3>Lọc Báo Cáo</h3>
-        <div class="input-group">
-          <input type="text" id="filter-range" placeholder="Chọn khoảng thời gian (VD: 25/07/2025 - 26/07/2025)" />
-          <button class="primary-btn" onclick="applyFilter()">Lọc</button>
-        </div>
-      </div>
-
-      <div id="revenue-expense-summary" class="card">
-        <h3>Tóm tắt Thu Chi</h3>
-      </div>
-
-      <div class="card table-section" id="shared-report-table">
-        <h3>Bảng Báo cáo Thu Chi</h3>
-      </div>
-
-      <div class="card table-section" id="transfer-details">
-        <h3>Chi tiết Giao dịch Chuyển khoản</h3>
-      </div>
-
-      <div class="card table-section" id="report-product-table">
-        <h3>Bảng Báo cáo Xuất Hàng</h3>
-      </div>
-
-      <div class="card table-section">
-  <h3>Lịch sử Thao tác</h3>
-  <div id="history-table"></div>
-</div>
-
-    </section>
-
-    <!-- Tab: Quản lý Kho -->
-    <section id="inventory" class="tabcontent">
-      <div class="card">
-        <h2>Quản lý Kho</h2>
-
-        <h3>Thêm sản phẩm</h3>
-        <div class="input-group">
-          <input type="text" id="product-name" placeholder="Tên sản phẩm" />
-          <input type="number" id="product-quantity" placeholder="Số lượng" />
-          <input type="number" id="product-price" placeholder="Giá (VND)" />
-          <input type="number" id="product-low-stock-threshold" placeholder="Ngưỡng tồn thấp" />
-          <button class="primary-btn" onclick="addInventory()">Thêm sản phẩm</button>
-        </div>
-
-        <h3>Danh sách sản phẩm</h3>
-        <div id="inventory-list"></div>
-
-        <h3>Ngày mua hàng dự kiến</h3>
-        <div id="restock-schedule"></div>
-
-        <h3>Phân tích tỷ lệ bán ra</h3>
-        <div id="export-analysis"></div>
-        <canvas id="export-chart"></canvas>
-      </div>
-
-      <!-- Modal chỉnh sửa -->
-      <div id="edit-inventory-modal" class="modal">
+    <!-- Device Detail Modal -->
+    <div id="deviceModal" class="modal">
         <div class="modal-content">
-          <span class="close" onclick="closeModal('edit-inventory-modal')">×</span>
-          <h3>Chỉnh sửa sản phẩm</h3>
-          <input type="text" id="edit-product-name" placeholder="Tên sản phẩm" />
-          <input type="number" id="edit-product-quantity" placeholder="Số lượng" />
-          <input type="number" id="edit-product-price" placeholder="Giá (VND)" />
-          <input type="number" id="edit-product-low-stock-threshold" placeholder="Ngưỡng tồn thấp" />
-          <div class="button-group">
-            <button class="primary-btn" onclick="saveInventoryEdit()">Lưu</button>
-            <button class="secondary-btn" onclick="closeModal('edit-inventory-modal')">Hủy</button>
-          </div>
+            <!-- Device details will be loaded here -->
         </div>
-      </div>
-    </section>
-
-<!-- Tab: Cá nhân -->
-<section id="profile" class="tabcontent">
-  <div class="card">
-    <h3>Lịch làm việc</h3>
-    <div id="calendar"></div>
-  </div>
-  <div id="employee-list-container"></div>
-
-  <!-- Popup -->
-  <div id="employee-details-modal" class="modal">
-    <div id="employee-details-content" class="modal-content"></div>
-  </div>
-
-  <!-- THÔNG TIN CÁ NHÂN -->
-  <div class="card">
-    <div class="toggle-header toggle-title" id="toggle-personal" onclick="toggleSection('personal')">
-      Thông tin cá nhân
-    </div>
-    <div class="toggle-body" id="section-personal">
-      <label>Tên</label>
-      <input id="name-input" type="text" placeholder="Nhập tên" />
-      <label>SĐT</label>
-      <input id="phone-input" type="text" placeholder="Nhập số điện thoại" />
-      <label>Địa chỉ</label>
-      <input id="address-input" type="text" placeholder="Nhập địa chỉ" />
-      <button onclick="updateUserProfile()">Cập nhật</button>
-    </div>
-  </div>
-
-  <!-- TẠM ỨNG -->
-  <div class="card">
-    <div class="toggle-header toggle-title" id="toggle-advance" onclick="toggleSection('advance')">
-      Tạm ứng
-    </div>
-    <div class="toggle-body" id="section-advance">
-      <label>Số tiền</label>
-      <input type="number" id="advance-amount" placeholder="Số tiền (VND)" />
-      <label>Lý do</label>
-      <input type="text" id="advance-reason" placeholder="Lý do" />
-      <button class="primary-btn" onclick="requestAdvance()">Gửi yêu cầu</button>
-    </div>
-  </div>
-
-  <!-- NGÀY OFF VÀ TĂNG CA -->
-  <div class="card">
-    <div class="toggle-header toggle-title" id="toggle-off" onclick="toggleSection('off')">
-      Ngày off và tăng ca
-    </div>
-    <div class="toggle-body" id="section-off">
-      <div id="off-and-overtime"></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div id="advance-requests-container" data-expanded="false"></div>
-  </div>
-  <div class="card">
-    <div id="schedule-requests-container"></div>
-  </div>
-</section>
-
-<!-- HTML: Báo cáo Thu - Chi -->
-<section id="report-page" class="report-page">
-
-  <header class="report-header">
-    <h2>Báo cáo Thu - Chi</h2>
-    <div class="report-header-right">
-      <label class="filter-label">Khoảng ngày:
-        <input id="report-filter-range" placeholder="Chọn khoảng ngày" />
-      </label>
-      <button id="refresh-report-btn" class="btn" onclick="fetchAllReportData()">🔄 Làm mới</button>
-      <div id="report-date-range" class="filter-info"></div>
-    </div>
-  </header>
-
-  <main class="report-main">
-
-    <!-- TOP: Tổng quan + Biểu đồ -->
-    <section class="report-top">
-      <div id="report-summary-table" class="card summary-card">
-        <!-- Bảng tổng sẽ được render vào đây -->
-        <p class="muted">Đang tải tổng quan...</p>
-      </div>
-
-      <div class="card chart-card">
-        <div class="card-title">Biểu đồ tổng quan</div>
-        <div class="chart-wrapper">
-          <canvas id="chart-profit" height="220"></canvas>
-        </div>
-      </div>
-    </section>
-
-    <!-- MIDDLE: Chi phí tháng + Inventory + Payroll -->
-    <section class="report-middle">
-      <div id="report-expense-detail" class="card month-cost-card">
-        <!-- Bảng chi phí tháng (so sánh trung bình) -->
-        <p class="muted">Đang tải chi phí tháng...</p>
-      </div>
-<!-- Bảng xuất kho -->
-<section id="report-inventory-export" class="card"></section>
-
-<!-- Cảnh báo tồn kho thấp -->
-<section id="low-stock-warning" class="card"></section>
-      <div id="report-inventory" class="card inventory-card">
-        <div class="card-title">Kho hàng</div>
-        <p class="muted">Đang tải kho...</p>
-      </div>
-
-      <div id="report-payroll" class="card payroll-card">
-        <div class="card-title">Bảng lương</div>
-        <p class="muted">Đang tải lương...</p>
-      </div>
-    </section>
-
-    <!-- BOTTOM: Bảng chi phí theo ngày (áp dụng filter) -->
-    <section class="report-bottom card" id="report-expense-daily-wrapper">
-      <div class="card-title">Chi phí theo ngày (áp dụng bộ lọc)</div>
-      <div id="report-expense-daily">
-        <p class="muted">Áp dụng bộ lọc ngày để hiển thị chi tiết theo ngày.</p>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- FOOTER / small controls -->
-  <footer class="report-footer">
-    <div class="left">
-      <input id="group-keyword" placeholder="Từ khóa gộp (ví dụ: sửa)" />
-      <input id="group-target" placeholder="Gộp vào (ví dụ: sửa máy)" />
-      <button class="btn" onclick="addManualCostGroup()">Thêm/Áp dụng gộp</button>
     </div>
 
-    <div class="right">
-      <button class="btn secondary" onclick="openAddMonthlyCostModal()">＋ Thêm dòng chi phí tháng</button>
-      <button class="btn" onclick="renderAllReportSections()">Hiển thị mặc định</button>
-    </div>
-  </footer>
+    <script>
+        // ==================== GLOBAL DATA STORAGE ====================
+        window.deviceManager = {
+            devices: [],
+            classifications: [],
+            searchResults: [],
+            
+            // Classification options
+            categories: [
+                'Dụng cụ phẫu thuật - Kềm các loại',
+                'Dụng cụ phẫu thuật - Kéo phẫu thuật',
+                'Dụng cụ phẫu thuật - Banh mổ',
+                'Thiết bị hỗ trợ - Đèn các loại',
+                'Thiết bị hỗ trợ - Xe đẩy',
+                'Thiết bị hỗ trợ - Tủ, bàn',
+                'Dụng cụ nội soi - Ống soi',
+                'Dụng cụ nội soi - Trocar',
+                'Dụng cụ tiêu hao - Bóp bóng',
+                'Dụng cụ tiêu hao - Ống nghe'
+            ],
+            
+            departments: [
+                'Đơn vị Phẫu thuật - Phòng Mổ 1',
+                'Đơn vị Phẫu thuật - Phòng Mổ 2',
+                'Đơn vị Hồi sức - Khu HS tích cực',
+                'Đơn vị Hồi sức - Khu HS sau mổ',
+                'Đơn vị Giảm đau - Phòng Tiêm',
+                'Kho dự phòng'
+            ],
+            
+            statuses: [
+                'Đang sử dụng',
+                'Bảo trì',
+                'Hư hỏng',
+                'Thanh lý',
+                'Dự phòng'
+            ],
+            
+            units: ['Cái', 'Bộ', 'Chiếc', 'Set', 'Bộ (lẻ)']
+        };
 
-</section>
+        // ==================== UTILITY FUNCTIONS ====================
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.style.display = 'none';
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).style.display = 'block';
+            event.target.classList.add('active');
+            
+            // Load tab content
+            loadTabContent(tabName);
+        }
 
-<!-- MODAL containers (script sẽ tìm by id) -->
-<div id="group-edit-modal" class="modal" style="display:none;"></div>
-<div id="add-monthly-cost-modal" class="modal" style="display:none;"></div>
+        function loadTabContent(tabName) {
+            const contentMap = {
+                'import': loadImportTab,
+                'classify': loadClassificationTab,
+                'search': loadSearchTab,
+                'dashboard': loadDashboardTab
+            };
+            
+            if (contentMap[tabName]) {
+                contentMap[tabName]();
+            }
+        }
 
-<!-- OPTIONAL: placeholder for toast messages (if you have showToastNotification) -->
-<div id="app-toast" class="toast" style="display:none;"></div>
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', { 
+                style: 'currency', 
+                currency: 'VND' 
+            }).format(amount);
+        }
 
+        function getStatusBadge(status) {
+            const badgeClass = {
+                'Đang sử dụng': 'status-active',
+                'Bảo trì': 'status-maintenance',
+                'Hư hỏng': 'status-broken',
+                'Thanh lý': 'status-broken',
+                'Dự phòng': 'status-active'
+            }[status] || 'status-active';
+            
+            return `<span class="badge ${badgeClass}">${status}</span>`;
+        }
 
+        function calculateDeviceAge(year) {
+            return new Date().getFullYear() - year;
+        }
 
-<!-- Modal và Toast -->
-<div id="action-modal" class="modal">
-  <div id="action-modal-content" class="modal-content"></div>
-</div>
-<div id="day-details-modal" class="modal">
-  <div id="day-details-content" class="modal-content"></div>
-</div>
-<div id="toast-container"></div>
+        // ==================== IMPORT TAB ====================
+        function loadImportTab() {
+            document.getElementById('import').innerHTML = `
+                <div class="card">
+                    <h2>📤 IMPORT DỮ LIỆU TỪ EXCEL</h2>
+                    <div class="grid grid-2">
+                        <div>
+                            <h3>Upload File Excel</h3>
+                            <input type="file" id="excelFile" accept=".xlsx, .xls">
+                            <button onclick="parseExcelFile()">Parse Excel</button>
+                        </div>
+                        <div>
+                            <h3>Dữ liệu mẫu</h3>
+                            <p>File Excel cần có các cột: Tên công cụ dụng cụ, Năm sản xuất, Số lượng, Nguyên giá</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="excelPreview" class="card" style="display: none;">
+                    <h3>📋 PREVIEW DỮ LIỆU</h3>
+                    <div id="previewTable"></div>
+                    <button onclick="confirmImport()" style="background: #27ae60;">XÁC NHẬN IMPORT</button>
+                </div>
+            `;
+        }
 
-    <!-- Floating Menu -->
-    <div class="floating-menu">
-      <button id="main-float-btn" onclick="toggleMenu()">☰</button>
-      <div id="float-options" class="float-options">
-        <button onclick="openTabBubble('revenue-expense')">Thu Chi</button>
-        <button onclick="openTabBubble('inventory')">Kho</button>
-        <button onclick="openTabBubble('profile')">Cá nhân</button>
-        <button onclick="openTabBubble('report-tab')">Báo cáo</button>
-</div>
-    </div>
-  </div>
+        function parseExcelFile() {
+            const fileInput = document.getElementById('excelFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Vui lòng chọn file Excel');
+                return;
+            }
 
-  <!-- Scripts -->
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDmFpKa8TpDjo3pQADaTubgVpDPOi-FPXk",
-      authDomain: "quanly-d7e54.firebaseapp.com",
-      databaseURL: "https://quanly-d7e54-default-rtdb.firebaseio.com",
-      projectId: "quanly-d7e54",
-      storageBucket: "quanly-d7e54.appspot.com",
-      messagingSenderId: "482686011267",
-      appId: "1:482686011267:web:f2fe9d400fe618487a98b6",
-    };
-    try {
-      firebase.initializeApp(firebaseConfig);
-    } catch (err) {
-      console.error("Firebase init failed:", err);
-    }
+            // Simulate Excel parsing (in real app, use SheetJS)
+            const sampleData = [
+                {
+                    ten_thiet_bi: 'Kềm kẹp kim thẳng 20cm',
+                    nam_san_xuat: 2019,
+                    so_luong: 7,
+                    nguyen_gia: 346500
+                },
+                {
+                    ten_thiet_bi: 'Bàn Mayo',
+                    nam_san_xuat: 1975,
+                    so_luong: 15,
+                    nguyen_gia: 1500000
+                },
+                {
+                    ten_thiet_bi: 'Đèn mổ đứng 1 bóng USA',
+                    nam_san_xuat: 2007,
+                    so_luong: 2,
+                    nguyen_gia: 2183363
+                },
+                {
+                    ten_thiet_bi: 'Bóp bóng sơ sinh Silicon',
+                    nam_san_xuat: 2021,
+                    so_luong: 2,
+                    nguyen_gia: 1785000
+                },
+                {
+                    ten_thiet_bi: 'Ống soi niệu quản bể thận',
+                    nam_san_xuat: 2025,
+                    so_luong: 2,
+                    nguyen_gia: 304160000
+                }
+            ];
 
-    document.addEventListener("DOMContentLoaded", () => {
-  const inputId = "report-filter-range";
-  const el = document.getElementById(inputId);
-  if (el) {
-    const instance = flatpickr(el, { mode: "range", dateFormat: "Y-m-d" });
-    flatpickrInstanceMap[inputId] = instance;
-  }
-  fetchAllReportData();
-});
+            window.deviceManager.devices = sampleData.map((device, index) => ({
+                id: index + 1,
+                ...device,
+                serial_number: `DC-${String(index + 1).padStart(3, '0')}`,
+                phan_loai: '',
+                don_vi_tinh: '',
+                tinh_trang: 'Đang sử dụng'
+            }));
 
+            displayExcelPreview();
+        }
 
+        function displayExcelPreview() {
+            const previewDiv = document.getElementById('excelPreview');
+            const tableDiv = document.getElementById('previewTable');
+            
+            let html = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Tên thiết bị</th>
+                            <th>Năm SX</th>
+                            <th>Số lượng</th>
+                            <th>Nguyên giá</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            window.deviceManager.devices.forEach(device => {
+                html += `
+                    <tr>
+                        <td>${device.id}</td>
+                        <td>${device.ten_thiet_bi}</td>
+                        <td>${device.nam_san_xuat}</td>
+                        <td>${device.so_luong}</td>
+                        <td>${formatCurrency(device.nguyen_gia)}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `</tbody></table>`;
+            tableDiv.innerHTML = html;
+            previewDiv.style.display = 'block';
+        }
 
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script src="revenue-expense.js"></script>
-<script src="inventory.js"></script>
-<script src="profile.js"></script>
-<script src="report-tab.js"></script>
-<script src="common.js"></script>
+        function confirmImport() {
+            alert(`Đã import thành công ${window.deviceManager.devices.length} thiết bị!`);
+            showTab('classify');
+        }
+
+        // ==================== CLASSIFICATION TAB ====================
+        function loadClassificationTab() {
+            if (window.deviceManager.devices.length === 0) {
+                document.getElementById('classify').innerHTML = `
+                    <div class="card">
+                        <h2>📝 PHÂN LOẠI THIẾT BỊ</h2>
+                        <p>Chưa có dữ liệu. Vui lòng import Excel trước.</p>
+                        <button onclick="showTab('import')">QUAY LẠI IMPORT</button>
+                    </div>
+                `;
+                return;
+            }
+
+            document.getElementById('classify').innerHTML = `
+                <div class="card">
+                    <h2>🏷️ PHÂN LOẠI THIẾT BỊ</h2>
+                    <p>Tổng số thiết bị: ${window.deviceManager.devices.length}</p>
+                    
+                    <div class="filter-group">
+                        <input type="text" id="searchClassify" placeholder="Tìm thiết bị..." onkeyup="filterClassificationTable()">
+                        <select id="filterStatus" onchange="filterClassificationTable()">
+                            <option value="">Tất cả trạng thái</option>
+                            ${window.deviceManager.statuses.map(status => 
+                                `<option value="${status}">${status}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    
+                    <div id="classificationTable"></div>
+                    
+                    <div style="margin-top: 20px;">
+                        <button onclick="saveAllClassifications()" style="background: #27ae60;">💾 LƯU TẤT CẢ PHÂN LOẠI</button>
+                        <button onclick="autoClassifyAll()">🤖 PHÂN LOẠI TỰ ĐỘNG</button>
+                    </div>
+                </div>
+            `;
+
+            renderClassificationTable();
+        }
+
+        function renderClassificationTable() {
+            const tableDiv = document.getElementById('classificationTable');
+            let html = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Tên thiết bị</th>
+                            <th>Phân loại</th>
+                            <th>Đơn vị</th>
+                            <th>Phòng ban</th>
+                            <th>Tình trạng</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            window.deviceManager.devices.forEach(device => {
+                html += `
+                    <tr>
+                        <td>${device.id}</td>
+                        <td>
+                            <strong>${device.ten_thiet_bi}</strong>
+                            <br><small>${device.serial_number}</small>
+                        </td>
+                        <td>
+                            <select id="category_${device.id}" onchange="updateDeviceClassification(${device.id})">
+                                <option value="">-- Chọn phân loại --</option>
+                                ${window.deviceManager.categories.map(cat => 
+                                    `<option value="${cat}" ${device.phan_loai === cat ? 'selected' : ''}>${cat}</option>`
+                                ).join('')}
+                            </select>
+                        </td>
+                        <td>
+                            <select id="unit_${device.id}" onchange="updateDeviceClassification(${device.id})">
+                                <option value="">-- Đơn vị --</option>
+                                ${window.deviceManager.units.map(unit => 
+                                    `<option value="${unit}" ${device.don_vi_tinh === unit ? 'selected' : ''}>${unit}</option>`
+                                ).join('')}
+                            </select>
+                        </td>
+                        <td>
+                            <select id="department_${device.id}" onchange="updateDeviceClassification(${device.id})">
+                                <option value="">-- Phòng ban --</option>
+                                ${window.deviceManager.departments.map(dept => 
+                                    `<option value="${dept}" ${device.phong_ban === dept ? 'selected' : ''}>${dept}</option>`
+                                ).join('')}
+                            </select>
+                        </td>
+                        <td>
+                            <select id="status_${device.id}" onchange="updateDeviceClassification(${device.id})">
+                                ${window.deviceManager.statuses.map(status => 
+                                    `<option value="${status}" ${device.tinh_trang === status ? 'selected' : ''}>${status}</option>`
+                                ).join('')}
+                            </select>
+                        </td>
+                        <td>
+                            <button onclick="viewDeviceDetail(${device.id})" style="padding: 5px 10px;">👁️ Xem</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `</tbody></table>`;
+            tableDiv.innerHTML = html;
+        }
+
+        function updateDeviceClassification(deviceId) {
+            const device = window.deviceManager.devices.find(d => d.id === deviceId);
+            if (device) {
+                device.phan_loai = document.getElementById(`category_${deviceId}`).value;
+                device.don_vi_tinh = document.getElementById(`unit_${deviceId}`).value;
+                device.phong_ban = document.getElementById(`department_${deviceId}`).value;
+                device.tinh_trang = document.getElementById(`status_${deviceId}`).value;
+            }
+        }
+
+        function autoClassifyAll() {
+            window.deviceManager.devices.forEach(device => {
+                // Auto-classify based on device name keywords
+                const name = device.ten_thiet_bi.toLowerCase();
+                
+                if (name.includes('kềm') || name.includes('kẹp')) {
+                    device.phan_loai = 'Dụng cụ phẫu thuật - Kềm các loại';
+                } else if (name.includes('bàn') || name.includes('bàn mayo')) {
+                    device.phan_loai = 'Thiết bị hỗ trợ - Tủ, bàn';
+                } else if (name.includes('đèn')) {
+                    device.phan_loai = 'Thiết bị hỗ trợ - Đèn các loại';
+                } else if (name.includes('bóp bóng')) {
+                    device.phan_loai = 'Dụng cụ tiêu hao - Bóp bóng';
+                } else if (name.includes('ống soi')) {
+                    device.phan_loai = 'Dụng cụ nội soi - Ống soi';
+                }
+                
+                device.don_vi_tinh = 'Cái';
+                device.phong_ban = 'Kho dự phòng';
+            });
+            
+            renderClassificationTable();
+            alert('Đã phân loại tự động cho tất cả thiết bị!');
+        }
+
+        function filterClassificationTable() {
+            const searchTerm = document.getElementById('searchClassify').value.toLowerCase();
+            const statusFilter = document.getElementById('filterStatus').value;
+            
+            const rows = document.querySelectorAll('#classificationTable tbody tr');
+            rows.forEach(row => {
+                const deviceName = row.cells[1].textContent.toLowerCase();
+                const deviceStatus = row.cells[5].querySelector('select').value;
+                
+                const nameMatch = deviceName.includes(searchTerm);
+                const statusMatch = !statusFilter || deviceStatus === statusFilter;
+                
+                row.style.display = nameMatch && statusMatch ? '' : 'none';
+            });
+        }
+
+        function saveAllClassifications() {
+            const unclassified = window.deviceManager.devices.filter(d => !d.phan_loai);
+            if (unclassified.length > 0) {
+                if (!confirm(`Còn ${unclassified.length} thiết bị chưa được phân loại. Tiếp tục lưu?`)) {
+                    return;
+                }
+            }
+            
+            localStorage.setItem('deviceClassifications', JSON.stringify(window.deviceManager.devices));
+            alert('✅ Đã lưu tất cả phân loại thành công!');
+        }
+
+        // ==================== SEARCH TAB ====================
+        function loadSearchTab() {
+            document.getElementById('search').innerHTML = `
+                <div class="card">
+                    <h2>🔍 TRA CỨU THIẾT BỊ</h2>
+                    
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="🔍 Tìm kiếm theo tên, serial, model..." style="width: 300px;">
+                        <button onclick="performSearch()">Tìm kiếm</button>
+                        <button onclick="showAdvancedFilters()" style="background: #95a5a6;">🎛️ Bộ lọc nâng cao</button>
+                    </div>
+                    
+                    <div id="advancedFilters" style="display: none;">
+                        <div class="grid grid-3">
+                            <div>
+                                <label>Phân loại:</label>
+                                <select id="filterCategory">
+                                    <option value="">Tất cả phân loại</option>
+                                    ${window.deviceManager.categories.map(cat => 
+                                        `<option value="${cat}">${cat}</option>`
+                                    ).join('')}
+                                </select>
+                            </div>
+                            <div>
+                                <label>Phòng ban:</label>
+                                <select id="filterDepartment">
+                                    <option value="">Tất cả phòng ban</option>
+                                    ${window.deviceManager.departments.map(dept => 
+                                        `<option value="${dept}">${dept}</option>`
+                                    ).join('')}
+                                </select>
+                            </div>
+                            <div>
+                                <label>Tình trạng:</label>
+                                <select id="filterStatusSearch">
+                                    <option value="">Tất cả tình trạng</option>
+                                    ${window.deviceManager.statuses.map(status => 
+                                        `<option value="${status}">${status}</option>`
+                                    ).join('')}
+                                </select>
+                            </div>
+                            <div>
+                                <label>Tuổi thiết bị:</label>
+                                <select id="filterAge">
+                                    <option value="">Tất cả tuổi</option>
+                                    <option value="5">Dưới 5 năm</option>
+                                    <option value="10">5-10 năm</option>
+                                    <option value="15">10-15 năm</option>
+                                    <option value="20">Trên 15 năm</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Giá trị:</label>
+                                <select id="filterPrice">
+                                    <option value="">Tất cả giá</option>
+                                    <option value="1000000">Dưới 1 triệu</option>
+                                    <option value="10000000">1-10 triệu</option>
+                                    <option value="100000000">10-100 triệu</option>
+                                    <option value="1000000000">Trên 100 triệu</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="searchResults" style="margin-top: 20px;"></div>
+                </div>
+            `;
+        }
+
+        function showAdvancedFilters() {
+            const filters = document.getElementById('advancedFilters');
+            filters.style.display = filters.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function performSearch() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const categoryFilter = document.getElementById('filterCategory').value;
+            const departmentFilter = document.getElementById('filterDepartment').value;
+            const statusFilter = document.getElementById('filterStatusSearch').value;
+            const ageFilter = document.getElementById('filterAge').value;
+            const priceFilter = document.getElementById('filterPrice').value;
+            
+            let results = window.deviceManager.devices.filter(device => {
+                // Text search
+                const textMatch = !searchTerm || 
+                    device.ten_thiet_bi.toLowerCase().includes(searchTerm) ||
+                    device.serial_number.toLowerCase().includes(searchTerm);
+                
+                // Category filter
+                const categoryMatch = !categoryFilter || device.phan_loai === categoryFilter;
+                
+                // Department filter
+                const departmentMatch = !departmentFilter || device.phong_ban === departmentFilter;
+                
+                // Status filter
+                const statusMatch = !statusFilter || device.tinh_trang === statusFilter;
+                
+                // Age filter
+                const deviceAge = calculateDeviceAge(device.nam_san_xuat);
+                const ageMatch = !ageFilter || (
+                    ageFilter === '5' ? deviceAge < 5 :
+                    ageFilter === '10' ? deviceAge >= 5 && deviceAge <= 10 :
+                    ageFilter === '15' ? deviceAge > 10 && deviceAge <= 15 :
+                    deviceAge > 15
+                );
+                
+                // Price filter
+                const priceMatch = !priceFilter || (
+                    priceFilter === '1000000' ? device.nguyen_gia < 1000000 :
+                    priceFilter === '10000000' ? device.nguyen_gia >= 1000000 && device.nguyen_gia < 10000000 :
+                    priceFilter === '100000000' ? device.nguyen_gia >= 10000000 && device.nguyen_gia < 100000000 :
+                    device.nguyen_gia >= 100000000
+                );
+                
+                return textMatch && categoryMatch && departmentMatch && statusMatch && ageMatch && priceMatch;
+            });
+            
+            displaySearchResults(results);
+        }
+
+        function displaySearchResults(results) {
+            const resultsDiv = document.getElementById('searchResults');
+            
+            if (results.length === 0) {
+                resultsDiv.innerHTML = '<p>Không tìm thấy thiết bị nào phù hợp.</p>';
+                return;
+            }
+            
+            let html = `
+                <h3>📊 KẾT QUẢ TÌM KIẾM: ${results.length} thiết bị</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Thiết bị</th>
+                            <th>Serial</th>
+                            <th>Phân loại</th>
+                            <th>Phòng ban</th>
+                            <th>Tình trạng</th>
+                            <th>Tuổi</th>
+                            <th>Giá trị</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            results.forEach(device => {
+                const age = calculateDeviceAge(device.nam_san_xuat);
+                html += `
+                    <tr>
+                        <td>${device.id}</td>
+                        <td><strong>${device.ten_thiet_bi}</strong></td>
+                        <td>${device.serial_number}</td>
+                        <td>${device.phan_loai || 'Chưa phân loại'}</td>
+                        <td>${device.phong_ban || 'Chưa phân bổ'}</td>
+                        <td>${getStatusBadge(device.tinh_trang)}</td>
+                        <td>${age} năm</td>
+                        <td>${formatCurrency(device.nguyen_gia)}</td>
+                        <td>
+                            <button onclick="viewDeviceDetail(${device.id})">👁️ Chi tiết</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `</tbody></table>`;
+            resultsDiv.innerHTML = html;
+        }
+
+        // ==================== DEVICE DETAIL MODAL ====================
+        function viewDeviceDetail(deviceId) {
+            const device = window.deviceManager.devices.find(d => d.id === deviceId);
+            if (!device) return;
+            
+            const modal = document.getElementById('deviceModal');
+            const modalContent = modal.querySelector('.modal-content');
+            
+            const age = calculateDeviceAge(device.nam_san_xuat);
+            const ageStatus = age < 5 ? 'Mới' : age < 10 ? 'Trung bình' : 'Cũ';
+            
+            modalContent.innerHTML = `
+                <div style="display: flex; justify-content: between; align-items: start; margin-bottom: 20px;">
+                    <h2>${device.ten_thiet_bi}</h2>
+                    <button onclick="closeModal()" style="background: #e74c3c; padding: 5px 10px;">✕ Đóng</button>
+                </div>
+                
+                <div class="grid grid-2">
+                    <div>
+                        <h3>📋 THÔNG TIN CƠ BẢN</h3>
+                        <table style="width: 100%;">
+                            <tr><td><strong>Serial:</strong></td><td>${device.serial_number}</td></tr>
+                            <tr><td><strong>Năm SX:</strong></td><td>${device.nam_san_xuat}</td></tr>
+                            <tr><td><strong>Tuổi:</strong></td><td>${age} năm (${ageStatus})</td></tr>
+                            <tr><td><strong>Nguyên giá:</strong></td><td>${formatCurrency(device.nguyen_gia)}</td></tr>
+                            <tr><td><strong>Số lượng:</strong></td><td>${device.so_luong}</td></tr>
+                        </table>
+                    </div>
+                    
+                    <div>
+                        <h3>🏷️ PHÂN LOẠI & TRẠNG THÁI</h3>
+                        <table style="width: 100%;">
+                            <tr><td><strong>Phân loại:</strong></td><td>${device.phan_loai || 'Chưa phân loại'}</td></tr>
+                            <tr><td><strong>Đơn vị tính:</strong></td><td>${device.don_vi_tinh || 'Chưa xác định'}</td></tr>
+                            <tr><td><strong>Phòng ban:</strong></td><td>${device.phong_ban || 'Chưa phân bổ'}</td></tr>
+                            <tr><td><strong>Tình trạng:</strong></td><td>${getStatusBadge(device.tinh_trang)}</td></tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <h3>📊 THỐNG KÊ SỬ DỤNG</h3>
+                    <div class="grid grid-3">
+                        <div style="text-align: center; padding: 10px; background: #ecf0f1; border-radius: 5px;">
+                            <div style="font-size: 24px;">${age}</div>
+                            <div>Năm tuổi</div>
+                        </div>
+                        <div style="text-align: center; padding: 10px; background: #ecf0f1; border-radius: 5px;">
+                            <div style="font-size: 24px;">${device.so_luong}</div>
+                            <div>Số lượng</div>
+                        </div>
+                        <div style="text-align: center; padding: 10px; background: #ecf0f1; border-radius: 5px;">
+                            <div style="font-size: 24px;">${formatCurrency(device.nguyen_gia)}</div>
+                            <div>Giá trị</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <button onclick="editDevice(${device.id})" style="background: #f39c12;">✏️ Chỉnh sửa</button>
+                    <button onclick="generateQRCode(${device.id})" style="background: #9b59b6;">📱 QR Code</button>
+                    <button onclick="exportDeviceReport(${device.id})" style="background: #27ae60;">📄 Xuất báo cáo</button>
+                </div>
+            `;
+            
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('deviceModal').style.display = 'none';
+        }
+
+        function editDevice(deviceId) {
+            alert(`Chuyển sang chế độ chỉnh sửa cho thiết bị ${deviceId}`);
+            // Implementation for edit functionality
+        }
+
+        function generateQRCode(deviceId) {
+            alert(`Tạo QR Code cho thiết bị ${deviceId}`);
+            // Implementation for QR code generation
+        }
+
+        function exportDeviceReport(deviceId) {
+            alert(`Xuất báo cáo cho thiết bị ${deviceId}`);
+            // Implementation for report export
+        }
+
+        // ==================== DASHBOARD TAB ====================
+        function loadDashboardTab() {
+            const devices = window.deviceManager.devices;
+            const totalDevices = devices.length;
+            const classifiedDevices = devices.filter(d => d.phan_loai).length;
+            const activeDevices = devices.filter(d => d.tinh_trang === 'Đang sử dụng').length;
+            
+            // Calculate statistics
+            const statusCount = {};
+            const categoryCount = {};
+            const departmentCount = {};
+            const ageGroups = { '0-5': 0, '5-10': 0, '10-15': 0, '15+': 0 };
+            
+            devices.forEach(device => {
+                // Status count
+                statusCount[device.tinh_trang] = (statusCount[device.tinh_trang] || 0) + 1;
+                
+                // Category count
+                if (device.phan_loai) {
+                    categoryCount[device.phan_loai] = (categoryCount[device.phan_loai] || 0) + 1;
+                }
+                
+                // Department count
+                if (device.phong_ban) {
+                    departmentCount[device.phong_ban] = (departmentCount[device.phong_ban] || 0) + 1;
+                }
+                
+                // Age groups
+                const age = calculateDeviceAge(device.nam_san_xuat);
+                if (age <= 5) ageGroups['0-5']++;
+                else if (age <= 10) ageGroups['5-10']++;
+                else if (age <= 15) ageGroups['10-15']++;
+                else ageGroups['15+']++;
+            });
+
+            document.getElementById('dashboard').innerHTML = `
+                <div class="card">
+                    <h2>📊 DASHBOARD TỔNG QUAN</h2>
+                    
+                    <div class="grid grid-3">
+                        <div style="text-align: center; padding: 20px; background: #3498db; color: white; border-radius: 10px;">
+                            <div style="font-size: 32px;">${totalDevices}</div>
+                            <div>Tổng thiết bị</div>
+                        </div>
+                        <div style="text-align: center; padding: 20px; background: #27ae60; color: white; border-radius: 10px;">
+                            <div style="font-size: 32px;">${classifiedDevices}</div>
+                            <div>Đã phân loại</div>
+                        </div>
+                        <div style="text-align: center; padding: 20px; background: #e74c3c; color: white; border-radius: 10px;">
+                            <div style="font-size: 32px;">${activeDevices}</div>
+                            <div>Đang sử dụng</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-2">
+                    <div class="card">
+                        <h3>📈 PHÂN BỐ THEO TÌNH TRẠNG</h3>
+                        <div id="statusChart">
+                            ${Object.entries(statusCount).map(([status, count]) => `
+                                <div style="margin: 10px 0;">
+                                    <div style="display: flex; justify-content: between;">
+                                        <span>${status}</span>
+                                        <span>${count}</span>
+                                    </div>
+                                    <div style="background: #ecf0f1; height: 10px; border-radius: 5px;">
+                                        <div style="background: #3498db; height: 100%; width: ${(count/totalDevices)*100}%; border-radius: 5px;"></div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>📊 PHÂN BỐ THEO TUỔI</h3>
+                        <div id="ageChart">
+                            ${Object.entries(ageGroups).map(([ageGroup, count]) => `
+                                <div style="margin: 10px 0;">
+                                    <div style="display: flex; justify-content: between;">
+                                        <span>${ageGroup} năm</span>
+                                        <span>${count}</span>
+                                    </div>
+                                    <div style="background: #ecf0f1; height: 10px; border-radius: 5px;">
+                                        <div style="background: #e74c3c; height: 100%; width: ${(count/totalDevices)*100}%; border-radius: 5px;"></div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>🚨 CẢNH BÁO & ĐỀ XUẤT</h3>
+                    <div id="alerts">
+                        ${devices.filter(d => calculateDeviceAge(d.nam_san_xuat) > 15).length > 0 ? `
+                            <div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin: 5px 0;">
+                                ⚠️ Có ${devices.filter(d => calculateDeviceAge(d.nam_san_xuat) > 15).length} thiết bị trên 15 năm tuổi cần xem xét thay thế
+                            </div>
+                        ` : ''}
+                        
+                        ${devices.filter(d => d.tinh_trang === 'Hư hỏng').length > 0 ? `
+                            <div style="background: #f8d7da; padding: 10px; border-radius: 5px; margin: 5px 0;">
+                                ❌ Có ${devices.filter(d => d.tinh_trang === 'Hư hỏng').length} thiết bị hư hỏng cần sửa chữa
+                            </div>
+                        ` : ''}
+                        
+                        ${devices.filter(d => !d.phan_loai).length > 0 ? `
+                            <div style="background: #d1ecf1; padding: 10px; border-radius: 5px; margin: 5px 0;">
+                                ℹ️ Có ${devices.filter(d => !d.phan_loai).length} thiết bị chưa được phân loại
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==================== INITIALIZATION ====================
+        window.onload = function() {
+            // Load saved data from localStorage
+            const savedData = localStorage.getItem('deviceClassifications');
+            if (savedData) {
+                window.deviceManager.devices = JSON.parse(savedData);
+            }
+            
+            // Show initial tab
+            loadTabContent('import');
+        };
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('deviceModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        };
+    </script>
 </body>
 </html>
